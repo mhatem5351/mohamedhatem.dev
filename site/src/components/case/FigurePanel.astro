@@ -49,7 +49,11 @@ const compact = diagramSvg(id, "compact", { locale });
             <span class="co" aria-hidden="true">
               {c.n}
             </span>
-            <span>{c[locale]}</span>
+            <span>
+              {c.term && <b>{c.term[locale]}.</b>}
+              {c.term && " "}
+              {c[locale]}
+            </span>
           </li>
         ))
       }

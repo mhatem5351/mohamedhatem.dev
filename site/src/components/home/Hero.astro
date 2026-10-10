@@ -53,7 +53,8 @@ const [before, after] = m.hero.localTime.split("{time}");
           {m.hero.ctaCv}
         </a>
         <p class="hero__meta">
-          <span><i class="dot" aria-hidden="true"></i>{m.hero.availability}</span>
+          {/* Availability and work arrangements up front (recruiters scan for them); the link goes to the full list. */}
+          <a class="hero__open" href="#open-to"><i class="dot" aria-hidden="true"></i><span>{m.hero.availability}<span class="hero__open-detail"> · {m.hero.arrangements}</span></span></a>
           <span>
             <Icon name="clock" size="sm" />
             {before}<time data-cairo-time>{cairoTime(locale)}</time>{after}

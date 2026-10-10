@@ -258,14 +258,15 @@ a.co { text-decoration: none; }
 .cs-hero .eyebrow bdi { unicode-bidi: isolate; }
 .cs-hero__links { display: flex; flex-wrap: wrap; gap: .75rem; }
 
-/* Key facts strip: column count follows the number of facts (0-4; the strip is omitted at 0) */
-@media (min-width: 48rem) {
-  .metrics--1 { grid-template-columns: minmax(0, 1fr); }
-  .metrics--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .metrics--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .metrics--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+/* Key facts strip (2-4 facts): two columns, four from 64rem whatever the count, so fewer facts keep their width
+   instead of stretching across the page (audit VUX-10). */
+.cs-facts.metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 64rem) { .cs-facts.metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 47.99rem) { .cs-facts .metric:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+@media (min-width: 48rem) and (max-width: 63.99rem) {
+  .cs-facts .metric:nth-child(odd) { border-inline-start: 0; padding-inline-start: 0; }
+  .cs-facts .metric:nth-child(n+3) { border-block-start: 1px solid var(--color-line); }
 }
-@media (max-width: 47.99rem) { .metrics--1 .metric, .metrics--3 .metric:last-child { grid-column: 1 / -1; } }
 .cs-facts .metric__value { font-size: var(--text-2xl); }
 
 /* Figures: wide diagram from 52rem of figure width (container query), the compact vertical one below */

@@ -2,7 +2,9 @@
 /**
  * Case-study hero (pages.css §2–3): breadcrumbs, eyebrow (organisation / role / years), H1, summary, actions,
  * the CaseMeta card (role, organisation, period + duration, where, stack) and the key-facts strip
- * (case.figures: 0–4, omitted when there are none, never estimated). The figure slot renders below the facts.
+ * (case.figures: 2–4 sourced facts, never estimated; omitted below 2, where one cell would only restate the summary).
+ * The strip keeps four columns from 64rem, so two or three facts don't stretch across the page. The figure slot
+ * renders below the facts.
  */
 import Breadcrumbs from "./Breadcrumbs.astro";
 import Icon from "~/components/ui/Icon.astro";
@@ -27,7 +29,7 @@ const detail = contextDetail(cs, locale);
 const isLatin = (s: string) => !/[؀-ۿ]/.test(s);
 const employment = role ? m.experience.employmentType[role.employmentType] : m.work.freelance;
 const mode = role?.workMode ? m.experience.workMode[role.workMode] : undefined;
-const figures = cs.figures.slice(0, 4);
+const figures = cs.figures.length >= 2 ? cs.figures.slice(0, 4) : [];
 const question = askQuestion(cs, locale);
 ---
 <section class="cs-hero" aria-labelledby="cs-title">
@@ -47,7 +49,7 @@ const question = askQuestion(cs, locale);
         <h1 class="cs-hero__title" id="cs-title">{tr(cs.title, locale)}</h1>
         <p class="cs-hero__summary">{tr(cs.summary, locale)}</p>
         <div class="cs-hero__actions">
-          <button class="btn btn--secondary" type="button" data-open-chat data-question={question} aria-haspopup="dialog">
+          <button class="btn btn--secondary" type="button" data-open-chat data-question={question} aria-haspopup="dialog" data-chat-avoid>
             <Icon name="ask" />
             {m.work.page.ask}
           </button>
@@ -115,12 +117,13 @@ const question = askQuestion(cs, locale);
 
     {
       figures.length > 0 && (
-        <dl class:list={["metrics", `metrics--${figures.length}`, "cs-facts"]}>
+        <dl class:list={["metrics", "cs-facts"]}>
           {figures.map((f) => (
             <div class="metric">
               <dt class="metric__label">{tr(f.label, locale)}</dt>
               <dd class:list={["metric__value", !/\d/.test(tr(f.value, locale)) && "metric__value--word"]}>
                 {isLatin(tr(f.value, locale)) ? <Ltr>{tr(f.value, locale)}</Ltr> : tr(f.value, locale)}
+                {f.unit && <small>{tr(f.unit, locale)}</small>}
               </dd>
             </div>
           ))}

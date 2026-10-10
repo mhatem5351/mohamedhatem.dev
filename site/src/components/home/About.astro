@@ -28,9 +28,9 @@ const roles = joinList(
   locale,
 );
 ---
-<section class="section" id="about" aria-labelledby="about-title">
+<section class="section section--band" id="about" aria-labelledby="about-title">
   <div class="container">
-    <SectionHeader index="09" eyebrow={m.about.eyebrow} title={m.about.title} titleId="about-title" />
+    <SectionHeader index="04" eyebrow={m.about.eyebrow} title={m.about.title} titleId="about-title" />
     <div class="about">
       <div class="about__aside">
         <div class="about__portrait">
@@ -59,7 +59,7 @@ const roles = joinList(
       </div>
       <div class="about__bio">
         {b.bio.map((f) => <p>{f.text[locale]}</p>)}
-        <dl class="facts about__open">
+        <dl class="facts about__open" id="open-to">
           <div class="wide">
             <dt>{m.about.openTo}</dt>
             <dd>{roles}</dd>

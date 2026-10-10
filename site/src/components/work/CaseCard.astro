@@ -6,7 +6,9 @@
  * an award badge where one belongs to the role, and the "Read the case study" cue.
  *
  * Variants: "feature" (5/7 split, media on the end side), "wide" (feature layout, media on the start side),
- * "default" (grid card), "compact" (no media; the "More work" list).
+ * "default" (grid card), "compact" (no media; the "More work" list). The eyebrow has one pattern everywhere,
+ * "Company / years" (feature cards add the role); work dated only by a role shared with other case studies reads
+ * "Wakeb Data / during 2024–2026", so the role's years don't pass for the project's own (audit FC-7).
  */
 import type { CaseStudy } from "@content/profile.ts";
 import { Picture } from "astro:assets";
@@ -29,8 +31,10 @@ interface Props {
   i?: number;
   headingLevel?: 3 | 4;
   class?: string;
+  /** Anchor id on the card (the logic-controls.com card keeps the old home "#craft" anchor). */
+  id?: string;
 }
-const { cs, locale, variant = "default", i = 0, headingLevel = 3, class: className } = Astro.props;
+const { cs, locale, variant = "default", i = 0, headingLevel = 3, class: className, id } = Astro.props;
 const m = messages(locale);
 const role = cs.roleId ? profile.experience.find((r) => r.id === cs.roleId) : undefined;
 const honors = role ? profile.honors.filter((h) => h.roleId === role.id) : [];
@@ -41,21 +45,23 @@ const facts = big ? cs.outcome.slice(0, 3) : [];
 const chips = cs.stack.slice(0, big ? 5 : 4);
 const company = role ? role.company[locale] : null;
 const years = formatYears(cs.period);
-/**
- * Work dated only by a role shared with other case studies (Wakeb Data): "At Wakeb Data, 2024–2026", so the role's
- * dates don't read as this project's own (audit FC-7). The template is split around its placeholders so the Latin
- * company name and the year range stay isolated in Arabic.
- */
-const atRole = company && sharesRolePeriod(cs)
-  ? m.work.page.atRole.split(/(\{company\}|\{years\})/).filter(Boolean)
-  : null;
+/** "during 2024–2026" for work dated only by a shared role; split around {years} so the range stays isolated. */
+const yearsParts = company && sharesRolePeriod(cs) ? m.work.page.atRole.split(/(\{years\})/).filter(Boolean) : ["{years}"];
 const Heading = headingLevel === 3 ? "h3" : "h4";
 const lc = locale === "ar" ? lcAr : lcEn;
 const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-/** Domain names ("logic-controls.com") never break at their hyphen; trailing punctuation stays with them. */
-const noBreakDomains = (t: string) => esc(t).replace(/\b([a-z0-9-]+\.(?:com|dev))([:;,.]?)/g, '<span class="nowrap" dir="ltr">$1$2</span>');
+/**
+ * Titles never break inside a hyphenated compound ("self-hosted", "real-estate", "6-agent") or a domain name
+ * ("logic-controls.com", with its trailing punctuation): each becomes an unbreakable unit (audit VUX-05).
+ */
+const noBreakDomains = (t: string) =>
+  esc(t)
+    .replace(/\b([a-z0-9-]+\.(?:com|dev))([:;,.]?)/g, '<span class="nowrap" dir="ltr">$1$2</span>')
+    .replace(/(^|[\s(])([A-Za-z0-9]+(?:-[A-Za-z0-9]+)+)(?![^<]*<\/span>)(?=[\s,.:;)]|$)/g, '$1<span class="nowrap">$2</span>');
+const brief = cs.depth === "brief";
 ---
 <article
+  id={id}
   class:list={[
     "card card--link work",
     `accent-${CASE_ACCENT[cs.slug]}`,
@@ -90,19 +96,7 @@ const noBreakDomains = (t: string) => esc(t).replace(/\b([a-z0-9-]+\.(?:com|dev)
   <div class="work__body">
     <div class="work__meta">
       <span class="eyebrow">
-        {
-          atRole ? (
-            <span>
-              {atRole.map((part) =>
-                part === "{company}" ? <span lang="en" class="latin">{company}</span> : part === "{years}" ? <Ltr>{years}</Ltr> : part,
-              )}
-            </span>
-          ) : company ? (
-            <span lang="en" class="latin">{company}</span>
-          ) : (
-            <span>{m.work.freelance}</span>
-          )
-        }
+        {company ? <span lang="en" class="latin">{company}</span> : <span>{m.work.freelance}</span>}
         {
           big && (
             <>
@@ -111,14 +105,8 @@ const noBreakDomains = (t: string) => esc(t).replace(/\b([a-z0-9-]+\.(?:com|dev)
             </>
           )
         }
-        {
-          !atRole && (
-            <>
-              <span class="sep" aria-hidden="true">/</span>
-              <Ltr>{years}</Ltr>
-            </>
-          )
-        }
+        <span class="sep" aria-hidden="true">/</span>
+        <span>{yearsParts.map((part) => (part === "{years}" ? <Ltr>{years}</Ltr> : part))}</span>
       </span>
     </div>
     <Heading class="work__title"><a class="stretched" href={href} set:html={noBreakDomains(cs.title[locale])} /></Heading>
@@ -150,7 +138,7 @@ const noBreakDomains = (t: string) => esc(t).replace(/\b([a-z0-9-]+\.(?:com|dev)
           </ul>
         )
       }
-      <span class="work__cta" aria-hidden="true">{m.work.readCase}<Icon name="arrow-right" size="sm" /></span>
+      <span class="work__cta" aria-hidden="true">{brief ? m.work.readBrief : m.work.readCase}<Icon name="arrow-right" size="sm" /></span>
     </div>
   </div>
 </article>
@@ -163,6 +151,7 @@ const noBreakDomains = (t: string) => esc(t).replace(/\b([a-z0-9-]+\.(?:com|dev)
   }
   .work__foot {
     margin-block-start: auto;
+    align-self: end;
   }
   .work__body {
     align-content: start;

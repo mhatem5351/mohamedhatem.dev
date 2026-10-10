@@ -110,6 +110,8 @@ export const en = {
   hero: {
     greeting: "Hi, I'm",
     availability: "Open to new roles",
+    /** After the availability in the hero meta line; links to the About facts (roles and work arrangements). */
+    arrangements: "remote, in Cairo, or relocating to the Gulf or Europe",
     localTime: "{time} in Cairo",
     ctaAsk: "Ask my AI assistant",
     ctaContact: "Get in touch",
@@ -176,26 +178,13 @@ export const en = {
     },
     frontend: {
       title: "Front end, too",
-      body: "Accessible, fast, multilingual sites with Astro, TypeScript and Tailwind CSS, including Arabic RTL. See the showcase below.",
+      body: "Accessible, fast, multilingual sites with Astro, TypeScript and Tailwind CSS, including Arabic RTL. See the logic-controls.com case study.",
       stack: "Astro · TypeScript · Tailwind CSS · Cloudflare Workers",
     },
   },
 
-  /** Home section 06: the logic-controls.com front-end showcase. */
+  /** The logic-controls.com screenshots (figure 1 of its case study; the home page no longer has a showcase section). */
   showcase: {
-    eyebrow: "Front-end craft",
-    title: "I ship the front end too, to the same standard.",
-    /** `{site}` is the linked domain. */
-    lead: "Freelance: {site}, the site of an industrial-automation company in Egypt, in English, Arabic (RTL), Chinese and Turkish, with an interactive HMI demo.",
-    stats: {
-      languages: { value: "4", label: "languages, including Arabic right-to-left" },
-      lighthouse: { value: "98–100", label: "Lighthouse on mobile, 100 on desktop" },
-      tests: { value: "~950 + ~900", label: "unit and end-to-end tests in CI, across Chrome, Android and iPhone Safari" },
-      wcag: { value: "AA", label: "WCAG 2.2, axe-clean, with reduced-motion support" },
-    },
-    stack: "Astro · TypeScript · Tailwind CSS · Cloudflare Workers · Turnstile",
-    visit: "Visit the site",
-    source: "Source",
     devicesLabel: "logic-controls.com on a laptop and a phone",
   },
 
@@ -216,6 +205,8 @@ export const en = {
       period: "When",
     },
     readCase: "Read the case study",
+    /** CTA of a brief case study (implementation details not public). */
+    readBrief: "Read the brief",
     allWork: "All work",
     nextCase: "Next case study",
     prevCase: "Previous case study",
@@ -275,8 +266,16 @@ export const en = {
       ctaContact: "Contact me",
       ctaWrite: "or write to",
       duringRole: "During the {company} role",
-      /** Card eyebrow of work dated only by its role (several case studies from one role): "At Wakeb Data, 2024–2026". */
-      atRole: "At {company}, {years}",
+      /**
+       * Card eyebrow years of work dated only by its role (several case studies from one role), in the cards' one
+       * "Company / years" pattern: "Wakeb Data / during 2024–2026".
+       */
+      atRole: "during {years}",
+      /** Brief case studies: a tag next to the eyebrow and the note card beside the text. */
+      briefTag: "Brief",
+      briefTitle: "A brief case study",
+      briefSources: "From {sources}.",
+      whatIDid: "What I did",
     },
   },
 
@@ -396,6 +395,8 @@ export const en = {
       },
       earlierNote: "Freelance & earlier: Logic Controls (front end), AestheticsPro, Misria Digital Payments.",
       allTitle: "The full toolbox",
+      /** Phones: the toolbox sits behind this disclosure. */
+      allToggle: "Show all {count} tools",
     },
   },
 
@@ -528,7 +529,7 @@ export const en = {
     /** Sentence after the lead with an inline button that opens the assistant. */
     askFirst: { before: "Or", action: "ask my AI", after: "first." },
     channels: {
-      email: { title: "Email", action: "Write an email" },
+      email: { title: "Email", action: "Write an email", or: "or" },
       whatsapp: { title: "WhatsApp", action: "Message me on WhatsApp" },
       linkedin: { title: "LinkedIn", action: "Connect on LinkedIn" },
       github: { title: "GitHub", action: "Read my code" },

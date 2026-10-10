@@ -117,7 +117,8 @@ bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
 @media print { .chat-noscript { display: none !important; } }
 
 /*
- * The chat bubble steps aside while the contact form's Send button is under it (src/scripts/site.ts, [data-chat-dodge]).
+ * The chat bubble steps aside while it would cover one of the page's own CTAs ([data-chat-avoid]), and on phones until
+ * the hero's ask bar has scrolled past ([data-chat-after]); src/scripts/site.ts sets data-dodge on the widget's host.
  * The host is the widget's light-DOM element; visibility and opacity reach the bubble in its shadow root.
  */
 [data-mh-chat] { transition: opacity var(--duration-fast) var(--ease-standard), visibility 0s; }
@@ -128,3 +129,15 @@ bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
 @media (forced-colors: active) {
   .span__bar { border: 1px solid CanvasText; }
 }
+
+/* Hero meta line: availability with the work arrangements, linked to the About facts (#open-to). */
+.hero__open { display: inline-flex; align-items: baseline; gap: .5rem; color: inherit; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .22em; transition: text-decoration-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard); }
+.hero__open:hover { color: var(--color-ink-2); text-decoration-color: currentColor; }
+.hero__open .dot { align-self: center; }
+.hero__meta .hero__open span { display: inline; }
+.hero__open-detail { color: var(--color-ink-2); }
+
+/* Experience trace: organisation names and date ranges are unbreakable units; a line breaks only between them
+   (never "Jan / 2020", "Al-/Qura", or an Arabic year alone on a line). Inline blocks, so text spacing can still wrap
+   a unit that is wider than the whole line (WCAG 1.4.12). */
+.span__unit { display: inline-block; max-width: 100%; }

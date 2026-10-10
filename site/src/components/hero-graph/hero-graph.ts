@@ -152,6 +152,7 @@ export function mountHeroGraph(host: HTMLElement, opts: HeroGraphOptions = {}): 
     const grad = comet.querySelector("linearGradient") as SVGLinearGradientElement;
     const satLayers = host.querySelectorAll<SVGGElement>(".hg-sl"), orcLayer = q<SVGGElement>(".hg-ol");
     const edges = host.querySelectorAll<SVGPathElement>(".hg-e,.hg-rt");
+    const routes = [...host.querySelectorAll<SVGPathElement>(".hg-rt")];
     const spokes = host.querySelectorAll<SVGPathElement>(".hg-spokes path");
     const el = {} as Record<Id, SVGGElement>, ripple = {} as Record<Id, SVGCircleElement>, r0 = {} as Record<Id, number>;
     for (const id of IDS) {
@@ -193,6 +194,8 @@ export function mountHeroGraph(host: HTMLElement, opts: HeroGraphOptions = {}): 
           setA(tailH, "stroke-dasharray", `${TAIL_H} ${L + TAIL_H}`);
           setA(comet, "class", "hg-comet hg-c-" + catOf(hop.a));
         }
+        // the coloured route edge under the pulse brightens while the pulse travels it
+        for (const p of routes) p.classList.toggle("is-hot", !!hop && p.dataset.a === hop.a && p.dataset.b === hop.b);
       }
       if (hop) {
         const u = (t - hop.t0) / hop.d, s = ease(u) * L;
@@ -229,6 +232,7 @@ export function mountHeroGraph(host: HTMLElement, opts: HeroGraphOptions = {}): 
 
     function reset(): void {
       comet.style.opacity = "0";
+      for (const p of routes) p.classList.remove("is-hot");
       cur = undefined; cmdNow = undefined; dirty = true;
       for (const id of IDS) {
         el[id].classList.remove("is-lit"); litNow[id] = false;

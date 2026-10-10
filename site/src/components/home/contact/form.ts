@@ -10,6 +10,7 @@ import { contactPayload, serverFieldErrors, validateContact, type ContactValues,
 interface Turnstile {
   render(el: HTMLElement, opts: Record<string, unknown>): string;
   reset(id?: string): void;
+  remove?(id: string): void;
 }
 type TurnstileWindow = Window & { turnstile?: Turnstile };
 type Plural = Partial<Record<"zero" | "one" | "two" | "few" | "many", string>> & { other: string };
@@ -56,14 +57,21 @@ export function initContactForm(): void {
   let busy = false;
 
   /* ---------------------------------------------------------------- Turnstile (lazy) */
+  // "flexible" is at least 300 px wide; below that (320 px phones, Display Zoom) the compact widget (150 px) keeps the
+  // form inside its card instead of widening the page (audit VUX-07). Re-rendered when the slot crosses 300 px while
+  // no token is held.
+  const sizeFor = (): "flexible" | "compact" => (slot.clientWidth < 300 ? "compact" : "flexible");
+  let size: "flexible" | "compact" | undefined;
   const render = (): void => {
     const ts = (window as TurnstileWindow).turnstile;
     if (!ts || widgetId !== undefined) return;
+    size = sizeFor();
+    slot.dataset.size = size;
     widgetId = ts.render(slot, {
       sitekey: form.dataset.sitekey,
       action: "contact",
       theme: document.documentElement.dataset.theme === "dark" ? "dark" : "light",
-      size: "flexible",
+      size,
       language: lang,
       callback: (v: string) => {
         token = v;
@@ -90,6 +98,14 @@ export function initContactForm(): void {
       };
       document.head.append(s);
     }).then(render));
+  if ("ResizeObserver" in window)
+    new ResizeObserver(() => {
+      const ts = (window as TurnstileWindow).turnstile;
+      if (widgetId === undefined || token || !ts?.remove || sizeFor() === size) return;
+      ts.remove(widgetId);
+      widgetId = undefined;
+      render();
+    }).observe(slot);
   const resetTurnstile = (): void => {
     token = "";
     if (widgetId !== undefined) (window as TurnstileWindow).turnstile?.reset(widgetId);

@@ -25,7 +25,7 @@ const examples = [
   { text: `${m.hero.ask.otherLanguage}: ${suggestions[other][0]!.label}`, lang: other },
 ];
 ---
-<form class="ask-bar" action="#contact" data-hero-ask data-examples={JSON.stringify(examples)}>
+<form class="ask-bar" action="#contact" data-hero-ask data-chat-avoid data-chat-after data-examples={JSON.stringify(examples)}>
   <Icon name="ask" size="md" class="ask-bar__icon" />
   <label class="sr-only" for="hero-ask">{m.hero.ask.label}</label>
   <span class="ask-bar__field">

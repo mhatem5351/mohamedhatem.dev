@@ -195,7 +195,7 @@ export const COPY: Record<Lang, Copy> = {
     pause: "Pause animation",
     play: "Play animation",
     nodes: {
-      orchestrator: { title: "orchestrator", text: "Routes each turn to the right agent: LangGraph Command routing across 6 agents at Wakeb Data, and 14 agents in the Arabsstock Assistant." },
+      orchestrator: { title: "orchestrator", text: "Routes each turn to the right agent: LangGraph Command routing across 6 agents at Wakeb Data, and 14 agents in the ArabsStock Assistant." },
       guard: { title: "guard", text: "Screens the input before a model sees it, like the prompt-injection guardrail in my open-source rag-answering-service." },
       retrieve: { title: "retrieve", text: "Hybrid retrieval: dense vectors plus BM25 keyword search, as in the RAG behind the Wakeb Data chatbot." },
       rerank: { title: "rerank", text: "An LLM reranks the candidates, so only the best context reaches the prompt (the Wakeb Data chatbot's hybrid RAG)." },

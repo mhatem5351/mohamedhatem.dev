@@ -1,8 +1,10 @@
 ---
 /**
- * Home page (EN at /, AR at /ar/). Section order and bands follow HANDOFF.md 2.2 (P = plain, B = bg-subtle band):
- * Hero (P) · 01 What I build (P) · 02 Selected work (B) · 03 Experience (P) · 04 Open source (B) · 05 AI assistant (P)
- * · 06 Front-end craft (B) · 07 Skills (P) · 08 Education (B) · 09 About (P) · 10 Contact (B).
+ * Home page (EN at /, AR at /ar/). Sections alternate plain (P) and bg-subtle bands (B):
+ * Hero (P) · 01 What I build (P) · 02 Selected work (B) · 03 Experience (P) · 04 About, with "open to" and work
+ * arrangements (B) · 05 Open source (P) · 06 AI assistant (B) · 07 Skills (P) · 08 Education (B) · 09 Contact (P).
+ * About sits right after the career so a recruiter reaches availability and relocation early; the front-end
+ * showcase lives in the logic-controls.com case study (its card in Selected work keeps the old #craft anchor).
  * Section ids match the chat widget's open_section targets (about, work, experience, projects, skills, education,
  * contact) and profile.site.sections.
  */
@@ -13,7 +15,6 @@ import SelectedWork from "~/components/home/SelectedWork.astro";
 import ExperienceTrace from "~/components/home/ExperienceTrace.astro";
 import OpenSource from "~/components/home/OpenSource.astro";
 import AssistantSection from "~/components/home/AssistantSection.astro";
-import Showcase from "~/components/home/Showcase.astro";
 import Skills from "~/components/home/Skills.astro";
 import Education from "~/components/home/Education.astro";
 import About from "~/components/home/About.astro";
@@ -32,11 +33,10 @@ const m = messages(locale);
   <Capabilities locale={locale} />
   <SelectedWork locale={locale} />
   <ExperienceTrace locale={locale} />
+  <About locale={locale} />
   <OpenSource locale={locale} />
   <AssistantSection locale={locale} />
-  <Showcase locale={locale} />
   <Skills locale={locale} />
   <Education locale={locale} />
-  <About locale={locale} />
   <Contact locale={locale} />
 </Base>

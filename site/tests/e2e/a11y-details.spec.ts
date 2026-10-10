@@ -109,7 +109,8 @@ test.describe("structure", () => {
     const wrap = page.locator(".matrix-wrap");
     await expect(wrap).not.toHaveAttribute("tabindex", "0");
     await expect(wrap).not.toHaveAttribute("role", "region");
-    await page.setViewportSize({ width: 390, height: 844 });
+    // Between 40rem and the table's 46rem width it scrolls sideways (phones get the list instead, see skills.spec).
+    await page.setViewportSize({ width: 700, height: 844 });
     await expect(wrap).toHaveAttribute("tabindex", "0");
     await expect(wrap).toHaveAttribute("role", "region");
     await expect(wrap).toHaveAccessibleName(/./);

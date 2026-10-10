@@ -22,10 +22,10 @@ const m = messages(locale);
 const chips = suggestions[locale].slice(0, 4);
 const flow = [m.assistant.flow.question, m.assistant.flow.worker, m.assistant.flow.model, m.assistant.flow.answer];
 ---
-<section class="section" id="assistant" aria-labelledby="assistant-title">
+<section class="section section--band" id="assistant" aria-labelledby="assistant-title">
   <div class="container assist">
     <div class="stack stack-lg">
-      <SectionHeader variant="rule" index="05" eyebrow={m.assistant.eyebrow} title={m.assistant.title} titleId="assistant-title" />
+      <SectionHeader variant="rule" index="06" eyebrow={m.assistant.eyebrow} title={m.assistant.title} titleId="assistant-title" />
       <h2 class="sec-head__title title-14ch" id="assistant-title">{m.assistant.title}</h2>
       <p class="lede">{m.assistant.lead}</p>
       <ol class="assist-flow" aria-label={m.assistant.flowLabel}>
@@ -40,7 +40,7 @@ const flow = [m.assistant.flow.question, m.assistant.flow.worker, m.assistant.fl
       </ol>
       <p class="t-sm muted assist__how">{m.assistant.howItWorks}</p>
       <div class="cluster gap-loose">
-        <button class="btn btn--accent" type="button" data-open-chat aria-haspopup="dialog">
+        <button class="btn btn--accent" type="button" data-open-chat aria-haspopup="dialog" data-chat-avoid>
           <Icon name="ask" />
           {m.assistant.open}
         </button>

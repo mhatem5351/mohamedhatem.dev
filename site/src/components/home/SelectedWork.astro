@@ -1,7 +1,8 @@
 ---
 /**
  * 02 Selected work (DESIGN.md 12.10): featured case studies (feature card first, then the grid; an orphan last card
- * becomes a wide card), then the compact "More work" list for the rest. Every card links to its case-study page.
+ * becomes a wide card), then the compact "More work" list: the brief case studies, whose implementation details
+ * aren't public (content/profile.ts `featured: false`). Every card links to its case-study page.
  */
 import CaseCard from "~/components/work/CaseCard.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
@@ -14,18 +15,20 @@ interface Props {
 const { locale } = Astro.props;
 const m = messages(locale);
 const { feature, grid, wide, more } = workLayout();
+/** The home page's former front-end showcase anchor (/#craft) now lands on the logic-controls.com card. */
+const anchorOf = (cs: { slug: string }) => (cs.slug === "logic-controls-website" ? "craft" : undefined);
 ---
 <section class="section section--band" id="work" aria-labelledby="work-title">
   <div class="container">
     <SectionHeader index="02" eyebrow={m.work.eyebrow} title={m.work.title} titleId="work-title" lede={m.work.lead} />
     <div class="work-list">
-      {feature && <CaseCard cs={feature} locale={locale} variant="feature" />}
+      {feature && <CaseCard cs={feature} locale={locale} variant="feature" id={anchorOf(feature)} />}
       {
         grid.map((cs, i) => (
-          <CaseCard cs={cs} locale={locale} i={(i % 3) + 1} class={grid.length % 2 === 1 && i === grid.length - 1 ? "work--span-md" : undefined} />
+          <CaseCard cs={cs} locale={locale} i={(i % 3) + 1} id={anchorOf(cs)} class={grid.length % 2 === 1 && i === grid.length - 1 ? "work--span-md" : undefined} />
         ))
       }
-      {wide && <CaseCard cs={wide} locale={locale} variant="wide" />}
+      {wide && <CaseCard cs={wide} locale={locale} variant="wide" id={anchorOf(wide)} />}
     </div>
     {
       more.length > 0 && (
@@ -67,9 +70,21 @@ const { feature, grid, wide, more } = workLayout();
     display: grid;
     gap: var(--grid-gap);
   }
+  /* Brief case studies: three compact cards in a row; on tablets two, the odd last one across the row. */
   @media (min-width: 48rem) {
     .more-work__list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .more-work__list > :global(.work:last-child:nth-child(odd)) {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (min-width: 64rem) {
+    .more-work__list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .more-work__list > :global(.work:last-child:nth-child(odd)) {
+      grid-column: auto;
     }
   }
 </style>

@@ -25,7 +25,8 @@ export interface Diagram {
   title: Bi;
   caption: Bi;
   desc: { long: Bi; short: Bi };
-  callouts: ({ n: number } & Bi)[];
+  /** Numbered notes under a figure; `term` is the bold lead-in ("Orchestrator."), as in the design. */
+  callouts: ({ n: number; term?: Bi } & Bi)[];
   ids: Record<Variant, string>;
 }
 

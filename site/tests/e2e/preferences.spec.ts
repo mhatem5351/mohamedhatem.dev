@@ -33,7 +33,7 @@ test.describe("language switch", () => {
 });
 
 test.describe("theme", () => {
-  test("toggle cycles system → light → dark and persists", async ({ page, isMobile }) => {
+  test("every toggle click changes the theme you see, back to system on the OS theme, and persists", async ({ page, isMobile }) => {
     await page.emulateMedia({ colorScheme: "light" });
     await page.goto("/");
     const html = page.locator("html");
@@ -43,11 +43,16 @@ test.describe("theme", () => {
       await page.locator('[data-set-theme="dark"]').click();
       await expect(page.locator('[data-set-theme="dark"]')).toHaveAttribute("aria-pressed", "true");
     } else {
+      // Light OS: system (light) → dark → system (light) → dark. The first click is never a no-op (audit VUX-14).
       const toggle = page.locator(".nav [data-theme-toggle]");
       await expect(toggle).toHaveAttribute("data-mode", "system");
       await toggle.click();
-      await expect(toggle).toHaveAttribute("data-mode", "light");
+      await expect(toggle).toHaveAttribute("data-mode", "dark");
+      await expect(html).toHaveAttribute("data-theme", "dark");
+      await toggle.click();
+      await expect(toggle).toHaveAttribute("data-mode", "system");
       await expect(html).toHaveAttribute("data-theme", "light");
+      expect(await page.evaluate(() => localStorage.getItem("mh-theme"))).toBeNull();
       await toggle.click();
       await expect(toggle).toHaveAttribute("data-mode", "dark");
     }

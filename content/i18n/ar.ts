@@ -103,6 +103,7 @@ export const ar: Messages = {
   hero: {
     greeting: "مرحبًا، أنا",
     availability: "منفتح على فرص جديدة",
+    arrangements: "عن بُعد، أو في القاهرة، أو بالانتقال إلى الخليج أو أوروبا",
     localTime: "{time} في القاهرة",
     ctaAsk: "اسأل مساعدي الذكي",
     ctaContact: "تواصل معي",
@@ -164,24 +165,12 @@ export const ar: Messages = {
     },
     frontend: {
       title: "والواجهات أيضًا",
-      body: "مواقع سريعة ومتعددة اللغات تراعي معايير الإتاحة، بـAstro وTypeScript وTailwind CSS، مع دعم كامل للعربية. انظر النموذج أدناه.",
+      body: "مواقع سريعة ومتعددة اللغات تراعي معايير الإتاحة، بـAstro وTypeScript وTailwind CSS، مع دعم كامل للعربية. انظر دراسة حالة موقع logic-controls.com.",
       stack: "Astro · TypeScript · Tailwind CSS · Cloudflare Workers",
     },
   },
 
   showcase: {
-    eyebrow: "حِرفة الواجهات",
-    title: "وأبني الواجهات أيضًا، وبالمعيار نفسه.",
-    lead: "عمل حر: {site}، موقع شركة أتمتة صناعية في مصر بأربع لغات: الإنجليزية، والعربية من اليمين إلى اليسار، والصينية، والتركية، مع عرض تفاعلي لواجهة تشغيل صناعية (HMI).",
-    stats: {
-      languages: { value: "4", label: "لغات، منها العربية من اليمين إلى اليسار" },
-      lighthouse: { value: "98–100", label: "في Lighthouse على الجوال، و100 على سطح المكتب" },
-      tests: { value: "~950 + ~900", label: "اختبار وحدة واختبار شامل في CI على Chrome وAndroid وSafari على iPhone" },
-      wcag: { value: "AA", label: "WCAG 2.2 دون مخالفات في axe، مع احترام تقليل الحركة" },
-    },
-    stack: "Astro · TypeScript · Tailwind CSS · Cloudflare Workers · Turnstile",
-    visit: "زيارة الموقع",
-    source: "الشيفرة المصدرية",
     devicesLabel: "موقع logic-controls.com على حاسوب محمول وهاتف",
   },
 
@@ -202,6 +191,7 @@ export const ar: Messages = {
       period: "الفترة",
     },
     readCase: "اقرأ دراسة الحالة",
+    readBrief: "اقرأ الملخص",
     allWork: "كل الأعمال",
     nextCase: "دراسة الحالة التالية",
     prevCase: "دراسة الحالة السابقة",
@@ -259,7 +249,11 @@ export const ar: Messages = {
       ctaContact: "تواصل معي",
       ctaWrite: "أو راسلني على",
       duringRole: "خلال العمل في {company}",
-      atRole: "خلال العمل في {company}، {years}",
+      atRole: "خلال {years}",
+      briefTag: "ملخص",
+      briefTitle: "دراسة حالة مختصرة",
+      briefSources: "المصدر: {sources}.",
+      whatIDid: "ما قمت به",
     },
   },
 
@@ -396,6 +390,7 @@ export const ar: Messages = {
       },
       earlierNote: "العمل الحر والأدوار السابقة: Logic Controls (واجهات)، وAestheticsPro، وMisria Digital Payments.",
       allTitle: "الأدوات كاملة",
+      allToggle: "اعرض الأدوات كلها ({count})",
     },
   },
 
@@ -523,7 +518,7 @@ export const ar: Messages = {
     localTime: "الساعة الآن {time} في القاهرة.",
     askFirst: { before: "أو", action: "اسأل مساعدي الذكي", after: "أولًا." },
     channels: {
-      email: { title: "البريد الإلكتروني", action: "أرسل رسالة" },
+      email: { title: "البريد الإلكتروني", action: "أرسل رسالة", or: "أو" },
       whatsapp: { title: "WhatsApp", action: "راسلني على WhatsApp" },
       linkedin: { title: "LinkedIn", action: "تواصل معي على LinkedIn" },
       github: { title: "GitHub", action: "اطّلع على شيفرتي" },

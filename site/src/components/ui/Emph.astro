@@ -1,0 +1,15 @@
+---
+/**
+ * A sentence with its bold phrases (src/lib/emphasis.ts): `<Emph text={…} strong={[…]} />`. Renders inline text and
+ * <strong> runs only; the wrapping element is the caller's.
+ */
+import { emphasize } from "~/lib/emphasis";
+
+interface Props {
+  text: string;
+  strong?: readonly (string | undefined)[];
+}
+const { text, strong = [] } = Astro.props;
+const segments = emphasize(text, strong.filter((s): s is string => !!s));
+---
+{segments.map((s) => (s.strong ? <strong>{s.text}</strong> : s.text))}

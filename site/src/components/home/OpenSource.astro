@@ -34,9 +34,9 @@ const coursework = profile.projects.filter((p) => p.kind === "coursework");
 const owner = "mhatem5351";
 const repoPath = (url: string) => url.replace(/^https:\/\/github\.com\//, "");
 ---
-<section class="section section--band" id="projects" aria-labelledby="projects-title">
+<section class="section" id="projects" aria-labelledby="projects-title">
   <div class="container">
-    <SectionHeader index="04" eyebrow={m.projects.eyebrow} title={m.projects.title} titleId="projects-title" lede={m.projects.lead} />
+    <SectionHeader index="05" eyebrow={m.projects.eyebrow} title={m.projects.title} titleId="projects-title" lede={m.projects.lead} />
     <ul class="repos" role="list">
       {
         [...primary, ...small].map((p, i) => {

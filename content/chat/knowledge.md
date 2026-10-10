@@ -15,8 +15,8 @@ answer.
 - **Name:** Mohamed Hatem (full name Mohamed Hatem Radwan). In Arabic: محمد حاتم (محمد حاتم رضوان).
   After the first mention, refer to him as **Hatem** (Arabic: **حاتم**).
 - **Current role:** **AI Team Lead at Globant**, since April 2026, full-time, working remotely from Cairo.
-  He leads AI engineering on the **STA project**, contributing to the design and delivery of production-grade AI
-  systems: multi-agent LLM orchestration, LLM serving and scalable RAG pipelines.
+  He leads AI engineering on the **STA project**: production-grade multi-agent LLM orchestration, LLM serving and
+  scalable RAG pipelines.
 - **Experience:** **7 years** in data and AI, starting January 2020 as a SQL developer, then data science, then
   building AI platforms in production, and now leading an AI engineering team.
 - **Based in:** Cairo, Egypt. Time zone Africa/Cairo: UTC+2, or UTC+3 during Egyptian summer time.
@@ -26,7 +26,7 @@ answer.
   EPITA Paris (2021–2022); B.Eng. in Structural Engineering, Tanta University (2015–2020).
 - **Certification:** AWS Certified Machine Learning – Specialty (earned 2022).
 - **Award:** Best Engineer of the Year at Empoweromics.
-- **Open to:** Senior AI Engineer, AI/ML Team Lead, MLOps Engineer, AI Agents / LLM Engineer and ML Engineer roles;
+- **Open to:** AI/ML Team Lead, Senior AI Engineer, MLOps Engineer, AI Agents / LLM Engineer and ML Engineer roles;
   remote from Cairo, hybrid or on-site in Cairo, or relocating to the Gulf or Europe (details in section 1.1).
 
 **In one paragraph:** Hatem designs, ships and runs production LLM systems: multi-agent orchestration, retrieval
@@ -40,7 +40,7 @@ servers. Most of what he has shipped works in Arabic and English.
 
 Share this when a visitor asks about availability, location, remote work or relocation.
 
-- **Roles:** Senior AI Engineer, AI/ML Team Lead, MLOps Engineer, AI Agents / LLM Engineer, ML Engineer.
+- **Roles:** AI/ML Team Lead, Senior AI Engineer, MLOps Engineer, AI Agents / LLM Engineer, ML Engineer.
 - **Remote:** yes, working from Cairo.
 - **Relocation to the Gulf:** yes: Saudi Arabia, UAE, Qatar and nearby countries.
 - **Relocation to Europe:** yes.
@@ -54,7 +54,7 @@ Share this when a visitor asks about availability, location, remote work or relo
 | Figure | What it is |
 | --- | --- |
 | 7 years | In data and AI, since January 2020 |
-| 14 agents | The Arabsstock Assistant, orchestrated with LangGraph |
+| 14 agents | The ArabsStock Assistant, orchestrated with LangGraph |
 | 6 agents | Wakeb's fully async bilingual production chatbot |
 | Millions | Of ArabsStock photos, videos and vector graphics indexed for semantic search |
 | A100 | NVIDIA GPUs serving Qwen through vLLM, across multiple production servers |
@@ -116,8 +116,8 @@ whole markdown link; never shorten a URL to a path.
 
 ### AI Team Lead · Globant · April 2026 – present
 - Full-time, remote from Cairo. ([globant.com](https://www.globant.com))
-- Leads AI engineering on the **STA project**, contributing to the design and delivery of production-grade AI
-  systems, with a focus on **multi-agent LLM orchestration, LLM serving and scalable RAG pipelines**.
+- Leads AI engineering on the **STA project**: production-grade AI systems, with a focus on **multi-agent LLM
+  orchestration, LLM serving and scalable RAG pipelines**.
 - Client naming: the project is disclosed only as "the STA project". Don't expand the acronym, name the client or
   guess its industry. Team size, architecture and results of this project are not public.
 - If a visitor cites the CV wording "Senior AI Engineer" for this role, his current title (LinkedIn and GitHub) is
@@ -151,7 +151,7 @@ whole markdown link; never shorten a URL to a path.
 ### AI Engineer · ArabsStock · April 2023 – December 2024
 - Full-time, remote; his CV lists the role's location as Dubai, UAE. ArabsStock is an Arab stock-media library of
   royalty-free photos, videos and vector graphics.
-- **Arabsstock Assistant:** architected and built a production multi-agent system of **14 specialised agents**
+- **ArabsStock Assistant:** architected and built a production multi-agent system of **14 specialised agents**
   orchestrated with LangGraph, handling semantic search, AI image generation, database operations, content
   moderation and other AI services across the platform.
 - **Semantic search:** designed and built the ML pipeline for semantic search with OpenAI embeddings and the Pinecone
@@ -250,7 +250,7 @@ whole markdown link; never shorten a URL to a path.
 
 What is public is listed. Where no number exists, describe capabilities and say no figure is published.
 
-### 4.1 Arabsstock Assistant and AI search (ArabsStock, 2023–2024)
+### 4.1 ArabsStock Assistant and AI search (ArabsStock, 2023–2024)
 - **Problem:** an Arab library of millions of royalty-free photos, videos and vector graphics needed one assistant for very
   different jobs (finding assets, generating images, database operations, content moderation) and search that finds
   assets by meaning and by visual similarity.
@@ -376,7 +376,7 @@ GitHub skill lists **without** any project in the sources: never tie those to a 
 
 | Area | Skills | Shown in |
 | --- | --- | --- |
-| Multi-agent LLM systems | LangGraph, multi-agent design, Command-based routing, subgraphs, agent memory, MCP | Arabsstock Assistant (14 agents); Wakeb chatbot (6 agents, MCP); Wakeb Papers Research Agent (memory); staged-llm-evaluator; Globant (STA project) |
+| Multi-agent LLM systems | LangGraph, multi-agent design, Command-based routing, subgraphs, agent memory, MCP | ArabsStock Assistant (14 agents); Wakeb chatbot (6 agents, MCP); Wakeb Papers Research Agent (memory); staged-llm-evaluator; Globant (STA project) |
 | LLMs and APIs | OpenAI API, Qwen | ArabsStock (OpenAI embeddings); Wakeb (Qwen); open-source tools (OpenAI API) |
 | Retrieval / RAG | RAG pipelines, hybrid search (vector + BM25), LLM reranking, semantic and visual search, Pinecone | Wakeb chatbot (hybrid + reranking); AIP search v2 (semantic and image search; techniques not public); ArabsStock (Pinecone, visual search); rag-answering-service |
 | LLM serving and MLOps | vLLM on NVIDIA A100, model versioning, GPU allocation, health monitoring, automated restarts, Docker, CI/CD, Nginx, shell scripting | Wakeb (serving lifecycle, Docker, Nginx, CI/CD); ArabsStock (containerised FastAPI microservices) |
@@ -557,7 +557,7 @@ digits.
 | data visualisation | التمثيل المرئي للبيانات |
 
 Counting with Western digits: «14 وكيلًا»، «6 وكلاء»، «7 سنوات»، «أكثر من 3,008 من المطوّرين العقاريين».
-Write "مساعد ArabsStock" for the Arabsstock Assistant.
+Write "مساعد ArabsStock" for the ArabsStock Assistant.
 
 The phone number in Arabic answers is written exactly as in English, plus sign first:
 «واتساب: [+20 114 207 0946](https://wa.me/201142070946)».

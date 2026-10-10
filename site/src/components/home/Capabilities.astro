@@ -1,12 +1,14 @@
 ---
 /**
  * 01 What I build (DESIGN.md 12.9): a bento of six capability cards. The feature card carries the multi-agent
- * chatbot diagram (decorative thumbnail on a dot-grid inset); "Front end, too" links to the showcase (#craft).
+ * chatbot diagram (decorative thumbnail on a dot-grid inset); "Front end, too" links to the logic-controls.com case
+ * study (the front-end showcase lives there).
  */
 import Icon from "~/components/ui/Icon.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
 import { diagramSvg } from "~/lib/diagrams";
-import { messages, type Locale } from "~/lib/i18n";
+import { localePath, messages, type Locale } from "~/lib/i18n";
+import { PATHS } from "~/lib/site";
 
 interface Props {
   locale: Locale;
@@ -70,7 +72,7 @@ const featureArt = diagramSvg("wakeb-multi-agent-chatbot", "thumb", { decorative
           );
         })
       }
-      <a class="card card--pad card--link cap cap--link" href="#craft" data-reveal data-reveal-i="5">
+      <a class="card card--pad card--link cap cap--link" href={localePath(PATHS.work("logic-controls-website"), locale)} data-reveal data-reveal-i="5">
         <span class="icon-tile icon-tile--coral"><Icon name="frontend" /></span>
         <h3 class="cap__title">{c.frontend.title}</h3>
         <p class="cap__body">{c.frontend.body}</p>

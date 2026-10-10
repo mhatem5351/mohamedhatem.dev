@@ -20,6 +20,23 @@ async function spyOnChat(page: Page) {
 }
 const opens = (page: Page) => page.evaluate(() => (window as unknown as { __opens: { question?: string }[] }).__opens);
 const panel = (page: Page) => page.locator("[data-mh-chat]").locator('[role="dialog"]');
+/** "visible" / "hidden": the bubble as rendered (the host fades out and gets visibility: hidden when it steps aside). */
+const bubbleVisibility = (page: Page) =>
+  page.evaluate(() => {
+    const host = document.querySelector("[data-mh-chat]")!;
+    const b = host.shadowRoot!.querySelector("button")!;
+    return getComputedStyle(b).visibility === "hidden" || Number(getComputedStyle(host).opacity) === 0 ? "hidden" : "visible";
+  });
+/** True while the visible bubble overlaps the element. */
+const coveredBy = (page: Page, selector: string) =>
+  page.evaluate((sel) => {
+    const host = document.querySelector("[data-mh-chat]")!;
+    const b = host.shadowRoot!.querySelector("button")!;
+    const visible = getComputedStyle(b).visibility !== "hidden" && Number(getComputedStyle(host).opacity) > 0;
+    const r1 = b.getBoundingClientRect();
+    const r2 = document.querySelector(sel)!.getBoundingClientRect();
+    return visible && r1.left < r2.right && r1.right > r2.left && r1.top < r2.bottom && r1.bottom > r2.top;
+  }, selector);
 
 test.describe("Ask my AI", () => {
   test("the hero input opens the assistant with the typed question", async ({ page }) => {
@@ -54,7 +71,7 @@ test.describe("Ask my AI", () => {
     await spyOnChat(page);
     await page.goto("/work/arabsstock-assistant/", { waitUntil: "networkidle" });
     await page.getByRole("button", { name: en.work.page.ask }).first().click();
-    await expect.poll(() => opens(page)).toContainEqual(expect.objectContaining({ question: expect.stringContaining("Arabsstock") }));
+    await expect.poll(() => opens(page)).toContainEqual(expect.objectContaining({ question: expect.stringContaining("ArabsStock") }));
   });
 
   test("the page tells the panel where its sticky header ends (--mh-chat-top)", async ({ page }) => {
@@ -92,6 +109,52 @@ test.describe("Ask my AI", () => {
       // Scrolled away from the form, the bubble is back.
       await page.evaluate(() => scrollTo(0, 0));
       await expect(host).not.toHaveAttribute("data-dodge", "");
+    }
+  });
+
+  test("on phones the bubble waits until the hero's ask bar has scrolled past, and the header still opens the chat", async ({ page, isMobile }) => {
+    test.skip(!isMobile, "phones only");
+    await page.goto("/", { waitUntil: "networkidle" });
+    const host = page.locator("[data-mh-chat]");
+    await expect(host).toBeAttached();
+    // Over the hero: stepped aside, out of the tab order and the accessibility tree.
+    await expect(host).toHaveAttribute("data-dodge", "");
+    await expect.poll(() => bubbleVisibility(page)).toBe("hidden");
+    await expect(page.getByRole("button", { name: /Ask my AI assistant/ }).filter({ has: page.locator("svg.g") })).toHaveCount(0);
+    // Past the ask bar: back.
+    await page.locator("[data-hero-ask]").evaluate((el) => scrollBy(0, el.getBoundingClientRect().bottom + 40));
+    await expect(host).not.toHaveAttribute("data-dodge", "");
+    await expect.poll(() => bubbleVisibility(page)).toBe("visible");
+    // Back to the top, the header's Ask AI still opens the chat with the composer focused.
+    await page.evaluate(() => scrollTo(0, 0));
+    await expect(host).toHaveAttribute("data-dodge", "");
+    await page.locator(".nav__ask").click();
+    await expect(panel(page)).toBeVisible();
+    await expect(host).not.toHaveAttribute("data-dodge", "");
+    await expect.poll(() => page.evaluate(() => document.querySelector("[data-mh-chat]")!.shadowRoot!.activeElement?.tagName)).toBe("TEXTAREA");
+  });
+
+  test("the bubble never covers a case study's 'Ask my AI about this project' button @desktop-only", async ({ page }) => {
+    for (const path of ["/work/arabsstock-assistant/", "/ar/work/arabsstock-assistant/"]) {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(path, { waitUntil: "networkidle" });
+      const host = page.locator("[data-mh-chat]");
+      await expect(host).toBeAttached();
+      // Scroll so the rail's ask button sits where the bubble is (the audit's 1440 × 900 view).
+      await page.locator(".toc-rail [data-open-chat]").evaluate((el) => scrollBy(0, el.getBoundingClientRect().bottom - (innerHeight - 14)));
+      await expect.poll(() => coveredBy(page, ".toc-rail [data-open-chat]")).toBe(false);
+      await expect(host).toHaveAttribute("data-dodge", "");
+      await page.evaluate(() => scrollTo(0, 0));
+      await expect(host).not.toHaveAttribute("data-dodge", "");
+    }
+  });
+
+  test("on phones the bubble never covers the hero ask bar's send button", async ({ page, isMobile }) => {
+    test.skip(!isMobile, "phones only");
+    for (const path of ["/", "/ar/"]) {
+      await page.goto(path, { waitUntil: "networkidle" });
+      await expect(page.locator("[data-mh-chat]")).toBeAttached();
+      await expect.poll(() => coveredBy(page, "[data-hero-ask] button")).toBe(false);
     }
   });
 

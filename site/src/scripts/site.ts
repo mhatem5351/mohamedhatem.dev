@@ -1,6 +1,7 @@
 /**
  * Site-wide behaviour, one small module on every page (no framework):
- *   theme (system → light → dark, persisted; segmented control in the menu), nav hairline after scroll, mobile menu,
+ *   theme (the toggle flips light ↔ dark and returns to "system" on the OS's own theme, persisted; segmented control in
+ *   the menu), nav hairline after scroll, mobile menu,
  *   home scroll-spy, reveal on scroll, copy buttons, live Cairo clock, "open the assistant" triggers and the "/" key.
  * Everything degrades: without JS the page is complete (theme follows the OS, menu links are reachable in the
  * footer, the assistant offers email/WhatsApp in a <noscript> card).
@@ -82,7 +83,10 @@ document.addEventListener("click", async (e) => {
 
   const toggle = target.closest<HTMLElement>("[data-theme-toggle]");
   if (toggle) {
-    setMode(({ system: "light", light: "dark", dark: "system" } as const)[mode]);
+    // Every click flips what you see (light ↔ dark). Landing on the OS's own theme goes back to following the OS
+    // ("system"), so a light-OS visitor gets system → dark → system …; the menu's segmented control can pin either.
+    const next: Mode = root.dataset.theme === "dark" ? "light" : "dark";
+    setMode(next === (darkMq.matches ? "dark" : "light") ? "system" : next);
     return;
   }
   const seg = target.closest<HTMLElement>("[data-set-theme]");
@@ -198,31 +202,81 @@ for (const wrap of document.querySelectorAll<HTMLElement>("[data-scroll-region]"
   void document.fonts?.ready.then(update);
 }
 
-/* ------------------------------------------------------------------ chat bubble vs the contact form's Send button */
-// The floating "Ask my AI" bubble (chat-widget, fixed at the bottom inline-end corner) must never cover the contact
-// form's Send button: while the button is under the bubble (and the chat is closed), the bubble steps aside.
-const dodge = document.querySelector<HTMLElement>("[data-chat-dodge]");
-if (dodge) {
+/* ------------------------------------------------------------------ toolbox disclosure (phones) */
+// Below 40rem the long tool list sits behind "Show all N tools" (home-b.css hides it while .js is set, so there is no
+// shift on load); the button only toggles it. Without JS the list is always shown.
+for (const box of document.querySelectorAll<HTMLElement>("[data-toolbox]")) {
+  const btn = box.querySelector<HTMLButtonElement>("[data-toolbox-toggle]");
+  btn?.addEventListener("click", () => {
+    const open = !box.hasAttribute("data-open");
+    box.toggleAttribute("data-open", open);
+    btn.setAttribute("aria-expanded", String(open));
+  });
+}
+
+/* ------------------------------------------------------------------ chat bubble: never over the page's own CTAs */
+// The floating "Ask my AI" bubble (chat-widget, fixed in the bottom inline-end corner) steps aside while it would
+// cover an element marked [data-chat-avoid] (the hero ask bar, the case-study "Ask my AI about this project" buttons,
+// the contact form's Send and copy actions), and on phones it waits until the hero's ask bar ([data-chat-after]) has
+// scrolled past: the hero already offers the assistant, and the header's "Ask AI" button is always there.
+// Stepping aside is `data-dodge` on the widget's host (site.css): it fades out, then leaves the tab order and the
+// accessibility tree (visibility: hidden). Never while the chat is open or the bubble has keyboard focus.
+const avoidEls = [...document.querySelectorAll<HTMLElement>("[data-chat-avoid]")];
+const afterEl = document.querySelector<HTMLElement>("[data-chat-after]");
+if (avoidEls.length || afterEl) {
+  const phone = matchMedia("(max-width: 39.99rem)");
+  const onScreen = new Set<HTMLElement>(avoidEls);
+  const PAD = 12;
   let chatOpen = false;
   let frame = 0;
-  const check = () => {
+  const hostEl = () => document.querySelector<HTMLElement>("[data-mh-chat]");
+  const update = () => {
     frame = 0;
-    const host = document.querySelector<HTMLElement>("[data-mh-chat]");
-    const bubble = host?.shadowRoot?.querySelector("button")?.getBoundingClientRect();
-    if (!host || !bubble || !bubble.width) return;
-    const r = dodge.getBoundingClientRect();
-    const pad = 12;
-    const overlaps = r.width > 0 && r.right + pad > bubble.left && r.left - pad < bubble.right && r.bottom + pad > bubble.top && r.top - pad < bubble.bottom;
-    host.toggleAttribute("data-dodge", overlaps && !chatOpen && !host.matches(":focus-within"));
+    const host = hostEl();
+    const b = host?.shadowRoot?.querySelector("button")?.getBoundingClientRect();
+    if (!host || !b?.width) return;
+    let hide = !!afterEl && phone.matches && afterEl.getBoundingClientRect().bottom > 0;
+    for (const el of onScreen) {
+      if (hide) break;
+      const r = el.getBoundingClientRect();
+      hide = r.width > 0 && r.right + PAD > b.left && r.left - PAD < b.right && r.bottom + PAD > b.top && r.top - PAD < b.bottom;
+    }
+    host.toggleAttribute("data-dodge", hide && !chatOpen && !host.matches(":focus-within"));
   };
-  const schedule = () => void (frame ||= requestAnimationFrame(check));
+  const schedule = () => void (frame ||= requestAnimationFrame(update));
+  // Only the marked elements near the viewport are measured on scroll.
+  if ("IntersectionObserver" in window) {
+    onScreen.clear();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const en of entries) en.isIntersecting ? onScreen.add(en.target as HTMLElement) : onScreen.delete(en.target as HTMLElement);
+        schedule();
+      },
+      { rootMargin: "64px 0px" },
+    );
+    for (const el of avoidEls) io.observe(el);
+  }
   addEventListener("scroll", schedule, { passive: true });
   addEventListener("resize", schedule);
+  phone.addEventListener("change", schedule);
+  document.addEventListener("focusout", schedule);
   document.addEventListener("mh:chat-state", (e) => {
     chatOpen = !!(e as CustomEvent<{ open?: boolean }>).detail?.open;
+    // At once, not on the next frame: the panel focuses its composer right after this event, and a hidden host
+    // can't take focus.
+    if (chatOpen) hostEl()?.removeAttribute("data-dodge");
     schedule();
   });
-  schedule();
+  // The widget mounts its host after this module runs: decide as soon as it exists, before its entrance animation.
+  if (hostEl()) schedule();
+  else {
+    const mo = new MutationObserver(() => {
+      if (!hostEl()) return;
+      mo.disconnect();
+      update();
+    });
+    mo.observe(document.body, { childList: true });
+  }
 }
 
 /* ------------------------------------------------------------------ home: section scroll-spy */

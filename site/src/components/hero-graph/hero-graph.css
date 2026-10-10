@@ -41,12 +41,14 @@
 }
 .hg-sp { stroke-width: calc(1.5px * var(--hg-k)); stroke-dasharray: 1 5 }
 .hg-sp.is-cmd { stroke: var(--color-teal-fill, #16A394) }
+/* the request route in its category colours: the still frame and the running flow alike (the pulse lights the hop
+   it travels, then the edge settles back) */
 .hg-rt {
   fill: none; stroke: var(--hg-f); stroke-width: calc(1.8px * var(--hg-k)); stroke-linecap: round; opacity: .55;
-  transition: opacity .64s var(--hg-ease);
+  transition: opacity .64s var(--hg-ease), stroke-width .64s var(--hg-ease);
 }
 .hg-rt.hg-sp { stroke-width: calc(2.1px * var(--hg-k)) }
-.hg-svg.is-run .hg-rt { opacity: 0 }
+.hg-svg.is-run .hg-rt.is-hot { opacity: 1; stroke-width: calc(2.2px * var(--hg-k)); transition-duration: .2s }
 
 /* ---------------------------------------------------------------- nodes */
 .hg-node { cursor: pointer; outline: none; transition: opacity .16s var(--hg-ease) }
@@ -84,7 +86,7 @@
 /* hover / focus: highlight a node's edges and neighbours, dim the rest */
 .hg-svg.is-dim :is(.hg-node, .hg-port, .hg-e):not(.is-near) { opacity: .35 }
 .hg-svg.is-dim .hg-e.is-near { stroke: var(--hg-hl, var(--color-line-input, #8E8676)) }
-.hg-svg.is-dim:not(.is-run) .hg-rt:not(.is-near) { opacity: .12 }
+.hg-svg.is-dim .hg-rt:not(.is-near) { opacity: .12 }
 
 /* ---------------------------------------------------------------- pulse (comet) */
 .hg-comet { pointer-events: none; opacity: 0 }

@@ -3,11 +3,13 @@
  * 07 Skills (DESIGN.md 12.15): "skills with receipts", a real table where every filled dot is a role, freelance
  * project or public repository that used the skill (data and evidence in src/lib/skills-matrix.ts), then the full
  * toolbox from profile.skills with LinkedIn endorsement counts and the passed assessment.
+ * Phones (below 40rem): the same data as a list, each skill followed by chips of the places it was used (a seven-
+ * column table would show one column at a time there), and the toolbox behind a "Show all N tools" disclosure.
  */
 import "~/styles/home-b.css";
 import Icon from "~/components/ui/Icon.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
-import { messages, pluralize, type Locale } from "~/lib/i18n";
+import { format, messages, pluralize, type Locale } from "~/lib/i18n";
 import { profile } from "~/lib/site";
 import { GROUP_ACCENT, MATRIX_COLUMNS, matrixGroups } from "~/lib/skills-matrix";
 
@@ -19,6 +21,7 @@ const m = messages(locale);
 const mx = m.skills.matrix;
 const groups = matrixGroups();
 const colCount = MATRIX_COLUMNS.length + 1;
+const toolCount = profile.skills.reduce((n, g) => n + g.skills.length, 0);
 
 /** Toolbox group colours, in the same category language as the matrix. */
 const GROUP_COLOR: Record<string, string> = {
@@ -90,11 +93,43 @@ const GROUP_COLOR: Record<string, string> = {
           }
         </table>
       </div>
+      {/* Phones: one entry per skill with the places it was used, from the same rows (no sideways scrolling). */}
+      <div class="matrix-list" data-matrix-list>
+        {
+          groups.map(({ group, rows }) => (
+            <div class:list={["matrix-list__group", `accent-${GROUP_ACCENT[group]}`]}>
+              <h4 class="matrix-list__title">{mx.groups[group]}</h4>
+              <ul class="matrix-list__rows" role="list">
+                {rows.map((row) => (
+                  <li class="matrix-list__row">
+                    <span class="matrix-list__skill" dir="auto">{mx.rows[row.key]}</span>
+                    <span class="sr-only">{locale === "ar" ? "، " : ", "}{m.skills.usedIn}: </span>
+                    <span class="matrix-list__where">
+                      {MATRIX_COLUMNS.filter((c) => row.cells[c]).map((c, i, all) => (
+                        <span class="matrix-list__place">
+                          {mx.columns[c]}
+                          {i < all.length - 1 && <span class="sr-only">{locale === "ar" ? "، " : ", "}</span>}
+                        </span>
+                      ))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
       <p class="matrix-legend"><span>{mx.earlierNote}</span></p>
     </div>
 
-    <div class="toolbox">
+    <div class="toolbox" data-toolbox>
       <h3 class="toolbox__title" id="toolbox-title">{mx.allTitle}</h3>
+      {/* Phones with JavaScript: collapsed behind this button (site.ts); without JavaScript everything shows. */}
+      <button class="btn btn--secondary toolbox__toggle" type="button" aria-expanded="false" aria-controls="toolbox-body" data-toolbox-toggle>
+        {format(mx.allToggle, { count: String(toolCount) })}
+        <Icon name="chevron-down" class="toolbox__chev" />
+      </button>
+      <div class="toolbox__body" id="toolbox-body">
       <ul class="toolbox__grid" role="list" aria-labelledby="toolbox-title">
         {
           profile.skills.map((g) => (
@@ -141,6 +176,7 @@ const GROUP_COLOR: Record<string, string> = {
       <p class="toolbox__note" aria-hidden="true">
         <span><Icon name="check" class="tool__check" />{m.skills.assessmentPassed}</span>
       </p>
+      </div>
     </div>
   </div>
 </section>
