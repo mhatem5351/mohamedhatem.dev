@@ -16,8 +16,8 @@ import { askQuestion, contextDetail, eyebrowParts, monoLogoOf, periodInfo, roleO
 interface Props {
   locale: Locale;
   cs: CaseStudy;
-  /** id of the architecture figure for "See the architecture" (absent: link to the components section). */
-  figureId: string;
+  /** id of the architecture figure for "See the architecture" (absent: no such link, e.g. a brief page with no figure). */
+  figureId?: string | undefined;
 }
 const { locale, cs, figureId } = Astro.props;
 const m = messages(locale);
@@ -45,6 +45,7 @@ const question = askQuestion(cs, locale);
           <span>{eb.role}</span>
           <span class="sep" aria-hidden="true">/</span>
           <Ltr>{eb.years}</Ltr>
+          {cs.depth === "brief" && <span class="cs-hero__brief">{m.work.page.briefTag}</span>}
         </p>
         <h1 class="cs-hero__title" id="cs-title">{tr(cs.title, locale)}</h1>
         <p class="cs-hero__summary">{tr(cs.summary, locale)}</p>
@@ -53,10 +54,14 @@ const question = askQuestion(cs, locale);
             <Icon name="ask" />
             {m.work.page.ask}
           </button>
-          <a class="btn btn--ghost" href={`#${figureId}`}>
-            {m.work.page.seeArchitecture}
-            <Icon name="arrow-down" class="arrow" />
-          </a>
+          {
+            figureId && (
+              <a class="btn btn--ghost" href={`#${figureId}`}>
+                {m.work.page.seeArchitecture}
+                <Icon name="arrow-down" class="arrow" />
+              </a>
+            )
+          }
           {
             cs.links.map((l) => (
               <a class="btn btn--ghost" href={l.href} rel="noopener">

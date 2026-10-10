@@ -15,6 +15,7 @@ export function mountChatWidget(): void {
     lang: d.lang === "ar" ? "ar" : "en",
     turnstileSiteKey: d.turnstile || null,
     ...(d.avatar ? { avatarSrc: d.avatar } : {}),
+    ...(d.subtitle ? { subtitle: d.subtitle } : {}),
     contact: {
       whatsapp: d.whatsapp ?? "",
       phoneDisplay: d.phone ?? "",

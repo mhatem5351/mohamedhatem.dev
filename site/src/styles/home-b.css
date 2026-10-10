@@ -8,8 +8,7 @@
 @layer components {
   /* Section titles placed inside a copy column (assistant, showcase) keep the prototype's measures. */
   .title-14ch { max-width: 14ch; }
-  .title-16ch { max-width: 16ch; }
-  :lang(ar) .title-14ch, :lang(ar) .title-16ch { max-width: 18ch; }
+  :lang(ar) .title-14ch { max-width: 18ch; }
 
   /* ---------- 04 Open source ---------- */
   .repo__meta { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem; }
@@ -27,11 +26,6 @@
   /* ---------- 05 Assistant ---------- */
   .chat-preview__head img { flex: none; }
   .assist .btn--ghost .icon { color: var(--color-ink-2); }
-
-  /* ---------- 06 Showcase ---------- */
-  .browser__spacer { width: 2.5rem; flex: none; }
-  .show__lede a { white-space: nowrap; }
-  .devices picture { display: block; }
 
   /* ---------- 07 Skills ---------- */
   .matrix-card { display: grid; gap: 1.25rem; }
@@ -160,9 +154,6 @@
 }
 
 @layer components {
-  /* Showcase figures never break inside a value ("~950 + ~900"); a step smaller on narrow phones. */
-  .show__stat b { white-space: nowrap; }
-  @media (max-width: 29.99rem) { .show__stat b { font-size: var(--text-lg); } }
 
   /* Skills table: scroll shadows at the inline edges while it scrolls sideways (below 46rem). */
   @media (max-width: 46rem) {

@@ -68,8 +68,8 @@ categories; English ones carry `one` / `other`.
 - **Dates.** ISO (`YYYY-MM`, or `YYYY` when the sources give no month). Count role durations inclusively
   (end month − start month + 1) so they match LinkedIn (Wakeb "1 yr 8 mos", ArabsStock "1 yr 9 mos"). The three Wakeb
   case studies (chatbot, government assistant, AIP) carry the Wakeb role's period because their own dates aren't
-  stated: pages say "During the Wakeb Data role" (`m.work.page.duringRole`), cards "At Wakeb Data, 2024–2026"
-  (`m.work.page.atRole`), and their JSON-LD states no project date (no `dateCreated` / `temporalCoverage` for any case
+  stated: pages say "During the Wakeb Data role" (`m.work.page.duringRole`), cards "Wakeb Data / during 2024–2026"
+  (`m.work.page.atRole`, in the cards' one "Company / years" pattern), and their JSON-LD states no project date (no `dateCreated` / `temporalCoverage` for any case
   study dated only by its role). The award has no date (`honors[].period: null`): the sources don't give one, so it
   is never shown with the role's dates. Pages carry full dates where they are known: `site.published`, `site.updated`,
   `cv.updated` and each case study's `published` / `updated` (`YYYY-MM-DD`) feed JSON-LD, `article:*` tags and the
@@ -121,7 +121,7 @@ Contact details and the binding decisions (title, "7 years", no Logic Controls f
   capability cards' stack lines (`i18n capabilities.*.stack`) name only tools with a project behind them.
 - The hero graph (`site/src/components/hero-graph/graph-data.ts`, copy of `design/assets/hero-graph/`) is an
   illustration of the pattern, not one system: its caption says so, and each node names where that step is sourced
-  (the Wakeb Data chatbot, the Arabsstock Assistant, or an open-source repository such as rag-answering-service's
+  (the Wakeb Data chatbot, the ArabsStock Assistant, or an open-source repository such as rag-answering-service's
   prompt-injection guardrail or staged-llm-evaluator's verdict computed in code). Architecture diagrams follow the same
   rule: the hybrid-RAG figure ends at "Generate" because the Wakeb sources state no evaluation step there; the
   LLM-serving figure draws health monitoring feeding the automated restarts because the sources state both and the
@@ -138,8 +138,16 @@ Contact details and the binding decisions (title, "7 years", no Logic Controls f
 - **Experience.** `primary: true` roles (Globant, Wakeb Data, ArabsStock, Empoweromics) are the expanded timeline;
   the rest go under "Earlier roles" (`m.experience.earlierTitle`). Logic Controls is freelance work shown as a case
   study and a project, as on his GitHub profile, not as a timeline role.
-- **Case studies.** `order` sets display order; `featured` ones form the main grid; `depth: "brief"` ones (the government
-  assistant, AIP, Tabaqat) render as compact cards with `m.work.briefNote`. Show `m.work.architectureNote` near diagrams.
+- **Case studies.** `order` sets display order (featured ones first); `featured` ones form the main grid (the feature card
+  plus three equal cards); `depth: "brief"` ones (the government assistant, AIP, Tabaqat) are not featured: they sit in
+  "More work" ("Read the brief") and their pages use the compact brief template with `m.work.briefNote`. `figures` holds
+  2–4 sourced facts for full case studies (the strip is omitted below two); a figure may carry a small `unit`
+  ("21" + "months"). Show `m.work.architectureNote` near diagrams.
+- **Bold receipts.** A `Fact` may name one phrase of its text in `strong` (`factB(["en", "ar"], …)`), and the CV summary
+  lists its phrases in `cv.summaryStrong`. Each phrase must occur verbatim in its text in both languages and start and
+  end on word boundaries (an Arabic phrase that starts inside a word, after a joining prefix such as "ب" or "ل", would
+  split the word between two weights); the site's unit tests check this. The text itself stays plain, so meta tags,
+  JSON-LD, llms.txt and the assistant never see markup.
 - **Diagram colours.** `ArchNodeKind` is meant to map to the brand's category colours, for example: `orchestrator`
   teal, `agent` saffron, `model` coral, `retrieval` sky, `data` / `pipeline` sage, `service` / `infra` steel,
   `quality` and `user` neutral. The design agent owns the final mapping; legend labels are in `m.work.legend`.

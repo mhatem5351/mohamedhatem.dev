@@ -14,7 +14,10 @@
  * 2. Sets the document metadata Chromium leaves empty (pdf-lib): Author, Subject, Keywords and Creator, keeping the
  *    title, the language and the tag tree. Applicant-tracking systems and document managers show these fields.
  * 3. Checks each PDF: at most 2 pages (fails the build otherwise), real text (Chromium embeds fonts as text, so it
- *    stays selectable and searchable; a PDF with no text objects fails), still tagged, with its language and author.
+ *    stays selectable and searchable; a PDF with no text objects fails), still tagged, with its language and author,
+ *    and the sidebar's page breaks (scripts/lib/pdf-text.mjs reads each page's text): every sidebar heading shares a
+ *    page with its first entry, and a section the sheet keeps whole (Education, Awards, Languages, Open to) is on one
+ *    page, heading included.
  * 4. Writes site/public/cv/Mohamed-Hatem-CV.pdf and Mohamed-Hatem-CV-ar.pdf (next build's /cv/ shows their size)
  *    and the same files into <dist>/cv/, then copies the English one to the owner's Downloads folder.
  */
@@ -26,6 +29,7 @@ import { PDFDocument } from "pdf-lib";
 import { chromium } from "playwright";
 import { startServer } from "../serve.mjs";
 import { loadContent } from "../lib/content.mjs";
+import { pdfPagesText, sectionBreakProblems } from "../lib/pdf-text.mjs";
 
 const SITE = fileURLToPath(new URL("../../", import.meta.url));
 const MAX_PAGES = 2;
@@ -118,6 +122,15 @@ export default async function cvPdf({ dist, site = SITE, downloads = true } = {}
         // Every face the sheet uses must be loaded, not just requested (Arabic weights load lazily).
         await Promise.all([...document.fonts].filter((ff) => ff.status !== "error").map((ff) => ff.load().catch(() => {})));
       });
+      // The sidebar's sections as text (as printed: innerText follows text-transform), for the page-break check.
+      const sections = await page.evaluate(() =>
+        [...document.querySelectorAll(".cv-side .cv-sec")].map((sec) => ({
+          heading: sec.querySelector("h2")?.innerText ?? "",
+          first: sec.querySelector(".side-list > li, .skill-g")?.innerText ?? "",
+          all: sec.innerText,
+          keep: sec.classList.contains("cv-sec--keep"),
+        })),
+      );
       const raw = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true, tagged: true, outline: false });
       const buf = await withMetadata(raw, f.lang);
       const pages = (await PDFDocument.load(buf, { updateMetadata: false })).getPageCount();
@@ -128,6 +141,9 @@ export default async function cvPdf({ dist, site = SITE, downloads = true } = {}
       if (!/\/StructTreeRoot/.test(latin1) || !/\/MarkInfo/.test(latin1)) throw new Error(`cv-pdf: ${f.path} lost its tag tree`);
       const meta = await PDFDocument.load(buf, { updateMetadata: false });
       if (!meta.getAuthor() || !meta.getSubject() || !meta.getTitle()) throw new Error(`cv-pdf: ${f.path} is missing its title, author or subject`);
+      if (sections.length < 5) throw new Error(`cv-pdf: ${f.path}: found ${sections.length} sidebar sections, expected the CV's six`);
+      const breaks = sectionBreakProblems(await pdfPagesText(buf), sections);
+      if (breaks.length) throw new Error(`cv-pdf: ${f.path}: ${breaks.join("; ")}`);
       writeFileSync(join(publicDir, f.file), buf);
       copyFileSync(join(publicDir, f.file), join(distDir, f.file));
       results.push({ ...f, pages, kb: Math.round(buf.length / 1024) });

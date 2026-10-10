@@ -42,6 +42,21 @@ test.describe("bubble and panel", () => {
     expect(await shadowFocus(page)).toMatch(/^button\.b/);
   });
 
+  test("the header is one line (title + subtitle); the 'answers can be wrong' note sits in the welcome, and describes the dialog", async ({ page }) => {
+    await openDemo(page);
+    await bubble(page).click();
+    await expect(dialog(page)).toBeVisible();
+    const head = page.locator("[data-mh-chat] .hd");
+    await expect(head.locator("#mhc-sub")).toHaveText("From his CV, LinkedIn and GitHub");
+    await expect(head).not.toContainText(STRINGS.en.disclaimer);
+    // One line of subtitle: the header stays compact (about 100 px tall before, with a 3-line disclaimer).
+    const sub = await head.locator("#mhc-sub").evaluate((el) => el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight));
+    expect(Math.round(sub)).toBe(1);
+    await expect(log(page).locator("#mhc-disc")).toContainText(STRINGS.en.disclaimer);
+    await expect(log(page).locator("#mhc-disc")).toContainText(STRINGS.en.privacy);
+    await expect(dialog(page)).toHaveAccessibleDescription(/From his CV.*AI answers can be wrong/);
+  });
+
   test("keyboard: reach the bubble with Tab, open with Enter, type, close with Escape", async ({ page }) => {
     await openDemo(page);
     // The bubble is the last element in the tab order: Shift+Tab from the top of the page reaches it.
@@ -630,10 +645,11 @@ test("the empty state shows the greeting and the privacy notice (EN and AR)", as
   await openDemo(page);
   await bubble(page).click();
   await expect(log(page)).toContainText(STRINGS.en.welcome);
-  await expect(log(page).locator(".pv")).toHaveText(STRINGS.en.privacy);
+  // The "answers can be wrong" disclaimer leads the privacy note (it left the panel header, audit VUX-15).
+  await expect(log(page).locator(".pv")).toHaveText(`${STRINGS.en.disclaimer} ${STRINGS.en.privacy}`);
   await expect(log(page).locator(".pv")).toContainText("Google may use them to improve its services");
 
   await openDemo(page, "lang=ar");
   await bubble(page).click();
-  await expect(log(page).locator(".pv")).toHaveText(STRINGS.ar.privacy);
+  await expect(log(page).locator(".pv")).toHaveText(`${STRINGS.ar.disclaimer} ${STRINGS.ar.privacy}`);
 });

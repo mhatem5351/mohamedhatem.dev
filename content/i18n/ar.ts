@@ -469,7 +469,7 @@ export const ar: Messages = {
     launcher: "اسأل المساعد",
     launcherLabel: "افتح المساعد الذكي لحاتم",
     title: "مساعد حاتم الذكي",
-    subtitle: "إجابات من سيرته الذاتية وملفيه على LinkedIn وGitHub",
+    subtitle: "من سيرته الذاتية وLinkedIn وGitHub",
     greeting:
       "مرحبًا! أنا مساعد حاتم الذكي. اسألني عن أعماله وأدواته، أو عن مدى ملاءمته لوظيفة ما. ويمكنك أيضًا لصق وصف وظيفي.",
     suggestionsTitle: "جرّب أن تسأل",

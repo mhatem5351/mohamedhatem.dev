@@ -14,6 +14,10 @@ test.describe("URLs @desktop-only", () => {
     ["/privacy", "/privacy/"],
     ["/work/arabsstock-assistant", "/work/arabsstock-assistant/"],
     ["/ar/work/tabaqat-gis", "/ar/work/tabaqat-gis/"],
+    // The brief case studies kept their URLs when they moved to "More work" (no new redirects needed).
+    ["/work/gov-bilingual-assistant", "/work/gov-bilingual-assistant/"],
+    ["/ar/work/aip-semantic-search", "/ar/work/aip-semantic-search/"],
+    ["/work/gov-bilingual-assistant/index.html", "/work/gov-bilingual-assistant/"],
     ["/index.html", "/"],
     ["/cv/index.html", "/cv/"],
     ["/work", "/#work"],
@@ -32,6 +36,15 @@ test.describe("URLs @desktop-only", () => {
     const res = await request.get("/cv?ref=linkedin", { maxRedirects: 0 });
     expect(res.headers()["location"]).toMatch(/^\/cv\/\?ref=linkedin$/);
     for (const to of ["/cv/", "/ar/", "/work/arabsstock-assistant/", "/"]) expect((await request.get(to, { maxRedirects: 0 })).status(), to).toBe(200);
+  });
+
+  test("every case study answers 200 at its own URL in both languages, as listed in the sitemap", async ({ request }) => {
+    const xml = await (await request.get("/sitemap-0.xml")).text();
+    for (const cs of profile.caseStudies)
+      for (const path of [`/work/${cs.slug}/`, `/ar/work/${cs.slug}/`]) {
+        expect((await request.get(path, { maxRedirects: 0 })).status(), path).toBe(200);
+        expect(xml, path).toContain(`https://mohamedhatem.dev${path}`);
+      }
   });
 
   test("text files for crawlers declare UTF-8", async ({ request }) => {

@@ -16,7 +16,7 @@ purple gradients and stock "neural" imagery. This one **shows the system**:
 - The hero is a live multi-agent graph: a request enters, the orchestrator dispatches it through `guard`,
   `retrieve`, `rerank`, `generate`, `evaluate` (and sometimes `tools · mcp`), and an answer leaves. It illustrates the
   pattern behind his agent systems, not one system (its caption says so: not every system uses every step), and every
-  node can be opened to read where he has used that step: the Wakeb Data chatbot, the Arabsstock Assistant or one of
+  node can be opened to read where he has used that step: the Wakeb Data chatbot, the ArabsStock Assistant or one of
   his open-source tools, each as the sources state it.
 - The "Ask my AI" assistant is a working product, one click from anywhere. It is the portfolio's strongest proof.
 - Experience is drawn like a **trace view** (the spans-on-a-timeline screen he reads every day in observability tools):
@@ -44,15 +44,21 @@ stripe), elevated to a product-grade site.
 |---|---|---|---|---|---|
 | 0 | Hero | Who, what, why believe | H1 = person chip (name · role) + the content tagline "I build multi-agent LLM systems that hold up in **production**, in Arabic and English." (one heading, so search and heading navigation get his name and role; the chip and the tagline keep their looks) + the live graph | person chip with photo, the 7-year intro, the assistant is *right there* (ask bar), "Open to new roles · 14:32 in Cairo" | ask bar, "See the work", CV |
 | 0b | Metric strip + logo row | Scan in 5 seconds | five hard facts in display numerals (7 · 14 · 6 · Millions · A100) | every fact is in `content/profile.ts` metrics; employer marks | (scroll) |
-| 01 | What I build | Map his skills to a stack | "from the agent graph down to the GPU" | bento with a real diagram in the feature card | Front-end card → showcase |
-| 02 | Selected work | Depth | 4 case studies, feature card first | architecture thumbnails, factual bullets, stack chips | case-study pages |
-| 03 | Experience (trace) | Chronology + overlap | the trace metaphor itself | dates, logos, bullets per role, study lanes | open a span |
-| 04 | Open source | Verifiable code | "small tools that test LLMs the way I test them at work" | GitHub repos with honest descriptions | GitHub |
-| 05 | AI assistant | The proof that he builds AI products | "Ask about my work." + a preview of the real widget | how-it-works flow (widget → Worker → Gemini → streamed answer), JD-fit tip | opens the chat |
-| 06 | Front-end craft | He ships UIs too | device frames of logic-controls.com (EN + AR) | Lighthouse, WCAG, test counts | live site, source |
-| 07 | Skills | Credibility of the long list | "Skills, with receipts." | dot matrix by role | (contact) |
+| 01 | What I build | Map his skills to a stack | "from the agent graph down to the GPU" | bento with a real diagram in the feature card | Front-end card → logic-controls.com case study |
+| 02 | Selected work | Depth | 4 case studies: the feature card, then three equal cards; the brief ones (details not public) in "More work" | architecture thumbnails, factual bullets, stack chips | case-study pages |
+| 03 | Experience (trace) | Chronology + overlap | the trace metaphor itself | dates, logos, bullets per role (bold receipts), study lanes | open a span |
+| 04 | About | Who he is, and availability | orbit portrait + bio | based in, time zone, languages, **open to** (roles, work arrangements) | (contact) |
+| 05 | Open source | Verifiable code | "small tools that test LLMs the way I test them at work" | GitHub repos with honest descriptions | GitHub |
+| 06 | AI assistant | The proof that he builds AI products | "Ask about my work." + a preview of the real widget | how-it-works flow (widget → Worker → Gemini → streamed answer), JD-fit tip | opens the chat |
+| 07 | Skills | Credibility of the long list | "Skills, with receipts." | dot matrix by role (a per-skill list on phones) | (contact) |
 | 08 | Education & certs | Formal credentials | AWS ML Specialty featured | degrees with logos | (contact) |
-| 09 | Contact | Convert | "Let's talk." | orbit portrait, about facts (Cairo, live local time, open to, languages), WhatsApp / email / LinkedIn / GitHub, form | message sent / chat |
+| 09 | Contact | Convert | "Let's talk." | WhatsApp / email (Gmail as "or …" in the email card) / LinkedIn / GitHub, form | message sent / chat |
+
+About sits right after the career so a recruiter reaches availability and relocation early (the hero meta line
+already says "Open to new roles · remote, in Cairo, or relocating to the Gulf or Europe"). The front-end showcase
+(logic-controls.com in device frames) is figure 1 of its case study, not a home section; `/#craft` lands on that
+case study's card. Bands alternate: What (P) · Work (B) · Experience (P) · About (B) · Open source (P) · Assistant
+(B) · Skills (P) · Education (B) · Contact (P).
 
 Testimonials: **omitted** (no real testimonials exist). The component is specified in section 12.20 so it can be added
 the day real, attributable quotes exist; never placeholder or paraphrased quotes.
@@ -154,8 +160,10 @@ Glows ≤ 16% opacity and only behind the hero graph and OG images.
 
 ### 3.4 Theme mechanics
 
-- Default follows `prefers-color-scheme`. The toggle cycles **system → light → dark** (desktop icon button) or uses a
-  three-segment control (mobile menu). Choice persists in `localStorage["mh-theme"]`; "system" removes the override.
+- Default follows `prefers-color-scheme`. The desktop icon button **flips what you see** on every click (light ↔ dark);
+  landing on the OS's own theme returns to "system" (so a light-OS visitor gets system → dark → system), and no click
+  is ever a no-op. The mobile menu has a three-segment control (Auto / Light / Dark) that can pin either. Choice
+  persists in `localStorage["mh-theme"]`; "system" removes the override.
 - An `is:inline` script in `<head>` sets `html[data-theme]` before first paint; without JS the
   `@media (prefers-color-scheme: dark)` block in `tokens.css` applies the same values (the checker fails the build if
   the two dark blocks ever drift).
@@ -377,7 +385,10 @@ pause control (WCAG 2.2.2) and the choice persists. CSS motion lives inside
 SVG rendered at build time (visible with JS off, zero CLS via fixed viewBox 600 × 520 and `aspect-ratio`), enhanced by
 a tiny dependency-free module. Nodes: `orchestrator` (teal, centre), `guard` (sage), `retrieve` and `rerank`
 (saffron), `generate` (coral), `evaluate` (sky), `tools · mcp` (slate), plus `query` and `answer` ports. Mono labels,
-dotted spokes, solid curved pipeline edges, comet pulses. Interaction: hover/focus highlights a node's edges and dims
+dotted spokes, solid curved pipeline edges, comet pulses. The request route keeps its category colours in every state
+(teal query → guard, saffron retrieve → rerank, coral generate, sky evaluate → answer, at 65% opacity); while the flow
+runs, the pulse lights the hop it travels to full strength and the edge settles back after it, so the animated graph
+is never a pale wireframe. Interaction: hover/focus highlights a node's edges and dims
 the rest; Enter/Space/click opens a short toggletip naming where he has used that step, with the source-backed
 example (EN and AR copy in `graph-data.ts`; never a step claimed for every production system); the graph is one tab stop with arrow-key navigation; a pause button sits in its corner. RTL
 mirrors the flow (query enters from the right). Budget ≤ 15 KB gzip JS + CSS (see `HANDOFF.md` for measured sizes).
@@ -457,7 +468,8 @@ name + role; name hidden < 480 where the nav shows it), **H1** = `basics.tagline
 **lede** = `basics.intro` (md, ink-2, ≤ 35rem), **ask bar** (a `<button>` that looks like an input: ask icon, typed
 example questions including one in the other language, "/" kbd, accent go button; opens the chat with the composer
 focused; keyboard shortcut "/" anywhere outside inputs), **actions** (secondary "See the work", ghost "CV"), **meta
-line** (mono 2xs: sage dot + "Open to new roles", clock icon + live Cairo time). Suggestion chips live in the AI
+line** (mono 2xs: sage dot + "Open to new roles · remote, in Cairo, or relocating to the Gulf or Europe", a link to
+the About facts, then clock icon + live Cairo time). Suggestion chips live in the AI
 assistant section and the chat welcome, not in the hero (the hero must fit 1440 × 900). Art column: hero graph +
 mono caption with a live dot. Background: dot grid + glows (section 10.3). Below: metric strip and logo row, inside the
 first viewport on 1440 × 900 (the strip's numerals peek above the fold as a scroll cue).
@@ -465,7 +477,7 @@ first viewport on 1440 × 900 (the strip's numerals peek above the fold as a scr
 ### 12.6 Metric strip (`.metrics`)
 `<dl>` of five facts: value (Space Grotesk 600, `2xl`, tabular, optional small unit) over a label (sm, muted, ≤ 18ch).
 Hairline top/bottom, vertical dividers; 2 columns on phones (last item spans both). Facts (from `profile.metrics`,
-featured first): 7 years · 14 agents in one LangGraph assistant · 6 agents in a bilingual production chatbot ·
+featured first): 7 years in data and AI, now leading an AI team · 14 agents in one LangGraph assistant · 6 agents in a bilingual production chatbot ·
 Millions of stock assets made searchable · A100 GPUs serving Qwen through vLLM. No count-up animation (numbers are
 content, not effects).
 
@@ -481,28 +493,38 @@ optional lede (md, ink-2) bottom-aligned in a 7 / 5 grid. Optional action link a
 ### 12.9 Capability cards (`.bento`, `.cap`)
 3-column bento (≥ 1024): one feature card spanning 2 × 2 with a diagram thumbnail on a dot-grid inset, five standard
 cards: icon tile, title (`lg`), two-line body (sm), mono stack line (first item emphasised). The "Front end, too" card
-links to the showcase.
+links to the logic-controls.com case study.
 
 ### 12.10 Case-study cards (`.work`)
 Card with a 3 px category bar, a 16:10 media area (diagram thumbnail on an 18 px dot grid fading down), eyebrow
-(company / role / years), title (`xl`; `2xl` on the feature), summary, optional 3 factual bullets with ring markers,
+in one pattern everywhere, "COMPANY / YEARS" ("COMPANY / ROLE / YEARS" on the feature card; work dated only by a role
+shared with other case studies reads "WAKEB DATA / DURING 2024–2026"), title (`xl`; `2xl` on the feature; hyphenated
+compounds such as "self-hosted" never break at their hyphen), summary, optional 3 factual bullets with ring markers,
 stack chips, "Read the case study →". The whole card is one link (stretched title anchor; inner interactive elements
-sit above it). Feature card: 5 / 7 split with the media on the end side. Grid: feature full width, then 3 columns
-(2 on tablets, 1 on phones).
+sit above it). Feature card: 5 / 7 split with the media on the end side. Grid: feature full width, then 3 equal
+columns (2 on tablets, 1 on phones); cards in a row share their tracks (CSS subgrid), so eyebrows, titles, summaries
+and the "Read" cue line up. "More work" lists the brief case studies (implementation details not public) as three
+compact text cards with "Read the brief →"; they never get flagship weight.
 
 ### 12.11 Case-study detail template
 See `prototypes/case-study.html` / `case-study-ar.html`: breadcrumb, eyebrow, H1, summary, meta grid (role, company,
 period, location, stack), framed architecture figure with numbered callouts, sticky table of contents with
 scroll-spy (desktop) / collapsible "On this page" (mobile), reading-progress hairline, long-form prose (40rem measure),
-key-facts strip (facts only), "decision" callouts, stack, "My role", next-case card, CTA band (ask the AI about this
-project with a prefilled question; contact). Diagrams switch to the compact vertical variant < 640 px.
+key-facts strip (2–4 sourced facts with an optional small unit, four columns from 64rem whatever the count, omitted
+below two), "decision" callouts, stack, "My role", next-case card, CTA band (ask the AI about this project with a
+prefilled question; contact). The numbered notes under a figure start with a bold term ("**Orchestrator.** LangGraph
+routes each request…", `term` in diagrams.json). Diagrams switch to the compact vertical variant < 640 px.
+**Brief case studies** (implementation details not public) are compact and say so: a "Brief" tag in the eyebrow, no
+key-facts strip, then "The problem", "What I did" and "Outcome" beside a note card (why the page is short, where the
+facts come from, ask my AI, all work); the component view only when it has more than three parts.
 
 ### 12.12 Experience trace (`.trace`)
 A card with a header row (mono "ROLE" + year axis 2020–2026) and one row per role: logo tile (36 px) + role + company
 in a 19rem label column; a lane where the span bar sits at `--s` (start %) with width `--w` (duration %), coloured by
 company category; date range in mono next to the bar (before it when the bar ends near the edge) from 64rem up;
 below 64rem the dates move into the company line ("Wakeb Data · Sep 2024 – Apr 2026") and roles/companies may wrap
-to two lines. Bar styles: solid =
+to two lines, only between units: each organisation name and the date range are unbreakable ("Umm Al-Qura
+University", "Jan 2020 – Jan 2021"). Bullets carry one bold receipt each where the content names one (`Fact.strong`). Bar styles: solid =
 full-time, tinted fill + outline = part-time / freelance, outline only = study; the current role's bar fades into a
 dashed "now" line. Rows are `<details>/<summary>` (works without JS); open rows show an attribute list (mono keys:
 type, stack, focus, honour) and bullets. Enhancement: single-open accordion, ArrowUp/ArrowDown/Home/End between rows.
@@ -512,13 +534,14 @@ Phones: the axis hides, each row shows a full-width mini lane under the role. Ar
 Icon tile + "mhatem5351 /" (mono) + repo name (Space Grotesk 600) + external arrow; description; chips. Category bar on
 top. Three primary + three small; footnote about coursework repos; "All repositories" button.
 
-### 12.14 Showcase (`.show`)
-Copy column (title, lede with link, 2 × 2 stat grid with hairline separators, stack line, "Visit the site" primary +
-"Source" ghost) and a device column (browser frame with URL pill + dark phone bezel overlapping the bottom end
-corner). Images are decorative (`alt=""`, `aria-hidden` on the frame) because the copy states the facts.
+### 12.14 Device frames (logic-controls.com)
+Figure 1 of the logic-controls.com case study (no longer a home section): a browser frame with URL pill (the page's
+language) and a dark phone bezel overlapping the bottom end corner (the other language). The desktop captures are
+1440 × 828, cut above the client site's angled section divider so the frame never ends in a slanted wedge. Images
+are decorative (`alt=""`, `aria-hidden` on the frame); the caption and the case study state the facts.
 
 ### 12.14b AI assistant section (`.assist`)
-Copy column: mono rule "05 AI assistant", H2 "Ask about my work.", lede (`i18n.assistant.lead`), a four-step
+Copy column: mono rule "06 AI assistant", H2 "Ask about my work.", lede (`i18n.assistant.lead`), a four-step
 **how-it-works flow** (`.assist-flow`: numbered saffron counters, chevron joints that mirror in RTL: your question → Worker
 → Gemini → answer), the `howItWorks` sentence, accent "Start a conversation" + ghost "How it's built" (repo link).
 Preview column: `.chat-preview`, a static, faithful miniature of the widget (header with avatar, title, subtitle,
@@ -530,7 +553,10 @@ A real `<table>`: skills as row headers grouped under category rows (`colgroup` 
 = Globant, Wakeb, ArabsStock, Tabaqat, Empoweromics, Freelance & earlier, Open source. Filled category dot = used there
 (with hidden "yes" text), small neutral dot = not used. Mapping comes only from the sources (see `HANDOFF.md` for the
 data). Horizontal scroll inside the card below 46rem (`position: relative` on the scroller so hidden text can't
-overflow the page), with the skill column first. Legend + "Also:" line for tools without receipts.
+overflow the page), with the skill column first. **Phones (< 40rem):** the same data as a list, one entry per skill
+followed by small group-coloured chips of the places it was used (no seven-column table to swipe). Legend + "Also:"
+line for tools without receipts. The full toolbox below sits behind a "Show all N tools" disclosure on phones (with
+JS; without it everything shows).
 
 ### 12.16 Education and certifications (`.edu`)
 Two cards: Degrees (logo tile, title, institution, mono years) and Certifications & honours (AWS ML Specialty
@@ -538,9 +564,10 @@ featured on a saffron-tint gradient panel; then Best Engineer of the Year, DataC
 
 ### 12.17 Contact (`.contact`)
 Left: mono rule, H2 "Let's talk.", orchestrator portrait + lede (with an inline "ask my AI" button), an
-**about-facts** grid (`.facts`: Based in · Time zone with the live Cairo time · Open to (roles) · Languages), channel rows (WhatsApp, Email with copy button, LinkedIn, GitHub; icon tile + label + value +
-arrow; copy announces "Copied" via the polite live region). Right: form card ("Or send a message"): Name, Email, Company (optional), What's it about? (select:
-job opportunity / project or consulting / speaking or collaboration / something else), Message, honeypot, Turnstile slot (reserve **65 px** height, `size="flexible"`, `theme="auto"`, `language` = page locale),
+**about-facts** grid (`.facts`: Based in · Time zone with the live Cairo time · Open to (roles) · Languages), channel rows (WhatsApp, Email with copy button and the Gmail address as an "or …" line under it, LinkedIn, GitHub;
+icon tile + label + value + arrow; copy announces "Copied" via the polite live region). Right: form card ("Or send a message"): Name, Email, Company (optional), What's it about? (select:
+job opportunity / project or consulting / speaking or collaboration / something else), Message, honeypot, Turnstile slot (reserve **65 px** height, `size="flexible"`, or `"compact"` when the slot is narrower than 300 px so
+a 320 px phone never scrolls sideways; `theme="auto"`, `language` = page locale),
 hint, "Send message". Validation on submit and on blur after the first submit: inline error under the field
 (`aria-invalid`, `aria-describedby`), an error summary at the top for screen readers, focus moves to the first
 invalid field. Success state replaces the form with a confirmation card (and keeps the channels visible).
@@ -553,11 +580,16 @@ from my CV and public profile."
 ### 12.19 Chat widget ("Ask my AI")
 Full spec and every state in `prototypes/chat-widget.html` (+ `-ar`), styles `prototypes/chat.css`, behaviour
 `prototypes/chat.js`; copy verbatim from `content/i18n` `chat.*` (launcher "Ask AI", title "Hatem's AI assistant",
-subtitle "Answers from his CV, LinkedIn and GitHub") and `content/chat/suggestions.json`. The nav button and hero
+subtitle "From his CV, LinkedIn and GitHub", one line) and `content/chat/suggestions.json`. The nav button and hero
 CTAs keep the first-person "Ask my AI" (it is his site); the widget speaks about him in the third person. Summary:
-closed launcher pill bottom-end (circle on small screens / after the hero), safe-area
-aware; panel 400 × 640 (desktop) growing from the launcher; header with avatar, title, subtitle, new chat + close;
-disclaimer line and privacy note (messages go to Google's Gemini API); welcome with 8 suggestions (4 on phones), a
+closed launcher pill bottom-end (circle on small screens), safe-area
+aware. The launcher never covers the page's own CTAs: it steps aside (fades, then leaves the tab order and the
+accessibility tree) while it would overlap any `[data-chat-avoid]` element (the hero ask bar, the case-study "Ask my AI
+about this project" buttons, the contact form's Send and copy buttons, the assistant section's CTA), and on phones it
+appears only once the hero's ask bar has scrolled past; never while the chat is open or the launcher has focus; the
+header's "Ask my AI" button always opens the chat. Panel 400 × 640 (desktop) growing from the launcher; header with
+avatar, title, one-line subtitle, new chat + close; the welcome message ends with the disclaimer ("AI answers can be
+wrong…") and the privacy note (messages go to Google's Gemini API), which together describe the dialog; welcome with 8 suggestions (4 on phones), a
 language switch chip and a job-description tip; long pasted job descriptions collapse with Show more; user bubbles (ink, end-aligned)
 and unboxed assistant answers with markdown-lite; thinking indicator using the graph motif; streaming with a teal
 block caret; copy answer; in-thread contact card (WhatsApp, Email, LinkedIn, CV); error, rate-limit, offline and
@@ -579,8 +611,12 @@ marker in muted. Errors in `danger` with an icon, never colour alone.
 dashed coral node, the requested path in mono, and actions (Back to home, Selected work, Ask the assistant, other
 language); one file serves both locales (Arabic when the path starts with `/ar/`). `prototypes/cv.html`: an A4 paper view with a toolbar (print /
 download PDF, copy link, language) and print CSS that fits two pages (monogram header, contact row in mono, summary,
-experience with mono date column, sidebar of skills, education, certifications with AWS featured, open source and
-languages); generated from the same content data as the site.
+experience with mono date column, sidebar of education, skills, certifications with AWS featured, awards, languages
+and open to); generated from the same content data as the site. The CV marks one bold receipt per bullet and three in
+the summary ("7 years in data and AI", "14-agent assistant", "6-agent bilingual Arabic/English chatbot"); body 9.1 pt
+(Arabic 9.4), sidebar 8.3–8.8 pt, small print ≥ 7.8 pt; roles may continue on the next page after their head and first
+two bullets; a sidebar heading never ends a page, and Education, Awards, Languages and Open to stay whole (the build
+checks the PDFs' page text). Names never break inside ("Umm Al-Qura University", "Learning – Specialty").
 
 ---
 

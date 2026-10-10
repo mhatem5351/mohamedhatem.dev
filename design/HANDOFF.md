@@ -90,8 +90,9 @@ Copy `design/tokens.tailwind.css` to `src/styles/tokens.tailwind.css` (regenerat
 <meta name="theme-color" content="#FBF8F3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0C151D" media="(prefers-color-scheme: dark)">
 ```
-Toggle: cycles system → light → dark (store `"light"`/`"dark"`, remove the key for system); listen to the media query
-while in system mode. Mobile menu uses a 3-way segmented control. Labels from `content/i18n` `theme.*`.
+Toggle: every click flips the visible theme (light ↔ dark); when the result equals the OS theme it goes back to system
+(store `"light"`/`"dark"`, remove the key for system), so no click is a no-op; listen to the media query while in
+system mode. Mobile menu uses a 3-way segmented control. Labels from `content/i18n` `theme.*`.
 
 ### 1.3 Fonts (Astro 6+ Fonts API, stable)
 
@@ -167,8 +168,9 @@ Classes refer to `design/prototypes/proto.css` (port them into components with T
 ### 2.2 Home (`src/pages/index.astro`, `src/pages/ar/index.astro`)
 
 Order and bands (P = plain `bg`, B = `bg-subtle` band): Hero (P) · 01 What I build (P) · 02 Selected work (B) ·
-03 Experience (P) · 04 Open source (B) · 05 AI assistant (P) · 06 Front-end craft (B) · 07 Skills (P) ·
-08 Education (B) · 09 Contact (P) · Footer.
+03 Experience (P) · 04 About (B) · 05 Open source (P) · 06 AI assistant (B) · 07 Skills (P) · 08 Education (B) ·
+09 Contact (P) · Footer. (The former 06 Front-end craft section is figure 1 of the logic-controls.com case study;
+`/#craft` lands on its card in Selected work.)
 
 | Astro component | Prototype (selector) | Data | JS |
 |---|---|---|---|
@@ -224,8 +226,10 @@ Route `src/pages/work/[slug].astro` (+ `ar/work/[slug].astro`) renders an entry 
 | `case/StackList.astro`, `case/Owned.astro`, `case/SourcesNote.astro` | `.stack-list`, `.owned`, `.sources` | stack grouped by category colour; "what I owned" list; where the facts come from |
 | `case/NextCase.astro`, `case/CaseCTA.astro` | `.next-case`, `.cta-band` | next entry in collection order; dark CTA band with an ask bar and contact |
 
-Brief variant (projects whose details aren't public, e.g. the Globant STA project): same hero + meta + one prose
-section + `i18n.work.briefNote` as the sources note; no figure, no key facts.
+Brief variant (`depth: "brief"`, projects whose details aren't public: the government assistant, AIP, Tabaqat): same
+hero + meta with a "Brief" tag in the eyebrow and no key-facts strip; then "The problem", "What I did" and "Outcome"
+beside a note card (`i18n.work.briefNote`, the sources, "Ask my AI about this project", all work); the component view
+only when it has more than three parts.
 
 ### 2.6 CV and 404
 

@@ -1589,7 +1589,7 @@ const caseStudies: readonly CaseStudy[] = [
       { value: same("5"), label: l("vision and audio model services, each a FastAPI container", "خدمات نماذج للصورة والصوت، كلٌّ منها حاوية FastAPI"), source: ["cv", "linkedin"] },
       { value: l("Millions", "ملايين"), label: l("of photos, videos and vector graphics behind semantic search", "من الصور ومقاطع الفيديو والرسومات المتجهة خلف البحث الدلالي"), source: ["cv", "linkedin", "github"] },
       // The role's own dates, counted inclusively like LinkedIn ("1 yr 9 mos").
-      { value: same("21"), unit: l("months", "شهرًا"), label: l("full-time and remote, Apr 2023 – Dec 2024", "بدوام كامل وعن بُعد، أبريل 2023 – ديسمبر 2024"), source: ["linkedin", "cv"] },
+      { value: same("21"), unit: l("months", "شهرًا"), label: l("Apr 2023 – Dec 2024, full-time and remote", "أبريل 2023 – ديسمبر 2024، بدوام كامل وعن بُعد"), source: ["linkedin", "cv"] },
     ],
     stack: ["LangGraph", "OpenAI API", "Pinecone", "Python", "FastAPI", "PostgreSQL", "Docker", "vLLM", "NVIDIA A100"],
     links: [],
@@ -2677,7 +2677,7 @@ const cvData: Cv = {
     "قائد فريق ذكاء اصطناعي بخبرة 7 سنوات في البيانات والذكاء الاصطناعي، يصمّم أنظمة النماذج اللغوية الكبيرة ويطلقها ويشغّلها في بيئة الإنتاج: تنسيق الوكلاء المتعددين (LangGraph)، وRAG والبحث الهجين، وخدمة النماذج ذاتية الاستضافة (vLLM على NVIDIA A100)، وتقييم النماذج اللغوية. بنى مساعدًا من 14 وكيلًا لمنصة ArabsStock، وروبوت محادثة ثنائي اللغة من 6 وكلاء في Wakeb Data. حاصل على شهادة AWS Certified Machine Learning – Specialty عام 2022.",
   ),
   summaryStrong: [
-    l("7 years in data and AI", "خبرة 7 سنوات في البيانات والذكاء الاصطناعي"),
+    l("7 years in data and AI", "بخبرة 7 سنوات في البيانات والذكاء الاصطناعي"),
     l("14-agent assistant", "مساعدًا من 14 وكيلًا"),
     l("6-agent bilingual Arabic/English chatbot", "روبوت محادثة ثنائي اللغة من 6 وكلاء"),
   ],

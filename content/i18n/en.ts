@@ -478,7 +478,8 @@ export const en = {
     launcher: "Ask AI",
     launcherLabel: "Open Hatem's AI assistant",
     title: "Hatem's AI assistant",
-    subtitle: "Answers from his CV, LinkedIn and GitHub",
+    /** Panel header line under the title (one line in the 400 px panel) and the preview card on the home page. */
+    subtitle: "From his CV, LinkedIn and GitHub",
     greeting:
       "Hi! I'm Hatem's AI assistant. Ask me about his work, his stack, or whether he fits a role. You can paste a job description too.",
     suggestionsTitle: "Try asking",

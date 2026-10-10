@@ -349,11 +349,28 @@ a.co { text-decoration: none; }
 /* Links section */
 .cs-links { display: flex; flex-wrap: wrap; gap: .75rem; }
 
-/* Brief variant: one column, no TOC */
-.cs-layout--brief { grid-template-columns: minmax(0, 1fr) !important; }
-.cs-layout--brief .cs-article { max-width: 52rem; }
-.cs-sub { font-size: var(--text-lg); line-height: var(--text-lg--line-height); letter-spacing: var(--text-lg--letter-spacing); margin-block: 2rem .75rem; }
-.cs-sub:first-child { margin-block-start: 0; }
+/* Brief variant (implementation details not public): the text and a note card side by side from 64rem, no TOC,
+   no key-facts strip; the page is short by design and says why (audit VUX-03). */
+.cs-brief { display: grid; gap: clamp(2rem, 1.5rem + 2vw, 3.5rem); padding-block: clamp(2.5rem, 2rem + 2.5vw, 4rem) var(--space-section); }
+@media (min-width: 64rem) {
+  .cs-brief { grid-template-columns: minmax(0, 1fr) 19rem; gap: clamp(3rem, 2rem + 4vw, 6rem); align-items: start; }
+  .cs-brief__aside { position: sticky; inset-block-start: 6.5rem; }
+}
+.cs-brief__main { min-width: 0; }
+.cs-brief__main > .cs-brief__sec + .cs-brief__sec { margin-block-start: clamp(2rem, 1.5rem + 1.5vw, 2.75rem); }
+.cs-brief__sec > * + * { margin-block-start: .875rem; }
+.cs-brief__sec > :where(p, ul) { max-width: var(--measure); }
+.cs-brief__h { display: flex; align-items: center; gap: .875rem; font-size: var(--text-lg); line-height: var(--text-lg--line-height); letter-spacing: var(--text-lg--letter-spacing); color: var(--color-ink); }
+.cs-brief__h::after { content: ""; flex: 1; height: 1px; background: var(--color-line); }
+.cs-brief__note { display: grid; gap: .875rem; justify-items: start; padding: 1.25rem 1.375rem 1.375rem; font-size: var(--text-sm); line-height: 1.6; color: var(--color-ink-2); }
+:lang(ar) .cs-brief__note { line-height: 1.85; }
+.cs-brief__tag { display: flex; align-items: center; gap: .5rem; font-family: var(--font-mono); font-size: var(--text-2xs); font-weight: 600; letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--color-muted); }
+:lang(ar) .cs-brief__tag { font-family: var(--font-arabic); font-size: var(--text-xs); letter-spacing: 0; text-transform: none; }
+.cs-brief__tag .icon { width: 1rem; height: 1rem; }
+.cs-brief__src { font-size: var(--text-xs); color: var(--color-muted); }
+.cs-brief__note .btn--secondary { margin-block-start: .25rem; }
+/* The "Brief" tag in the hero eyebrow */
+.cs-hero__brief { display: inline-flex; align-items: center; min-height: 1.375rem; padding: 0 .5rem; border-radius: var(--radius-full); border: 1px solid var(--color-line-strong); background: var(--color-surface); color: var(--color-ink-2); font-size: var(--text-2xs); letter-spacing: var(--tracking-label); }
 
 /* Next case: thumbnails (diagram or screenshot) fill the media box */
 .next-case .work__media > img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: var(--radius-sm); }

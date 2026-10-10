@@ -3,16 +3,23 @@
  * The CV sheet (design/prototypes/cv.html .sheet), generated from content/profile.ts only:
  * header (monogram, name, title · employer · focus, contact row, stripe), summary (profile.cv.summary),
  * Experience (the main roles with their cvBullets; non-primary roles that ended before every main role are condensed
- * under "Earlier roles"), Selected projects (profile.cv.projects), and a sidebar with Skills (profile.cv.skills),
- * Education (status-aware: an in-progress degree shows "(expected)" and is never described as held),
+ * under "Earlier roles"), Selected projects (profile.cv.projects), and a sidebar with Education (status-aware: an
+ * in-progress degree shows "(expected)" and is never described as held), Skills (profile.cv.skills),
  * Certifications (AWS featured), Awards, Languages and Open to. Two A4 pages in print, both languages.
+ *
+ * Bold "receipts" (design/prototypes/cv.html): the summary's profile.cv.summaryStrong phrases and each bullet's
+ * `strong` phrase. Names never break inside: an organisation list ("The British University in Dubai · Umm Al-Qura
+ * University") wraps only at its " · ", a " – " stays between its two words ("Learning – Specialty"), so no line
+ * starts with a dash, and a line never breaks at a word's own hyphen ("Al-Qura", "real-estate"). All of these are
+ * spans with white-space: nowrap; the text itself (and so the PDF's text layer) is unchanged.
  */
 import Monogram from "~/components/brand/Monogram.astro";
 import Icon from "~/components/ui/Icon.astro";
 import Ltr from "~/components/ui/Ltr.astro";
 import { format, formatMonth, formatPeriod, localePath, messages, parseIso, type Locale } from "~/lib/i18n";
 import { absolute, contact, link, mailtoHref, profile, whatsappHref } from "~/lib/site";
-import type { Role } from "@content/profile.ts";
+import type { Fact, Role } from "@content/profile.ts";
+import { emphasize } from "~/lib/emphasis";
 
 interface Props {
   locale: Locale;
@@ -49,6 +56,88 @@ const place = `${t(b.location.city)}${sep}${t(b.location.country)} · ${m.experi
 const projects = profile.cv.projects.map((id) => profile.projects.find((p) => p.id === id)!);
 const expectedSuffix = m.education.expected.replace("{year}", "").trim();
 const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, locale, "long") });
+/** A run of text: plain, bold, and/or kept on one line. */
+type Run = { text: string; strong: boolean; nowrap: boolean };
+/**
+ * Runs that must not break inside: "word – word" (no line starts with a dash), a hyphenated name with its neighbours
+ * ("Umm Al-Qura University"), a hyphenated word ("real-estate", "multi-agent": the line never breaks at its hyphen)
+ * and a product name with its model number.
+ */
+const UNBREAKABLE = /\S+ – \S+|NVIDIA A100|(?:\p{Lu}\p{L}* )?\p{Lu}\p{L}*-\p{Lu}\p{L}*(?: \p{Lu}\p{L}*)?|[\p{L}\p{N}][\p{L}\p{N}.+]*(?:-[\p{L}\p{N}]+)+/gu;
+/** Splits a segment so each unbreakable run is its own run. */
+function glue(text: string, strong: boolean): Run[] {
+  const out: Run[] = [];
+  let i = 0;
+  for (const m of text.matchAll(UNBREAKABLE)) {
+    if (m[0].length > 28) continue;
+    const at = m.index ?? 0;
+    if (at > i) out.push({ text: text.slice(i, at), strong, nowrap: false });
+    out.push({ text: m[0], strong, nowrap: true });
+    i = at + m[0].length;
+  }
+  if (i < text.length) out.push({ text: text.slice(i), strong, nowrap: false });
+  return out;
+}
+/**
+ * Bold always covers whole words: a phrase that starts or ends inside a word (an Arabic prefix such as "ب" or "و"
+ * attached to it) takes the rest of that word, so a word is never split between two weights (which would also break
+ * the Arabic letter joining).
+ */
+function wholeWords(segs: { text: string; strong: boolean }[]): { text: string; strong: boolean }[] {
+  const out = segs.map((x) => ({ ...x }));
+  for (let i = 0; i < out.length; i++) {
+    if (!out[i]!.strong) continue;
+    const prev = out[i - 1];
+    if (prev && !prev.strong) {
+      const m = /[^\s(«"“]+$/u.exec(prev.text);
+      if (m && /^[\p{L}\p{N}]/u.test(out[i]!.text)) {
+        prev.text = prev.text.slice(0, m.index);
+        out[i]!.text = m[0] + out[i]!.text;
+      }
+    }
+    const next = out[i + 1];
+    if (next && !next.strong) {
+      const m = /^[\p{L}\p{N}]+/u.exec(next.text);
+      if (m && /[\p{L}\p{N}]$/u.test(out[i]!.text)) {
+        next.text = next.text.slice(m[0].length);
+        out[i]!.text += m[0];
+      }
+    }
+  }
+  return out.filter((x) => x.text);
+}
+/** A sentence with its bold phrases and unbreakable dash pairs. */
+const runs = (text: string, phrases: readonly string[] = []): Run[] => wholeWords(emphasize(text, phrases)).flatMap((s) => glue(s.text, s.strong));
+const factRuns = (f: Fact): Run[] => runs(t(f.text), f.strong ? [t(f.strong)] : []);
+const esc = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/**
+ * Runs as HTML (text is escaped): <span class="nb"> for runs kept on one line, inside one <strong> per bold phrase
+ * (consecutive bold runs share it).
+ */
+function html(rs: readonly Run[]): string {
+  let out = "";
+  let bold = false;
+  for (const r of rs) {
+    if (r.strong !== bold) {
+      out += r.strong ? "<strong>" : "</strong>";
+      bold = r.strong;
+    }
+    out += r.nowrap ? `<span class="nb">${esc(r.text)}</span>` : esc(r.text);
+  }
+  return bold ? `${out}</strong>` : out;
+}
+/**
+ * Names joined by `joiner`, each kept on one line ("The British University in Dubai · Umm Al-Qura University"); a
+ * trailing parenthetical is its own unit ("AestheticsPro (US healthcare software)" wraps before the bracket).
+ */
+const nb = (x: string) => `<span class="nb">${esc(x)}</span>`;
+const unit = (name: string): string => {
+  const m = /^(.+?) (\(.+\))$/u.exec(name);
+  return m ? `${nb(m[1]!)} ${nb(m[2]!)}` : nb(name);
+};
+const units = (names: readonly string[], joiner: string): string => names.map(unit).join(esc(joiner));
+const org = (r: Role): string => units(t(r.company).split(" · "), " · ");
+
 /** The footer sentence with its domain as a link (the PDF keeps it clickable). */
 const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
 ---
@@ -56,10 +145,9 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
   <header class="cv-head">
     <Monogram class="cv-head__mark" />
     <h1 class="cv-name" id="cv-name">{t(b.name)}</h1>
+    {/* Real spaces around the separators, so copied and extracted text reads "AI Team Lead · Globant · …". */}
     <p class="cv-title">
-      {t(b.title)}<span class="sep" aria-hidden="true">·</span><b lang="en">{b.employer}</b><span class="sep" aria-hidden="true"
-        >·</span
-      >{m.cv.focus}
+      {t(b.title)} <span class="sep" aria-hidden="true">·</span> <b lang="en">{b.employer}</b> <span class="sep" aria-hidden="true">·</span> {m.cv.focus}
     </p>
     <ul class="cv-contact" aria-label={m.cv.sections.contact}>
       {
@@ -81,7 +169,7 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
   </header>
 
   <h2 class="sr-only">{m.cv.sections.summary}</h2>
-  <p class="cv-summary">{t(profile.cv.summary)}</p>
+  <p class="cv-summary" set:html={html(runs(t(profile.cv.summary), profile.cv.summaryStrong.map(t)))} />
 
   <div class="cv-grid">
     <div class="cv-main">
@@ -91,8 +179,8 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
           jobs.map((r) => (
             <div class="job">
               <div class="job__head">
-                <span>
-                  <span class="job__role">{t(r.title)}</span> <span class="job__org">{t(r.company)}</span>
+                <span class="job__name">
+                  <span><span class="job__role">{t(r.title)}</span> <span class="job__org" set:html={org(r)} /></span>
                   {honorsOf(r).map((h) => (
                     <span class="job__award">
                       <Icon name="award" />
@@ -105,7 +193,7 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
               </div>
               <ul>
                 {r.cvBullets.map((f) => (
-                  <li>{t(f.text)}</li>
+                  <li set:html={html(factRuns(f))} />
                 ))}
               </ul>
             </div>
@@ -118,10 +206,10 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
               earlier.map((r) => (
                 <div class="earlier__row">
                   <span>
-                    <b>{t(r.title)}</b> · <span class="earlier__org">{t(r.company)}</span>
+                    <b>{t(r.title)}</b> · <span class="earlier__org" set:html={org(r)} />
                   </span>
                   <em>{formatPeriod(r.period, locale)}</em>
-                  <p>{r.cvBullets.map((f) => t(f.text)).join(" ")}</p>
+                  <p set:html={r.cvBullets.map((f) => html(factRuns(f))).join(" ")} />
                 </div>
               ))
             }
@@ -143,20 +231,10 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
       </section>
     </div>
 
-    <aside class="cv-side" aria-label={`${m.cv.sections.skills}, ${m.cv.sections.education}, ${m.cv.sections.certifications}`}>
-      <section class="cv-sec" aria-labelledby="cv-skills">
-        <h2 class="cv-h" id="cv-skills">{m.cv.sections.skills}</h2>
-        {
-          profile.cv.skills.map((g) => (
-            <div class="skill-g">
-              <b>{t(g.label)}</b>
-              <p>{g.items.flatMap((item, i) => [...(i > 0 ? [sep] : []), <bdi>{t(item)}</bdi>])}</p>
-            </div>
-          ))
-        }
-      </section>
-
-      <section class="cv-sec" aria-labelledby="cv-edu">
+    {/* Education first: it stays whole (heading and every degree on one page), so it opens the sidebar on page 1 and
+        the skills, which may continue on page 2 group by group, follow it. */}
+    <aside class="cv-side" aria-label={`${m.cv.sections.education}, ${m.cv.sections.skills}, ${m.cv.sections.certifications}`}>
+      <section class="cv-sec cv-sec--keep" aria-labelledby="cv-edu">
         <h2 class="cv-h" id="cv-edu">{m.cv.sections.education}</h2>
         <ul class="side-list">
           {
@@ -181,6 +259,18 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
         </ul>
       </section>
 
+      <section class="cv-sec" aria-labelledby="cv-skills">
+        <h2 class="cv-h" id="cv-skills">{m.cv.sections.skills}</h2>
+        {
+          profile.cv.skills.map((g) => (
+            <div class="skill-g">
+              <b>{t(g.label)}</b>
+              <p>{g.items.flatMap((item, i) => [...(i > 0 ? [sep] : []), <bdi>{t(item)}</bdi>])}</p>
+            </div>
+          ))
+        }
+      </section>
+
       <section class="cv-sec" aria-labelledby="cv-cert">
         <h2 class="cv-h" id="cv-cert">{m.cv.sections.certifications}</h2>
         <ul class="side-list">
@@ -189,7 +279,7 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
               .sort((a, c) => Number(c.featured) - Number(a.featured))
               .map((c) => (
                 <li class:list={[c.featured && "cert-hero"]}>
-                  <b lang="en">{t(c.name)}</b>
+                  <b lang="en" set:html={html(runs(t(c.name)))} />
                   <em>
                     <bdi>{t(c.issuer)}</bdi>
                     {c.issued && ` · ${parseIso(c.issued).y}`}
@@ -200,7 +290,7 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
         </ul>
       </section>
 
-      <section class="cv-sec" aria-labelledby="cv-awards">
+      <section class="cv-sec cv-sec--keep" aria-labelledby="cv-awards">
         <h2 class="cv-h" id="cv-awards">{m.cv.sections.awards}</h2>
         <ul class="side-list">
           {
@@ -214,7 +304,7 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
         </ul>
       </section>
 
-      <section class="cv-sec" aria-labelledby="cv-lang">
+      <section class="cv-sec cv-sec--keep" aria-labelledby="cv-lang">
         <h2 class="cv-h" id="cv-lang">{m.cv.sections.languages}</h2>
         <ul class="side-list">
           {
@@ -228,11 +318,12 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
         </ul>
       </section>
 
-      <section class="cv-sec" aria-labelledby="cv-open">
+      <section class="cv-sec cv-sec--keep" aria-labelledby="cv-open">
         <h2 class="cv-h" id="cv-open">{m.cv.sections.openTo}</h2>
         <ul class="side-list">
-          <li><span>{b.openTo.roles.map(t).join(sep)}</span></li>
-          <li><span>{b.openTo.arrangements.map((a) => t(a.label)).join(" · ")}</span></li>
+          {/* One role, one arrangement per line: a scannable list with no separator left dangling at a line end. */}
+          <li><span set:html={b.openTo.roles.map((r) => esc(t(r))).join("<br />")} /></li>
+          <li><span set:html={b.openTo.arrangements.map((a) => esc(t(a.label))).join("<br />")} /></li>
         </ul>
       </section>
     </aside>

@@ -61,7 +61,7 @@ site/
 ├── scripts/
 │   ├── og.mjs              renders OG PNGs from the design's templates (Playwright), skips unchanged inputs
 │   ├── postbuild.mjs       runs postbuild/: relocate-404.mjs (ar/404.html), redirects.mjs (_redirects),
-│   │                       early-hints.mjs (Link headers), cv-pdf.mjs
+│   │                       early-hints.mjs (Link headers), cv-pdf.mjs (+ lib/pdf-text.mjs: page-break check)
 │   ├── subset-fonts.mjs    builds src/assets/fonts from design/assets/fonts (see "Fonts")
 │   ├── check-dist.mjs      static checks of the build (see "Tests")
 │   ├── check-budgets.mjs   performance budgets
@@ -77,14 +77,14 @@ site/
 │   ├── components/
 │   │   ├── Head.astro      meta, canonical + hreflang, fonts + preloads, OG/Twitter, JSON-LD, analytics beacon
 │   │   ├── nav/ Footer     nav + mobile menu sheet, footer
-│   │   ├── home/           the home sections (Hero + hero/, Capabilities, SelectedWork, ExperienceTrace,
-│   │   │                   OpenSource, AssistantSection, Showcase, Skills, Education, About, Contact + contact/)
+│   │   ├── home/           the home sections (Hero + hero/, Capabilities, SelectedWork, ExperienceTrace, About,
+│   │   │                   OpenSource, AssistantSection, Skills, Education, Contact + contact/)
 │   │   ├── work/           CaseCard, ArchThumb, DateRun
 │   │   ├── case/           case-study template parts (hero, figure, component view, TOC, next case, CTA…)
 │   │   ├── cv/ notfound/   CV sheet + toolbar, 404 art
 │   │   ├── hero-graph/     the live agent graph (from design/assets/hero-graph: SSR render + runtime module)
 │   │   ├── chat/ChatMount  thin wrapper around ../chat-widget (see "Chat widget")
-│   │   └── ui/             Icon (inline from the design's sprite), LogoTile, Ltr, SectionHeader
+│   │   └── ui/             Icon (inline from the design's sprite), LogoTile, Ltr, SectionHeader, Emph (bold receipts)
 │   ├── lib/                pure helpers (unit-tested): i18n, site, trace, skills-matrix, contact-form, case,
 │   │                       home-work, diagrams, jsonld, icons, env
 │   ├── scripts/            site.ts (theme, menu, scroll-spy, reveal, copy, Cairo clock, "/" and data-open-chat),
@@ -188,8 +188,8 @@ Preloads:
 ## Budgets (`scripts/check-budgets.mjs`, part of `npm test`)
 
 - **JS:** ≤ 60 KB gzip loaded on first view of each page. The lazy chat panel is excluded; the loader counts.
-  Today: home 16.3 KB, other pages 5.9–6.7 KB, hero graph 6.9 KB.
-- **CSS:** ≤ 40 KB gzip per page. Today: 18.5–24.5 KB.
+  Today: home 16.7 KB, other pages 6.1–6.9 KB, hero graph 7.0 KB.
+- **CSS:** ≤ 40 KB gzip per page. Today: 18.7–25.0 KB.
 - **Fonts:** self-hosted woff2 only, with exactly the preloads listed under "Fonts".
 - **Images:** any high-priority image must be preloaded. The LCP element is text (the H1, or the lede on Arabic
   phones), so there are none today.
@@ -200,10 +200,12 @@ Lighthouse (`npm run lighthouse`; mobile = simulated slow 4G, desktop preset):
 |---|---|---|
 | Home, English | 98 | 100 |
 | Home, Arabic | 97 | 100 |
-| ArabsStock case study, EN and AR | 99 | 100 |
-| CV, EN and AR | 99 | 100 |
+| ArabsStock case study, English / Arabic | 99 / 98 | 100 |
+| AIP semantic search (a brief case study) | 99 | 100 |
+| CV | 99 | 100 |
 
-Accessibility, best practices and SEO are 100 on every run (measured 2026-10-10, after the audit fixes). CLS ≤ 0.012, TBT ≤ 10 ms, and mobile LCP is 1.8–2.3 s.
+Accessibility, best practices and SEO are 100 on every run (measured 2026-10-10, after the design review fixes).
+CLS ≤ 0.001, TBT ≤ 20 ms, and mobile LCP is 1.8–2.3 s.
 
 The runner blocks the Cloudflare analytics beacon (`--with-analytics` keeps it). From localhost, CORS refuses the
 beacon's report, which logs a console error the live site doesn't have.
@@ -220,6 +222,11 @@ beacon's report, which logs a console error the live site doesn't have.
 - **Case studies, JSON-LD and diagrams:** case-study helpers; JSON-LD content, including the honesty checks (the
   unnamed client, the M.Sc. status); diagram inlining.
 - **CSP integration.**
+- **Bold receipts:** `emphasize()`, and every `Fact.strong` / `cv.summaryStrong` phrase occurs in its text in both
+  languages, on word boundaries (a phrase starting inside an Arabic word would split it between two weights).
+- **Home work layout:** the 14-agent assistant is the feature card, then three equal cards; brief case studies sit in
+  "More work".
+- **PDF page text:** `scripts/lib/pdf-text.mjs` (the CV build's page-break check).
 
 **Static (`npm run test:static`):** run on `../dist` after a build.
 - `check-dist.mjs`:
@@ -257,11 +264,13 @@ running server such as `wrangler dev`.
 - **Motion:**
   - The hero graph is a still frame under reduced motion, and no transform animation runs.
   - Its pause button works and the choice persists.
-- **Preferences:** the language switch keeps the page; the theme cycles system → light → dark and persists across
-  pages; the mobile menu closes on Escape and returns focus.
+- **Preferences:** the language switch keeps the page; every click of the theme toggle changes what you see (light OS:
+  system → dark → system) and the choice persists across pages; the mobile menu closes on Escape and returns focus.
 - **CV:** `/cv/` and `/ar/cv/` print to ≤ 2 A4 pages, the generated PDFs are served with title, author, subject,
   keywords and language, the Arabic CV links to `/ar/`, its degree years read in the same order on every row, and print
-  hides the site chrome.
+  hides the site chrome; the bold receipts are there in both languages, "Open to" starts with the team-lead role,
+  names ("Umm Al-Qura University", "Learning – Specialty") never break inside, and in both PDFs every sidebar heading
+  shares a page with its first entry and Education is on one page (read from the PDFs' text, `scripts/lib/pdf-text.mjs`).
 - **Contact form** (API mocked, Turnstile stubbed):
   - Client-side validation, with errors linked to their fields and focus on the error summary.
   - The Worker contract: subject mapping, `mh_hp` honeypot, language, token.
@@ -275,14 +284,26 @@ running server such as `wrangler dev`.
   - `data-open-chat` buttons, the `/` key, and the case-study "ask about this project" button all open it.
   - The no-JS fallback is present.
   - The page sets `--mh-chat-top` from the sticky header's height (the panel's top edge sits below it).
-  - The floating bubble steps aside (fades out) while the contact form's Send button is under it, at 1280 and 1440.
-- **SEO (`seo.spec.ts`):** the 301 redirects and their targets, UTF-8 text files, sitemap `<lastmod>`, the home H1
+  - The floating bubble steps aside (fades out, leaves the tab order) while it would cover a `[data-chat-avoid]` CTA:
+    the contact form's Send button (1280, 1440), a case study's "Ask my AI about this project" rail button (1440 × 900,
+    EN and AR), the hero ask bar's send button on phones. On phones it waits until the hero's ask bar has scrolled
+    past, and the header's "Ask AI" still opens the chat with the composer focused.
+- **Contact form at 320–375 px:** with a Turnstile stub that has Turnstile's real sizes, the widget is compact below a
+  300 px slot, the form stays inside its card and the page never scrolls sideways; wide screens keep "flexible".
+- **Case studies (`case.spec.ts`):** brief pages are labelled, compact (note card beside the text, no facts strip, a
+  figure only with more than three parts); full pages show 2–4 facts that never stretch, ArabsStock's four with the unit
+  set small, and bold lead-ins on every figure note; home: brief work in "More work", `/#craft` on the logic-controls.com
+  card, and the cards in a row line up.
+- **Skills on phones (`skills.spec.ts`):** below 40rem a list with exactly the table's receipts and no sideways scroll;
+  the toolbox behind "Show all N tools" (open without JS); desktop keeps the table.
+- **SEO (`seo.spec.ts`):** the 301 redirects and their targets (the brief case studies kept their URLs), every case study
+  200 at its URL in both languages and in the sitemap, UTF-8 text files, sitemap `<lastmod>`, the home H1
   (name and role, then the tagline), per-page `og:image:alt`, `article:*` dates on case studies.
 - **CSP (`csp.spec.ts`):** see "Security".
 - **Accessibility details (`a11y-details.spec.ts`):** axe at 320 px (every page light, key pages dark); the home link's
   name below 360 px; user text spacing (WCAG 1.4.12) clips nothing in the work cards or the trace at 1440, 390 and
   320; focus outlines under forced colors; each role in the trace is an h3; the skills table is a focusable region
-  only while it scrolls; the mobile menu's language and theme controls sit in the nav landmark and the sheet closes
+  only while it scrolls (between 40rem and its 46rem width; phones get the list); the mobile menu's language and theme controls sit in the nav landmark and the sheet closes
   when focus leaves it; Latin and number runs keep their order on Arabic pages.
 
 One WebKit quirk is filtered in `tests/e2e/fixtures.ts` and `csp.spec.ts`. WebKit logs a CSP message (and fires a

@@ -63,7 +63,7 @@ button,a,textarea,.log{-webkit-tap-highlight-color:transparent}
 .rt:hover,.cb:hover{border-color:var(--lin)}
 .rt:disabled{color:var(--mut);cursor:not-allowed}
 .ic{flex:none}
-.rt .ic,.cb .ic{width:1rem;height:1rem}
+.rt .ic,.cb .ic,.jump .ic{width:1rem;height:1rem}
 .tl{display:flex;flex-direction:column;align-items:flex-start;gap:.5rem;margin-top:.625rem}
 .card{align-self:stretch;padding:.875rem;border:1px solid var(--line);border-radius:1rem;background:var(--bg2)}
 .ch{margin:0 0 .625rem;font:600 .875rem/1.3 var(--fontd);color:var(--ink)}
@@ -78,7 +78,6 @@ button,a,textarea,.log{-webkit-tap-highlight-color:transparent}
 .cb{min-height:1.75rem;padding:0 .625rem;font-size:.75rem}
 .jump{display:inline-flex;align-items:center;gap:.375rem;min-height:2rem;padding:.25rem .875rem;border-radius:999px;background:var(--tint);border:1px solid var(--tintl);color:var(--acc);font-weight:500;font-size:.8125rem;text-decoration:none}
 .jump:hover{border-color:var(--acc)}
-.jump .ic{width:1rem;height:1rem}
 :host([dir=rtl]) .fl{transform:scaleX(-1)}
 .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.125rem}
 .chip{min-height:2.25rem;padding:.4375rem .875rem;border:1px solid var(--line2);border-radius:1.125rem;background:var(--bg);color:var(--ink2);font:500 .8125rem/1.35 var(--font);text-align:start;cursor:pointer;transition:.15s}

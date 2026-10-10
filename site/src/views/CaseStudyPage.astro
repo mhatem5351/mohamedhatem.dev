@@ -5,9 +5,11 @@
  * Full case studies: hero (breadcrumbs, eyebrow, H1, summary, actions, meta card, key facts) with figure 1 (the
  * designed diagram, or the component view drawn from profile.ts), then an article with a sticky TOC: problem,
  * approach (+ an engineering decision where the sources state one), architecture (component list, extra figures),
- * outcome, stack, links, and where the facts come from. Brief case studies (implementation details not public): the
- * same hero and one prose section with a capability view and m.work.briefNote. Both end with the next case study and
- * a CTA band. All copy: content/profile.ts, content/i18n (m.work.*), design/assets/diagrams/diagrams.json.
+ * outcome, stack, links, and where the facts come from. Brief case studies (implementation details not public) are
+ * compact and say so: a "Brief" tag in the eyebrow, no key-facts strip, then the problem, what I did and the outcome
+ * next to a note card (why the page is short, where the facts come from, ask my AI), and the component view only
+ * when it has more than three parts (a three-box capability view adds nothing to the text). Both end with the next
+ * case study and a CTA band. All copy: content/profile.ts, content/i18n (m.work.*), diagrams.json.
  */
 import Base from "~/layouts/Base.astro";
 import "~/styles/case.css";
@@ -43,6 +45,8 @@ const toc = tocOf(cs, locale);
 const groups = nodesByKind(cs);
 const edges = edgesOf(cs, locale);
 const question = askQuestion(cs, locale);
+/** Brief pages draw the component view only when it says more than the text (more than three parts). */
+const briefFigure = brief && cs.architecture.nodes.length > 3;
 /** logic-controls.com: the live site is figure 1 and the component view moves into the architecture section. */
 const siteShots = !mainDiagram && cs.slug === "logic-controls-website";
 const accent = (a: string) => (a === "neutral" ? undefined : `accent-${a}`);
@@ -70,7 +74,7 @@ const ogAlt = format(m.meta.ogImageAltCase, {
 >
   <ReadingProgress />
 
-  <CaseHero locale={locale} cs={cs} figureId="architecture">
+  <CaseHero locale={locale} cs={cs} figureId={brief && !briefFigure ? undefined : "architecture"}>
     {
       !brief &&
         (mainDiagram ? (
@@ -85,49 +89,53 @@ const ogAlt = format(m.meta.ogImageAltCase, {
 
   {
     brief ? (
-      <div class="container cs-layout cs-layout--brief">
-        <article class="cs-article" aria-labelledby="cs-title">
-          <section class="cs-sec" id="problem" aria-labelledby="h-problem">
-            <div class="cs-sec__rule">
-              <span class="sec-head__index" dir="ltr">01</span>
-            </div>
-            <h2 class="cs-sec__title" id="h-problem">
-              {m.work.labels.problem}
-            </h2>
-            <div class="cs-prose">
-              <p class="lead">{tr(cs.problem, locale)}</p>
-              <h3 class="cs-sub">{m.work.labels.approach}</h3>
-              <ul>
-                {cs.approach.map((f) => (
-                  <li>{tr(f.text, locale)}</li>
-                ))}
-              </ul>
-              <h3 class="cs-sub">{m.work.labels.outcome}</h3>
-              <ul class="ticks" role="list">
-                {cs.outcome.map((f) => (
-                  <li>
-                    <span class="tick" aria-hidden="true">
-                      <Icon name="check" />
-                    </span>
-                    <span>{tr(f.text, locale)}</span>
-                  </li>
-                ))}
-              </ul>
-              <ComponentView locale={locale} cs={cs} n={1} anchor="architecture" class="wide" />
-              <h3 class="cs-sub">{m.work.labels.stack}</h3>
-              <ul class="cluster gap-tight" role="list">
-                {cs.stack.map((t) => {
-                  const a = techAccent(t);
-                  return <li class:list={["chip", a !== "neutral" && `chip--${a}`]}>{t}</li>;
-                })}
-              </ul>
-              <p class="sources">
-                <Icon name="info" />
-                <span>{m.work.briefNote}</span>
-              </p>
-            </div>
+      <div class="container cs-brief">
+        <article class="cs-brief__main cs-prose" aria-labelledby="cs-title">
+          <section class="cs-brief__sec" id="problem" aria-labelledby="h-problem">
+            <h2 class="cs-brief__h" id="h-problem">{m.work.labels.problem}</h2>
+            <p class="lead">{tr(cs.problem, locale)}</p>
           </section>
+          <section class="cs-brief__sec" id="approach" aria-labelledby="h-approach">
+            <h2 class="cs-brief__h" id="h-approach">{m.work.page.whatIDid}</h2>
+            <ul>
+              {cs.approach.map((f) => (
+                <li>{tr(f.text, locale)}</li>
+              ))}
+            </ul>
+          </section>
+          <section class="cs-brief__sec" id="outcome" aria-labelledby="h-outcome">
+            <h2 class="cs-brief__h" id="h-outcome">{m.work.labels.outcome}</h2>
+            <ul class="ticks" role="list">
+              {cs.outcome.map((f) => (
+                <li>
+                  <span class="tick" aria-hidden="true">
+                    <Icon name="check" />
+                  </span>
+                  <span>{tr(f.text, locale)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+          {briefFigure && <ComponentView locale={locale} cs={cs} n={1} anchor="architecture" class="wide" />}
         </article>
+        <aside class="cs-brief__aside" aria-labelledby="brief-note-title">
+          <div class="card cs-brief__note">
+            <p class="cs-brief__tag" id="brief-note-title">
+              <Icon name="info" />
+              {m.work.page.briefTitle}
+            </p>
+            <p>{m.work.briefNote}</p>
+            <p class="cs-brief__src">{format(m.work.page.briefSources, { sources: sourcesText(cs.source, locale) })}</p>
+            <button class="btn btn--secondary" type="button" data-open-chat data-question={question} aria-haspopup="dialog" data-chat-avoid>
+              <Icon name="ask" />
+              {m.work.page.ask}
+            </button>
+            <a class="btn btn--ghost btn--sm" href={homeAnchor("work", locale, false)}>
+              <Icon name="arrow-left" />
+              {m.work.allWork}
+            </a>
+          </div>
+        </aside>
       </div>
     ) : (
       <div class="container cs-layout">

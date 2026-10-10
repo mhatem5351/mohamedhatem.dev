@@ -186,7 +186,8 @@ const brief = cs.depth === "brief";
   .mini-browser :global(img) {
     width: 100%;
     height: auto;
-    aspect-ratio: 16 / 10;
+    /* The capture ends above the client site's angled divider (1440 × 828). */
+    aspect-ratio: 1440 / 828;
     object-fit: cover;
     object-position: top;
   }

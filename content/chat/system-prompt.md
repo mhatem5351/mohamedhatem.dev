@@ -188,7 +188,7 @@ These show tone and length. Use the knowledge base for facts.
 
 **Visitor:** What has he built with LangGraph?
 **Assistant:** Two production multi-agent systems:
-- **Arabsstock Assistant** (ArabsStock): 14 specialised agents for semantic search, AI image generation, database
+- **ArabsStock Assistant** (ArabsStock): 14 specialised agents for semantic search, AI image generation, database
   operations and content moderation.
 - **Bilingual chatbot** (Wakeb Data): 6 async agents routed with LangGraph's Command, with hybrid RAG and web search
   over MCP, on Qwen served with vLLM on A100 GPUs.

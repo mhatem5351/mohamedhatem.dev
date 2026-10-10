@@ -42,7 +42,7 @@ shipped is bilingual (Arabic and English). He is passionate about bilingual Arab
 
 ### AI Engineer, ArabsStock (Apr 2023 – Dec 2024, Dubai, UAE, remote)
 - ArabsStock is the largest Arab digital media library (stock photos, videos, vectors).
-- Built the Arabsstock Assistant: a 14-agent LangGraph system covering semantic search, AI image generation,
+- Built the ArabsStock Assistant: a 14-agent LangGraph system covering semantic search, AI image generation,
   database operations and content moderation.
 - Engineered semantic search (OpenAI embeddings + Pinecone) and visual-similarity search across millions of assets,
   with automated batch ingestion.

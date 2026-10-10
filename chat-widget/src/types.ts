@@ -22,6 +22,12 @@ export interface ChatWidgetConfig {
   turnstileSiteKey?: string | null;
   /** Avatar shown in the panel header (square, ≥ 72 px). Omitted: an "MH" monogram. */
   avatarSrc?: string;
+  /**
+   * One line under the title in the panel header, in the page language (the site passes content/i18n
+   * `chat.subtitle`: "From his CV, LinkedIn and GitHub"). Omitted: the title stands alone. The "answers can be
+   * wrong" disclaimer sits with the privacy note in the welcome message.
+   */
+  subtitle?: string;
   /** Contact details for the contact card. They come from here, never from the model. */
   contact?: Partial<ContactConfig>;
   /**

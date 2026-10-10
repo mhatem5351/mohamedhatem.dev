@@ -71,6 +71,8 @@ export function createVerifier(container: HTMLElement, sitekey: string, lang: La
         sitekey,
         action: "chat",
         appearance: "interaction-only",
+        // The 300 px widget doesn't fit a 320 px phone sheet (its slot has .75rem padding): compact (150 px) there.
+        size: container.clientWidth < 324 ? "compact" : "normal",
         "refresh-expired": "manual",
         language: lang === "ar" ? "ar-eg" : "en",
         callback: (t: string) => {

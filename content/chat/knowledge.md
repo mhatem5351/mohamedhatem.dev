@@ -282,6 +282,8 @@ What is public is listed. Where no number exists, describe capabilities and say 
 - **What is public:** he built a bilingual enterprise assistant (Arabic/English) for a Saudi government client, with
   LLM evaluation and observability monitoring for response quality.
 - **Not public:** the client's name (confidential), models, architecture, user numbers, quality scores.
+- **Don't merge it with the 6-agent chatbot (4.2):** that is a separate Wakeb project. Never call this assistant
+  multi-agent, LangGraph-based or self-hosted, and don't name its models; the sources don't say.
 
 ### 4.4 AIP semantic search, version 2 (Wakeb Data)
 - **What is public:** he designed the second version of the AI-powered semantic search for the flagship AIP

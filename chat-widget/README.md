@@ -39,6 +39,7 @@ time the panel opens or closes (also when it reopens after a navigation), so the
 | `lang` | from `<html lang>` (`ar…` → `ar`, else `en`) | UI language and panel direction (RTL for Arabic; the bubble moves to the left) |
 | `turnstileSiteKey` | none (Turnstile off) | **Required in production**: the Worker answers 401 without a session or a token |
 | `avatarSrc` | "MH" monogram | Square image ≥ 72 px |
+| `subtitle` | none | One line under the title in the panel header, in the page language |
 | `contact` | Hatem's WhatsApp `201142070946`, `hatem@mohamedhatem.dev`, LinkedIn | Used by the contact card (never taken from the model). `email` / `altEmail` are also the only addresses answers may turn into `mailto:` links |
 | `sections` | `#<id>` on the page, else `/#id` or `/ar/#id`, built-in EN/AR labels | Targets of "Go to …" links: `about`, `work`, `experience`, `projects`, `skills`, `education`, `contact` |
 | `suggestions` | `content/chat/suggestions.json` (bundled at build time) | `{ en, ar }` arrays of strings or `{ label, prompt }`; first 4 on phones, up to 8 otherwise |
@@ -61,7 +62,11 @@ content-owned keys mirror the content copy).
 ## What it does
 
 - Bubble: bottom-right (bottom-left in RTL), animated multi-agent glyph (static with reduced motion), "Ask my AI"
-  label on the first visit, then icon-only; `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`.
+  label on the first visit, then icon-only; `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`. The host page
+  can make it step aside: mohamedhatem.dev sets `data-dodge` on the host element (`[data-mh-chat]`) while the bubble
+  would cover one of its own CTAs, and on phones until the hero has scrolled past; the site's CSS fades the host and
+  then hides it (`visibility: hidden`, so the bubble leaves the tab order and the accessibility tree). Listen to
+  `mh:chat-state` to clear it when the chat opens (the site does so synchronously, before the composer takes focus).
 - Panel on phones (below 640 px wide or 520 px tall): full-screen modal sheet (`aria-modal`, the page is inert,
   focus trap, scroll lock, safe-area insets); Escape closes and focus returns to the bubble.
 - Panel on desktop: non-modal (`role="dialog"`), anchored above the bubble and below the site's sticky header
@@ -70,8 +75,10 @@ content-owned keys mirror the content copy).
   Escape instead); focus that lands on a page element the panel hides (40% or more of its on-screen box) closes it
   and stays on that element (WCAG 2.4.11); an in-answer jump link ("Go to Contact", a `#section` link) closes it when
   the panel would hide the target's form controls or a large part of it, and moves focus to the target.
-- Header with avatar, title, disclaimer, New chat, Close. Empty state: greeting, the privacy notice (messages go to
-  Google's Gemini API, which may use them to improve its services on the free tier) and starter suggestions. A chip
+- Header with avatar, title, a one-line `subtitle` (config; the site passes "From his CV, LinkedIn and GitHub"), New
+  chat, Close. Empty state: greeting, then the disclaimer ("AI answers can be wrong…") and the privacy notice (messages
+  go to Google's Gemini API, which may use them to improve its services on the free tier) in one note, and starter
+  suggestions. The dialog is described by the subtitle and that note. A chip
   (starter or follow-up) keeps focus in the panel: on the textarea, or on the conversation after a tap in the sheet
   (no on-screen keyboard over the answer).
 - Open state: kept in sessionStorage (`<storageKey>:open`) while the desktop panel is open, so the next page of the
@@ -98,7 +105,8 @@ content-owned keys mirror the content copy).
   is busy or unavailable (every free model over quota, the site-wide limit (`503 upstream_busy`), the platform's own
   429 / 5xx without the Worker's JSON, or the API down) the error offers the contact card. A stream that goes silent
   for 30 s is treated as dropped.
-- Turnstile ("interaction-only", `refresh-expired: "manual"`, light DOM slotted into the panel) exists only while a
+- Turnstile ("interaction-only", `refresh-expired: "manual"`, light DOM slotted into the panel; `compact` when its
+  slot is narrower than the 300 px widget plus padding, as in a 320 px phone sheet) exists only while a
   token is being made: it loads when the panel opens without a valid session (after a navigation, only once the
   input gets focus), and the widget is removed as soon as its token is handed out, when the token expires unused and
   when a session starts, so nothing re-challenges in the background mid-conversation. A `401 turnstile_*` (session

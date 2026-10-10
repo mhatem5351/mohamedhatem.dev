@@ -81,12 +81,12 @@ export function createPanel(ctx: PanelContext): PanelApi {
   const live = h("div", { class: "sr", "aria-live": "polite", "aria-atomic": "true" });
   const panel = h(
     "div",
-    { class: "pn", id: "mhc-panel", role: "dialog", "aria-labelledby": "mhc-title", "aria-describedby": "mhc-disc" },
+    { class: "pn", id: "mhc-panel", role: "dialog", "aria-labelledby": "mhc-title", "aria-describedby": "mhc-sub mhc-disc" },
     h(
       "div",
       { class: "hd" },
       h("span", { class: "avw" }, avatar),
-      h("div", { class: "hx" }, h("h2", { id: "mhc-title", class: "ti" }, t.title), h("p", { id: "mhc-disc", class: "di" }, t.disclaimer)),
+      h("div", { class: "hx" }, h("h2", { id: "mhc-title", class: "ti" }, t.title), h("p", { id: "mhc-sub", class: "di" }, config.subtitle ?? "")),
       newBtn,
       closeBtn,
     ),
@@ -252,7 +252,7 @@ export function createPanel(ctx: PanelContext): PanelApi {
         h(
           "div",
           { class: "msg a" },
-          h("div", { class: "md", dir: lang === "ar" ? "rtl" : "ltr" }, h("p", {}, t.welcome), h("p", { class: "pv" }, t.privacy)),
+          h("div", { class: "md", dir: lang === "ar" ? "rtl" : "ltr" }, h("p", {}, t.welcome), h("p", { id: "mhc-disc", class: "pv" }, `${t.disclaimer} ${t.privacy}`)),
         ),
       );
     }

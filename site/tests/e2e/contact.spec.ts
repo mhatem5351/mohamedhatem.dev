@@ -122,3 +122,56 @@ test.describe("contact form", () => {
     await expect(inline(page, ar.contact.errors.nameRequired)).toBeVisible();
   });
 });
+
+/**
+ * Turnstile's own sizes, as a stub: "normal" 300 × 65, "flexible" 100% wide with a 300 px minimum, "compact" 150 × 140.
+ * The fixtures' stub draws nothing, so it could never show a too-wide widget.
+ */
+const SIZED_TURNSTILE = `(() => {
+  window.turnstile = {
+    render(el, o) {
+      const box = document.createElement("div");
+      box.setAttribute("data-ts-size", o.size || "normal");
+      box.style.cssText = o.size === "compact" ? "width:150px;height:140px" : o.size === "flexible" ? "width:100%;min-width:300px;height:65px" : "width:300px;height:65px";
+      el.append(box);
+      setTimeout(() => o.callback && o.callback("test-token"), 30);
+      return "ts-" + Math.random().toString(36).slice(2);
+    },
+    reset() {}, remove() {}, getResponse() { return "test-token"; }, ready(cb) { cb && cb(); },
+  };
+})();`;
+
+test.describe("contact form on narrow screens (audit VUX-07)", () => {
+  for (const width of [320, 360, 375])
+    test(`at ${width} px Turnstile fits the card and the page never scrolls sideways @desktop-only`, async ({ page }) => {
+      await page.route("https://challenges.cloudflare.com/**", (r) => r.fulfill({ status: 200, contentType: "text/javascript", body: SIZED_TURNSTILE }));
+      await page.setViewportSize({ width, height: 740 });
+      await page.goto("/#contact", { waitUntil: "networkidle" });
+      await form(page).locator("#cf-name").focus();
+      const widget = form(page).locator("[data-ts-size]");
+      await expect(widget).toBeAttached();
+      const m = await page.evaluate(() => {
+        const slot = document.querySelector<HTMLElement>("[data-turnstile-slot]")!;
+        const card = document.querySelector<HTMLElement>("#contact .contact-card")!;
+        const pad = parseFloat(getComputedStyle(card).paddingInlineEnd);
+        return {
+          scroll: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth,
+          formRight: Math.round(document.querySelector("#contact form")!.getBoundingClientRect().right),
+          cardInner: Math.round(card.getBoundingClientRect().right - pad),
+          slot: slot.clientWidth,
+          size: slot.querySelector("[data-ts-size]")!.getAttribute("data-ts-size"),
+        };
+      });
+      expect(m.scroll).toBeLessThanOrEqual(m.client);
+      expect(m.formRight).toBeLessThanOrEqual(m.cardInner);
+      expect(m.size).toBe(m.slot < 300 ? "compact" : "flexible");
+    });
+
+  test("wide screens keep the flexible widget @desktop-only", async ({ page }) => {
+    await page.route("https://challenges.cloudflare.com/**", (r) => r.fulfill({ status: 200, contentType: "text/javascript", body: SIZED_TURNSTILE }));
+    await page.goto("/#contact", { waitUntil: "networkidle" });
+    await form(page).locator("#cf-name").focus();
+    await expect(form(page).locator("[data-ts-size]")).toHaveAttribute("data-ts-size", "flexible");
+  });
+});

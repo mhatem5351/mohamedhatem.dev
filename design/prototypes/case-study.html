@@ -156,7 +156,7 @@
       <div class="cs-hero__copy">
         <p class="eyebrow">ArabsStock<span class="sep">/</span>AI Engineer<span class="sep">/</span>2023–2024</p>
         <h1 class="cs-hero__title" id="cs-title">A 14-agent assistant for the largest Arab digital media library</h1>
-        <p class="cs-hero__summary">At ArabsStock I architected and built the <strong>Arabsstock Assistant</strong>: 14 specialised agents, orchestrated with LangGraph, that handle semantic search, AI image generation, database operations and content moderation. Underneath it: semantic and visual search across millions of stock assets, five vision and audio AI services, and the evaluation that watches the agents in production.</p>
+        <p class="cs-hero__summary">At ArabsStock I architected and built the <strong>ArabsStock Assistant</strong>: 14 specialised agents, orchestrated with LangGraph, that handle semantic search, AI image generation, database operations and content moderation. Underneath it: semantic and visual search across millions of stock assets, five vision and audio AI services, and the evaluation that watches the agents in production.</p>
         <div class="cs-hero__actions">
           <button class="btn btn--secondary" type="button" data-open-chat data-question="Walk me through the 14-agent ArabsStock assistant." aria-haspopup="dialog"><svg class="icon" aria-hidden="true" style="color:var(--color-accent)"><use href="#i-ask"/></svg>Ask my AI about this project</button>
           <a class="btn btn--ghost" href="#architecture">See the architecture<svg class="icon arrow" aria-hidden="true"><use href="#i-arrow-down"/></svg></a>
@@ -194,7 +194,7 @@
         </div>
       </div>
       <figcaption class="fig__caption">
-        <p class="fig__caption-text" data-caption><b>Fig. 1</b> The Arabsstock Assistant routes platform requests through a LangGraph orchestrator to 14 specialised agents, backed by semantic search on Pinecone, containerized model-serving endpoints and media pipelines. <span class="fig__note">Diagrams show the components named in public descriptions of the work. They are simplified, not complete system maps.</span></p>
+        <p class="fig__caption-text" data-caption><b>Fig. 1</b> The ArabsStock Assistant routes platform requests through a LangGraph orchestrator to 14 specialised agents, backed by semantic search on Pinecone, containerized model-serving endpoints and media pipelines. <span class="fig__note">Diagrams show the components named in public descriptions of the work. They are simplified, not complete system maps.</span></p>
         <ol class="callouts callouts--3" data-callouts aria-label="Diagram notes">
           <li><span class="co" aria-hidden="true">1</span><span><b>Orchestrator.</b> Routes each request to the right specialised agent.</span></li>
           <li><span class="co" aria-hidden="true">2</span><span><b>Specialised agents.</b> 14 of them, covering semantic search, AI image generation, database operations, content moderation and integrated AI services.</span></li>
@@ -243,7 +243,7 @@
       <div class="cs-sec__rule"><span class="sec-head__index">02</span><span class="eyebrow">What I built</span></div>
       <h2 class="cs-sec__title" id="h-built">One assistant, fourteen specialised agents</h2>
       <div class="cs-prose">
-        <p>The Arabsstock Assistant is a production multi-agent system: <strong>14 specialised agents orchestrated with <span class="term">LangGraph</span></strong>. Between them they handle semantic search, AI image generation, database operations and content moderation, and they reach the other AI services built across the platform.</p>
+        <p>The ArabsStock Assistant is a production multi-agent system: <strong>14 specialised agents orchestrated with <span class="term">LangGraph</span></strong>. Between them they handle semantic search, AI image generation, database operations and content moderation, and they reach the other AI services built across the platform.</p>
         <p>Read the architecture in <a href="#architecture">figure 1</a> from the top. Every request enters through the orchestrator <a class="co co-ref" href="#architecture" aria-label="note 1">1</a>, which routes it to one of the specialised agents <a class="co co-ref" href="#architecture" aria-label="note 2">2</a>. Agent evaluation <a class="co co-ref" href="#architecture" aria-label="note 3">3</a> watches reliability, accuracy and routing in production. Search agents query the semantic-search index <a class="co co-ref" href="#architecture" aria-label="note 4">4</a>; other work goes to the platform's model-serving endpoints <a class="co co-ref" href="#architecture" aria-label="note 5">5</a>, and media pipelines <a class="co co-ref" href="#architecture" aria-label="note 6">6</a> prepare raw footage and audio for the library.</p>
 
         <aside class="decision wide" aria-label="Engineering decision: one orchestrator, fourteen agents" data-note="Decision.astro · statement must be traceable to the CV/LinkedIn (shown in the source line) · 'why' slot optional, omitted when the sources don't say">

@@ -54,6 +54,19 @@ describe("Turnstile verifier", () => {
     expect(ts.renders[0]).toMatchObject({ action: "chat", appearance: "interaction-only", "refresh-expired": "manual", language: "ar-eg" });
   });
 
+  it("uses the compact widget (150 px) when its slot is narrower than the normal one (300 px + padding)", async () => {
+    const sized = (w: number) => {
+      const el = document.createElement("div");
+      Object.defineProperty(el, "clientWidth", { value: w });
+      return createVerifier(el, "1x00000000000000000000BB", "en", () => {});
+    };
+    sized(296).prepare();
+    await tick();
+    sized(376).prepare();
+    await tick();
+    expect(ts.renders.map((o) => o.size)).toEqual(["compact", "normal"]);
+  });
+
   it("hands a token to a waiting request, then removes the widget", async () => {
     const v = verifier();
     const pending = v.token(new AbortController().signal);

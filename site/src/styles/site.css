@@ -133,7 +133,9 @@ bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
 /* Hero meta line: availability with the work arrangements, linked to the About facts (#open-to). */
 .hero__open { display: inline-flex; align-items: baseline; gap: .5rem; color: inherit; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .22em; transition: text-decoration-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard); }
 .hero__open:hover { color: var(--color-ink-2); text-decoration-color: currentColor; }
-.hero__open .dot { align-self: center; }
+.hero__open { line-height: 1.5; }
+/* The dot sits on the first line when the line wraps (phones). */
+.hero__open .dot { align-self: flex-start; margin-block-start: calc(.75em - .25rem); }
 .hero__meta .hero__open span { display: inline; }
 .hero__open-detail { color: var(--color-ink-2); }
 

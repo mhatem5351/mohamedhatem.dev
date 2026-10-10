@@ -44,7 +44,7 @@
 /* the request route in its category colours: the still frame and the running flow alike (the pulse lights the hop
    it travels, then the edge settles back) */
 .hg-rt {
-  fill: none; stroke: var(--hg-f); stroke-width: calc(1.8px * var(--hg-k)); stroke-linecap: round; opacity: .55;
+  fill: none; stroke: var(--hg-f); stroke-width: calc(1.8px * var(--hg-k)); stroke-linecap: round; opacity: .65;
   transition: opacity .64s var(--hg-ease), stroke-width .64s var(--hg-ease);
 }
 .hg-rt.hg-sp { stroke-width: calc(2.1px * var(--hg-k)) }
