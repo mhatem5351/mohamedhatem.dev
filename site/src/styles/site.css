@@ -122,6 +122,14 @@ bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
  * The host is the widget's light-DOM element; visibility and opacity reach the bubble in its shadow root.
  */
 [data-mh-chat] { transition: opacity var(--duration-fast) var(--ease-standard), visibility 0s; }
+/*
+ * The launcher is dressed as Hatem's avatar once the page has loaded (src/scripts/chat-avatar.ts sets data-art="on";
+ * "off" if it can't load). Until then it is hidden, so the default launcher never flashes and changes shape. The
+ * panel sets its own visibility, so the chat still opens from the page's buttons in the meantime.
+ * The disc (deep ink with a teal glow and rim) can be switched in ChatMount.astro (data-av-disc="teal") or here:
+ * --mh-av-disc, --mh-av-rim, --mh-av-glow, --mh-av-glow-o on [data-mh-chat].
+ */
+[data-mh-chat]:not([data-art]) { visibility: hidden; }
 [data-mh-chat][data-dodge] { opacity: 0; visibility: hidden; transition: opacity var(--duration-fast) var(--ease-standard), visibility 0s linear var(--duration-fast); }
 @media (prefers-reduced-motion: reduce) { [data-mh-chat], [data-mh-chat][data-dodge] { transition: none; } }
 

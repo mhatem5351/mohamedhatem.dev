@@ -54,9 +54,11 @@ export function createPanel(ctx: PanelContext): PanelApi {
 
   /* ---------------------------------------------------------------- DOM */
 
-  const avatar = config.avatarSrc
-    ? h("img", { class: "av", src: config.avatarSrc, alt: "", width: "40", height: "40", decoding: "async" })
-    : h("span", { class: "av", "aria-hidden": "true" }, "MH");
+  const avatar =
+    config.avatar?.() ??
+    (config.avatarSrc
+      ? h("img", { class: "av", src: config.avatarSrc, alt: "", width: "40", height: "40", decoding: "async" })
+      : h("span", { class: "av", "aria-hidden": "true" }, "MH"));
   const button = (cls: string, label: string, ic: IconName, more = {}) =>
     h("button", { type: "button", class: cls, "aria-label": label, title: label, ...more }, icon(ic));
   const newBtn = button("ib", t.newChat, "new");

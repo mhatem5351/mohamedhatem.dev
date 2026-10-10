@@ -27,6 +27,22 @@ const bubbleVisibility = (page: Page) =>
     const b = host.shadowRoot!.querySelector("button")!;
     return getComputedStyle(b).visibility === "hidden" || Number(getComputedStyle(host).opacity) === 0 ? "hidden" : "visible";
   });
+/** True while the avatar's speech bubble (above the launcher) is showing over the element. */
+const speechCovers = (page: Page, selector: string) =>
+  page.evaluate((sel) => {
+    const bub = document.querySelector("[data-mh-chat]")!.shadowRoot!.querySelector(".bub");
+    if (!bub || getComputedStyle(bub).visibility !== "visible") return false;
+    const r1 = bub.getBoundingClientRect();
+    const r2 = document.querySelector(sel)!.getBoundingClientRect();
+    return r1.left < r2.right && r1.right > r2.left && r1.top < r2.bottom && r1.bottom > r2.top;
+  }, selector);
+/** True when the launcher, 12 px around it, would overlap the element horizontally (it then has to step aside). */
+const sideBySide = (page: Page, selector: string) =>
+  page.evaluate((sel) => {
+    const b = document.querySelector("[data-mh-chat]")!.shadowRoot!.querySelector("button")!.getBoundingClientRect();
+    const r = document.querySelector(sel)!.getBoundingClientRect();
+    return b.left - 12 < r.right && b.right + 12 > r.left;
+  }, selector);
 /** True while the visible bubble overlaps the element. */
 const coveredBy = (page: Page, selector: string) =>
   page.evaluate((sel) => {
@@ -89,7 +105,7 @@ test.describe("Ask my AI", () => {
       await page.goto("/", { waitUntil: "networkidle" });
       const send = page.locator("#contact [data-submit]");
       const host = page.locator("[data-mh-chat]");
-      await expect(host).toBeAttached();
+      await expect(host).toHaveAttribute("data-art", "on", { timeout: 10_000 }); // the avatar launcher is in
       // Scroll so the button sits where the bubble is (bottom inline-end corner).
       await send.evaluate((el) => {
         const r = el.getBoundingClientRect();
@@ -105,7 +121,9 @@ test.describe("Ask my AI", () => {
           return visible && hit;
         });
       await expect.poll(overlap).toBe(false);
-      await expect(host).toHaveAttribute("data-dodge", "");
+      await expect.poll(() => speechCovers(page, "#contact [data-submit]")).toBe(false);
+      // At 1280 the launcher sits above the button's end and steps aside; at 1440 the 64 px avatar clears it.
+      if (await sideBySide(page, "#contact [data-submit]")) await expect(host).toHaveAttribute("data-dodge", "");
       // Scrolled away from the form, the bubble is back.
       await page.evaluate(() => scrollTo(0, 0));
       await expect(host).not.toHaveAttribute("data-dodge", "");
@@ -120,7 +138,7 @@ test.describe("Ask my AI", () => {
     // Over the hero: stepped aside, out of the tab order and the accessibility tree.
     await expect(host).toHaveAttribute("data-dodge", "");
     await expect.poll(() => bubbleVisibility(page)).toBe("hidden");
-    await expect(page.getByRole("button", { name: /Ask my AI assistant/ }).filter({ has: page.locator("svg.g") })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /AI assistant/ }).filter({ has: page.locator("svg.g") })).toHaveCount(0);
     // Past the ask bar: back.
     await page.locator("[data-hero-ask]").evaluate((el) => scrollBy(0, el.getBoundingClientRect().bottom + 40));
     await expect(host).not.toHaveAttribute("data-dodge", "");
@@ -139,11 +157,12 @@ test.describe("Ask my AI", () => {
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto(path, { waitUntil: "networkidle" });
       const host = page.locator("[data-mh-chat]");
-      await expect(host).toBeAttached();
+      await expect(host).toHaveAttribute("data-art", "on", { timeout: 10_000 }); // the avatar launcher is in
       // Scroll so the rail's ask button sits where the bubble is (the audit's 1440 × 900 view).
       await page.locator(".toc-rail [data-open-chat]").evaluate((el) => scrollBy(0, el.getBoundingClientRect().bottom - (innerHeight - 14)));
       await expect.poll(() => coveredBy(page, ".toc-rail [data-open-chat]")).toBe(false);
-      await expect(host).toHaveAttribute("data-dodge", "");
+      await expect.poll(() => speechCovers(page, ".toc-rail [data-open-chat]")).toBe(false);
+      if (await sideBySide(page, ".toc-rail [data-open-chat]")) await expect(host).toHaveAttribute("data-dodge", "");
       await page.evaluate(() => scrollTo(0, 0));
       await expect(host).not.toHaveAttribute("data-dodge", "");
     }

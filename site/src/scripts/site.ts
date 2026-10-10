@@ -221,6 +221,8 @@ for (const box of document.querySelectorAll<HTMLElement>("[data-toolbox]")) {
 // scrolled past: the hero already offers the assistant, and the header's "Ask AI" button is always there.
 // Stepping aside is `data-dodge` on the widget's host (site.css): it fades out, then leaves the tab order and the
 // accessibility tree (visibility: hidden). Never while the chat is open or the bubble has keyboard focus.
+// The avatar's comic speech bubble (chat-avatar.ts) sits above the launcher: while it would cover a marked element,
+// `data-hush` on the host hides the speech bubble alone.
 const avoidEls = [...document.querySelectorAll<HTMLElement>("[data-chat-avoid]")];
 const afterEl = document.querySelector<HTMLElement>("[data-chat-after]");
 if (avoidEls.length || afterEl) {
@@ -235,13 +237,19 @@ if (avoidEls.length || afterEl) {
     const host = hostEl();
     const b = host?.shadowRoot?.querySelector("button")?.getBoundingClientRect();
     if (!host || !b?.width) return;
+    const hits = (r: DOMRect, o: DOMRect) => r.width > 0 && r.right + PAD > o.left && r.left - PAD < o.right && r.bottom + PAD > o.top && r.top - PAD < o.bottom;
+    // The avatar's speech bubble (chat-avatar.ts), measured whether it is showing or not.
+    const bub = host.shadowRoot?.querySelector(".bub")?.getBoundingClientRect();
     let hide = !!afterEl && phone.matches && afterEl.getBoundingClientRect().bottom > 0;
+    let hush = false;
     for (const el of onScreen) {
-      if (hide) break;
       const r = el.getBoundingClientRect();
-      hide = r.width > 0 && r.right + PAD > b.left && r.left - PAD < b.right && r.bottom + PAD > b.top && r.top - PAD < b.bottom;
+      hide ||= hits(r, b);
+      hush ||= !!bub?.width && hits(r, bub);
     }
     host.toggleAttribute("data-dodge", hide && !chatOpen && !host.matches(":focus-within"));
+    // The bubble alone steps aside while it would cover a marked element (the launcher may stay).
+    host.toggleAttribute("data-hush", hush);
   };
   const schedule = () => void (frame ||= requestAnimationFrame(update));
   // Only the marked elements near the viewport are measured on scroll.
@@ -260,6 +268,7 @@ if (avoidEls.length || afterEl) {
   addEventListener("resize", schedule);
   phone.addEventListener("change", schedule);
   document.addEventListener("focusout", schedule);
+  document.addEventListener("mh:chat-art", schedule); // the avatar and its bubble have just been added
   document.addEventListener("mh:chat-state", (e) => {
     chatOpen = !!(e as CustomEvent<{ open?: boolean }>).detail?.open;
     // At once, not on the next frame: the panel focuses its composer right after this event, and a hidden host

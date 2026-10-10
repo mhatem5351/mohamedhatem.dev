@@ -23,6 +23,12 @@ export interface ChatWidgetConfig {
   /** Avatar shown in the panel header (square, ≥ 72 px). Omitted: an "MH" monogram. */
   avatarSrc?: string;
   /**
+   * Builds the panel header's avatar instead of `avatarSrc`, called once when the panel is created. Return an element
+   * with the class `av` (it gets the header's 40 px circle), or nothing to fall back to `avatarSrc` / the monogram.
+   * mohamedhatem.dev returns the illustrated avatar once its module has loaded (site/src/scripts/chat-avatar.ts).
+   */
+  avatar?: () => Element | null | undefined;
+  /**
    * One line under the title in the panel header, in the page language (the site passes content/i18n
    * `chat.subtitle`: "From his CV, LinkedIn and GitHub"). Omitted: the title stands alone. The "answers can be
    * wrong" disclaimer sits with the privacy note in the welcome message.
@@ -69,6 +75,18 @@ export interface OpenOptions {
   question?: string;
   /** Default true when `question` is given. */
   send?: boolean;
+}
+
+/**
+ * The launcher's elements, as `window.MHChat.launcher`, for page code that dresses the launcher (its styles go in the
+ * open shadow root as constructed stylesheets; see the README, "Launcher hook").
+ */
+export interface ChatLauncher {
+  /** The light-DOM host (`[data-mh-chat]`, `lang` and `dir` set). */
+  host: HTMLElement;
+  root: ShadowRoot;
+  /** The launcher button (`.b`): aria-expanded / aria-controls reflect the panel. */
+  button: HTMLButtonElement;
 }
 
 /** What the lazily loaded panel module exposes to the loader. */

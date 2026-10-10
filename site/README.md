@@ -145,7 +145,7 @@ site/
 
 ## Chat widget
 
-`src/components/chat/ChatMount.astro` mounts `../chat-widget/src/index.ts`. It loads a 2.4 KB loader up front; the
+`src/components/chat/ChatMount.astro` mounts `../chat-widget/src/index.ts`. It loads a 2.6 KB loader up front; the
 panel arrives on the first interaction and isn't counted in the JS budget.
 
 - **Config:** Turnstile key, avatar (built by `astro:assets`) and contact details from `profile.ts`. They are passed
@@ -153,6 +153,23 @@ panel arrives on the first interaction and isn't counted in the JS budget.
 - **Opening it:** any `[data-open-chat]` element (with an optional `data-question`), the hero input, and the `/` key
   all call `window.MHChat.open({ question })`. Calls made before the loader is ready are queued.
 - **No JavaScript:** a `<noscript>` card offers email and WhatsApp instead.
+- **Avatar launcher (`src/scripts/chat-avatar.ts`):** once the page has loaded and the browser is idle, `chat.ts`
+  imports it and it dresses the widget's launcher through `window.MHChat.launcher` (the widget README's "Launcher
+  hook"): Hatem's illustrated avatar (`design/assets/avatar/mh-avatar.svg`, imported `?raw`) on a deep ink disc with a
+  teal rim, named "Ask Hatem's AI assistant", and a comic greeting that pops out of it behind two balls ("Hi, I'm
+  Hatem! 👋 Ask my AI assistant about my work.", copy in `content/i18n` → `chat.avatar`), which is the launcher's
+  description. The panel header uses the same avatar (`avatar` option) and its mouth talks while an answer streams.
+  - Until it is in, `[data-mh-chat]:not([data-art])` keeps the launcher hidden (site.css), so the default launcher
+    never shows and then changes shape; `data-art="off"` (the module failed to load) shows the default one.
+  - Motion: three short bursts (first appearance, then a wave 13 s and 26 s later), each over within 5 s
+    (WCAG 2.2.2), then only on hover / keyboard focus; none with reduced motion (a still avatar and bubble).
+  - The greeting shows 2.6 s after the launcher first appears (on phones, once the hero has scrolled past), at most
+    twice per session; its × hides it for the session (`sessionStorage` `mh-chat:greet`), so does opening the chat;
+    Escape hides it; it stays while hovered or focused; it hides when page focus lands under it.
+  - `site.ts` sets `data-hush` on the host while the greeting would cover a `[data-chat-avoid]` element (the greeting
+    hides, the launcher may stay), alongside `data-dodge` for the launcher itself.
+  - The disc: `data-av-disc` in ChatMount.astro (`dark`, the default, or `teal`), or `--mh-av-disc`, `--mh-av-rim`,
+    `--mh-av-glow`, `--mh-av-glow-o` on `[data-mh-chat]`.
 - **Build step:** `npm run content:gen` (part of `dev`, `build` and `check`) runs `../worker/scripts/gen-content.mjs`,
   which writes the widget's generated strings and suggestions.
 
@@ -187,8 +204,9 @@ Preloads:
 
 ## Budgets (`scripts/check-budgets.mjs`, part of `npm test`)
 
-- **JS:** ≤ 60 KB gzip loaded on first view of each page. The lazy chat panel is excluded; the loader counts.
-  Today: home 16.7 KB, other pages 6.1–6.9 KB, hero graph 7.0 KB.
+- **JS:** ≤ 60 KB gzip loaded on first view of each page. The lazy chat panel and the launcher's avatar (loaded after
+  `load`, 6.9 KB gzip; design target ≤ 12 KB) are excluded; the loader counts. Today: home 17.0 KB, other pages
+  6.4–7.2 KB, hero graph 7.0 KB.
 - **CSS:** ≤ 40 KB gzip per page. Today: 18.7–25.0 KB.
 - **Fonts:** self-hosted woff2 only, with exactly the preloads listed under "Fonts".
 - **Images:** any high-priority image must be preloaded. The LCP element is text (the H1, or the lede on Arabic
@@ -204,7 +222,7 @@ Lighthouse (`npm run lighthouse`; mobile = simulated slow 4G, desktop preset):
 | AIP semantic search (a brief case study) | 99 | 100 |
 | CV | 99 | 100 |
 
-Accessibility, best practices and SEO are 100 on every run (measured 2026-10-10, after the design review fixes).
+Accessibility, best practices and SEO are 100 on every run (measured 2026-10-10, after the design review fixes, and again after the avatar launcher: the same scores).
 CLS ≤ 0.001, TBT ≤ 20 ms, and mobile LCP is 1.8–2.3 s.
 
 The runner blocks the Cloudflare analytics beacon (`--with-analytics` keeps it). From localhost, CORS refuses the
@@ -284,10 +302,19 @@ running server such as `wrangler dev`.
   - `data-open-chat` buttons, the `/` key, and the case-study "ask about this project" button all open it.
   - The no-JS fallback is present.
   - The page sets `--mh-chat-top` from the sticky header's height (the panel's top edge sits below it).
-  - The floating bubble steps aside (fades out, leaves the tab order) while it would cover a `[data-chat-avoid]` CTA:
-    the contact form's Send button (1280, 1440), a case study's "Ask my AI about this project" rail button (1440 × 900,
-    EN and AR), the hero ask bar's send button on phones. On phones it waits until the hero's ask bar has scrolled
-    past, and the header's "Ask AI" still opens the chat with the composer focused.
+  - Neither the floating launcher nor its greeting ever covers a `[data-chat-avoid]` CTA: the contact form's Send
+    button (1280, where the launcher steps aside, and 1440), a case study's "Ask my AI about this project" rail button
+    (1440 × 900, EN and AR), the hero ask bar's send button on phones. On phones it waits until the hero's ask bar has
+    scrolled past, and the header's "Ask AI" still opens the chat with the composer focused.
+- **Avatar launcher (`chat-avatar.spec.ts`):** a real button named "Ask Hatem's AI assistant" (EN and AR) and described
+  by the greeting, on the dark disc; it opens the panel and the header shows the avatar; the greeting shows a few
+  seconds after load and its × hides it for the session (also after a reload); keyboard focus shows it, Escape hides
+  it, its × returns focus to the launcher; reduced motion: nothing runs and every word shows; motion on first
+  appearance (float, the mouth talking) is over within 5 s, and hover waves again; RTL: bottom-left, mirrored, the
+  greeting on the page side; the greeting steps aside (`data-hush`) from the contact Send and the case-study ask
+  buttons; on phones nothing greets (or is counted) until the hero has scrolled past; the header's mouth talks while
+  an answer streams and stops after; forced colors keep the launcher's edge and the drawing's colours; axe with the
+  greeting showing (EN/AR × light/dark × 1440/390/320).
 - **Contact form at 320–375 px:** with a Turnstile stub that has Turnstile's real sizes, the widget is compact below a
   300 px slot, the form stays inside its card and the page never scrolls sideways; wide screens keep "flexible".
 - **Case studies (`case.spec.ts`):** brief pages are labelled, compact (note card beside the text, no facts strip, a

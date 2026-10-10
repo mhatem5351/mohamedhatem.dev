@@ -468,6 +468,12 @@ export const ar: Messages = {
   chat: {
     launcher: "اسأل المساعد",
     launcherLabel: "افتح المساعد الذكي لحاتم",
+    avatar: {
+      name: "اسأل مساعد حاتم الذكي",
+      hi: "أهلًا، أنا حاتم!",
+      text: "اسأل مساعدي الذكي عن خبرتي.",
+      hide: "إخفاء الرسالة",
+    },
     title: "مساعد حاتم الذكي",
     subtitle: "من سيرته الذاتية وLinkedIn وGitHub",
     greeting:

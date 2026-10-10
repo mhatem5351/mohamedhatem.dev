@@ -19,6 +19,8 @@ window.MHChat.close()
 document.dispatchEvent(new CustomEvent("mh:open-chat", { detail: { question } }))   // same, decoupled
 
 document.addEventListener("mh:chat-state", (e) => e.detail.open)                    // the panel opened (true) or closed (false)
+
+window.MHChat.launcher                                                              // { host, root, button }: see "Launcher hook"
 ```
 
 `open({ question })` opens the panel and sends the question at once (`send: false` only puts it in the input).
@@ -39,6 +41,7 @@ time the panel opens or closes (also when it reopens after a navigation), so the
 | `lang` | from `<html lang>` (`ar…` → `ar`, else `en`) | UI language and panel direction (RTL for Arabic; the bubble moves to the left) |
 | `turnstileSiteKey` | none (Turnstile off) | **Required in production**: the Worker answers 401 without a session or a token |
 | `avatarSrc` | "MH" monogram | Square image ≥ 72 px |
+| `avatar` | none | `() => Element \| null \| undefined`, called once when the panel is created: the header's avatar instead of `avatarSrc` (give it the class `av`, which makes it the header's 40 px circle). Nothing returned → `avatarSrc`, then the monogram |
 | `subtitle` | none | One line under the title in the panel header, in the page language |
 | `contact` | Hatem's WhatsApp `201142070946`, `hatem@mohamedhatem.dev`, LinkedIn | Used by the contact card (never taken from the model). `email` / `altEmail` are also the only addresses answers may turn into `mailto:` links |
 | `sections` | `#<id>` on the page, else `/#id` or `/ar/#id`, built-in EN/AR labels | Targets of "Go to …" links: `about`, `work`, `experience`, `projects`, `skills`, `education`, `contact` |
@@ -48,6 +51,20 @@ time the panel opens or closes (also when it reopens after a navigation), so the
 UI strings the content agent owns (title, disclaimer, privacy notice, greeting, placeholder, button labels) come
 from `content/i18n/{en,ar}.ts` → `chat` at build time; the rest are built in (`src/i18n.ts`, whose values for the
 content-owned keys mirror the content copy).
+
+### Launcher hook
+
+`window.MHChat.launcher` is `{ host, root, button }`: the light-DOM host (`[data-mh-chat]`, with `lang` and `dir`), its
+open shadow root and the launcher button (`.b`, whose `aria-expanded` follows the panel). Page code can dress the
+launcher with it: add styles to `root` as a constructed stylesheet (`root.adoptedStyleSheets`, so a strict CSP still
+applies them), add elements to `root` or the button, set the button's `aria-label` / `aria-describedby`. The widget
+never reads them back. Pair it with `avatar` for the panel header.
+
+mohamedhatem.dev uses it for Hatem's illustrated avatar and its comic greeting (`site/src/scripts/chat-avatar.ts`,
+loaded after `load` on idle): the avatar replaces the glyph and the label (the button becomes a 64 px circle, 56 px on
+phones), the greeting is its description, and the header's avatar talks while an answer streams (the panel shows
+`.cursor` then, which the site's CSS matches with `.pn:has(.cursor)`). The art, its styles and behaviour live in the
+site, so they are outside this widget's size budget; the hook costs 22 bytes gzip.
 
 ## Build requirements
 
@@ -62,7 +79,7 @@ content-owned keys mirror the content copy).
 ## What it does
 
 - Bubble: bottom-right (bottom-left in RTL), animated multi-agent glyph (static with reduced motion), "Ask my AI"
-  label on the first visit, then icon-only; `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`. The host page
+  label on the first visit, then icon-only (mohamedhatem.dev replaces both with its avatar through the launcher hook); `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`. The host page
   can make it step aside: mohamedhatem.dev sets `data-dodge` on the host element (`[data-mh-chat]`) while the bubble
   would cover one of its own CTAs, and on phones until the hero has scrolled past; the site's CSS fades the host and
   then hides it (`visibility: hidden`, so the bubble leaves the tab order and the accessibility tree). Listen to
@@ -123,6 +140,9 @@ npm run test:widget        # Playwright: desktop + mobile, mocked API, axe, forc
 npm run test:widget:unit   # Vitest: markdown (links, isolation), SSE, language, API client, tools, Turnstile
 npm run widget:size        # gzip budget
 ```
+
+Size today (gzip, fflate): loader 2.56 KB (budget 3 KB), total 18.50 KB (budget 18.5 KB, met to the byte after the
+launcher hook and the `avatar` option, +22 B).
 
 `tests/fixtures/site.html` mirrors the site's layout for the desktop tests (`tests/e2e/desktop.spec.ts`, 1440×807):
 64 px sticky header, scroll-padding, smooth scrolling, contact form in the right column.

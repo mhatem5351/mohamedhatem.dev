@@ -8,7 +8,8 @@
  * Per page (all pages; the home pages are the ones that matter most):
  *   JS    gzip of every script the page runs on first load: its <script src> modules plus their static imports,
  *         followed through the built chunks. Dynamic import() targets (the chat widget's panel, loaded on the first
- *         hover / focus of the bubble; the hero graph's lazy renderer) are excluded. Budget: 60 KB.
+ *         hover / focus of the bubble; the launcher's avatar, loaded after load on idle; the hero graph's lazy renderer)
+ *         are excluded. Budget: 60 KB.
  *   CSS   gzip of the stylesheets the page links. Budget: 40 KB.
  *   HTML  gzip size, reported (warning above 60 KB).
  * Fonts: every @font-face source is a self-hosted .woff2; the English home preloads Space Grotesk (its H1 face) and
@@ -71,6 +72,7 @@ const pageFiles = files.filter((f) => f.endsWith(".html"));
 const rows = [];
 let heroGraph = null;
 let widgetPanel = null;
+let chatAvatar = null;
 for (const f of pageFiles) {
   const html = readFileSync(`${DIST}/${f}`, "utf8");
   const path = `/${f.replace(/index\.html$/, "")}`;
@@ -90,7 +92,12 @@ for (const f of pageFiles) {
     const text = readFileSync(`${DIST}/${x}`, "utf8");
     for (const m of text.matchAll(/import\(["'`]([^"'`]+\.js)["'`]\)/g)) {
       const p = new URL(m[1], `http://x/${x.split("/").slice(0, -1).join("/")}/`).pathname.slice(1);
-      if (files.includes(p) && /createPanel|mh-chat|panel/i.test(readFileSync(`${DIST}/${p}`, "utf8")) && !js.has(p)) widgetPanel = { file: p, gzip: [...closure([p])].filter((c) => !js.has(c)).reduce((s, c) => s + gz(c), 0) };
+      if (!files.includes(p) || js.has(p)) continue;
+      const lazy = { file: p, gzip: [...closure([p])].filter((c) => !js.has(c)).reduce((s, c) => s + gz(c), 0) };
+      const text = readFileSync(`${DIST}/${p}`, "utf8");
+      // the launcher's avatar and speech bubble (src/scripts/chat-avatar.ts), imported after load on idle
+      if (/mhb-t/.test(text)) chatAvatar = lazy;
+      else if (/mhc-panel/.test(text)) widgetPanel = lazy;
     }
   }
 
@@ -151,6 +158,7 @@ console.log(`${pad("page", 40)} ${pad("JS gz", 10)} ${pad("CSS gz", 10)} ${pad("
 for (const r of rows) console.log(`${pad(r.path, 40)} ${pad(kb(r.js), 10)} ${pad(kb(r.css), 10)} ${pad(kb(r.html), 10)} ${r.scripts}${r.third ? ` (+${r.third} third-party, not counted)` : ""}`);
 if (heroGraph) console.log(`hero graph module: ${heroGraph.file} ${kb(heroGraph.gzip)} gzip (design budget 15 KB with its CSS)`);
 if (widgetPanel) console.log(`chat widget panel (lazy, not counted): ${widgetPanel.file} ${kb(widgetPanel.gzip)} gzip`);
+if (chatAvatar) console.log(`chat launcher avatar (after load, not counted; design target 12 KB): ${chatAvatar.file} ${kb(chatAvatar.gzip)} gzip`);
 for (const w of [...new Set(warnings)]) console.warn(`  warn  ${w}`);
 if (errors.length) {
   console.error(`check-budgets: ${errors.length} problem(s)`);

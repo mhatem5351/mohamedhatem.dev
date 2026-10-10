@@ -477,6 +477,13 @@ export const en = {
   chat: {
     launcher: "Ask AI",
     launcherLabel: "Open Hatem's AI assistant",
+    /** The floating launcher drawn as Hatem (site/src/scripts/chat-avatar.ts): its name, and its comic speech bubble. */
+    avatar: {
+      name: "Ask Hatem's AI assistant",
+      hi: "Hi, I'm Hatem!",
+      text: "Ask my AI assistant about my work.",
+      hide: "Hide message",
+    },
     title: "Hatem's AI assistant",
     /** Panel header line under the title (one line in the 400 px panel) and the preview card on the home page. */
     subtitle: "From his CV, LinkedIn and GitHub",

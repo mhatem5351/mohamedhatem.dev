@@ -11,9 +11,9 @@
  * `document.dispatchEvent(new CustomEvent("mh:open-chat", { detail: { question } }))`. The panel announces open and
  * close with a `mh:chat-state` event on document (`detail: { open: boolean }`).
  */
-import type { ChatWidgetConfig, OpenOptions, PanelApi } from "./types";
+import type { ChatLauncher, ChatWidgetConfig, OpenOptions, PanelApi } from "./types";
 
-export type { ChatWidgetConfig, ContactConfig, OpenOptions, SectionConfig } from "./types";
+export type { ChatLauncher, ChatWidgetConfig, ContactConfig, OpenOptions, SectionConfig } from "./types";
 
 /**
  * Short aliases for the design tokens (design/tokens.css), each with the brand fallback. Custom properties
@@ -54,7 +54,7 @@ const GLYPH =
 const CLOSE =
   '<svg class="x" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
-let api: { open(o?: OpenOptions): void; close(): void } | undefined;
+let api: { open(o?: OpenOptions): void; close(): void; launcher: ChatLauncher } | undefined;
 
 /**
  * Adds styles to the shadow root as a constructed stylesheet: CSSOM, so a strict Content-Security-Policy (no
@@ -145,6 +145,8 @@ export function mountChat(config: ChatWidgetConfig = {}): void {
       load().then((p) => p.open(o), () => {});
     },
     close: () => void panel?.then((p) => p.close(), () => {}),
+    // For page code that dresses the launcher (mohamedhatem.dev: the avatar and its speech bubble, see the README).
+    launcher: { host, root, button: bubble },
   };
   (window as Window & { MHChat?: typeof api }).MHChat = api;
   if (!listening) {

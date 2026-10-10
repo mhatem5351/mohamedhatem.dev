@@ -326,7 +326,9 @@ Motion is an enhancement: every component is complete and usable with no motion 
 | Button / arrow | arrow nudges 3 px in reading direction | 240 ms | hover | none |
 | Trace span | chevron rotates; row background | 240 ms | open/close | instant |
 | Mobile menu | fade + 6 px drop | 240 ms | open | instant |
-| Chat launcher | one soft pulse ring 4 s after load, never repeats | 1.2 s | once | none |
+| Chat launcher (avatar) | pop-in (scale .6→1, y 8→0), then a wave (hand ±17° from the wrist, forearm ±3° from the elbow, head ±2.5°) and a 2 px float; a blink | 550 ms pop, 1.7 s wave, float 2.4 s period, blink 180 ms | first appearance (after load, on idle; on phones once the hero has scrolled past), then a wave + blink 13 s and 26 s later, three in all; afterwards only hover / keyboard focus | still avatar |
+| Chat greeting bubble | two balls pop one after the other (scale 0→1.2→1), the comic bubble pops (scale .35→1.05→1, tilted 2.2°), words fade in one by one while the mouth talks (scaleY .42–1.1) | balls 350 ms (+120 ms), bubble 450 ms (+240 ms), words 110 ms apart | 2.6 s after the launcher first appears, at most twice per session; hover / keyboard focus | still bubble, all words shown |
+| Chat header avatar | mouth talks; two blinks | 360 ms loop while an answer streams in (the cursor shows); blinks 1.2 s and 4.2 s after the panel opens | streaming / open | still |
 | Chat panel | grows from launcher: scale .96→1, y 8→0, opacity | 380 ms `--ease-spring` | open | opacity 120 ms |
 | Chat thinking | three-node pulse (graph motif) | 1.2 s loop while waiting | streaming | static dots + "Thinking…" text |
 | Chat caret | teal block caret blink | 1 s steps | streaming | solid caret |
@@ -334,7 +336,8 @@ Motion is an enhancement: every component is complete and usable with no motion 
 
 Rules: animate only `transform` and `opacity` (and SVG `stroke-dashoffset`); no scroll-jacking; no parallax on scroll;
 nothing flashes more than 3 times per second; the only auto-playing loop longer than 5 s (hero graph) has a visible
-pause control (WCAG 2.2.2) and the choice persists. CSS motion lives inside
+pause control (WCAG 2.2.2) and the choice persists. The chat avatar's automatic motion comes in three short bursts,
+each over within 5 s, and then stops; it moves again only while hovered or focused. CSS motion lives inside
 `@media (prefers-reduced-motion: no-preference)`; JS checks `matchMedia` and listens for changes.
 
 ---
@@ -375,6 +378,15 @@ pause control (WCAG 2.2.2) and the choice persists. CSS motion lives inside
   bezel. Never show or name the Logic Controls founder.
 - **OG images** (`design/assets/brand/og/`): 1200 × 630 PNG rendered from SVG templates, deep-ink theme for feed
   contrast, EN and AR, home and per case study (template + render script in `design/scripts/brand/`).
+- **Chat avatar** (`design/assets/avatar/mh-avatar.svg`): Mohamed as a flat vector illustration, traced from the
+  profile photo (rounder head, near-black buzz cut with the receding temples, light stubble, warm smile, navy blazer
+  over an open white shirt, sky-blue pocket square), raising his right hand to wave. It sits on a **deep ink disc**
+  (`#14212B`) with a soft teal inner glow and a `#2CC2B0` rim; the rim keeps the launcher's edge ≥ 3:1 on both themes
+  (8.3:1 on the dark page; the disc itself is 15.5:1 on paper). The disc is CSS-driven (`--mh-av-disc`, `--mh-av-glow`,
+  `--mh-av-glow-o`, `--mh-av-rim`), and `data-disc="teal"` is the brand-teal alternative (teal disc, `#0A766C` rim).
+  Layers carry classes for the motion: `.av-head` (nods), `.av-eyes` (blink; centre y 45.25), `.av-jaw` (talks; hinge
+  y 65.4), `.av-arm` > `.av-wave` (elbow) > `.av-hand` (wrist at 0,0). Skin `#E6B593`, stubble a cool near-black at
+  11–26 %, hair `#1D1A17`. ≈ 2.6 KB gzip.
 - No stock photography, no AI-generated imagery, no 3D blobs.
 
 ---
@@ -582,13 +594,21 @@ Full spec and every state in `prototypes/chat-widget.html` (+ `-ar`), styles `pr
 `prototypes/chat.js`; copy verbatim from `content/i18n` `chat.*` (launcher "Ask AI", title "Hatem's AI assistant",
 subtitle "From his CV, LinkedIn and GitHub", one line) and `content/chat/suggestions.json`. The nav button and hero
 CTAs keep the first-person "Ask my AI" (it is his site); the widget speaks about him in the third person. Summary:
-closed launcher pill bottom-end (circle on small screens), safe-area
-aware. The launcher never covers the page's own CTAs: it steps aside (fades, then leaves the tab order and the
-accessibility tree) while it would overlap any `[data-chat-avoid]` element (the hero ask bar, the case-study "Ask my AI
+closed launcher bottom-end, safe-area aware: **his avatar** (section 9) in a 64 px circle (56 px on phones), named
+"Ask Hatem's AI assistant", that waves, blinks and floats (section 7.2). A **comic greeting** pops out of it behind two
+little balls, like a comic-strip thought trail: a paper bubble with a 2.5 px ink outline, organic corners, a 2.2° tilt
+and a teal Ben-Day dot offset, the first line in teal ("Hi, I'm Hatem! 👋"), then "Ask my AI assistant about my
+work." (AR «أهلًا، أنا حاتم! 👋» / «اسأل مساعدي الذكي عن خبرتي.»), in the site's display / Arabic faces. It is the
+launcher's description; its × ("Hide message") hides it for the session, Escape hides it, it stays while hovered or
+focused, and it never shows once the chat has been opened. It stays paper in the dark theme (with a faint light
+keyline). Mirrored on `/ar/` (launcher bottom-start, the hand on the page side). The avatar arrives after load;
+until then the launcher is hidden, so nothing changes shape on screen. The launcher never covers the page's own CTAs:
+it steps aside (fades, then leaves the tab order and the accessibility tree) while it would overlap any
+`[data-chat-avoid]` element, and the greeting bubble alone steps aside while it would cover one (the hero ask bar, the case-study "Ask my AI
 about this project" buttons, the contact form's Send and copy buttons, the assistant section's CTA), and on phones it
 appears only once the hero's ask bar has scrolled past; never while the chat is open or the launcher has focus; the
 header's "Ask my AI" button always opens the chat. Panel 400 × 640 (desktop) growing from the launcher; header with
-avatar, title, one-line subtitle, new chat + close; the welcome message ends with the disclaimer ("AI answers can be
+the avatar (its face; the mouth talks while an answer streams in), title, one-line subtitle, new chat + close; the welcome message ends with the disclaimer ("AI answers can be
 wrong…") and the privacy note (messages go to Google's Gemini API), which together describe the dialog; welcome with 8 suggestions (4 on phones), a
 language switch chip and a job-description tip; long pasted job descriptions collapse with Show more; user bubbles (ink, end-aligned)
 and unboxed assistant answers with markdown-lite; thinking indicator using the graph motif; streaming with a teal
@@ -655,7 +675,8 @@ checks the PDFs' page text). Names never break inside ("Umm Al-Qura University",
   image; hero graph SVG is inline (≈ few KB) and its module loads on idle.
 - CLS 0: fixed aspect ratios for the graph, images (`width`/`height`), Turnstile slot (65 px), metric fallbacks.
 - JS ≤ 60 KB gzip excluding the chat widget: theme + nav (~1 KB inline), hero graph (≤ 15 KB budget), trace
-  enhancement (< 1 KB), copy buttons and ask-bar (< 2 KB). The chat widget loads on first intent.
+  enhancement (< 1 KB), copy buttons and ask-bar (< 2 KB). The chat widget loads on first intent; the launcher's avatar
+  (art + motion CSS + behaviour, ≈ 7 KB gzip, target ≤ 12 KB) after load, on idle.
 - CSS: one stylesheet, ≤ 25 KB gzip. Images: AVIF first, WebP fallback, `loading="lazy"` below the fold.
 
 ## 16. Voice (copy)
@@ -685,6 +706,7 @@ design slot would need one, remove the slot. Never feature the Logic Controls fo
 | `assets/hero-graph/` | hero graph source, build and dist |
 | `assets/brand/` | monogram, lockups, favicons, manifest, OG templates and PNGs |
 | `assets/photo/` | portrait crops and treatments |
+| `assets/avatar/` | the chat launcher's illustrated avatar (layered SVG) |
 | `assets/logos/` | tiles, mono marks, `logos.json` |
 | `assets/diagrams/` | diagram CSS, SVGs (wide / compact / thumb), `diagrams.json` |
 | `assets/icons/` | icon set + sprite |
