@@ -6,7 +6,10 @@
  * leaves the tab order and the accessibility tree) while
  *   - the contact section or the footer is on screen (they carry the same actions),
  *   - the menu, the chat or a dialog (an enlarged figure or screen) is open,
- *   - a text field has focus (the on-screen keyboard is up, and the dock would ride on it).
+ *   - a text field has focus (the on-screen keyboard is up, and the dock would ride on it),
+ *   - the chat launcher beside it steps aside: while the page scrolls down (back 1.2 s after it stops, or on a scroll
+ *     up), over one of the page's own buttons, over a form (chat.ts data-aside, site.ts data-dodge). The two are one
+ *     bar at the bottom of the screen, so the dock never sits there alone next to an empty corner.
  * It sits beside the chat launcher, never over it (CSS), and announces its changes with an "mh:dock" event so the
  * launcher's greeting can step aside from it (site.ts, [data-chat-hush]).
  */
@@ -21,6 +24,7 @@ if (dock) {
   let menu = false;
   let chat = false;
   let field = false;
+  let launcherAway = false;
 
   const isField = (el: Element | null): boolean =>
     !!el && el.matches("input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]), textarea, select, [contenteditable='true']");
@@ -29,7 +33,7 @@ if (dock) {
   let shown: boolean | undefined;
   const update = () => {
     dock.hidden = !phone.matches;
-    const show = phone.matches && pastStart && endsInView.size === 0 && !menu && !chat && !field && !dialogOpen();
+    const show = phone.matches && pastStart && endsInView.size === 0 && !menu && !chat && !field && !launcherAway && !dialogOpen();
     if (show === shown) return;
     shown = show;
     dock.toggleAttribute("data-away", !show);
@@ -79,5 +83,25 @@ if (dock) {
   // Dialogs (the enlarge views of figures and screens) report open and close.
   document.addEventListener("mh:dialog", update);
   phone.addEventListener("change", update);
+  // The launcher's host (the chat widget mounts it; usually before this module runs).
+  const follow = (host: Element) => {
+    const sync = () => {
+      launcherAway = host.matches("[data-dodge],[data-aside]");
+      update();
+    };
+    new MutationObserver(sync).observe(host, { attributes: true, attributeFilter: ["data-dodge", "data-aside"] });
+    sync();
+  };
+  const host = document.querySelector("[data-mh-chat]");
+  if (host) follow(host);
+  else {
+    const mo = new MutationObserver(() => {
+      const h = document.querySelector("[data-mh-chat]");
+      if (!h) return;
+      mo.disconnect();
+      follow(h);
+    });
+    mo.observe(document.body, { childList: true });
+  }
   update();
 }

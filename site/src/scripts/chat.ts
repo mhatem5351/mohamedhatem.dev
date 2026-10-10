@@ -91,9 +91,12 @@ function warmUp(w: ChatWindow): () => void {
  *     interactive-widget=resizes-content the launcher would ride up onto the field;
  *   - it is over a form (the contact form: its fields and its controls, not only Send);
  *   - on phones, the visitor scrolls down the page: nothing slides under it while they read on, and it comes back
- *     as soon as they stop (1.2 s), scroll up or reach the end of the page.
+ *     as soon as they stop (1.2 s), scroll up or reach the end of the page. Over a text to read ([data-chat-read]:
+ *     the CV sheet, whose lines run to the screen's edge on a phone) it doesn't come back on its own after a scroll
+ *     down: only on a scroll up, past that text or at the end of the page, so it never sits on the line ends being
+ *     read. It is there when the page opens, and a small scroll up always brings it back.
  * Never while the chat is open or the launcher has focus. The avatar (chat-avatar.ts) waits for it to come back
- * before it greets.
+ * before it greets. The phone action dock steps aside with it (dock.ts), so the two never look half there.
  */
 function manners(host: HTMLElement, button: HTMLElement): void {
   const sheet = new CSSStyleSheet();
@@ -107,6 +110,7 @@ function manners(host: HTMLElement, button: HTMLElement): void {
   const phone = matchMedia("(max-width: 39.99rem)");
   const FIELD = "input:not([type=checkbox],[type=radio],[type=button],[type=submit],[type=reset],[type=range],[type=color],[type=file],[type=image]),textarea,select,[contenteditable]:not([contenteditable=false])";
   const forms = [...document.querySelectorAll("form")];
+  const texts = [...document.querySelectorAll("[data-chat-read]")];
   const PAD = 12;
   let open = false;
   let reading = false;
@@ -114,16 +118,19 @@ function manners(host: HTMLElement, button: HTMLElement): void {
   let frame = 0;
   let pause = 0;
 
+  /** The launcher (measured even while it is aside) is over one of `els`, with `pad` px around it. */
+  const over = (els: Element[], pad: number) => {
+    const b = button.getBoundingClientRect();
+    return els.some((f) => {
+      const r = f.getBoundingClientRect();
+      return r.width > 0 && r.right + pad > b.left && r.left - pad < b.right && r.bottom + pad > b.top && r.top - pad < b.bottom;
+    });
+  };
   const update = () => {
     frame = 0;
     const a = document.activeElement;
     const typing = touch.matches && !!a && a !== host && a.matches(FIELD);
-    const b = button.getBoundingClientRect();
-    const overForm = forms.some((f) => {
-      const r = f.getBoundingClientRect();
-      return r.width > 0 && r.right + PAD > b.left && r.left - PAD < b.right && r.bottom + PAD > b.top && r.top - PAD < b.bottom;
-    });
-    host.toggleAttribute("data-aside", !open && !host.matches(":focus-within") && (typing || overForm || reading));
+    host.toggleAttribute("data-aside", !open && !host.matches(":focus-within") && (typing || over(forms, PAD) || reading));
   };
   const schedule = () => void (frame ||= requestAnimationFrame(update));
 
@@ -138,7 +145,8 @@ function manners(host: HTMLElement, button: HTMLElement): void {
         lastY = y;
       }
       clearTimeout(pause);
-      if (reading) pause = window.setTimeout(() => ((reading = false), schedule()), 1200);
+      // Still for 1.2 s: back, unless it would sit on the text being read (then a scroll up or the end brings it).
+      if (reading) pause = window.setTimeout(() => over(texts, 0) || ((reading = false), schedule()), 1200);
       schedule();
     },
     { passive: true },

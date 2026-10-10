@@ -168,7 +168,8 @@ export function mountAvatar({ host, root, button }: ChatLauncher, copy: AvatarCo
   button.setAttribute("aria-label", copy.name);
   button.setAttribute("aria-describedby", "mhb-t");
 
-  // ---- the two balls and the bubble; words are separate spans so they can appear one after the other
+  // ---- the two balls and the bubble. The greeting's first line ("Hi, I'm Hatem!") arrives with the bubble, so it never
+  // shows as an empty card; the wave and the rest follow word by word (separate spans) while the mouth talks.
   const box = el("div", "mhb");
   box.innerHTML = `<i class="ball b1"></i><i class="ball b2"></i><div class="bub"><div class="bbx"><p id="mhb-t"></p><button type="button" class="bx">${CLOSE}</button></div></div>`;
   const text = box.querySelector("p")!;
@@ -176,22 +177,18 @@ export function mountAvatar({ host, root, button }: ChatLauncher, copy: AvatarCo
   close.setAttribute("aria-label", copy.hide);
   const hi = el("b", "");
   let n = 0;
-  const words = (parent: HTMLElement, s: string) => {
-    for (const w of s.trim().split(/\s+/)) {
-      const span = el("span", "w");
-      span.textContent = w;
-      span.style.animationDelay = `${0.5 + n++ * 0.11}s`; // CSSOM, allowed by the CSP (no style attribute markup)
-      parent.append(span, " ");
-    }
+  /** A word that fades in after the bubble has landed (about 0.5 s), 0.11 s after the one before. */
+  const word = (parent: HTMLElement, w: string, cls = "w") => {
+    const span = el("span", cls);
+    span.textContent = w;
+    span.style.animationDelay = `${0.45 + n++ * 0.11}s`; // CSSOM, allowed by the CSP (no style attribute markup)
+    parent.append(span, " ");
+    return span;
   };
-  words(hi, copy.hi);
-  const wave = el("span", "w e");
-  wave.textContent = "👋";
-  wave.setAttribute("aria-hidden", "true");
-  wave.style.animationDelay = `${0.5 + n++ * 0.11}s`;
-  hi.append(wave);
+  hi.append(`${copy.hi.trim()} `);
+  word(hi, "👋", "w e").setAttribute("aria-hidden", "true");
   text.append(hi, " ");
-  words(text, copy.text);
+  for (const w of copy.text.trim().split(/\s+/)) word(text, w);
   const talkMs = 600 + n * 110;
   root.append(box);
 

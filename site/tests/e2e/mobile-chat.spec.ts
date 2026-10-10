@@ -237,6 +237,9 @@ test.describe("the chat sheet on phones", () => {
       await ready(page);
       await page.evaluate(() => scrollTo(0, 900));
       await page.waitForTimeout(200);
+      // Below 64rem the header slides away on the way down; a small scroll up brings its "Ask AI" back, as a visitor does.
+      await page.evaluate(() => scrollBy(0, -40));
+      await expect.poll(() => page.evaluate(() => Math.round(document.querySelector("[data-nav]")!.getBoundingClientRect().top))).toBe(0);
       const y = await page.evaluate(() => Math.round(scrollY));
       await openFromHeader(page);
       expect((await historyState(page)).ours).toBe(true);
@@ -520,6 +523,82 @@ test.describe("the chat sheet on phones", () => {
     expect(Date.now() - t0).toBeLessThan(5600);
   });
 
+  for (const [path, lang] of PAGES)
+    test(`CHAT-06 ${lang}: the greeting never shows as an empty card: its first line arrives with the bubble`, async ({ page }) => {
+      await page.goto(path);
+      await ready(page);
+      // Freeze the bubble's animations the moment it shows, then step through its entrance.
+      await page.evaluate(() => {
+        const h = document.querySelector("[data-mh-chat]")!;
+        const box = h.shadowRoot!.querySelector<HTMLElement>(".mhb")!;
+        new MutationObserver(() => {
+          if (box.dataset.s !== "on" || (window as unknown as { __frozen?: boolean }).__frozen) return;
+          for (const a of h.shadowRoot!.getAnimations()) a.pause();
+          (window as unknown as { __frozen?: boolean }).__frozen = true;
+        }).observe(box, { attributes: true });
+      });
+      await pastHero(page);
+      await expect.poll(() => page.evaluate(() => !!(window as unknown as { __frozen?: boolean }).__frozen), { timeout: 8000 }).toBe(true);
+      const frames = await page.evaluate(() => {
+        const r = document.querySelector("[data-mh-chat]")!.shadowRoot!;
+        const out: { t: number; text: string }[] = [];
+        for (let t = 0; t <= 1500; t += 25) {
+          for (const a of r.getAnimations()) a.currentTime = t;
+          if (+getComputedStyle(r.querySelector(".bub")!).opacity < 0.3) continue;
+          // What reads on the card: its text without the words still fading in.
+          const p = r.querySelector("#mhb-t")!.cloneNode(true) as HTMLElement;
+          const live = [...r.querySelectorAll("#mhb-t .w")].map((w) => +getComputedStyle(w).opacity >= 0.5);
+          p.querySelectorAll(".w").forEach((w, i) => !live[i] && w.remove());
+          out.push({ t, text: p.textContent!.replace(/\s+/g, " ").trim() });
+        }
+        return out;
+      });
+      expect(frames.length).toBeGreaterThan(10);
+      for (const f of frames) expect(f.text, `${f.t} ms`).toContain(copy[lang].chat.avatar.hi.trim());
+    });
+
+  test("Back with the enlarge view and the sheet together: each Back closes one layer, history doesn't grow, then the page is left", async ({ page }) => {
+    const path = "/work/sta-tourism-assistants/";
+    await page.goto("/privacy/");
+    await page.goto(path);
+    await ready(page);
+    const start = (await historyState(page)).length;
+    const zoom = page.locator("#architecture [data-zoom-figure]");
+    const dialog = page.locator("dialog[data-zoom-dialog]");
+    // An answer's link to a section of this page: the sheet closes (Back over its entry), then the page scrolls there.
+    await answerWith(page, "See [the architecture](#architecture) for the agent graph.");
+    await openFromHeader(page);
+    await inShadow(page, "textarea").fill("How is it built?");
+    await inShadow(page, "textarea").press("Enter");
+    await inShadow(page, ".md a[href$='#architecture']").click();
+    await expect(sheet(page)).toBeHidden();
+    await expect(page).toHaveURL(new RegExp(`${path}#architecture$`));
+    // The enlarge view from there: Back closes it, and only it.
+    await zoom.tap();
+    await expect(dialog).toBeVisible();
+    await page.goBack();
+    await expect(dialog).toBeHidden();
+    await expect(page).toHaveURL(new RegExp(`${path}#architecture$`));
+    // The chat asked for from inside the enlarge view ("/" reaches the page from the dialog): the view closes first (it
+    // sits in the top layer, over the chat), then the sheet opens with its own entry, which the next Back takes.
+    await zoom.tap();
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("/");
+    await expect(sheet(page)).toBeVisible();
+    await expect(dialog).toBeHidden();
+    await settled(page);
+    expect((await historyState(page)).ours).toBe(true);
+    await page.goBack();
+    await expect(sheet(page)).toBeHidden();
+    await expect(dialog).toBeHidden();
+    await expect(page).toHaveURL(new RegExp(`${path}#architecture$`));
+    expect(await page.evaluate(() => (document.querySelector("main") as HTMLElement).inert)).toBe(false);
+    expect((await historyState(page)).length, "history doesn't grow").toBeLessThanOrEqual(start + 1);
+    // No layer left to close: the next Back leaves the page.
+    await page.goBack();
+    await expect(page).toHaveURL(/\/privacy\/$/);
+  });
+
   test("CHAT-12: a finished answer that overflows keeps its question and first line in view", async ({ page }) => {
     await page.goto("/");
     await ready(page);
@@ -675,6 +754,36 @@ test.describe("desktop counterparts", () => {
     await page.keyboard.press("Escape");
     await expect(sheet(page)).toBeHidden();
     expect(await page.evaluate(() => document.activeElement?.id)).toBe("hero-ask");
+  });
+
+  test("tablet width: the floating panel starts under the header, and takes the header's band while it has slid away", async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 700 }); // a portrait tablet with its keyboard up: height is short
+    await page.goto("/");
+    await ready(page);
+    const geo = () =>
+      page.evaluate(() => {
+        const nav = document.querySelector("[data-nav]")!.getBoundingClientRect();
+        const pn = document.querySelector("[data-mh-chat]")!.shadowRoot!.querySelector(".pn")!.getBoundingClientRect();
+        return { away: document.documentElement.hasAttribute("data-nav-hidden"), header: Math.round(nav.height), top: Math.round(pn.top) };
+      });
+    await page.evaluate(() => scrollTo({ top: 120, behavior: "instant" }));
+    await openFromHeader(page);
+    let g = await geo();
+    expect(g.away).toBe(false);
+    expect(g.top).toBe(g.header + 12);
+    // The page scrolls on under the open panel: the header slides away, the panel grows into its band.
+    for (let i = 0; i < 8; i++) {
+      await page.evaluate(() => scrollBy(0, 40));
+      await page.waitForTimeout(30);
+    }
+    await expect.poll(async () => (await geo()).away).toBe(true);
+    await expect.poll(async () => (await geo()).top).toBe(12);
+    // Back up: the header returns, and the panel makes room for it at once.
+    await page.evaluate(() => scrollBy(0, -40));
+    await expect.poll(async () => (await geo()).away).toBe(false);
+    g = await geo();
+    expect(g.top).toBe(g.header + 12);
+    await expect(sheet(page)).toBeVisible();
   });
 
   test("CHAT-08 / A11Y-03: the desktop panel keeps its compact controls and its hover states", async ({ page }) => {

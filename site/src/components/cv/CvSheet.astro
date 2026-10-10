@@ -19,6 +19,9 @@
  * University") wraps only at its " · ", a " – " stays between its two words ("Learning – Specialty"), so no line
  * starts with a dash, and a line never breaks at a word's own hyphen ("Al-Qura", "real-estate"). All of these are
  * spans with white-space: nowrap; the text itself (and so the PDF's text layer) is unchanged.
+ *
+ * data-chat-read: on a phone the lines run to the screen's edge, so the chat launcher, once the visitor scrolls down,
+ * stays aside while it would sit on them, until a scroll up or the end of the page (src/scripts/chat.ts).
  */
 import { getImage } from "astro:assets";
 import type { ImageMetadata } from "astro";
@@ -169,7 +172,7 @@ const isolateLatin = (x: string): string =>
 /** The footer sentence with its domain as a link (the PDF keeps it clickable). */
 const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
 ---
-<article class="sheet" aria-labelledby="cv-name" lang={locale}>
+<article class="sheet" aria-labelledby="cv-name" lang={locale} data-chat-read>
   <header class="cv-head">
     <Monogram class="cv-head__mark" />
     <h1 class="cv-name" id="cv-name">{t(b.name)}</h1>

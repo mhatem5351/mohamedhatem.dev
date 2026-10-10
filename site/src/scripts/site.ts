@@ -78,8 +78,17 @@ let closeMenu: () => void = () => {};
 function openChat(req: OpenRequest = {}): void {
   closeMenu();
   const w = window as ChatWindow;
-  if (w.MHChat?.open) w.MHChat.open(req);
-  else (w.MHChatQueue ??= []).push(req);
+  const go = () => {
+    if (w.MHChat?.open) w.MHChat.open(req);
+    else (w.MHChatQueue ??= []).push(req);
+  };
+  // A modal dialog (a case study's enlarge view; "/" still reaches the page from inside it) sits in the top layer, over
+  // the chat, and keeps it inert: it closes first. zoom-dialog.ts reports the close ("mh:dialog") once it has taken
+  // back its history entry (touch screens), so the phone sheet's own entry comes after it and Back closes the sheet.
+  const dialog = document.querySelector<HTMLDialogElement>("dialog[open][data-zoom-dialog]");
+  if (!dialog) return go();
+  document.addEventListener("mh:dialog", go, { once: true });
+  dialog.close();
 }
 (window as Window & { mhOpenChat?: typeof openChat }).mhOpenChat = openChat;
 
@@ -159,11 +168,13 @@ const menuOpen = () => !!sheet && !sheet.hidden;
 if (nav) {
   // The chat panel's top edge sits below the sticky header (chat-widget README: --mh-chat-top). The widget measures it
   // too when it opens; this keeps the page-level value right from the start and whenever the header's height changes
-  // (zoom, text size, a wrapped nav). The header is sticky at the top, so its height is its bottom edge. --nav-real
-  // is the same height for the menu sheet and its scrim (the header grows with text zoom).
+  // (zoom, text size, a wrapped nav). The header is sticky at the top, so its height is its bottom edge, except while
+  // it has slid away (below): the panel then starts 12 px from the top instead of leaving the header's band empty
+  // (a tablet with its keyboard up has little height to spare). --nav-real is the header's height for the menu sheet
+  // and its scrim (the header grows with text zoom).
   const setChatTop = () => {
     const h = Math.round(nav.getBoundingClientRect().height);
-    root.style.setProperty("--mh-chat-top", `${h + 12}px`);
+    root.style.setProperty("--mh-chat-top", `${(root.hasAttribute("data-nav-hidden") ? 0 : h) + 12}px`);
     root.style.setProperty("--nav-real", `${h}px`);
   };
   setChatTop();
@@ -179,6 +190,10 @@ if (nav) {
   const setHidden = (hide: boolean) => {
     if (hide === root.hasAttribute("data-nav-hidden")) return;
     root.toggleAttribute("data-nav-hidden", hide);
+    setChatTop();
+    // The open panel measured the header when it opened (the widget's own --mh-chat-top on its host): from here the
+    // page's value, which follows the header, applies (the widget measures again on resize, to the same value).
+    document.querySelector<HTMLElement>("[data-mh-chat]")?.style.removeProperty("--mh-chat-top");
   };
   const onScroll = () => {
     const y = scrollY;

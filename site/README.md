@@ -146,7 +146,9 @@ The phone round (the audit's plan, `tests/e2e/mobile.spec.ts` locks each item in
 - **CV on a phone:** on touch screens the hero's CV button opens `/cv/` (with a mouse it downloads the PDF); `/cv/`'s
   PDF button opens the PDF in the viewer (no `download`; "Save the PDF" under the sheet downloads it), Share (Web
   Share: the PDF file where files can be shared, fetched ahead on idle; else the link) replaces Copy link where it
-  exists, and "Add to contacts" serves the vCard.
+  exists, and "Add to contacts" serves the vCard. The sheet's lines run to the screen's edge on a phone, so the chat
+  launcher, once the visitor scrolls down, stays aside while it would sit on them (`[data-chat-read]`, `chat.ts`): it
+  is there when the page opens, on any scroll up and at the end of the page.
 - **vCard** (`src/pages/mohamed-hatem.vcf.ts`, `src/lib/vcard.ts`): vCard 3.0 generated from `profile.ts` at build
   time (name, title, employer, emails, the WhatsApp number, site, LinkedIn, GitHub, Cairo, a 160 px photo), served
   `text/vcard` (`public/_headers`); linked from the CV toolbar and the contact section.
@@ -154,8 +156,10 @@ The phone round (the audit's plan, `tests/e2e/mobile.spec.ts` locks each item in
   screen below 40rem, beside the chat launcher (it ends `--dock-launcher` = 4rem before the inline-end edge: the 3.5rem
   launcher + 0.5rem). It appears once `[data-dock-after]` (the hero's, or the case study's, buttons) has scrolled away
   and steps away while `#contact` or the footer is on screen, while the menu, the chat (`mh:chat-state`) or a dialog
-  (`mh:dialog`) is open, and while a text field has focus. `[data-chat-hush]` makes the launcher's greeting step aside
-  from it without moving the launcher.
+  (`mh:dialog`) is open, while a text field has focus, and whenever the chat launcher beside it steps aside (the
+  host's `data-aside` / `data-dodge`: scrolling down, over one of the page's own buttons or a form), so the two move as
+  one bar and the dock never sits alone next to an empty corner. `[data-chat-hush]` makes the launcher's greeting step
+  aside from it without moving the launcher.
 - **Menu and header** (site.ts): the open menu is modal (`html.menu-open` locks scrolling, a scrim closes it, main,
   the footer, the skip link, the dock and the chat are inert; the launcher steps away). Below 64rem the header slides
   away on scroll down and back on scroll up (`html[data-nav-hidden]`; not while the menu is open or focus is in it, not
@@ -214,7 +218,8 @@ more, and phone or dialog captures sit beside the rest (`screenGroups()` in `lib
   view (`ZoomDialog.astro`, shared with the figures; Back closes it too), a modal `<dialog>`:
   on phones at the screen's natural size (a 2x capture at half its pixels) to pan and pinch-zoom; from 48rem as large
   as the window allows, never beyond the capture's pixels. Escape, the close button or the backdrop closes it, focus
-  returns to the screen, and the chat launcher steps away while it is open.
+  returns to the screen, and the chat launcher steps away while it is open. Asking for the chat while it is open (the
+  "/" key) closes it first, after its own history step, so the phone sheet's Back entry comes after it.
 - **Captions** come from `profile.ts` (EN/AR) and say what a screen shows, never how it was captured; the section
   says "Screens from the apps, with personal data removed" (`m.work.page.screensCredit`).
 
@@ -449,7 +454,8 @@ running server such as `wrangler dev`.
   - The hero input opens the widget with the question.
   - `data-open-chat` buttons, the `/` key, and the case-study "ask about this project" button all open it.
   - The no-JS fallback is present.
-  - The page sets `--mh-chat-top` from the sticky header's height (the panel's top edge sits below it).
+  - The page sets `--mh-chat-top` from the sticky header's height (the panel's top edge sits below it; while the
+    header has slid away below 64rem, 12 px from the top, so a tablet panel with the keyboard up keeps that band).
   - Neither the floating launcher nor its greeting ever covers a `[data-chat-avoid]` CTA: the contact form's Send
     button (1280, where the launcher steps aside, and 1440), a case study's "Ask my AI about this project" rail button
     (1440 × 900, EN and AR), the hero ask bar's send button on phones. On phones it waits until the hero's ask bar has
@@ -497,7 +503,11 @@ running server such as `wrangler dev`.
   return key, loads Turnstile only on use with its height reserved; the hero CV opens /cv/ with no download, /cv/ opens
   the PDF in the viewer, Share only where Web Share exists, the vCard is served as `text/vcard`; the dock (EN/AR ×
   dark/light) is one tap away from Work, Experience and Skills, 44 px, ≥ 8 px from the launcher, away at Contact and
-  with the menu, axe-clean; compact diagram labels ≥ 11 px; figure 1 cut and expandable; the Enlarge dialog (Back,
+  with the menu, axe-clean; the dock and the chat launcher as one bar (EN dark, AR light: they step aside and return
+  together on a scroll, never the dock alone; ≥ 8 px apart, mirrored; the greeting clear of the dock; away while the
+  chat or the menu is open; asking from the header with the menu open closes the menu first, and Back closes the
+  chat); on /cv/ and /ar/cv/ the launcher never sits on the sheet's line ends while it is read, and is there on load,
+  on a scroll up and at the end; compact diagram labels ≥ 11 px; figure 1 cut and expandable; the Enlarge dialog (Back,
   Escape and Close close it, focus returns, history doesn't grow, the charts rest, axe-clean); < 10 % of the text under
   13 px and none under 12 px; the shorter home page (swipe row, disclosures); trace durations; 200 % text and 214 px
   (175 % zoom) without sideways scrolling or cut-off content; no raster image more than twice what the screen needs;

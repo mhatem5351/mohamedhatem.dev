@@ -795,7 +795,10 @@ Copy link where it exists, and "Add to contacts" serves the vCard (`/mohamed-hat
   aware, mirrored in RTL), beside the chat launcher, never over it (it ends 0.5rem before the launcher's corner, and the
   launcher's greeting steps aside from it). It appears once the hero's (or the case study's) own buttons have scrolled
   away, and steps away while the contact section or the footer is on screen, while the menu, the chat or a dialog is
-  open, and while a text field has focus.
+  open, while a text field has focus, and whenever the launcher steps aside (scrolling down, over a CTA or a form):
+  the dock and the launcher are one bar, never the dock alone beside an empty corner.
+- **The CV on a phone:** its lines run to the screen's edge, so once the visitor scrolls down the chat launcher stays
+  aside while it would sit on them (`[data-chat-read]`); it is there when the page opens, on a scroll up and at the end.
 - **Touch targets:** 44 px on touch screens for every control outside running text (`.btn--sm`, nav and menu
   controls, footer rows in a two-column grid, breadcrumbs, case links, the CV toolbar, figure tools); pause buttons keep
   their 32 px look with a 44 px hit area.

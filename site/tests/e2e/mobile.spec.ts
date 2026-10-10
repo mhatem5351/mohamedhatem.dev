@@ -542,6 +542,54 @@ test.describe("phones: the CV (CV-01..03)", () => {
     await load(page, "/");
     await expect(page.locator('.channels a[href="/mohamed-hatem.vcf"]')).toHaveCount(1);
   });
+
+  for (const [locale, path] of [["en", "/cv/"], ["ar", "/ar/cv/"]] as const)
+    test(`${locale}: the chat launcher never sits on the CV's line ends while it is read; it is there on load, on a scroll up and at the end`, async ({ page, isMobile }) => {
+      test.skip(!isMobile, "phones");
+      await page.addInitScript(() => sessionStorage.setItem("mh-chat:greet", "x")); // the greeting has its own tests
+      await load(page, path, locale === "ar" ? "light" : "dark");
+      const host = page.locator("[data-mh-chat]");
+      await expect(host).toHaveAttribute("data-art", "on", { timeout: 10_000 });
+      const out = () => host.evaluate((h) => !h.matches("[data-dodge],[data-aside]"));
+      /** Lines of the sheet's text under the launcher (8 px around it), while it is out. */
+      const covered = () =>
+        page.evaluate(() => {
+          const h = document.querySelector<HTMLElement>("[data-mh-chat]")!;
+          if (h.matches("[data-dodge],[data-aside]")) return [];
+          const b = h.shadowRoot!.querySelector("button")!.getBoundingClientRect();
+          const out: string[] = [];
+          const walk = document.createTreeWalker(document.querySelector(".sheet")!, NodeFilter.SHOW_TEXT);
+          const range = document.createRange();
+          for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+            if (!n.textContent?.trim()) continue;
+            range.selectNodeContents(n);
+            for (const r of range.getClientRects())
+              if (r.width > 1 && r.right > b.left - 8 && r.left < b.right + 8 && r.bottom > b.top && r.top < b.bottom) out.push(n.textContent.trim().slice(0, 40));
+          }
+          return out;
+        });
+      const scroll = async (dy: number) => {
+        for (let i = 0; i < 10; i++) {
+          await page.evaluate((d) => scrollBy(0, d), dy / 10);
+          await page.waitForTimeout(16);
+        }
+      };
+      await expect.poll(out, "on screen when the page opens").toBe(true);
+      // Reading: scroll, rest (longer than the 1.2 s after which it comes back elsewhere), scroll on.
+      for (let i = 0; i < 6; i++) {
+        await scroll(300);
+        await page.waitForTimeout(1600);
+        expect(await covered(), `step ${i}`).toEqual([]);
+        expect(await out(), `step ${i}: aside over the sheet`).toBe(false);
+      }
+      // A small scroll up brings it back (its corner may cover a line then, as the header does while it is back).
+      await scroll(-80);
+      await expect.poll(out).toBe(true);
+      // The end of the page: back, below the sheet.
+      await page.evaluate(() => scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
+      await expect.poll(out).toBe(true);
+      expect(await covered()).toEqual([]);
+    });
 });
 
 test.describe("phones: the action dock (ERGO-01)", () => {
@@ -590,6 +638,69 @@ test.describe("phones: the action dock (ERGO-01)", () => {
         const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();
         expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(" | ")}`)).toEqual([]);
       });
+
+  /** The bottom bar as the visitor sees it: the dock and the chat launcher, each out or stepped aside. */
+  const bar = (page: Page) =>
+    page.evaluate(() => {
+      const d = document.querySelector<HTMLElement>("[data-dock]")!;
+      const h = document.querySelector<HTMLElement>("[data-mh-chat]")!;
+      return { dock: !d.hidden && !d.hasAttribute("data-away"), launcher: !h.matches("[data-dodge],[data-aside],[data-modal]") };
+    });
+  for (const [locale, path, theme] of [["en", "/", "dark"], ["ar", "/ar/", "light"]] as const)
+    test(`${locale} ${theme}: the dock and the chat launcher are one bar: they step aside and come back together, 8 px apart, clear of the greeting`, async ({ page, isMobile }) => {
+      test.skip(!isMobile, "phones");
+      await load(page, path, theme);
+      await expect(page.locator("[data-mh-chat]")).toHaveAttribute("data-art", "on", { timeout: 10_000 });
+      await scrollToEl(page, "#experience", "start");
+      await expect.poll(() => bar(page)).toEqual({ dock: true, launcher: true });
+      expect(await gap(page), "8 px apart (mirrored in Arabic)").toBeGreaterThanOrEqual(8);
+      // The greeting (its bubble and its two balls, measured whether it shows or not) sits above the bar, off the dock.
+      const clash = await page.evaluate(() => {
+        const d = document.querySelector("[data-dock]")!.getBoundingClientRect();
+        const parts = [...document.querySelector("[data-mh-chat]")!.shadowRoot!.querySelectorAll(".bub, .ball")];
+        return parts.filter((p) => {
+          const r = p.getBoundingClientRect();
+          return r.width > 0 && r.right > d.left && r.left < d.right && r.bottom > d.top && r.top < d.bottom;
+        }).length;
+      });
+      expect(clash, "the greeting never overlaps the dock").toBe(0);
+
+      // Scrolling down: both step aside, never the dock alone beside an empty corner; both back once it rests.
+      const samples: { dock: boolean; launcher: boolean }[] = [];
+      for (let i = 0; i < 12; i++) {
+        await page.evaluate(() => scrollBy(0, 40));
+        await page.waitForTimeout(32);
+        samples.push(await bar(page));
+      }
+      expect(samples.filter((s) => s.dock !== s.launcher), "the dock and the launcher out of step").toEqual([]);
+      expect(samples.at(-1)).toEqual({ dock: false, launcher: false });
+      await expect.poll(() => bar(page), { timeout: 3000 }).toEqual({ dock: true, launcher: true });
+
+      // The chat (header Ask AI, with the header back after a scroll up): the dock leaves while it is open, returns after.
+      await page.evaluate(() => scrollBy(0, -40));
+      await expect(page.locator("html")).not.toHaveAttribute("data-nav-hidden");
+      await page.waitForTimeout(300);
+      await tapAt(page, ".nav__ask");
+      await expect(page.locator("[data-mh-chat]").getByRole("dialog")).toBeVisible();
+      expect((await bar(page)).dock).toBe(false);
+      await page.goBack();
+      await expect(page.locator("[data-mh-chat]").getByRole("dialog")).toBeHidden();
+      await expect.poll(() => bar(page)).toEqual({ dock: true, launcher: true });
+
+      // The menu covers both; asking from the header with the menu open closes the menu first, and Back then closes the
+      // chat and leaves the page where it was.
+      await tapAt(page, "[data-menu-button]");
+      await expect.poll(() => bar(page)).toEqual({ dock: false, launcher: false });
+      await tapAt(page, ".nav__ask");
+      await expect(page.locator("[data-menu-sheet]")).toBeHidden();
+      await expect(page.locator("[data-mh-chat]").getByRole("dialog")).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.classList.contains("menu-open"))).toBe(false);
+      await page.goBack();
+      await expect(page.locator("[data-mh-chat]").getByRole("dialog")).toBeHidden();
+      await expect(page).toHaveURL(new RegExp(`${path}$`));
+      await expect.poll(() => bar(page)).toEqual({ dock: true, launcher: true });
+      expect(await page.evaluate(() => [...document.querySelectorAll<HTMLElement>("main, [data-dock], [data-mh-chat]")].some((e) => e.inert))).toBe(false);
+    });
 });
 
 test.describe("phones: case studies (CASE-01, CASE-02)", () => {

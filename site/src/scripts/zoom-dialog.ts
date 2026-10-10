@@ -82,20 +82,27 @@ if (dialog && typeof dialog.showModal === "function") {
   dialog.addEventListener("click", (e) => {
     if (e.target === dialog) dialog.close();
   });
+  const ours = () => !!(history.state as { mhZoom?: boolean } | null)?.mhZoom;
+  // Back: only when it took our entry (a step back to an entry another layer added on top of ours leaves it open).
   addEventListener("popstate", () => {
-    if (!dialog.open || !pushed) return;
+    if (!dialog.open || !pushed || ours()) return;
     pushed = false;
     dialog.close();
   });
+  // "mh:dialog" (closed) goes out once the history is settled: after the Back that takes our entry, if any. The chat
+  // opened over this dialog (site.ts) waits for it, so the phone sheet's own entry lands after that step.
   dialog.addEventListener("close", () => {
     root.removeAttribute("data-screen-open");
     body.replaceChildren();
-    announce(false);
-    if (pushed) {
-      pushed = false;
-      if ((history.state as { mhZoom?: boolean } | null)?.mhZoom) history.back();
-    }
     opener?.focus();
     opener = null;
+    if (pushed && ours()) {
+      pushed = false;
+      addEventListener("popstate", () => announce(false), { once: true });
+      history.back();
+    } else {
+      pushed = false;
+      announce(false);
+    }
   });
 }
