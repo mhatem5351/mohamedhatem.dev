@@ -89,6 +89,27 @@ describe("JSON-LD", () => {
     }
   });
 
+  it("names a client (about.sponsor) only where it approved being named: the Saudi Tourism Authority", () => {
+    for (const cs of profile.caseStudies)
+      for (const l of ["en", "ar"] as const) {
+        const article = caseStudyJsonLd(cs.slug, l).find((n) => (n as Node)["@type"] === "Article") as Node;
+        const about = article.about as Node;
+        expect(about["@type"]).toBe("CreativeWork");
+        if (cs.slug !== "sta-tourism-assistants") {
+          expect(about, cs.slug).not.toHaveProperty("sponsor");
+          continue;
+        }
+        expect(article.headline).toBe(cs.title[l]);
+        expect((about.producer as Node).name).toBe("Globant");
+        const sponsor = about.sponsor as Node;
+        expect(sponsor["@type"]).toBe("Organization");
+        expect(sponsor.name).toBe(l === "en" ? "Saudi Tourism Authority" : "الهيئة السعودية للسياحة");
+        expect(sponsor.alternateName).toContain("STA");
+        // Dated by the Globant role: no project dates are claimed.
+        expect(about).not.toHaveProperty("dateCreated");
+      }
+  });
+
   it("gives each case study a breadcrumb Home → Work → case", () => {
     const items = caseStudyJsonLd("arabsstock-assistant", "en");
     const crumbs = items.find((i) => (i as { "@type"?: string })["@type"] === "BreadcrumbList") as { itemListElement: unknown[] } | undefined;

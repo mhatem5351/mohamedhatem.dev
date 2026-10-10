@@ -3,9 +3,16 @@
  * The CV sheet (design/prototypes/cv.html .sheet), generated from content/profile.ts only:
  * header (monogram, name, title · employer · focus, contact row, stripe), summary (profile.cv.summary),
  * Experience (the main roles with their cvBullets; non-primary roles that ended before every main role are condensed
- * under "Earlier roles"), Selected projects (profile.cv.projects), and a sidebar with Education (status-aware: an
- * in-progress degree shows "(expected)" and is never described as held), Skills (profile.cv.skills),
- * Certifications (AWS featured), Awards, Languages and Open to. Two A4 pages in print, both languages.
+ * under "Earlier roles"; a role's client, where one is named, on its own line under the role head), and a sidebar with
+ * Education (status-aware: an in-progress degree shows "(expected)" and is never described as held), Skills
+ * (profile.cv.skills), Certifications (AWS featured), Awards, Languages and Open to (profile.cv.openTo). Two A4 pages
+ * in print, both languages.
+ *
+ * Logos: every role and every degree has its organisation's tile (design/assets/logos/tiles, the same tiles as the
+ * site's experience trace) in a narrow column at the start of its first line; the bullets' rings sit in that column
+ * too. Decorative (alt=""): the name is the text next to it. One 64 px JPEG per tile, about 4 mm on paper (about
+ * 400 dpi); the rounded corners come from CSS. Chromium embeds a JPEG in the PDF as it is (a PNG is re-compressed at
+ * about twice the size). Plain images in the grid, never positioned (positioned boxes go last in the PDF's text stream).
  *
  * Bold "receipts" (design/prototypes/cv.html): the summary's profile.cv.summaryStrong phrases and each bullet's
  * `strong` phrase. Names never break inside: an organisation list ("The British University in Dubai · Umm Al-Qura
@@ -13,11 +20,13 @@
  * starts with a dash, and a line never breaks at a word's own hyphen ("Al-Qura", "real-estate"). All of these are
  * spans with white-space: nowrap; the text itself (and so the PDF's text layer) is unchanged.
  */
+import { getImage } from "astro:assets";
+import type { ImageMetadata } from "astro";
 import Monogram from "~/components/brand/Monogram.astro";
 import Icon from "~/components/ui/Icon.astro";
 import Ltr from "~/components/ui/Ltr.astro";
 import { format, formatMonth, formatPeriod, localePath, messages, parseIso, type Locale } from "~/lib/i18n";
-import { absolute, contact, link, mailtoHref, profile, whatsappHref } from "~/lib/site";
+import { PATHS, absolute, contact, link, mailtoHref, profile, whatsappHref } from "~/lib/site";
 import type { Fact, Role } from "@content/profile.ts";
 import { emphasize } from "~/lib/emphasis";
 
@@ -41,6 +50,12 @@ const jobs = profile.experience.filter((r) => !isEarlier(r));
 const earlier = profile.experience.filter(isEarlier);
 const honorsOf = (r: Role) => profile.honors.filter((h) => r.honors.includes(h.id));
 const where = (r: Role) => `${m.experience.employmentType[r.employmentType]} · ${t(r.location)}`;
+/**
+ * A main role's featured case study, linked at the end of its where-line ("Case study ↗", in the CV's language): one
+ * click from the PDF to the work behind the bullets, without adding a line.
+ */
+const caseOf = (r: Role) => r.caseStudies.map((s) => profile.caseStudies.find((c) => c.slug === s)).find((c) => c?.featured && c.depth === "full");
+const caseHref = (slug: (typeof profile.caseStudies)[number]["slug"]) => absolute(localePath(PATHS.work(slug), locale));
 
 /** The site in the CV's own language (the Arabic CV links to /ar/, the English one to /). */
 const home = absolute(localePath("/", locale));
@@ -53,7 +68,16 @@ const contacts = [
 ];
 const place = `${t(b.location.city)}${sep}${t(b.location.country)} · ${m.experience.workMode.remote}`;
 
-const projects = profile.cv.projects.map((id) => profile.projects.find((p) => p.id === id)!);
+/** Logo tiles (src/assets/logos/tiles) as 64 px JPEGs on white: crisp at about 4 mm on paper, small in the PDF. */
+const tiles = import.meta.glob<{ default: ImageMetadata }>("../../assets/logos/tiles/*-160.webp", { eager: true });
+const LOGO_PX = 64;
+async function logoSrc(key: string | null): Promise<string | undefined> {
+  const meta = key ? tiles[`../../assets/logos/tiles/${key}-160.webp`]?.default : undefined;
+  return meta ? (await getImage({ src: meta, width: LOGO_PX, height: LOGO_PX, format: "jpeg", quality: 90, background: "#ffffff" })).src : undefined;
+}
+/** A role's tile: its logo file, or the design's tile named after the role (Tabaqat's symbol, the MTC monogram). */
+const roleLogo = new Map(await Promise.all(profile.experience.map(async (r) => [r.id, await logoSrc(r.logo.file ?? r.id)] as const)));
+const eduLogo = new Map(await Promise.all(profile.education.map(async (e) => [e.id, await logoSrc(e.logo.file)] as const)));
 const expectedSuffix = m.education.expected.replace("{year}", "").trim();
 const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, locale, "long") });
 /** A run of text: plain, bold, and/or kept on one line. */
@@ -138,6 +162,10 @@ const unit = (name: string): string => {
 const units = (names: readonly string[], joiner: string): string => names.map(unit).join(esc(joiner));
 const org = (r: Role): string => units(t(r.company).split(" · "), " · ");
 
+/** Text with its Latin runs isolated on the Arabic sheet ("… (GADD)" keeps its brackets around the abbreviation). */
+const isolateLatin = (x: string): string =>
+  locale === "ar" ? esc(x).replace(/[A-Za-z][A-Za-z0-9&.\-]*(?: [A-Za-z0-9&.\-]+)*/g, (run) => `<bdi>${run}</bdi>`) : esc(x);
+
 /** The footer sentence with its domain as a link (the PDF keeps it clickable). */
 const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
 ---
@@ -178,7 +206,8 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
         {
           jobs.map((r) => (
             <div class="job">
-              <div class="job__head">
+              <div class:list={["job__head", roleLogo.get(r.id) && "job__head--logo"]}>
+                {roleLogo.get(r.id) && <img class="cv-logo" src={roleLogo.get(r.id)} alt="" width="15" height="15" loading="eager" decoding="async" />}
                 <span class="job__name">
                   <span><span class="job__role">{t(r.title)}</span> <span class="job__org" set:html={org(r)} /></span>
                   {honorsOf(r).map((h) => (
@@ -189,8 +218,16 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
                   ))}
                 </span>
                 <span class="job__when">{formatPeriod(r.period, locale)}</span>
-                <span class="job__where">{where(r)}</span>
+                {/* The arrow is the vector icon (mirrored in Arabic): a text arrow would need a fallback font, which
+                    Chromium embeds in the PDF as Type 3 (unsearchable text; the build refuses it). */}
+                <span class="job__where">{where(r)}{caseOf(r) && <> · <a class="job__case" href={caseHref(caseOf(r)!.slug)} aria-label={`${m.experience.caseStudy}: ${t(caseOf(r)!.title)}`}>{m.experience.caseStudy}<Icon name="arrow-up-right" /></a></>}</span>
               </div>
+              {/* The client of the whole role (Role.client): its own line under the head, never on a bullet. */}
+              {r.client && (
+                <p class="job__client">
+                  <span class="job__client-k">{m.cv.client}:</span> <span class="job__client-name" set:html={isolateLatin(t(r.client.name))} />
+                </p>
+              )}
               <ul>
                 {r.cvBullets.map((f) => (
                   <li set:html={html(factRuns(f))} />
@@ -204,7 +241,8 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
           <div class="earlier">
             {
               earlier.map((r) => (
-                <div class="earlier__row">
+                <div class:list={["earlier__row", roleLogo.get(r.id) && "earlier__row--logo"]}>
+                  {roleLogo.get(r.id) && <img class="cv-logo" src={roleLogo.get(r.id)} alt="" width="15" height="15" loading="eager" decoding="async" />}
                   <span>
                     <b>{t(r.title)}</b> · <span class="earlier__org" set:html={org(r)} />
                   </span>
@@ -216,19 +254,6 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
           </div>
         </div>
       </section>
-
-      <section class="cv-sec" aria-labelledby="cv-projects">
-        <h2 class="cv-h" id="cv-projects">{m.cv.sections.projects}</h2>
-        <ul class="cv-projects">
-          {
-            projects.map((p) => (
-              <li>
-                <b><a href={p.repo} dir="ltr">{p.name}</a></b> · {t(p.description)}
-              </li>
-            ))
-          }
-        </ul>
-      </section>
     </div>
 
     {/* Education first: it stays whole (heading and every degree on one page), so it opens the sidebar on page 1 and
@@ -236,13 +261,14 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
     <aside class="cv-side" aria-label={`${m.cv.sections.education}, ${m.cv.sections.skills}, ${m.cv.sections.certifications}`}>
       <section class="cv-sec cv-sec--keep" aria-labelledby="cv-edu">
         <h2 class="cv-h" id="cv-edu">{m.cv.sections.education}</h2>
-        <ul class="side-list">
+        <ul class="side-list edu-list">
           {
             profile.education.map((e) => {
               const s = parseIso(e.period.start).y;
               const end = e.period.end ? parseIso(e.period.end).y : null;
               return (
-                <li>
+                <li class:list={[eduLogo.get(e.id) && "edu-list__logo"]}>
+                  {eduLogo.get(e.id) && <img class="cv-logo" src={eduLogo.get(e.id)} alt="" width="15" height="15" loading="eager" decoding="async" />}
                   <b>{t(e.degree)}</b>
                   <span>{t(e.institution)}</span>
                   <em>
@@ -320,10 +346,11 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
 
       <section class="cv-sec cv-sec--keep" aria-labelledby="cv-open">
         <h2 class="cv-h" id="cv-open">{m.cv.sections.openTo}</h2>
-        <ul class="side-list">
-          {/* One role, one arrangement per line: a scannable list with no separator left dangling at a line end. */}
-          <li><span set:html={b.openTo.roles.map((r) => esc(t(r))).join("<br />")} /></li>
-          <li><span set:html={b.openTo.arrangements.map((a) => esc(t(a.label))).join("<br />")} /></li>
+        {/* Two groups, one item per line (no separator left dangling at a line end): the roles, team lead first, then
+            the work arrangements. CV-only data (profile.cv.openTo); the site's About uses basics.openTo. */}
+        <ul class="side-list open-to">
+          <li class="open-to__roles">{profile.cv.openTo.roles.map((r) => <span>{t(r)}</span>)}</li>
+          <li class="open-to__ways">{profile.cv.openTo.arrangements.map((a) => <span>{t(a)}</span>)}</li>
         </ul>
       </section>
     </aside>

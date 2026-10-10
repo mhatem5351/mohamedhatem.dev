@@ -5,6 +5,7 @@
 import { profile } from "@content/profile.ts";
 import { en } from "@content/i18n/en.ts";
 import { expect, test } from "./fixtures";
+import { PAGES } from "./pages";
 
 test.describe("URLs @desktop-only", () => {
   const cases: [string, string][] = [
@@ -54,7 +55,9 @@ test.describe("URLs @desktop-only", () => {
   test("every sitemap URL has a <lastmod>", async ({ request }) => {
     const xml = await (await request.get("/sitemap-0.xml")).text();
     const urls = xml.match(/<url>[\s\S]*?<\/url>/g) ?? [];
-    expect(urls.length).toBe(20);
+    // Every page in both languages (home, each case study, CV, privacy), and nothing else.
+    expect(urls.length).toBe(PAGES.length);
+    expect(PAGES.length).toBe(2 * (3 + profile.caseStudies.length));
     for (const u of urls) expect(u).toMatch(/<lastmod>\d{4}-\d{2}-\d{2}/);
   });
 });

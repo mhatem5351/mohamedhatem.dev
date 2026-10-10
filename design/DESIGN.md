@@ -45,7 +45,7 @@ stripe), elevated to a product-grade site.
 | 0 | Hero | Who, what, why believe | H1 = person chip (name · role) + the content tagline "I build multi-agent LLM systems that hold up in **production**, in Arabic and English." (one heading, so search and heading navigation get his name and role; the chip and the tagline keep their looks) + the live graph | person chip with photo, the 7-year intro, the assistant is *right there* (ask bar), "Open to new roles · 14:32 in Cairo" | ask bar, "See the work", CV |
 | 0b | Metric strip + logo row | Scan in 5 seconds | five hard facts in display numerals (7 · 14 · 6 · Millions · A100) | every fact is in `content/profile.ts` metrics; employer marks | (scroll) |
 | 01 | What I build | Map his skills to a stack | "from the agent graph down to the GPU" | bento with a real diagram in the feature card | Front-end card → logic-controls.com case study |
-| 02 | Selected work | Depth | 4 case studies: the feature card, then three equal cards; the brief ones (details not public) in "More work" | architecture thumbnails, factual bullets, stack chips | case-study pages |
+| 02 | Selected work | Depth | the feature card (the Saudi Tourism Authority assistants at Globant), then three equal cards led by ArabsStock, then logic-controls.com as a wide card; the brief ones (details not public) in "More work" | architecture thumbnails, factual bullets, stack chips | case-study pages |
 | 03 | Experience (trace) | Chronology + overlap | the trace metaphor itself | dates, logos, bullets per role (bold receipts), study lanes | open a span |
 | 04 | About | Who he is, and availability | orbit portrait + bio | based in, time zone, languages, **open to** (roles, work arrangements) | (contact) |
 | 05 | Open source | Verifiable code | "small tools that test LLMs the way I test them at work" | GitHub repos with honest descriptions | GitHub |
@@ -391,6 +391,11 @@ each over within 5 s, and then stops; it moves again only while hovered or focus
   (`brand/brand.json`, built by `scripts/brand/brand-logos.mjs`). `mono/` are single-colour marks (case-study meta).
   Crests (Cairo, Tanta) use text monograms in mono contexts. **MTC uses a monogram** (the LinkedIn logo is a different
   college). Never a client's logo for unnamed clients: the Saudi government assistant's card shows Wakeb Data.
+- **Product screens** (the STA case study only, published with Globant's and the client's written approval): six cleaned
+  captures of Noura and the staff assistant (personal data, a persona photo and internal names removed in the pixels
+  before export) in `site/src/assets/screens/sta-tourism-assistants/`, shown as a gallery (section 12.11): desktop
+  screens in a quiet browser-like frame without an address bar, the phone screen in the showcase's phone bezel, a
+  cropped dialog on a stage. 1x captures are never upscaled. Captions say what a screen shows ("Screens from the apps").
 - **Showcase screenshots** (`design/assets/showcase/`): logic-controls.com desktop (EN, AR) and phone (EN, AR) and the
   HMI panel, AVIF + WebP at 390 / 780 / 960 / 1440 / 1920. Shown inside a neutral browser frame and a dark phone
   bezel. Never show or name the Logic Controls founder.
@@ -541,7 +546,8 @@ shared with other case studies reads "WAKEB DATA / DURING 2024–2026"), title (
 compounds such as "self-hosted" never break at their hyphen), summary, optional 3 factual bullets with ring markers,
 stack chips, "Read the case study →". The whole card is one link (stretched title anchor; inner interactive elements
 sit above it). Feature card: 5 / 7 split with the media on the end side. Grid: feature full width, then 3 equal
-columns (2 on tablets, 1 on phones); cards in a row share their tracks (CSS subgrid), so eyebrows, titles, summaries
+columns (2 on tablets, 1 on phones), and a card that would sit alone in the last row becomes a wide card (the feature
+layout with the media on the start side: logic-controls.com); cards in a row share their tracks (CSS subgrid), so eyebrows, titles, summaries
 and the "Read" cue line up. "More work" lists the brief case studies (implementation details not public) as three
 compact text cards with "Read the brief →"; they never get flagship weight.
 
@@ -553,6 +559,12 @@ key-facts strip (2–4 sourced facts with an optional small unit, four columns f
 below two), "decision" callouts, stack, "My role", next-case card, CTA band (ask the AI about this project with a
 prefilled question; contact). The numbered notes under a figure start with a bold term ("**Orchestrator.** LangGraph
 routes each request…", `term` in diagrams.json). Diagrams switch to the compact vertical variant < 640 px.
+**Screens** (where the client approved publishing them: the STA case study): a section between Approach and
+Architecture, grouped by product under mono eyebrows ("Noura, for visitors", "The staff assistant"). From 48rem a 2 : 1
+grid: the group's first desktop screen spans both columns when it has three or more; the phone screen and the dialog
+crop sit in the narrow column beside the stacked desktop screens. Captions in `sm` muted under each screen. Every
+screen enlarges in a modal dialog (natural size with panning on phones; as large as the window allows, never beyond
+the capture's pixels, from 48rem) with an "enlarge" cue on hover / focus (always on touch screens).
 **Brief case studies** (implementation details not public) are compact and say so: a "Brief" tag in the eyebrow, no
 key-facts strip, then "The problem", "What I did" and "Outcome" beside a note card (why the page is short, where the
 facts come from, ask my AI, all work); the component view only when it has more than three parts.
@@ -662,7 +674,14 @@ dashed coral node, the requested path in mono, and actions (Back to home, Select
 language); one file serves both locales (Arabic when the path starts with `/ar/`). `prototypes/cv.html`: an A4 paper view with a toolbar (print /
 download PDF, copy link, language) and print CSS that fits two pages (monogram header, contact row in mono, summary,
 experience with mono date column, sidebar of education, skills, certifications with AWS featured, awards, languages
-and open to); generated from the same content data as the site. The CV marks one bold receipt per bullet and three in
+and open to); generated from the same content data as the site. Round 4: each role (and each degree) carries its
+organisation's square tile (section 9 tiles, 4 mm, 22 % radius, hairline) in a narrow column at the start of its first
+line, centred on that line; the role's text and bullets start after it and the bullet rings sit centred under it (the
+grid mirrors it in Arabic; the tiles are plain images, never positioned). A role's named client is its own line under
+the head ("Client: …", muted label, semibold name). A main role with a featured case study ends its meta line with
+a small accent "Case study ↗" link to it (the vector arrow, mirrored in Arabic; no extra line). There is no projects
+section. Open to is two short groups, one
+item per line: the roles (semibold, team lead first), then the work arrangements. The CV marks one bold receipt per bullet and three in
 the summary ("7 years in data and AI", "14-agent assistant", "6-agent bilingual Arabic/English chatbot"); body 9.1 pt
 (Arabic 9.4), sidebar 8.3–8.8 pt, small print ≥ 7.8 pt; roles may continue on the next page after their head and first
 two bullets; a sidebar heading never ends a page, and Education, Awards, Languages and Open to stay whole (the build

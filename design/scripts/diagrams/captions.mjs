@@ -8,7 +8,7 @@
 // desc.long: full description of the system (used by the wide and compact SVGs).
 // desc.short: the simplified thumbnail.
 
-export const ORDER = ["arabsstock-assistant", "wakeb-multi-agent-chatbot", "llm-serving-a100", "hybrid-rag", "empoweromics-message-routing"];
+export const ORDER = ["arabsstock-assistant", "wakeb-multi-agent-chatbot", "llm-serving-a100", "hybrid-rag", "empoweromics-message-routing", "sta-tourism-assistants"];
 
 export const CAPTIONS = {
   "arabsstock-assistant": {
@@ -152,6 +152,36 @@ export const CAPTIONS = {
       { n: 2, term: { en: "Routing", ar: "التوجيه" }, en: "Each message is routed to Tech, HR, Accounting, Operations or Marketing.", ar: "تُوجَّه كل رسالة إلى التقنية أو الموارد البشرية أو المحاسبة أو العمليات أو التسويق." },
       { n: 3, term: { en: "ETL", ar: "ETL" }, en: "ETL from Cosmos DB (NoSQL) to Microsoft SQL Server, scheduled with Azure Functions triggers.", ar: "عمليات ETL من Cosmos DB (NoSQL) إلى Microsoft SQL Server، مجدولة بمشغّلات Azure Functions." },
       { n: 4, term: { en: "Data integration", ar: "تكامل البيانات" }, en: "Data from 3,008+ real-estate developers, each with its own schema, merged to scale the real-time e-map.", ar: "دمج بيانات أكثر من 3,008 مطوّرين عقاريين، لكلٍّ منهم مخطط بيانات خاص، لتوسيع الخريطة الإلكترونية الفورية." },
+    ],
+  },
+
+  "sta-tourism-assistants": {
+    context: { en: ["AI Team Lead", "Globant", "Apr 2026 – present"], ar: ["قائد فريق الذكاء الاصطناعي", "Globant", "أبريل 2026 – حتى الآن"] },
+    title: {
+      en: "Saudi Tourism Authority assistants: one agent for visitors and staff",
+      ar: "مساعدا الهيئة السعودية للسياحة: وكيل واحد للزوار والموظفين",
+    },
+    caption: {
+      en: "Two assistants for the Saudi Tourism Authority (STA) run on one LangGraph agent: Noura, for visitors in Arabic and English, and an internal staff assistant. An audience gate sets which tools and knowledge each session may use; typed tools return cards, every action waits for the user's approval, and answers show their sources.",
+      ar: "يعمل مساعدان للهيئة السعودية للسياحة (STA) على وكيل LangGraph واحد: «نورة» للزوار بالعربية والإنجليزية، و«مساعد الموظفين» الداخلي. تحدد بوابة الجمهور الأدوات والمعرفة المتاحة لكل جلسة، وتعيد الأدوات المحددة الأنواع نتائجها في بطاقات، وينتظر كل إجراء موافقة المستخدم، وتعرض الإجابات مصادرها.",
+    },
+    desc: {
+      long: {
+        en: "Architecture diagram. Two audiences come in: visitors, who use Noura in Arabic or English, and the authority's staff, who use the staff assistant. Both pass through an audience gate, which decides which tools and which knowledge the session may use, so a visitor never reaches staff tools or data. The gate hands the request to one LangGraph agent. The agent calls typed tools that return cards: 96 tools, 27 of them visible to visitors. Look-up tools (destinations and events, visas and weather) are called directly. Tools that change something (itineraries, and staff requests such as meeting rooms, leave and office coffee orders) are reached only through human approval: each action waits for the user's approval before it runs. The agent also calls an LLM and retrieval, which answers from the authority's own documents and tourism content and shows the sources. Evaluation checks answer quality and retrieval in the background.",
+        ar: "مخطط معماري. يدخل جمهوران: الزوار الذين يستخدمون «نورة» بالعربية أو الإنجليزية، وموظفو الهيئة الذين يستخدمون «مساعد الموظفين». يمر الطرفان عبر بوابة الجمهور التي تحدد الأدوات والمعرفة التي يحق للجلسة استخدامها، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم. تسلّم البوابة الطلب إلى وكيل LangGraph واحد. يستدعي الوكيل أدوات محددة الأنواع تعيد نتائجها في بطاقات: 96 أداة، منها 27 متاحة للزوار. تُستدعى أدوات الاستعلام (الوجهات والفعاليات، والتأشيرات والطقس) مباشرةً، أما الأدوات التي تغيّر شيئًا (خطط الرحلات، وطلبات الموظفين مثل حجز قاعات الاجتماعات والإجازات وطلبات قهوة المكتب) فلا يُوصَل إليها إلا عبر الموافقة البشرية: ينتظر كل إجراء موافقة المستخدم قبل تنفيذه. ويستدعي الوكيل أيضًا نموذجًا لغويًا كبيرًا (LLM) والاسترجاعَ الذي يجيب من وثائق الهيئة ومحتواها السياحي ويعرض المصادر. وتُقيَّم جودة الإجابات والاسترجاع في الخلفية.",
+      },
+      short: {
+        en: "Simplified diagram: visitors and staff pass an audience gate to one agent, which calls a set of 96 tools, 27 of them for visitors; actions wait for human approval.",
+        ar: "مخطط مبسّط: يمر الزوار والموظفون عبر بوابة الجمهور إلى وكيل واحد يستدعي 96 أداة، منها 27 للزوار، وتنتظر الإجراءات الموافقة البشرية.",
+      },
+    },
+    callouts: [
+      { n: 1, term: { en: "Audience gate", ar: "بوابة الجمهور" }, en: "Decides which tools and which knowledge each session may use, so a visitor never reaches staff tools or data.", ar: "تحدد الأدوات والمعرفة التي يحق لكل جلسة استخدامها، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم." },
+      { n: 2, term: { en: "One agent", ar: "وكيل واحد" }, en: "A single LangGraph agent serves both Noura and the staff assistant, and works by calling tools.", ar: "وكيل LangGraph واحد يخدم «نورة» و«مساعد الموظفين» معًا، ويعمل باستدعاء الأدوات." },
+      { n: 3, term: { en: "Typed tools", ar: "أدوات محددة الأنواع" }, en: "96 tools, 27 of them visible to visitors, each returning a card: destinations and events, visas, weather, itineraries, and staff requests such as meeting rooms, leave and office coffee orders.", ar: "96 أداة، منها 27 متاحة للزوار، تعيد كلٌّ منها بطاقة: الوجهات والفعاليات، والتأشيرات، والطقس، وخطط الرحلات، وطلبات الموظفين مثل حجز قاعات الاجتماعات والإجازات وطلبات قهوة المكتب." },
+      { n: 4, term: { en: "Human approval", ar: "الموافقة البشرية" }, en: "Every action that changes something, such as booking a room, placing an order, requesting leave or building an itinerary, waits for the user's approval before it runs.", ar: "كل إجراء يغيّر شيئًا، مثل حجز قاعة أو إرسال طلب أو طلب إجازة أو بناء خطة رحلة، ينتظر موافقة المستخدم قبل تنفيذه." },
+      { n: 5, term: { en: "Retrieval with sources", ar: "الاسترجاع مع المصادر" }, en: "Answers come from the authority's own documents and tourism content, and show their sources.", ar: "تأتي الإجابات من وثائق الهيئة ومحتواها السياحي، وتعرض مصادرها." },
+      { n: 6, term: { en: "Evaluation", ar: "التقييم" }, en: "Answer quality and retrieval are evaluated in the background.", ar: "تُقيَّم جودة الإجابات والاسترجاع في الخلفية." },
     ],
   },
 };

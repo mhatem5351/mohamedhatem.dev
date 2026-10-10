@@ -1,7 +1,8 @@
 /**
  * JSON-LD (schema.org) for every page, built only from content/profile.ts and content/i18n:
  *   home:        Person + WebSite + ProfilePage
- *   case study:  WebSite + Article (genre "case study", about the system) + BreadcrumbList
+ *   case study:  WebSite + Article (genre "case study", about the system: its producer, the employer or freelance
+ *                client, and its sponsor, the client where it approved being named) + BreadcrumbList
  *   cv:          Person + WebSite + ProfilePage + BreadcrumbList
  *   privacy:     WebSite + WebPage + BreadcrumbList
  *
@@ -20,7 +21,7 @@
  * name, so only `name` and `alternateName` are stated.
  * Pure functions (no I/O), so tests can call them directly.
  */
-import type { CaseStudy, Locale, Period } from "@content/profile.ts";
+import type { CaseStudy, Client, Locale, Period } from "@content/profile.ts";
 import { datedByRole } from "./case";
 import { PRIVACY_UPDATED, SITE_PUBLISHED, HOME_UPDATED } from "./dates";
 import { format, localePath, messages, parseIso } from "./i18n";
@@ -163,6 +164,12 @@ function caseOrganisation(cs: CaseStudy, locale: Locale): string {
   return cs.context[locale].split(/[،,]/)[0]!.trim();
 }
 
+/** A named client as an Organization: its name in the page's language, the other language and the abbreviation as alternates. */
+function clientOrganisation(client: Client, locale: Locale): Record<string, unknown> {
+  const other = locale === "en" ? "ar" : "en";
+  return { "@type": "Organization", name: client.name[locale], alternateName: [client.name[other], ...(client.abbreviation ? [client.abbreviation] : [])] };
+}
+
 export function caseStudyJsonLd(slug: string, locale: Locale): object[] {
   const cs = caseStudyBySlug(slug);
   if (!cs) return [];
@@ -194,6 +201,8 @@ export function caseStudyJsonLd(slug: string, locale: Locale): object[] {
       description: cs.problem[locale],
       creator: { "@id": PERSON_ID },
       producer: organization(caseOrganisation(cs, locale)),
+      // The client, only where it approved being named (the Saudi Tourism Authority); never the unnamed client.
+      ...(cs.client ? { sponsor: clientOrganisation(cs.client, locale) } : {}),
       // Dated only by its role: no project dates are claimed (audit FC-7).
       ...(datedByRole(cs) ? {} : { temporalCoverage: temporalCoverage(cs.period), dateCreated: String(parseIso(cs.period.start).y) }),
       ...(live ? { url: live.href } : {}),

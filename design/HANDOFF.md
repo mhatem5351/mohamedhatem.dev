@@ -324,7 +324,7 @@ animation"). Container queries scale labels up on phones (1.15× ≤ 540 px, 1.3
 
 ### 4.2 Architecture diagrams (`design/assets/diagrams/`)
 
-Five systems × three variants, generated from data by `design/scripts/diagrams/build.mjs` (`--strict` fails on layout
+Six systems × three variants, generated from data by `design/scripts/diagrams/build.mjs` (`--strict` fails on layout
 warnings, `--audit` prints the contrast table; specs in `specs.mjs`, captions in `captions.mjs`):
 
 | Diagram | Wide (≈1120 w) | Compact (352 w, phones) | Thumb (400 × 250, cards) |
@@ -334,6 +334,7 @@ warnings, `--audit` prints the contrast table; specs in `specs.mjs`, captions in
 | `llm-serving-a100` | 4.0 | 3.8 | 2.4 |
 | `hybrid-rag` | 3.2 | 3.2 | 2.3 |
 | `empoweromics-message-routing` | 4.2 | 4.1 | 2.6 |
+| `sta-tourism-assistants` (capability view) | 5.2 | 5.2 | 3.2 |
 
 `diagrams.json` carries, per diagram and in EN + AR: title, caption, role / company / dates, long and short text
 descriptions, numbered callouts, legend labels, file paths and element ids. `diagram.css` (9 KB) holds the grammar

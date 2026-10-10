@@ -1,10 +1,19 @@
 import { PDFDocument } from "pdf-lib";
 import { profile } from "@content/profile.ts";
-import { contains, pdfPagesText, sectionBreakProblems } from "../../scripts/lib/pdf-text.mjs";
+import { contains, letters, pdfPagesText, sectionBreakProblems } from "../../scripts/lib/pdf-text.mjs";
 import { expect, test } from "./fixtures";
 
 /** Pages in a Chromium PDF: one "/Type /Page" object per page (the page tree node is "/Type /Pages"). */
 const countPages = (pdf: Buffer) => (pdf.toString("latin1").match(/\/Type\s*\/Page(?!s)/g) ?? []).length;
+
+const PDFS = [
+  ["/cv/", "/cv/Mohamed-Hatem-CV.pdf", "en"],
+  ["/ar/cv/", "/cv/Mohamed-Hatem-CV-ar.pdf", "ar"],
+] as const;
+/** The Wakeb Data role's client line, exactly as approved. */
+const CLIENT_LINE = { en: "Client: Saudi Ministry of Defense (GADD)", ar: "العميل: وزارة الدفاع السعودية (GADD)" } as const;
+/** The section the CV no longer has. */
+const PROJECTS = /Selected projects|مشروعات مختارة/i;
 
 test.describe("CV", () => {
   for (const path of ["/cv/", "/ar/cv/"]) {
@@ -88,9 +97,107 @@ test.describe("CV", () => {
       for (const p of phrases) expect(bold.some((b) => b.includes(p)), p).toBe(true);
       for (const b of bold) expect(b, b).not.toMatch(/^\s|\s$/);
       const openTo = page.locator(".cv-side .cv-sec").last().locator(".side-list li").first();
-      expect((await openTo.innerText()).split("\n")[0]).toBe(profile.basics.openTo.roles[0]![locale]);
+      expect(profile.cv.openTo.roles[0]!.en).toMatch(/Team Lead/);
+      expect((await openTo.innerText()).split("\n")[0]).toBe(profile.cv.openTo.roles[0]![locale]);
     });
   }
+
+  for (const [path, , locale] of PDFS) {
+    test(`${path}: no "Selected projects" section`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page.locator(".sheet #cv-projects, .sheet .cv-projects")).toHaveCount(0);
+      for (const h of await page.locator(".sheet h2").allInnerTexts()) expect(h).not.toMatch(PROJECTS);
+      expect(await page.locator(".sheet").innerText()).not.toMatch(PROJECTS);
+    });
+
+    test(`${path}: every role has its logo tile, loaded and decorative, on the role's line (mirrored in Arabic)`, async ({ page }) => {
+      await page.goto(path, { waitUntil: "networkidle" });
+      await page.waitForFunction(() => [...document.querySelectorAll<HTMLImageElement>(".sheet img.cv-logo")].every((i) => i.complete));
+      // One row per role: the main roles (with Tabaqat, which overlaps them) and the condensed "Earlier roles".
+      const rows = page.locator(".sheet .job:not(.job--brief), .sheet .earlier__row");
+      await expect(rows).toHaveCount(profile.experience.length);
+      const logos = await rows.evaluateAll((els) =>
+        els.map((row) => {
+          const img = row.querySelector<HTMLImageElement>(":scope > .job__head > img.cv-logo, :scope > img.cv-logo");
+          const title = row.querySelector(".job__role, :scope > span > b")!.getClientRects()[0]!;
+          if (!img) return { title: row.textContent?.trim().slice(0, 40) };
+          const r = img.getBoundingClientRect();
+          const mid = r.top + r.height / 2;
+          return {
+            loaded: img.complete && img.naturalWidth > 0,
+            decorative: img.getAttribute("alt") === "" || img.getAttribute("aria-hidden") === "true",
+            square: Math.abs(r.width - r.height) < 0.5,
+            height: r.height,
+            onTitleLine: mid > title.top && mid < title.bottom,
+            side: r.right <= title.left ? "left" : r.left >= title.right ? "right" : "overlap",
+            position: getComputedStyle(img).position,
+          };
+        }),
+      );
+      for (const l of logos) {
+        expect(l, JSON.stringify(l)).toMatchObject({ loaded: true, decorative: true, square: true, onTitleLine: true, position: "static" });
+        // About 4 mm on paper: 14-18 px at print scale, a little more on screens (the sheet is zoomed there).
+        expect(l.height!).toBeGreaterThanOrEqual(13);
+        expect(l.height!).toBeLessThanOrEqual(24);
+        expect(l.side).toBe(locale === "ar" ? "right" : "left");
+      }
+    });
+
+    test(`${path}: the Wakeb Data role names its client on its own line, after the head and before the bullets`, async ({ page }) => {
+      await page.goto(path);
+      expect(profile.experience.filter((r) => r.client).map((r) => r.id)).toEqual(["wakeb"]);
+      const line = page.locator(".sheet .job__client");
+      await expect(line).toHaveCount(1);
+      expect((await line.innerText()).trim()).toBe(CLIENT_LINE[locale]);
+      expect(
+        await line.evaluate((el) => ({
+          org: el.closest(".job")?.querySelector(".job__org")?.textContent?.trim(),
+          inBullet: !!el.closest("li"),
+          afterHead: !!el.previousElementSibling?.classList.contains("job__head"),
+          beforeBullets: el.nextElementSibling?.tagName === "UL",
+        })),
+      ).toEqual({ org: "Wakeb Data", inBullet: false, afterHead: true, beforeBullets: true });
+      // No bullet carries the client: the government assistant's client stays unnamed.
+      for (const li of await page.locator(".sheet .job li").allInnerTexts()) expect(li).not.toMatch(/GADD|Ministry of Defense|وزارة الدفاع/);
+    });
+
+    test(`${path}: Open to lists the three roles in order, then the three work arrangements`, async ({ page }) => {
+      await page.goto(path);
+      expect(profile.cv.openTo.roles.map((r) => r.en)).toEqual(["AI/ML Team Lead", "Senior AI / LLM Engineer", "MLOps Engineer"]);
+      expect(profile.cv.openTo.arrangements.map((a) => a.en)).toEqual(["Remote", "Relocation to the Gulf or Europe", "Hybrid in Cairo"]);
+      const block = page.locator(".cv-side .cv-sec").last();
+      await expect(block).toHaveAttribute("aria-labelledby", "cv-open");
+      expect(await block.locator(".open-to__roles > span").allInnerTexts()).toEqual(profile.cv.openTo.roles.map((r) => r[locale]));
+      expect(await block.locator(".open-to__ways > span").allInnerTexts()).toEqual(profile.cv.openTo.arrangements.map((a) => a[locale]));
+      // One item per line.
+      const tops = await block.locator(".open-to span").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+      for (let i = 1; i < tops.length; i++) expect(tops[i]!).toBeGreaterThan(tops[i - 1]!);
+    });
+  }
+
+  test("both PDFs: exactly two pages, the Wakeb client line right after its role head, no Selected projects @desktop-only", async ({ page, request }) => {
+    for (const [, file, locale] of PDFS) {
+      const pages = await pdfPagesText(Buffer.from(await (await request.get(file)).body()));
+      expect(pages.length, file).toBe(2);
+      expect(pages.some((p) => contains(p, CLIENT_LINE[locale])), file).toBe(true);
+      for (const p of pages) for (const x of ["Selected projects", "مشروعات مختارة"]) expect(contains(p, x), `${file}: ${x}`).toBe(false);
+      // Every role head is intact in the text layer (a logo adds no text), and Open to has its roles.
+      for (const r of profile.experience) expect(pages.some((p) => contains(p, `${r.title[locale]} ${r.company[locale].split(" · ")[0]}`)), `${file}: ${r.id}`).toBe(true);
+      for (const r of profile.cv.openTo.roles) expect(pages.some((p) => contains(p, r[locale])), `${file}: ${r.en}`).toBe(true);
+      if (locale === "en") {
+        // Reading order (the English text layer reads in order): head, period and where line, client, first bullet.
+        await page.goto("/cv/");
+        const head = page.locator(".job", { has: page.locator(".job__client") }).locator(".job__head");
+        const headText = letters(`${await head.locator(".job__name").innerText()} ${await head.locator(".job__when").innerText()} ${await head.locator(".job__where").innerText()}`);
+        const text = letters(pages.join("\n"));
+        const wakeb = profile.experience.find((r) => r.id === "wakeb")!;
+        const at = text.indexOf(headText);
+        expect(at, "the Wakeb role head").toBeGreaterThanOrEqual(0);
+        expect(text.indexOf(letters(CLIENT_LINE.en)), "the client line follows the head").toBe(at + headText.length);
+        expect(text.indexOf(letters(wakeb.cvBullets[0].text.en)), "the first bullet follows the client line").toBe(at + headText.length + letters(CLIENT_LINE.en).length);
+      }
+    }
+  });
 
   test("names and dash pairs never break inside a line (Umm Al-Qura University, Learning – Specialty)", async ({ page }) => {
     for (const width of [1440, 390]) {
@@ -143,6 +250,26 @@ test.describe("CV", () => {
         expect(pages.some((p) => contains(p, "Umm Al-Qura University"))).toBe(true);
         expect(pages.some((p) => contains(p, "AWS Certified Machine Learning – Specialty"))).toBe(true);
       }
+    }
+  });
+
+  test("each main role links its featured case study in the CV's language (the STA case study on the Globant role), in the page and the PDFs", async ({ page, request }) => {
+    for (const [path, file, locale] of PDFS) {
+      await page.goto(path);
+      const prefix = locale === "ar" ? "/ar" : "";
+      const featured = profile.experience
+        .map((r) => ({ r, cs: profile.caseStudies.find((c) => r.caseStudies.includes(c.slug) && c.featured && c.depth === "full") }))
+        .filter((x) => x.cs);
+      expect(featured.find((x) => x.r.id === "globant")?.cs?.slug).toBe("sta-tourism-assistants");
+      const links = page.locator(".job__where a.job__case");
+      await expect(links).toHaveCount(featured.length);
+      for (const [i, { cs }] of featured.entries()) {
+        await expect(links.nth(i)).toHaveAttribute("href", `https://mohamedhatem.dev${prefix}/work/${cs!.slug}/`);
+        await expect(links.nth(i)).toHaveAccessibleName(new RegExp(cs!.title[locale].slice(0, 12).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+      }
+      // The PDF keeps the links (URI annotations) to every featured case study.
+      const pdf = Buffer.from(await (await request.get(file)).body()).toString("latin1");
+      for (const { cs } of featured) expect(pdf, `${file}: ${cs!.slug}`).toContain(`${prefix}/work/${cs!.slug}/`);
     }
   });
 

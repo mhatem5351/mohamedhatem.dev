@@ -123,11 +123,6 @@
   :lang(ar) .earlier__row em { font-family: var(--font-sans); font-size: 8.3pt; }
   .earlier__row p { grid-column: 1 / -1; margin: 0; }
 
-  /* projects (main column) */
-  .cv-projects { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.8mm; }
-  .cv-projects li { break-inside: avoid; color: var(--ink-2); }
-  .cv-projects b { font-family: var(--font-mono); font-size: 8.3pt; font-weight: 600; color: var(--ink); direction: ltr; unicode-bidi: isolate; }
-
   /* sidebar */
   .side-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.2mm; }
   .side-list li { break-inside: avoid; }
@@ -181,7 +176,64 @@
   .sheet:lang(ar) { font-size: 9.4pt; }
   .sheet a { color: inherit !important; text-decoration: none !important; }
   .cv-grid { grid-template-columns: minmax(0, 1fr) 54mm; }
-  .job__head, .job li, .skill-g, .earlier__row, .side-list li, .cv-projects li, .cv-sec--keep { break-inside: avoid; }
+  .job__head, .job li, .skill-g, .earlier__row, .side-list li, .cv-sec--keep { break-inside: avoid; }
   .job__head, .job li:first-child, .cv-h { break-after: avoid; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ---------- CV round 4: logos, client line, open-to (layout only) ---------- */
+@layer components {
+  /*
+   * The logo column: each role's (and each degree's) tile sits at the start of its first line, the role's text and
+   * its bullets start after it, and the bullets' rings are centred under the tile. Plain grid items, no `position`
+   * (positioned boxes are written to the PDF's text stream last). Mirrored by the grid in the Arabic sheet.
+   */
+  .sheet { --cv-logo: 4mm; --cv-logo-gap: 2mm; --cv-rail: calc(var(--cv-logo) + var(--cv-logo-gap)); --cv-logo-drop: .45mm; }
+  .sheet:lang(ar) { --cv-logo-drop: .75mm; }
+  .sheet .cv-logo { display: block; width: var(--cv-logo); height: var(--cv-logo); max-width: none; border-radius: 22%; box-shadow: 0 0 0 .2mm var(--line); align-self: start; margin-block-start: var(--cv-logo-drop); }
+
+  .sheet .job__head--logo { grid-template-columns: var(--cv-logo) minmax(0, 1fr) auto; column-gap: var(--cv-logo-gap); }
+  .job__head--logo > .cv-logo { grid-column: 1; grid-row: 1; }
+  .job__head--logo > .job__name { grid-column: 2; }
+  .job__head--logo > .job__when { grid-column: 3; margin-inline-start: 1mm; }
+  .job__head--logo > .job__where { grid-column: 2 / -1; }
+  .job li { padding-inline-start: var(--cv-rail); background-position: left calc(var(--cv-logo) / 2 - .65mm) top .58em; }
+  [dir="rtl"] .job li { background-position: right calc(var(--cv-logo) / 2 - .65mm) top .72em; }
+
+  .sheet .earlier__row--logo { grid-template-columns: var(--cv-logo) minmax(0, 1fr) auto; column-gap: var(--cv-logo-gap); }
+  .earlier__row--logo > .cv-logo { grid-column: 1; grid-row: 1; --cv-logo-drop: .25mm; }
+  :lang(ar) .earlier__row--logo > .cv-logo { --cv-logo-drop: .5mm; }
+  .earlier__row--logo > span { grid-column: 2; }
+  .earlier__row--logo > em { grid-column: 3; margin-inline-start: 1mm; }
+  .earlier__row--logo > p { grid-column: 2 / -1; }
+
+  /* A little more air between roles and bullets (the space "Selected projects" used to take). */
+  .job { padding-block-end: 3.2mm; }
+  .job:not(:last-child) { margin-block-end: 3.4mm; }
+  .job ul { margin-block-start: 1.8mm; }
+  .job li + li { margin-block-start: 1.4mm; }
+  .earlier { gap: 2.4mm; }
+
+  /* The role's client: one line under the head, aligned with the role's text, before the bullets. */
+  .job__client { margin: .8mm 0 0; padding-inline-start: var(--cv-rail); font-size: 8.4pt; line-height: 1.4; color: var(--ink-2); break-inside: avoid; break-after: avoid; }
+  .job__client-k { color: var(--muted); }
+  .job__client-name { font-weight: 600; color: var(--ink); }
+
+  /* Education: the institution's tile beside the degree. */
+  .edu-list__logo { display: grid; grid-template-columns: var(--cv-logo) minmax(0, 1fr); column-gap: var(--cv-logo-gap); align-items: start; }
+  .edu-list__logo > .cv-logo { grid-column: 1; grid-row: 1 / span 2; --cv-logo-drop: 0mm; }
+  .edu-list__logo > :not(.cv-logo) { grid-column: 2; }
+
+  /* A main role's featured case study, at the end of its where-line. */
+  .sheet .job__case { color: var(--accent); white-space: nowrap; text-decoration: underline; text-decoration-thickness: .1mm; text-underline-offset: .6mm; }
+  .sheet .job__case .icon { display: inline-block; width: 2.5mm; height: 2.5mm; margin-inline-start: .5mm; vertical-align: -.3mm; }
+
+  /* Open to: the roles (team lead first), then the work arrangements; one per line. */
+  .open-to { gap: 1.8mm; }
+  .open-to > li > span { display: block; line-height: 1.45; }
+  .open-to__roles > span { font-size: 8.8pt; font-weight: 600; color: var(--ink); }
+}
+@media print {
+  .job__client { break-inside: avoid; break-after: avoid; }
+}
+/* ---------- end CV round 4 ---------- */

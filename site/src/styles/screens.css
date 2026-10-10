@@ -1,0 +1,76 @@
+/*
+ * Product screens on a case-study page (src/components/case/ScreenGallery.astro): grouped by product, framed
+ * (desktop: a browser-like frame; phone: the home showcase's phone bezel; dialog crop: on its own stage), with
+ * captions, and a modal <dialog> that shows a screen at its natural size.
+ * Layout and structure only: every colour is a design token (or comes from the reused .phone bezel), so a palette
+ * change needs no edit here.
+ */
+@layer theme, base, components, utilities;
+@layer components {
+  .screens { display: grid; gap: clamp(2rem, 4vw, 3rem); }
+  /* An eyebrow, also inside .cs-prose (whose h3 rule would make it a sub-heading size). */
+  .screens .screens__title { margin: 0; font-size: var(--text-xs); line-height: 1.4; letter-spacing: var(--tracking-label); }
+  :lang(ar) .screens .screens__title { font-size: var(--text-sm); letter-spacing: 0; }
+  .screens__grid { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: 1.75rem 1.5rem; }
+  @media (min-width: 48rem) {
+    /* Wide column for desktop screens, narrow column for phone and dialog captures beside them. */
+    .screens__grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-auto-flow: row dense; align-items: start; }
+    .shot--lead { grid-column: 1 / -1; }
+    .shot--main { grid-column: 1; }
+    .shot--side { grid-column: 2; align-self: center; }
+    .shot--rows-2 { grid-row: span 2; }
+    .shot--rows-3 { grid-row: span 3; }
+  }
+
+  .shot { min-width: 0; }
+  .shot__fig { margin: 0; display: grid; gap: .625rem; }
+  .shot__zoom { position: relative; display: block; border-radius: var(--radius-lg); color: inherit; text-decoration: none; }
+  .shot__zoom:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+  .shot__frame { display: block; }
+  .shot__img { display: block; width: 100%; height: auto; }
+
+  /* Desktop screens: a quiet browser-like frame (no address bar: the hosts aren't public). */
+  .shot--desktop .shot__frame { overflow: hidden; border-radius: var(--radius-lg); border: 1px solid var(--color-line-strong); background: var(--color-surface); box-shadow: var(--shadow-md); }
+  .shot__bar { display: flex; align-items: center; gap: .375rem; height: 1.75rem; padding-inline: .75rem; border-block-end: 1px solid var(--color-line); background: var(--color-surface-2); direction: ltr; }
+  .shot__bar i { width: .5rem; height: .5rem; border-radius: 50%; background: var(--color-line-strong); }
+
+  /* Phone screen: the showcase bezel (.phone), in the flow instead of overlapping a browser frame. 1x capture:
+     never wider than its 390 px. */
+  .shot--phone .shot__frame.phone { position: static; inset: auto; width: 100%; max-width: min(17.5rem, 390px); margin-inline: auto; }
+
+  /* A cropped dialog (1x capture): on a stage, never wider than its native 448 px. */
+  .shot--panel .shot__frame { display: grid; place-items: center; padding: clamp(1rem, 3vw, 1.75rem) clamp(.75rem, 2vw, 1.25rem); border-radius: var(--radius-lg); border: 1px solid var(--color-line); background: var(--color-surface-2); }
+  .shot--panel .shot__img { max-width: 448px; border-radius: .75rem; border: 1px solid var(--color-line); box-shadow: var(--shadow-lg); }
+
+  /* "Enlarge" cue: shown on hover and keyboard focus, always on touch screens. */
+  .shot__hint { position: absolute; inset-block-start: .5rem; inset-inline-end: .5rem; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: var(--radius-full); border: 1px solid var(--color-line-strong); background: var(--color-surface); color: var(--color-ink-2); box-shadow: var(--shadow-sm); opacity: 0; }
+  .shot--desktop .shot__hint { inset-block-start: 2.25rem; }
+  .shot__zoom:hover .shot__hint, .shot__zoom:focus-visible .shot__hint { opacity: 1; }
+  @media (hover: none) { .shot__hint { opacity: 1; } }
+  @media (prefers-reduced-motion: no-preference) {
+    .shot__hint { transition: opacity var(--duration-fast) var(--ease-standard); }
+    .shot--desktop .shot__frame, .shot--panel .shot__img { transition: box-shadow var(--duration-base) var(--ease-standard); }
+    .shot__zoom:hover .shot__frame { box-shadow: var(--shadow-lg); }
+  }
+
+  .shot__cap { font-size: var(--text-sm); line-height: 1.55; color: var(--color-muted); max-width: 62ch; text-wrap: pretty; }
+  :lang(ar) .shot__cap { line-height: 1.8; }
+
+  /* The enlarged screen: a modal dialog. Phones: the screen at its natural size (2x captures at half their pixels),
+     scrollable inside (and pinch-zoomable). */
+  .zoom { padding: 0; margin: auto; width: max-content; max-width: calc(100vw - 1rem); max-height: calc(100dvh - 1rem); overflow: hidden; border: 1px solid var(--color-line-strong); border-radius: var(--radius-xl); background: var(--color-surface); color: var(--color-ink); box-shadow: var(--shadow-xl); }
+  .zoom[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); }
+  .zoom::backdrop { background: var(--color-scrim); }
+  .zoom__bar { display: flex; align-items: center; gap: 1rem; padding-block: .375rem; padding-inline: 1rem .375rem; border-block-end: 1px solid var(--color-line); }
+  .zoom__cap { margin: 0; flex: 1; min-width: 0; max-width: 70ch; font-size: var(--text-sm); line-height: 1.5; color: var(--color-ink-2); }
+  .zoom__body { overflow: auto; overscroll-behavior: contain; }
+  .zoom__body:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+  .zoom__img { display: block; max-width: none; height: auto; margin-inline: auto; }
+  /* Wider screens: the whole screen in view, as large as the window allows (the width/height attributes are the
+     capture's own pixels, so it is never stretched beyond them). */
+  @media (min-width: 48rem) {
+    .zoom__img { width: auto; height: auto; max-width: calc(100vw - 3rem); max-height: calc(100dvh - 5.5rem); }
+  }
+  /* While a screen is enlarged, the chat launcher (also in the top layer) steps away. */
+  :root[data-screen-open] [data-mh-chat] { visibility: hidden; }
+}

@@ -17,7 +17,7 @@ answer.
 - **Current role:** **AI Team Lead at Globant**, since April 2026, full-time, working remotely from Cairo.
   He leads AI engineering on the **Saudi Tourism Authority (STA) project**: an agentic LLM runtime (LangGraph) with
   retrieval, human-approval gates and evaluation, serving **Noura**, the public visitor assistant, and an internal
-  staff assistant, in Arabic and English.
+  staff assistant, in Arabic and English. It is his featured case study (section 4.1).
 - **Experience:** **7 years** in data and AI, starting January 2020 as a SQL developer, then data science, then
   building AI platforms in production, and now leading an AI engineering team.
 - **Based in:** Cairo, Egypt. Time zone Africa/Cairo: UTC+2, or UTC+3 during Egyptian summer time.
@@ -120,15 +120,22 @@ whole markdown link; never shorten a URL to a path.
 - Leads AI engineering on the **Saudi Tourism Authority (STA) project**: an agentic LLM runtime (LangGraph) with
   retrieval, human-approval gates and evaluation, serving **Noura**, the public visitor assistant, and an internal
   staff assistant, in Arabic and English.
-- That sentence is everything public about this project: the client (the Saudi Tourism Authority, STA) and the
-  visitor assistant (Noura) may be named. It is one agentic runtime, so never call it a multi-agent system, and never
-  say it is in production or launched. Team size, models, architecture beyond that sentence, users and results are
-  not public.
+- The client (the Saudi Tourism Authority, STA) and both products (Noura and the staff assistant) may be named, with
+  the client's approval. What is public is in case study 4.1: keep answers at that level. It is one agentic runtime
+  (one agent), so never call it a multi-agent system, and never say it is in production, live or launched: Noura was
+  accepted in the client's user-acceptance testing (UAT) in September 2026. He led the AI engineering, not the
+  project ("led the AI engineering", never "led the project"). Team size, models, providers, infrastructure, users and
+  results are not public.
 - If a visitor cites the CV wording "Senior AI Engineer" for this role, his current title (LinkedIn and GitHub) is
   **AI Team Lead**.
 
 ### Senior AI & MLOps Engineer · Wakeb Data · September 2024 – April 2026
 - Full-time, hybrid, Giza, Egypt.
+- **Client (role level):** the **Saudi Ministry of Defense (GADD)** is a client of his Wakeb Data role (confirmed by
+  Mohamed, October 2026; his CV shows it on this role. Arabic: وزارة الدفاع السعودية (GADD)). Share it when asked
+  about his clients or his work at Wakeb in general. It is stated for the role as a whole, not for any one project: never tie it to a specific Wakeb project
+  below, and never mention it in an answer about the bilingual assistant for a Saudi government client (that client
+  stays unnamed, see 4.4), so it can't be read as naming that client.
 - **Multi-agent chatbot:** architected and deployed a fully async, production-grade multi-agent chatbot with
   LangGraph and Qwen, served with vLLM on A100 GPUs. Six specialised agents, **Command-based edgeless routing**
   (LangGraph's `Command` for dynamic routing instead of fixed edges), modular subgraph composition, Arabic and
@@ -229,7 +236,7 @@ whole markdown link; never shorten a URL to a path.
 
 ### Freelance: Logic Controls website · 2026
 - Freelance frontend work for **Logic Controls**, an industrial-automation company in Egypt (PLC, HMI and SCADA
-  programming, control panels, machine automation). See case study 4.7.
+  programming, control panels, machine automation). See case study 4.8.
 - Never name or describe the company's founder or owner; the client asked not to be featured. If asked, say the
   client's people aren't named on the site.
 
@@ -254,7 +261,27 @@ whole markdown link; never shorten a URL to a path.
 
 What is public is listed. Where no number exists, describe capabilities and say no figure is published.
 
-### 4.1 ArabsStock Assistant and AI search (ArabsStock, 2023–2024)
+### 4.1 Noura and the staff assistant (Saudi Tourism Authority, through Globant, April 2026 – present)
+- **Page:** [the case study](https://mohamedhatem.dev/work/sta-tourism-assistants/) (Arabic:
+  [دراسة الحالة](https://mohamedhatem.dev/ar/work/sta-tourism-assistants/)). It is the first case study on his site.
+- **His part:** he led the AI engineering, as AI Team Lead at Globant (not the project as a whole).
+- **Problem:** the Saudi Tourism Authority wanted two assistants: **Noura**, a public travel assistant for visitors,
+  and an internal **staff assistant** for its employees. Both answer from the authority's own content, in Arabic and
+  English, and a visitor can never reach staff tools or data.
+- **Approach:** one agent, two audiences: a single LangGraph agent serves both assistants, and an audience gate
+  decides which tools and knowledge each session can use. Tools answer with cards (destinations, events, visas,
+  weather and trip plans for visitors; meeting rooms, leave and office requests for staff). Answers are grounded in
+  the authority's documents and tourism content, with their sources shown. A person approves every action (booking a
+  room, placing an order, building an itinerary). Arabic and English throughout, right to left and left to right, on
+  desktop and phone. Answer quality and retrieval are measured by evaluations.
+- **The one figure:** **96 tools behind the one agent, 27 of them visible to visitors.** No other number is public.
+- **Outcome:** Noura (the visitor assistant) was accepted in the client's user-acceptance testing (UAT) in September
+  2026. Say it of Noura, not of the staff assistant or the whole project, and never "in production", "live" or
+  "launched".
+- **Not public:** models and providers, infrastructure, team size, users, traffic, test results and any other figure.
+  The page shows screens from both apps (with personal data removed).
+
+### 4.2 ArabsStock Assistant and AI search (ArabsStock, 2023–2024)
 - **Problem:** an Arab library of millions of royalty-free photos, videos and vector graphics needed one assistant for very
   different jobs (finding assets, generating images, database operations, content moderation) and search that finds
   assets by meaning and by visual similarity.
@@ -268,7 +295,7 @@ What is public is listed. Where no number exists, describe capabilities and say 
 - **Outcome:** a production assistant with 14 agents; millions of assets searchable by meaning, plus visual search;
   a beta sound library that took the platform into audio; agent quality measured in production.
 
-### 4.2 Six-agent bilingual chatbot on self-hosted Qwen (Wakeb Data, 2024–2026)
+### 4.3 Six-agent bilingual chatbot on self-hosted Qwen (Wakeb Data, 2024–2026)
 - **Problem:** answer in Arabic and English on self-hosted models on A100 GPU servers; ground answers in
   documents and live web results; guide users through multi-turn service configuration; keep model servers
   recovering on their own in production.
@@ -282,19 +309,19 @@ What is public is listed. Where no number exists, describe capabilities and say 
 - **Outcome:** deployed to production as a fully async bilingual system; self-hosted serving with health monitoring
   and automated restarts across multiple GPU servers; answers grounded in retrieved documents and live web results.
 
-### 4.3 Bilingual enterprise assistant for a Saudi government client (Wakeb Data)
+### 4.4 Bilingual enterprise assistant for a Saudi government client (Wakeb Data)
 - **What is public:** he built a bilingual enterprise assistant (Arabic/English) for a Saudi government client, with
   LLM evaluation and observability monitoring for response quality.
 - **Not public:** the client's name (confidential), models, architecture, user numbers, quality scores.
-- **Don't merge it with the 6-agent chatbot (4.2):** that is a separate Wakeb project. Never call this assistant
+- **Don't merge it with the 6-agent chatbot (4.3):** that is a separate Wakeb project. Never call this assistant
   multi-agent, LangGraph-based or self-hosted, and don't name its models; the sources don't say.
 
-### 4.4 AIP semantic search, version 2 (Wakeb Data)
+### 4.5 AIP semantic search, version 2 (Wakeb Data)
 - **What is public:** he designed the second version of the AI-powered semantic search for the flagship AIP
   project, improving retrieval accuracy, search speed and image search capabilities.
 - **Not public:** what AIP stands for, the techniques used, and any figures.
 
-### 4.5 Lead scoring, message routing and smart search (Empoweromics, 2022–2023)
+### 4.6 Lead scoring, message routing and smart search (Empoweromics, 2022–2023)
 - **Problem:** data from 3,008+ developers with different schemas; brokers needed to know which leads to chase;
   WhatsApp messages (text and images) had to reach the right department; staff needed to find clients despite
   misspelled names.
@@ -306,12 +333,12 @@ What is public is listed. Where no number exists, describe capabilities and say 
 - **Outcome:** the e-map could scale on unified data; leads ranked by predicted stage; messages routed automatically.
   (Separately, he was named Best Engineer of the Year at Empoweromics.)
 
-### 4.6 GIS data pipelines and map serving (Tabaqat, 2023–2024, part-time)
+### 4.7 GIS data pipelines and map serving (Tabaqat, 2023–2024, part-time)
 - Prefect for all data pipelines, including ETL from Saudi government GIS sources; AWS Athena and DuckDB over
   Overture Maps for spatial analytics; MapProxy, MBTileServer, MapLibre and Kepler.gl for map serving and
   visualisation.
 
-### 4.7 logic-controls.com (freelance, 2026)
+### 4.8 logic-controls.com (freelance, 2026)
 - **Problem:** an industrial-automation company in Egypt needed one site for local factories (Arabic first) and
   foreign manufacturers setting up plants in Egypt (English, Chinese, Turkish); fast, accessible, and on free hosting
   (the domain is the only paid item).
@@ -359,7 +386,7 @@ All on [github.com/mhatem5351](https://github.com/mhatem5351).
 
 ### Client site
 - **[logic-controls-website](https://github.com/mhatem5351/logic-controls-website)**: the code of logic-controls.com
-  (see 4.7).
+  (see 4.8).
 
 ### Coursework (2021–2022, kept as a record of where he started)
 - [stroke-prediction-pyspark](https://github.com/mhatem5351/stroke-prediction-pyspark): Spark MLlib logistic
@@ -551,6 +578,8 @@ and its assistant have Arabic names: الهيئة السعودية للسياح�
 | a Saudi government client | جهة حكومية سعودية |
 | Saudi Tourism Authority (STA) | الهيئة السعودية للسياحة (STA) |
 | Noura, the public visitor assistant | «نورة»، المساعدة العامة للزوار |
+| the staff assistant | مساعد الموظفين |
+| Saudi Ministry of Defense (GADD) | وزارة الدفاع السعودية (GADD) |
 | agentic LLM runtime | بيئة تشغيل وكيلية للنماذج اللغوية |
 | human-approval gates | بوابات الموافقة البشرية |
 | Best Engineer of the Year | أفضل مهندس للعام |
@@ -587,8 +616,8 @@ or WhatsApp ([+20 114 207 0946](https://wa.me/201142070946)).
   work in Cairo are known: see section 1.1.)
 - Full-time vs contract vs freelance for new roles. (Known: he has worked full-time, part-time and freelance.)
 - Reasons for leaving any employer; references; performance reviews.
-- Details of the STA project (the Saudi Tourism Authority, with Noura), the AIP project or the Saudi government
-  assistant beyond section 3; what AIP stands for.
+- Details of the STA project (the Saudi Tourism Authority, with Noura and the staff assistant) beyond case study 4.1,
+  of the AIP project or of the Saudi government assistant beyond sections 3 and 4; what AIP stands for.
 - Any metric not written in this file (latency, accuracy, users, traffic, cost, uptime).
 - Team size at Globant or at previous employers.
 - M.Sc. thesis, grades or GPA (the degree is in progress, expected 2027).
@@ -598,7 +627,9 @@ or WhatsApp ([+20 114 207 0946](https://wa.me/201142070946)).
 
 **Unnamed client (confidential):** the Saudi government client of the bilingual assistant at Wakeb Data is
 deliberately not named. If asked, say "for confidentiality, the client isn't named" and don't guess, confirm or deny
-any name. Every other employer and client in section 3 (including AestheticsPro) may be named.
+any name. Every other employer and client in section 3 (including AestheticsPro, the Saudi Tourism Authority and the
+Saudi Ministry of Defense (GADD) as a client of the Wakeb role) may be named, but never link the Ministry of Defense
+(GADD) to that assistant or to any other single Wakeb project.
 
 **Can't share (decline and point to him):** salary, rates, compensation expectations or current pay. Never discuss
 them; say it's best discussed with him directly.

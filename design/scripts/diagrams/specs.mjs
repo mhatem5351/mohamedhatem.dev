@@ -472,3 +472,108 @@ SPECS["empoweromics-message-routing"].thumb = {
   ],
   main: [["a", "b"], ["c", "d"], ["r0", "r1", "r2", "r3", "r4"]],
 };
+
+// ============================================================================ sta-tourism-assistants
+// One LangGraph agent behind an audience gate serves both assistants (Noura for visitors, the staff assistant).
+// Look-up tools are called directly; tools that change something are reached only through human approval.
+// The main path is a visitor's request, so it never lands on a staff tool.
+{
+  const look = [["r0", "Destinations & events", "location"], ["r1", "Visas & weather", "globe"]];
+  const act = [["r2", "Itineraries", "map"], ["r3", "Staff requests", "calendar"]];
+  const tab = "96 tools · 27 for visitors";
+  SPECS["sta-tourism-assistants"] = {
+    wide: {
+      w: 1120, h: 464,
+      groups: [{ id: "tools", x: 856, y: 88, w: 232, h: 248, tab, co: 3 }],
+      nodes: [
+        { id: "vis", kind: "ext", x: 32, y: 96, w: 216, t: "Visitors", s: "Noura · Arabic · English", g: "bilingual" },
+        { id: "staff", kind: "ext", x: 32, y: 176, w: 216, t: "Staff", s: "staff assistant", g: "briefcase" },
+        { id: "gate", kind: "guard", x: 280, y: 136, w: 176, t: "Audience gate", s: "tools · knowledge", co: 1 },
+        { id: "eval", kind: "eval", x: 488, y: 40, w: 192, t: "Evaluation", s: "answers · retrieval", co: 6 },
+        { id: "agent", kind: "orch", x: 496, y: 136, w: 176, t: "One agent", s: "LangGraph", co: 2 },
+        { id: "appr", kind: "guard", x: 632, y: 248, w: 176, t: "Human approval", s: "before any action", g: "check", co: 4 },
+        ...look.map(([id, t, g], i) => ({ id, kind: "infra", x: 872, y: 120 + i * 48, w: 200, h: 40, t, g })),
+        ...act.map(([id, t, g], i) => ({ id, kind: "infra", x: 872, y: 232 + i * 48, w: 200, h: 40, t, g })),
+        { id: "llm", kind: "model", x: 472, y: 376, w: 128, t: "LLM" },
+        { id: "ret", kind: "data", x: 632, y: 376, w: 176, t: "Retrieval", s: "with sources", co: 5 },
+        { id: "kb", kind: "store", x: 872, y: 372, w: 200, h: 64, t: "Authority content", s: "documents · tourism", g: "file-text" },
+      ],
+      edges: [
+        { id: "v1", from: "vis:r", to: "gate:l", via: { x: 264 } },
+        { id: "s1", from: "staff:r", to: "gate:l", via: { x: 264 } },
+        { id: "g1", from: "gate:r", to: "agent:l" },
+        { id: "t0", from: "agent:r", to: "r0:l", via: { x: 832 } },
+        { id: "t1", from: "agent:r", to: "r1:l", via: { x: 832 } },
+        { id: "ap", from: "agent:b+16", to: "appr:l" },
+        { id: "a0", from: "appr:r", to: "r2:l", via: { x: 832 } },
+        { id: "a1", from: "appr:r", to: "r3:l", via: { x: 832 } },
+        { id: "l1", from: "agent:b-48", to: "llm:t" },
+        { id: "l2", from: "agent:b-48", to: "ret:t", via: { y: 344 } },
+        { id: "k1", from: "ret:r", to: "kb:l" },
+        { id: "ev", from: "agent:t", to: "eval:b", async: true },
+      ],
+      main: ["v1", "g1", ["t0", "t1", "ap"], "a0"],
+      legend: { x: 32, y: 272, w: 288, cols: 2 },
+    },
+
+    // Vertical: the agent's trunk on the left reaches the look-up tools, the LLM and retrieval; the approval's bus on
+    // the right reaches the action tools.
+    compact: {
+      w: CW, h: 1104,
+      groups: [{ id: "tools", x: 12, y: 424, w: 328, h: 248, tab, tabAlign: "center", co: 3, coX: 292 }],
+      nodes: [
+        { id: "vis", kind: "ext", tile: true, x: 24, y: 24, w: 148, h: 104, t: "Visitors", s: "Noura\nArabic · English", g: "bilingual" },
+        { id: "staff", kind: "ext", tile: true, x: 180, y: 24, w: 148, h: 104, t: "Staff", s: "staff assistant\ninternal", g: "briefcase" },
+        { id: "gate", kind: "guard", x: 24, y: 160, w: 304, t: "Audience gate", s: "tools · knowledge per audience", co: 1 },
+        { id: "agent", kind: "orch", x: 24, y: 248, w: 148, t: "One agent", s: "LangGraph", co: 2 },
+        { id: "eval", kind: "eval", x: 196, y: 248, w: 132, t: "Evaluation", s: "quality", co: 6 },
+        { id: "appr", kind: "guard", x: 56, y: 336, w: 176, t: "Human approval", s: "before any action", g: "check", co: 4 },
+        ...look.map(([id, t, g], i) => ({ id, kind: "infra", x: 56, y: 456 + i * 48, w: 240, h: 40, t, g })),
+        ...act.map(([id, t, g], i) => ({ id, kind: "infra", x: 56, y: 568 + i * 48, w: 240, h: 40, t, g })),
+        { id: "llm", kind: "model", x: 56, y: 704, w: 240, h: 48, t: "LLM" },
+        { id: "ret", kind: "data", x: 56, y: 776, w: 240, t: "Retrieval", s: "with sources", co: 5 },
+        { id: "kb", kind: "store", x: 56, y: 856, w: 240, h: 64, t: "Authority content", s: "documents · tourism", g: "file-text" },
+      ],
+      edges: [
+        { id: "v1", from: "vis:b", to: "gate:t", via: { y: 144 } },
+        { id: "s1", from: "staff:b", to: "gate:t", via: { y: 144 } },
+        { id: "g1", from: "gate:b-78", to: "agent:t" },
+        { id: "ev", from: "agent:r", to: "eval:l", async: true },
+        { id: "ap", from: "agent:b+46", to: "appr:t" },
+        { id: "t0", from: "agent:b-62", to: "r0:l" },
+        { id: "t1", from: "agent:b-62", to: "r1:l" },
+        { id: "a0", from: "appr:r", to: "r2:r", via: { x: 316 } },
+        { id: "a1", from: "appr:r", to: "r3:r", via: { x: 316 } },
+        { id: "l1", from: "agent:b-62", to: "llm:l" },
+        { id: "l2", from: "agent:b-62", to: "ret:l" },
+        { id: "k1", from: "ret:b", to: "kb:t" },
+      ],
+      main: ["v1", "g1", ["t0", "t1", "ap"], "a0"],
+      legend: { x: 24, y: 960, w: 304, cols: 2 },
+    },
+
+    // Thumbnail: two audiences, the gate, the agent, approval, and the tool set as pips.
+    thumb: {
+      w: TW, h: TH,
+      groups: [{ id: "tools", x: 256, y: 40, w: 124, h: 172, tab: "96 tools" }],
+      nodes: [
+        icon({ id: "vis", kind: "ext", x: 20, y: 44, w: 40, h: 40, g: "bilingual", cap: "visitors", capPos: "above" }),
+        icon({ id: "staff", kind: "ext", x: 20, y: 124, w: 40, h: 40, g: "briefcase", cap: "staff", capGap: 20 }),
+        icon({ id: "gate", kind: "guard", x: 84, y: 80, w: 48, h: 48, g: "guard", cap: "audience\ngate", capGap: 20 }),
+        icon({ id: "agent", kind: "orch", x: 156, y: 76, w: 56, h: 56, wl: 34, gs: 20, cap: "one agent", capPos: "above", capGap: 16 }),
+        icon({ id: "appr", kind: "guard", x: 162, y: 168, w: 44, h: 44, wl: 30, g: "check", cap: "approval", capGap: 20 }),
+        ...Array.from({ length: 12 }, (_, i) => ({ id: `p${i}`, kind: "infra", x: 274 + (i % 3) * 32, y: 66 + Math.floor(i / 3) * 32, w: 24, h: 24, rx: 7, g: null, pip: 3, offgrid: true })),
+      ],
+      texts: [{ x: 318, y: 232, text: "27 for visitors", cls: "dg-cap", anchor: "middle" }],
+      edges: [
+        { id: "v", from: "vis:r", to: "gate:l", via: { x: 72 } },
+        { id: "s", from: "staff:r", to: "gate:l", via: { x: 72 } },
+        { id: "g", from: "gate:r", to: "agent:l" },
+        { id: "t", from: "agent:r", to: "tools:l-22" },
+        { id: "ap", from: "agent:b", to: "appr:t" },
+        { id: "a", from: "appr:r", to: "tools:l+64" },
+      ],
+      main: ["v", "g", ["t", "ap"], "a"],
+    },
+  };
+}

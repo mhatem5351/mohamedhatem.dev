@@ -2,7 +2,7 @@
  * Pure helpers for the case-study pages (src/views/CaseStudyPage.astro, src/components/case/*).
  * Everything is derived from content/profile.ts and the design's diagrams.json; no copy is written here.
  */
-import type { ArchNode, ArchNodeKind, CaseStudy, Fact, Locale, Role, Source } from "@content/profile.ts";
+import type { ArchNode, ArchNodeKind, CaseStudy, Fact, L10n, Locale, Role, Screen, Source } from "@content/profile.ts";
 import { format, formatDuration, formatPeriod, formatYears, joinList, messages, monthsInclusive, tr } from "./i18n";
 import { CASE_DIAGRAMS, type DiagramId } from "./diagrams";
 import { profile } from "./site";
@@ -37,6 +37,7 @@ export function monoLogoOf(cs: CaseStudy): string | undefined {
 
 /** Card / bar accent per case study (design: ArabsStock coral, Wakeb saffron, Empoweromics sky, freelance teal …). */
 const ACCENT: Record<string, Accent> = {
+  "sta-tourism-assistants": "teal",
   "arabsstock-assistant": "coral",
   "wakeb-bilingual-chatbot": "saffron",
   "gov-bilingual-assistant": "sage",
@@ -97,6 +98,7 @@ export function sourcesText(sources: readonly Source[], locale: Locale): string 
 /* ------------------------------------------------------------------------------------------------------------ */
 
 const DECISION: Partial<Record<CaseStudy["slug"], number>> = {
+  "sta-tourism-assistants": 0, // one agent for two audiences, behind an audience gate
   "arabsstock-assistant": 0, // 14 specialised agents behind one LangGraph orchestrator
   "wakeb-bilingual-chatbot": 0, // Command-based routing instead of fixed edges, fully async
   "logic-controls-website": 0, // static build on Workers, free tier
@@ -124,6 +126,7 @@ export function tocOf(cs: CaseStudy, locale: Locale): TocEntry[] {
   const out: TocEntry[] = [
     { id: "problem", label: l.problem },
     { id: "approach", label: l.approach },
+    ...(cs.screens?.length ? [{ id: "screens", label: l.screens }] : []),
     { id: "components", label: l.architecture },
     { id: "outcome", label: l.outcome },
     { id: "stack", label: l.stack },
@@ -235,6 +238,8 @@ const TECH_KIND: Record<string, ArchNodeKind> = {
   "Computer vision": "model",
   "Arabic NLP": "model",
   "LLM evaluation": "quality",
+  RAG: "retrieval",
+  React: "service",
   Observability: "quality",
   Turnstile: "quality",
   Vitest: "quality",
@@ -262,3 +267,43 @@ export function stackGroups(cs: CaseStudy): { kind: ArchNodeKind; items: string[
 
 /** Designed diagrams for this case study (main figure first), if any. */
 export const diagramsOf = (cs: CaseStudy): DiagramId[] => CASE_DIAGRAMS[cs.slug] ?? [];
+
+/* ------------------------------------------------------------------------------------------------------------ */
+/* Screens gallery (case studies whose client approved publishing product screens)                               */
+/* ------------------------------------------------------------------------------------------------------------ */
+
+/**
+ * Where a screen sits in its group's grid (two columns from 48rem, 2 : 1):
+ * - `lead`: the first desktop screen of a group with three or more, across both columns;
+ * - `main`: the other desktop screens, in the wide column;
+ * - `side`: phone and dialog captures in the narrow column, spanning `rows` rows of desktop screens, so a tall
+ *   phone sits beside a stack of desktop screens instead of under them.
+ */
+export interface ScreenSlot {
+  screen: Screen;
+  place: "lead" | "main" | "side";
+  rows: 1 | 2 | 3;
+}
+export interface ScreenGroup {
+  product: L10n;
+  slots: ScreenSlot[];
+}
+
+/** The case study's screens grouped by product (first-seen order), each with its place in the grid. */
+export function screenGroups(cs: CaseStudy): ScreenGroup[] {
+  const groups: ScreenGroup[] = [];
+  for (const screen of cs.screens ?? []) {
+    let g = groups.find((x) => x.product.en === screen.product.en);
+    if (!g) groups.push((g = { product: screen.product, slots: [] }));
+    g.slots.push({ screen, place: "main", rows: 1 });
+  }
+  for (const g of groups) {
+    const desktop = g.slots.filter((s) => s.screen.frame === "desktop");
+    const side = g.slots.filter((s) => s.screen.frame !== "desktop");
+    if (desktop.length >= 3) desktop[0]!.place = "lead";
+    const beside = desktop.filter((s) => s.place === "main").length;
+    const rows = Math.max(1, Math.min(3, Math.round(beside / Math.max(1, side.length)))) as 1 | 2 | 3;
+    for (const s of side) Object.assign(s, { place: "side", rows });
+  }
+  return groups;
+}
