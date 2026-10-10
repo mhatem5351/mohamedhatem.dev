@@ -19,7 +19,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: "24"
+  # Same major as the machine that builds and deploys: the widget size budget is measured with gzip, and Node 24's
+  # zlib compresses the same bundle about 250 bytes larger than Node 26's.
+  NODE_VERSION: "26"
 
 jobs:
   checks:
