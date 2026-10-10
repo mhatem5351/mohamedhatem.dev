@@ -70,6 +70,7 @@ export async function handleContact(req: Request, env: Env): Promise<Response> {
     ip: req.headers.get("CF-Connecting-IP"),
     action: "contact",
     hostnames: allowedHostnames(req, env),
+    allowTestKey: env.ALLOW_TURNSTILE_TEST === "1",
   });
   if (!check.ok) return reply(403, { ok: false, error: "turnstile_failed", message: "The human check did not pass. Please try again." });
 

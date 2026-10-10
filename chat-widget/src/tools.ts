@@ -41,26 +41,23 @@ function copyRow(value: string, label: string, done: string, t: Strings, announc
   const btnLabel = h("span", {}, t.copy);
   const btn = h("button", { type: "button", class: "cb", "aria-label": `${label}: ${value}` }, icon("copy"), btnLabel);
   let timer = 0;
+  const show = (copied: boolean) => {
+    btn.replaceChildren(icon(copied ? "check" : "copy"), btnLabel);
+    btnLabel.textContent = copied ? t.copied : t.copy;
+  };
   btn.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(value);
-      btn.replaceChildren(icon("check"), btnLabel);
-      btnLabel.textContent = t.copied;
-      announce(done);
-      clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        btn.replaceChildren(icon("copy"), btnLabel);
-        btnLabel.textContent = t.copy;
-      }, 2000);
     } catch {
-      // No clipboard permission (or an old browser): select the text so the visitor can copy it.
-      const range = document.createRange();
-      range.selectNodeContents(text);
-      const sel = getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(range);
-      announce(t.selected);
+      // No clipboard permission (or an old browser): copy the selected text the old way; if even that fails, the
+      // text stays selected for Ctrl+C.
+      getSelection()?.setBaseAndExtent(text, 0, text, 1);
+      if (!document.execCommand("copy")) return;
     }
+    show(true);
+    announce(done);
+    clearTimeout(timer);
+    timer = window.setTimeout(show, 2000, false);
   });
   return h("div", { class: "cr" }, text, btn);
 }

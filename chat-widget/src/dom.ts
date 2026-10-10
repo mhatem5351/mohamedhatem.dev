@@ -31,6 +31,6 @@ export type IconName = keyof typeof PATHS;
 
 export function icon(name: IconName, cls = ""): SVGSVGElement {
   const t = document.createElement("template");
-  t.innerHTML = `<svg class="ic ${cls}" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${PATHS[name]}</svg>`;
+  t.innerHTML = `<svg class="ic ${cls}" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[name]}</svg>`;
   return t.content.firstChild as SVGSVGElement;
 }

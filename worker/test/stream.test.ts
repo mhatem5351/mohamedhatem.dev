@@ -297,9 +297,11 @@ describe("model chain and cooldown", () => {
     expect(other.isCooling("gemini-3.5-flash-lite")).toBe(false);
   });
 
-  it("cooldown length: daily quota until RetryInfo or midnight Pacific; per-minute 429: 60 s; 503: RetryInfo or 30 s", () => {
+  it("cooldown length: daily quota at least 1 h (RetryInfo or midnight Pacific); per-minute 429: 60 s; 503: RetryInfo or 30 s", () => {
     const at = new Date("2026-10-09T19:00:00Z"); // 12:00 PDT
     expect(cooldownSeconds(new UpstreamError("quota", 429, 19048, true), at)).toBe(19048);
+    // A spent daily quota with a short RetryInfo was retried minutes later in production and failed again.
+    expect(cooldownSeconds(new UpstreamError("quota", 429, 40, true), at)).toBe(3600);
     expect(cooldownSeconds(new UpstreamError("quota", 429, undefined, true), at)).toBe(12 * 3600);
     expect(cooldownSeconds(new UpstreamError("busy", 429), at)).toBe(60);
     expect(cooldownSeconds(new UpstreamError("busy", 429, 34), at)).toBe(60);
@@ -342,7 +344,9 @@ describe("streamAnswer: SSE assembly with a mocked Gemini", () => {
       ]);
     const r = await streamAnswer("SYS", contents, deps(fetcher), sink, new AbortController().signal);
     expect(sink.text()).toBe("Hatem is an **AI Team Lead** at Globant.\n");
-    expect(sink.names()).toEqual(["token", "token", "tool", "tool", "done"]);
+    // Text first (in as many token events as the guards release), then the UI events, then done.
+    expect(sink.names().filter((n) => n !== "token")).toEqual(["tool", "tool", "done"]);
+    expect(sink.names().lastIndexOf("token")).toBeLessThan(sink.names().indexOf("tool"));
     const tools = sink.events.filter((e) => e.event === "tool").map((e) => e.data);
     expect(tools).toEqual([
       { name: "open_section", args: { id: "experience" } },
@@ -497,7 +501,7 @@ describe("streamAnswer: SSE assembly with a mocked Gemini", () => {
     expect(r.outcome).toBe("upstream_error");
   });
 
-  it("a hedge goes to the first Flash-Lite model in the chain (the fast ones)", async () => {
+  it("a hedge goes to the first fast model in the chain (Flash-Lite or 2.5 Flash), with fast settings", async () => {
     const calls: string[] = [];
     const fetcher = async (url: string) => {
       calls.push(modelOf(url));

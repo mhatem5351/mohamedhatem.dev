@@ -11,7 +11,12 @@
  *    "**Visitor:**" or heading) and quoted phrasings longer than 30 characters. (An answer that followed the prompt's
  *    LangGraph example word for word was blocked before this rule.) Translations and paraphrases are left to the
  *    model's own rules.
+ * 3. Confidential names (confidential.ts): the unnamed client's names, checked by hash on every 1-3 word sequence.
+ *    The last words are held back until the next chunk, so a name is caught before any part of it is sent; the
+ *    caller then replaces the whole answer with a fixed reply.
  */
+import { ConfidentialScanner, type ConfidentialMatcher } from "./confidential";
+
 export const SHINGLE = 10;
 export const LEAK_BLOCKS = 3;
 
@@ -54,7 +59,7 @@ export function buildFingerprints(privateText: string, publicText: string): Map<
   return out;
 }
 
-export type GuardVerdict = { ok: true; emit: string } | { ok: false; reason: "canary" | "leak" };
+export type GuardVerdict = { ok: true; emit: string } | { ok: false; reason: "canary" | "leak" | "confidential" };
 
 /**
  * Incremental: every chunk is normalised and checked once (only a window of canary length is re-scanned), so the
@@ -72,13 +77,16 @@ export class OutputGuard {
   private hits = new Set<number>();
   private readonly canaries: string[];
   private readonly longest: number;
+  private readonly names: ConfidentialScanner | null;
 
   constructor(
     canaries: string | readonly string[],
     private readonly fingerprints: Map<string, number>,
+    confidential?: ConfidentialMatcher,
   ) {
     this.canaries = (typeof canaries === "string" ? [canaries] : [...canaries]).filter(Boolean).map((c) => c.toLowerCase());
     this.longest = Math.max(0, ...this.canaries.map((c) => c.length));
+    this.names = confidential ? new ConfidentialScanner(confidential) : null;
   }
 
   /** Adds a chunk; returns the text that is now safe to send, or a block verdict. */
@@ -87,9 +95,11 @@ export class OutputGuard {
     this.text += chunk;
     if (this.canaryFrom(from)) return { ok: false, reason: "canary" };
     if (this.leaked(chunk, false)) return { ok: false, reason: "leak" };
-    // Hold back a possible canary prefix at the end.
-    const safeEnd = this.text.length - this.heldBack();
-    const emit = this.text.slice(this.emitted, safeEnd);
+    const namesEnd = this.names ? this.names.push(chunk) : this.text.length;
+    if (namesEnd < 0) return { ok: false, reason: "confidential" };
+    // Hold back a possible canary prefix and the last words (a name may still be completing) at the end.
+    const safeEnd = Math.min(this.text.length - this.heldBack(), namesEnd);
+    const emit = this.text.slice(this.emitted, Math.max(this.emitted, safeEnd));
     this.emitted = Math.max(this.emitted, safeEnd);
     return { ok: true, emit };
   }
@@ -98,6 +108,7 @@ export class OutputGuard {
   flush(): GuardVerdict {
     if (this.canaryFrom(Math.max(0, this.text.length - this.longest))) return { ok: false, reason: "canary" };
     if (this.leaked("", true)) return { ok: false, reason: "leak" };
+    if (this.names && this.names.push("", true) < 0) return { ok: false, reason: "confidential" };
     const emit = this.text.slice(this.emitted);
     this.emitted = this.text.length;
     return { ok: true, emit };
@@ -105,6 +116,11 @@ export class OutputGuard {
 
   get answer(): string {
     return this.text;
+  }
+
+  /** True once any text has been released to the browser. */
+  get started(): boolean {
+    return this.emitted > 0;
   }
 
   private canaryFrom(from: number): boolean {

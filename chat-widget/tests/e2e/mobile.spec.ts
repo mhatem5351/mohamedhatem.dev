@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { answer, ask, bubble, dialog, mock, openDemo, setup, shadowFocus } from "./helpers";
+import { answer, ask, bubble, dialog, log, mock, openDemo, setup, shadowFocus } from "./helpers";
 
 test.beforeEach(async ({ page }) => setup(page));
 
@@ -47,4 +47,36 @@ test("a jump link closes the sheet and scrolls to the section @mobile", async ({
   await expect(dialog(page)).toBeHidden();
   await expect.poll(() => page.evaluate(() => Math.round(document.getElementById("projects")!.getBoundingClientRect().top))).toBeLessThan(120);
   expect(await page.evaluate(() => document.activeElement?.id)).toBe("projects");
+});
+
+test("Enter on a chip in the sheet keeps focus in the sheet, on the textarea @mobile", async ({ page }) => {
+  await openDemo(page);
+  await bubble(page).tap();
+  await expect(dialog(page)).toBeVisible();
+  await mock(page, answer("Sure."));
+  await expect(page.locator("[data-mh-chat] .chip").first()).toBeVisible();
+  await page.locator("[data-mh-chat] .chip").first().focus();
+  await page.keyboard.press("Enter");
+  expect(await shadowFocus(page)).toBe("textarea");
+  await expect(log(page)).toContainText("Sure.");
+  expect(await shadowFocus(page)).toBe("textarea");
+});
+
+test("a tapped chip keeps focus in the sheet without raising the keyboard (the log) @mobile", async ({ page }) => {
+  await openDemo(page);
+  await bubble(page).tap();
+  await mock(page, answer("Sure."));
+  await page.locator("[data-mh-chat] .chip").first().tap();
+  await expect(log(page)).toContainText("Sure.");
+  expect(await shadowFocus(page)).toBe("div.log");
+});
+
+test("the sheet is not reopened on the next page (it would cover it) @mobile", async ({ page }) => {
+  await openDemo(page);
+  await bubble(page).tap();
+  await expect(dialog(page)).toBeVisible();
+  expect(await page.evaluate(() => sessionStorage.getItem("mh-chat:open"))).toBeNull();
+  await page.reload();
+  await expect(bubble(page)).toHaveAttribute("aria-expanded", "false");
+  await expect(dialog(page)).toHaveCount(0);
 });

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat widget fixture · site layout</title>
+  <!--
+    Test fixture (served by scripts/serve.mjs, used by tests/e2e/desktop.spec.ts). It mirrors the parts of the
+    mohamedhatem.dev layout that matter to the desktop panel: a 4rem sticky header ([data-nav]), sections in a 78rem
+    container, html scroll-padding and smooth scrolling, and a contact section whose form sits in the right column
+    of a 5fr / 6fr grid, plus a page <dialog> (another layer for Escape). Every mh:chat-state is recorded in
+    window.__chatState.
+  -->
+  <link rel="stylesheet" href="../../../design/tokens.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-padding-block-start: 5.5rem; }
+    @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+    body { margin: 0; font: 400 1rem/1.6 var(--font-sans, system-ui, sans-serif); background: var(--color-bg); color: var(--color-ink); }
+    .nav { position: sticky; inset-block-start: 0; z-index: 10; height: 4rem; display: flex; align-items: center; gap: 1.5rem; padding: 0 2rem; background: var(--color-bg); border-block-end: 1px solid var(--color-line); }
+    .nav a { color: inherit; }
+    .container { max-width: 78rem; margin: 0 auto; padding: 0 2rem; }
+    section { padding-block: 4rem; min-height: 80vh; }
+    p { max-width: 62ch; }
+    .contact { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 3.7rem; align-items: start; }
+    form { display: grid; gap: 1rem; }
+    label { display: grid; gap: .25rem; }
+    input, textarea, form button { width: 100%; padding: .75rem; font: inherit; border: 1px solid var(--color-line-input); border-radius: .5rem; background: var(--color-surface); color: inherit; }
+    footer { padding: 3rem 2rem; }
+  </style>
+</head>
+<body>
+  <header class="nav" data-nav>
+    <a href="#about" id="nav-about">About</a>
+    <a href="#experience">Experience</a>
+    <a href="#contact">Contact</a>
+  </header>
+  <main>
+    <section id="about"><div class="container"><h2>About</h2><p>Placeholder text about the AI Team Lead.</p></div></section>
+    <section id="experience"><div class="container"><h2>Experience</h2><p>Placeholder text about production LLM systems.</p></div></section>
+    <section id="contact">
+      <div class="container contact">
+        <div><h2>Contact</h2><p>Write to <a href="mailto:hatem@mohamedhatem.dev" id="mail-link">hatem@mohamedhatem.dev</a>, or use WhatsApp.</p></div>
+        <form id="contact-form" onsubmit="return false">
+          <label>Name <input name="name" id="name"></label>
+          <label>Email <input name="email" id="email" type="email"></label>
+          <label>Message <textarea name="message" rows="4"></textarea></label>
+          <button type="submit" id="send-message">Send message</button>
+        </form>
+      </div>
+    </section>
+  </main>
+  <footer>Footer</footer>
+  <dialog id="page-dialog"><p>A dialog the page opened.</p><button type="button">OK</button></dialog>
+  <script type="module">
+    import { mountChat } from "../../dist/index.js";
+
+    window.__chatState = [];
+    document.addEventListener("mh:chat-state", (e) => window.__chatState.push(e.detail.open));
+    mountChat({ turnstileSiteKey: null });
+  </script>
+</body>
+</html>

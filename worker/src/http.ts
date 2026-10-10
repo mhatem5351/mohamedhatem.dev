@@ -155,12 +155,25 @@ export function parseJsonBytes(bytes: Uint8Array): unknown {
   }
 }
 
+const clientIp = (req: Request) => req.headers.get("CF-Connecting-IP") ?? req.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ?? "unknown";
+
 /** Client IP for rate limiting only (never stored). IPv6 is keyed by its /64 so one host can't rotate addresses. */
 export function clientKey(req: Request): string {
-  const ip = req.headers.get("CF-Connecting-IP") ?? req.headers.get("X-Forwarded-For")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = clientIp(req);
   if (!ip.includes(":")) return ip;
   const groups = expandIpv6(ip);
   return groups ? `${groups.slice(0, 4).join(":")}::/64` : ip;
+}
+
+/**
+ * The visitor's network for session binding (never stored; only an HMAC of it goes into the cookie): IPv4 /24, IPv6
+ * /48. Coarser than {@link clientKey} because mobile carriers move a device between addresses inside these ranges.
+ */
+export function networkKey(req: Request): string {
+  const ip = clientIp(req);
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) return `${ip.split(".").slice(0, 3).join(".")}.0/24`;
+  const groups = ip.includes(":") ? expandIpv6(ip) : null;
+  return groups ? `${groups.slice(0, 3).join(":")}::/48` : ip;
 }
 
 function expandIpv6(ip: string): string[] | null {

@@ -27,26 +27,59 @@ export interface ModelProfile {
  * Generation settings per model family (the fallback chain mixes families; thinking settings only where supported).
  *   Gemini 3 Flash / Flash-Lite: thinkingLevel "low". For Flash-Lite, "low" beat "minimal" on the hardest evaluation
  *     cases (7/8 vs 6/8) for ~1.5 s more; it spends up to ~1,450 thinking tokens (eval max), hence the headroom.
+ *     `fast` (a hedge: it only runs because the first model stalled, so time to first token matters most):
+ *     Flash-Lite at "minimal" (~1 s to the first token instead of 2-4 s). Job-description turns keep "low".
  *   gemini-flash-lite-latest: an alias (currently gemini-3.5-flash-lite), same settings.
  *   Gemini 2.5 Flash / Flash-Lite: thinkingBudget 0 (no thinking: fast, and nothing to budget for).
  *   Gemma 4: thinks by default and accepts no thinking settings, so it only gets headroom.
  */
-export function profileFor(model: string): ModelProfile {
-  if (/^gemini-[3-9][\w.]*-flash-lite|^gemini-flash-lite-latest$/.test(model)) return { thinkingConfig: { thinkingLevel: "low" }, thinkingHeadroom: 1800 };
+export function profileFor(model: string, opts: { fast?: boolean } = {}): ModelProfile {
+  if (/^gemini-[3-9][\w.]*-flash-lite|^gemini-flash-lite-latest$/.test(model))
+    return opts.fast ? { thinkingConfig: { thinkingLevel: "minimal" }, thinkingHeadroom: 600 } : { thinkingConfig: { thinkingLevel: "low" }, thinkingHeadroom: 1800 };
   if (/^gemini-[3-9]/.test(model) || model === "gemini-flash-latest") return { thinkingConfig: { thinkingLevel: "low" }, thinkingHeadroom: 400 };
   if (/^gemini-2\.5-flash/.test(model)) return { thinkingConfig: { thinkingBudget: 0 }, thinkingHeadroom: 0 };
   if (/^gemma-/.test(model)) return { thinkingConfig: null, thinkingHeadroom: 1500 };
   return { thinkingConfig: null, thinkingHeadroom: 0 };
 }
 
-/** Fast models (used first when hedging a slow request). */
-export const isLite = (model: string) => /flash-lite/.test(model);
+/**
+ * Fast models, preferred when hedging a slow request: Flash-Lite, and Gemini 2.5 Flash without thinking (measured in
+ * production: first token 0.7-1.5 s).
+ */
+export const isFast = (model: string) => /flash-lite/.test(model) || /^gemini-2\.5-flash$/.test(model);
 
 /** Models whose free tier allows too few input tokens a minute for the full prompt (Gemma: 16k TPM). */
 export const usesCompactPrompt = (model: string) => /^gemma-/.test(model);
 
-export function buildBody(system: string, contents: GeminiContent[], model: string): Record<string, unknown> {
-  const p = profileFor(model);
+/**
+ * Input tokens a model's free tier accepts per minute, when that is the binding limit: Gemma 4 allows 16,000 (the
+ * full instruction alone is ~14.9K tokens, the compact one ~6.3K, a 6,000-character job description 1.2K-2.1K).
+ * Requests estimated above this are routed to models that fit. Gemini Flash / Flash-Lite allow 250,000.
+ */
+export function inputTokenLimit(model: string): number {
+  return /^gemma-/.test(model) ? 15_000 : 240_000;
+}
+
+const ARABIC_CHARS = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
+
+/**
+ * A deliberately high token estimate, no API call. Calibrated with countTokens (October 2026): English prose ~4.7
+ * characters per token, the markdown-heavy instructions ~3.9, Arabic ~2.9; this uses 3.6 and 2.5 so a long paste or
+ * a grown prompt never slips past a limit.
+ */
+export function estimateTokens(text: string): number {
+  const arabic = text.match(ARABIC_CHARS)?.length ?? 0;
+  return Math.ceil((text.length - arabic) / 3.6 + arabic / 2.5);
+}
+
+export function estimateRequestTokens(system: string, contents: GeminiContent[]): number {
+  let n = estimateTokens(system);
+  for (const c of contents) for (const p of c.parts) n += estimateTokens(p.text ?? "") + 4;
+  return n;
+}
+
+export function buildBody(system: string, contents: GeminiContent[], model: string, opts: { fast?: boolean } = {}): Record<string, unknown> {
+  const p = profileFor(model, opts);
   return {
     systemInstruction: { parts: [{ text: system }] },
     contents,

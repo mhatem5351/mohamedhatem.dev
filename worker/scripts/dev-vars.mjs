@@ -2,13 +2,17 @@
 /**
  * Writes .dev.vars (gitignored, mode 600) for `wrangler dev` from the repo's .env, without printing any secret.
  *
- *   GEMINI_API_KEY, SESSION_SECRET  copied from .env (SESSION_SECRET is generated if .env has none)
+ *   GEMINI_API_KEY                  copied from .env
+ *   SESSION_SECRET                  a random dev-only value, never the production one in .env: a local Worker must not
+ *                                   be able to mint session cookies that production accepts. Kept across
+ *                                   regenerations so local sessions survive.
  *   TURNSTILE_SECRET                Cloudflare's always-pass TEST secret by default, because the real widget is only
  *                                   valid on mohamedhatem.dev. `--real-turnstile` copies the real secret instead.
+ *   ALLOW_TURNSTILE_TEST=1          the Worker accepts test-key results only with this (never set in production)
  *   ALLOWED_ORIGINS                 localhost origins (wrangler dev, Astro dev/preview, the widget demo server)
  *   ALLOW_MODEL_OVERRIDE=1          lets the eval/smoke scripts choose the models (X-Model-Chain header)
  *
- * Flags: --if-missing (keep an existing .dev.vars) · --real-turnstile
+ * Flags: --if-missing (keep an existing, current .dev.vars) · --real-turnstile
  */
 import { randomBytes } from "node:crypto";
 import { chmodSync, existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -19,16 +23,20 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const target = join(root, ".dev.vars");
 const args = new Set(process.argv.slice(2));
 
-if (args.has("--if-missing") && existsSync(target)) process.exit(0);
-
-const env = {};
-const envFile = join(root, ".env");
-if (existsSync(envFile)) {
-  for (const line of readFileSync(envFile, "utf8").split(/\r?\n/)) {
+const parse = (file) => {
+  const out = {};
+  if (!existsSync(file)) return out;
+  for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
     const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/.exec(line);
-    if (m) env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, "$2");
+    if (m) out[m[1]] = m[2].replace(/^(['"])(.*)\1$/, "$2");
   }
-}
+  return out;
+};
+const env = parse(join(root, ".env"));
+const previous = parse(target);
+// An older .dev.vars copied the production session secret, or predates ALLOW_TURNSTILE_TEST: always rewrite those.
+const current = previous.ALLOW_TURNSTILE_TEST === "1" && previous.SESSION_SECRET && previous.SESSION_SECRET !== env.SESSION_SECRET;
+if (args.has("--if-missing") && existsSync(target) && current) process.exit(0);
 if (!env.GEMINI_API_KEY) {
   console.error("dev-vars: GEMINI_API_KEY is missing from .env");
   process.exit(1);
@@ -40,8 +48,9 @@ const origins = ports.flatMap((p) => [`http://localhost:${p}`, `http://127.0.0.1
 
 const vars = {
   GEMINI_API_KEY: env.GEMINI_API_KEY,
-  SESSION_SECRET: env.SESSION_SECRET || randomBytes(32).toString("base64url"),
+  SESSION_SECRET: current ? previous.SESSION_SECRET : randomBytes(32).toString("base64url"),
   TURNSTILE_SECRET: args.has("--real-turnstile") && env.TURNSTILE_SECRET ? env.TURNSTILE_SECRET : TEST_TURNSTILE_SECRET,
+  ALLOW_TURNSTILE_TEST: "1",
   ALLOWED_ORIGINS: ["https://mohamedhatem.dev", ...origins].join(","),
   // Lets chat:eval / chat:smoke pick Flash-Lite models with the X-Model-Chain header. Never set in production.
   ALLOW_MODEL_OVERRIDE: "1",

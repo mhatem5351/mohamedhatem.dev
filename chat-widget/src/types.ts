@@ -8,15 +8,16 @@ import type { Lang, SectionId } from "../../worker/src/chat/protocol";
 export interface ChatWidgetConfig {
   /**
    * Origin of the Worker API, without a trailing slash. Default "" (same origin: POST /api/chat).
-   * A cross-origin value (e.g. "http://localhost:8787" from the demo) sends the session cookie with
-   * `credentials: "include"`.
+   * Requests use `credentials: "include"`, so a cross-origin value (e.g. "http://localhost:8787" from the demo)
+   * sends the session cookie too.
    */
   apiBase?: string;
   /** UI language. Default: `<html lang>` ("ar…" → "ar", anything else → "en"). Also sets the panel direction. */
   lang?: Lang;
   /**
    * Public Turnstile site key. The widget loads Turnstile (managed, "interaction-only") lazily when the panel
-   * opens and no chat session exists yet. `null` / omitted: never load Turnstile (tests, local mocks).
+   * opens (or its input gets focus) and no chat session exists yet, and removes it once a session exists.
+   * `null` / omitted: never load Turnstile (tests, local mocks).
    */
   turnstileSiteKey?: string | null;
   /** Avatar shown in the panel header (square, ≥ 72 px). Omitted: an "MH" monogram. */
@@ -66,10 +67,10 @@ export interface OpenOptions {
 
 /** What the lazily loaded panel module exposes to the loader. */
 export interface PanelApi {
-  open(options?: OpenOptions): void;
+  /** `quiet`: reopening after a page navigation (no focus move, no scroll, Turnstile waits for the textarea). */
+  open(options?: OpenOptions, quiet?: boolean): void;
   close(): void;
   toggle(): void;
-  readonly isOpen: boolean;
 }
 
 /** What the loader hands the panel module (no shared imports: keeps the loader chunk standalone). */

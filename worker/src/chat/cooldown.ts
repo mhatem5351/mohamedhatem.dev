@@ -3,10 +3,11 @@
  *
  * Two layers, both free:
  *   - a module-level map: this isolate never retries a model it has seen fail;
- *   - the Workers Cache API (`caches.default`, per Cloudflare location), one entry per model with the expiry as its
- *     max-age: other isolates in the same location skip the model too.
- * The cooldown comes from Google's RetryInfo when it sends one; a daily-quota error without one lasts until the next
- * midnight Pacific time (when free-tier daily quotas reset); an overload (503) without one lasts 30 s.
+ *   - the Workers Cache API (`caches.default`), one entry per model with the expiry as its max-age: other isolates in
+ *     the same data center skip the model too. Cache contents don't replicate between data centers, and one visitor's
+ *     requests can land in several, so each location learns about a spent quota once (one instant 429, ~0.3 s).
+ * Durations (answer.ts → cooldownSeconds): a daily quota at least an hour (Google's RetryInfo when longer, else until
+ * midnight Pacific); a per-minute limit 60 s; an overload (503) RetryInfo or 30 s.
  */
 const memory = new Map<string, number>();
 

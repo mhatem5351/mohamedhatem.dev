@@ -54,6 +54,7 @@ for (const { id, lang, q } of questions) {
   console.log(`\x1b[1m[${id}] ${q}\x1b[0m`);
   const r = await client.ask([{ role: "user", content: q }], { lang, onToken: (t) => process.stdout.write(t) });
   process.stdout.write("\n");
+  if (r.replaced) console.log(`  replaced by the confidentiality guard: ${r.text}`);
   if (r.tools.length) console.log(`  tools: ${r.tools.map((t) => `${t.name}(${JSON.stringify(t.args)})`).join(", ")}`);
   if (r.error || r.status !== 200) {
     failures++;

@@ -48,6 +48,23 @@ describe("link allow-list", () => {
       expect(check(bad), bad).toBe(false);
     }
   });
+
+  it("refuses the backslash, tab and newline tricks that browsers turn into another origin (SEC-4)", () => {
+    for (const bad of ["/\\evil.example/login", "/\t/evil.example/login", "/\n/evil.example", "\\\\evil.example", "https://mohamedhatem.dev\\@evil.example/", "/ /evil.example", "/\u2028/evil.example"]) {
+      expect(check(bad), JSON.stringify(bad)).toBe(false);
+    }
+    // Why: the WHATWG URL parser reads "\\" as "/" and drops tabs, so these leave the site.
+    expect(new URL("/\\evil.example/login", "https://mohamedhatem.dev/").origin).toBe("https://evil.example");
+    expect(new URL("/\t/evil.example/login", "https://mohamedhatem.dev/").origin).toBe("https://evil.example");
+    // relative links that stay on the site are fine
+    for (const ok of ["/cv/", "/ar/#contact", "cv/", "#work"]) expect(check(ok), ok).toBe(true);
+  });
+
+  it("the streaming filter judges a markdown link even when its target contains whitespace", () => {
+    expect(run(["See [apply here](/\t/evil.example/login) now."])).toBe("See apply here now.");
+    expect(run(["See [apply ", "here](/\\evil.example/login) now."])).toBe("See apply here now.");
+    expect(run(['A [titled](https://mohamedhatem.dev/cv/ "CV") link.'])).toBe('A [titled](https://mohamedhatem.dev/cv/ "CV") link.');
+  });
 });
 
 describe("LinkFilter (streaming)", () => {
@@ -79,6 +96,7 @@ describe("LinkFilter (streaming)", () => {
 describe("thinking per model", () => {
   it("Gemini 3 Flash and Flash-Lite think at low, with room for the thinking tokens", () => {
     expect(profileFor("gemini-3.5-flash-lite")).toEqual({ thinkingConfig: { thinkingLevel: "low" }, thinkingHeadroom: 1800 });
+    expect(profileFor("gemini-3.5-flash-lite", { fast: true })).toEqual({ thinkingConfig: { thinkingLevel: "minimal" }, thinkingHeadroom: 600 });
     expect(profileFor("gemini-3.1-flash-lite")).toEqual({ thinkingConfig: { thinkingLevel: "low" }, thinkingHeadroom: 1800 });
     expect(profileFor("gemini-3.8-flash")).toEqual({ thinkingConfig: { thinkingLevel: "low" }, thinkingHeadroom: 400 });
   });

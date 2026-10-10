@@ -7,6 +7,8 @@ export interface Env {
   RL_CHAT?: RateLimit;
   RL_CHAT_BURST?: RateLimit;
   RL_CHAT_GLOBAL?: RateLimit;
+  /** Per chat session (keyed by the session nonce). */
+  RL_CHAT_SESSION?: RateLimit;
   RL_CONTACT?: RateLimit;
   /** Workers Analytics Engine (anonymous counts and latency only). */
   EVENTS?: AnalyticsEngineDataset;
@@ -22,6 +24,8 @@ export interface Env {
   GEMINI_HEDGE_MS?: string;
   /** "1" only in local dev (.dev.vars): honours the X-Model-Chain request header (eval/smoke use Flash-Lite). */
   ALLOW_MODEL_OVERRIDE?: string;
+  /** "1" only in local dev (.dev.vars): accept Cloudflare's Turnstile test secret and test-key results. */
+  ALLOW_TURNSTILE_TEST?: string;
 
   GEMINI_API_KEY?: string;
   TURNSTILE_SECRET?: string;

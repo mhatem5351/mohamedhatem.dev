@@ -2,7 +2,7 @@ import type { Lang } from "../../worker/src/chat/protocol";
 
 interface TurnstileApi {
   render(el: HTMLElement, options: Record<string, unknown>): string;
-  reset(id?: string): void;
+  remove(id: string): void;
 }
 
 declare global {
@@ -15,30 +15,37 @@ const SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explic
 const WAIT_MS = 120_000;
 
 export interface Verifier {
-  /** Load Turnstile and start solving in the background (panel opened, no session yet). */
+  /** Load Turnstile and start solving in the background (no chat session yet). */
   prepare(): void;
   /** A fresh single-use token (resolves immediately when one is ready). Rejects on error, timeout or abort. */
   token(signal: AbortSignal): Promise<string>;
-  /** Forget a token the Worker rejected. */
-  discard(): void;
+  /** Remove the widget and forget any unused token (a session exists): nothing can show until the next prepare() / token(). */
+  drop(): void;
 }
 
 /**
- * Turnstile, loaded only when needed, rendered "interaction-only" into a light-DOM container that the panel slots
- * in (iframes inside shadow roots are unreliable). Tokens are single use and valid for 5 minutes; "refresh-expired:
- * auto" keeps a fresh one ready while the visitor types.
+ * Turnstile, loaded only when a token is needed, rendered "interaction-only" into a light-DOM container that the
+ * panel slots in (iframes inside shadow roots are unreliable). The widget only lives while a token is being made:
+ * it is removed as soon as its token is handed out, when the token expires unused ("refresh-expired: manual", so
+ * there are no background re-challenges) and when a chat session starts. A later 401 renders a fresh one.
  */
 export function createVerifier(container: HTMLElement, sitekey: string, lang: Lang, onInteractive: (visible: boolean) => void): Verifier {
   let loading: Promise<TurnstileApi> | null = null;
   let id: string | null = null;
   let ready: string | null = null;
-  let solving = false;
-  let waiters: { ok: (t: string) => void; fail: (e: Error) => void }[] = [];
+  let waiters: ((token: string | null) => void)[] = [];
 
+  // Removal is deferred so it never runs inside one of Turnstile's own callbacks.
+  const drop = () => {
+    const old = id;
+    if (old !== null) setTimeout(() => window.turnstile?.remove(old));
+    id = ready = null;
+    onInteractive(false);
+  };
   const settle = (token: string | null) => {
     const list = waiters;
     waiters = [];
-    for (const w of list) token ? w.ok(token) : w.fail(new Error("turnstile"));
+    for (const w of list) w(token);
   };
 
   const load = () =>
@@ -47,8 +54,9 @@ export function createVerifier(container: HTMLElement, sitekey: string, lang: La
       const s = document.createElement("script");
       s.src = SRC;
       s.async = true;
-      s.onload = () => (window.turnstile ? resolve(window.turnstile) : reject(new Error("turnstile")));
-      s.onerror = () => {
+      // Loaded without the API, or failed: forget it, so the next attempt loads it again.
+      s.onload = s.onerror = () => {
+        if (window.turnstile) return resolve(window.turnstile);
         loading = null;
         s.remove();
         reject(new Error("turnstile"));
@@ -56,64 +64,54 @@ export function createVerifier(container: HTMLElement, sitekey: string, lang: La
       document.head.append(s);
     }));
 
-  async function start() {
-    const ts = await load();
-    if (id === null) {
-      solving = true;
-      id = ts.render(container, {
+  // One widget at a time: while it exists it is either solving or holding an unused token.
+  const start = () =>
+    load().then((ts) => {
+      id ??= ts.render(container, {
         sitekey,
         action: "chat",
         appearance: "interaction-only",
-        "refresh-expired": "auto",
+        "refresh-expired": "manual",
         language: lang === "ar" ? "ar-eg" : "en",
         callback: (t: string) => {
-          solving = false;
-          onInteractive(false);
-          if (waiters.length) settle(t);
-          else ready = t;
+          if (!waiters.length) return void (ready = t);
+          drop();
+          settle(t);
         },
-        "expired-callback": () => (ready = null),
+        "expired-callback": drop,
         "error-callback": () => {
-          solving = false;
-          onInteractive(false);
+          drop();
           settle(null);
         },
         "before-interactive-callback": () => onInteractive(true),
         "after-interactive-callback": () => onInteractive(false),
       });
-    } else if (!ready && !solving) {
-      solving = true;
-      ts.reset(id);
-    }
-  }
+    });
 
   return {
     prepare() {
       start().catch(() => settle(null));
     },
     token(signal) {
-      if (ready) {
-        const t = ready;
-        ready = null;
+      const t = ready;
+      if (t) {
+        drop();
         return Promise.resolve(t);
       }
       return new Promise<string>((ok, fail) => {
-        const timer = setTimeout(() => done(null), WAIT_MS);
-        const abort = () => done(null);
         const done = (t: string | null) => {
           clearTimeout(timer);
           signal.removeEventListener("abort", abort);
-          waiters = waiters.filter((w) => w !== waiter);
+          waiters = waiters.filter((w) => w !== done);
           t ? ok(t) : fail(new Error("turnstile"));
         };
-        const waiter = { ok: (t: string) => done(t), fail: () => done(null) };
-        waiters.push(waiter);
+        const abort = () => done(null);
+        const timer = setTimeout(abort, WAIT_MS);
+        waiters.push(done);
         signal.addEventListener("abort", abort);
         start().catch(() => settle(null));
       });
     },
-    discard() {
-      ready = null;
-    },
+    drop,
   };
 }

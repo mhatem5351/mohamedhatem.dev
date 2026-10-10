@@ -4,13 +4,14 @@
  * Schema (positional, keep stable; query with the SQL API, see worker/README.md):
  *   index1  kind               "chat" | "contact"
  *   blob1   kind
- *   blob2   outcome            "ok" | an ErrorCode | "honeypot" | "invalid" | "send_failed"
+ *   blob2   outcome            "ok" | "redacted" | an ErrorCode | "honeypot" | "invalid" | "send_failed"
  *   blob3   lang               "en" | "ar" | ""
  *   blob4   model              model that answered ("" when none)
  *   blob5   finish             "stop" | "length" | "tools" | ""
  *   blob6   tools              comma-separated tool names called, e.g. "show_contact_card,suggest_followups"
  *   blob7   content version    sha of system prompt + knowledge
  *   blob8   country            request.cf.country (2 letters) or ""
+ *   blob9   upstream trace     content-free model chain, e.g. "gemini-3.8-flash:quota429>hedge3200>gemini-2.5-flash:ok"
  *   double1 count (1) · double2 total ms · double3 first-token ms (-1 none) · double4 input tokens
  *   double5 output tokens · double6 thinking tokens · double7 cached tokens · double8 messages in request
  *   double9 visitor message chars · double10 answer chars · double11 1 if the fallback model answered
@@ -24,6 +25,8 @@ export interface ChatEvent {
   tools?: string[];
   version?: string;
   country?: string;
+  /** Content-free upstream trace (model names, failure kinds, hedges): which model answered and why. */
+  trace?: string;
   totalMs?: number;
   firstMs?: number | null;
   input?: number;
@@ -41,7 +44,7 @@ export function track(dataset: AnalyticsEngineDataset | undefined, e: ChatEvent)
   try {
     dataset.writeDataPoint({
       indexes: [e.kind],
-      blobs: [e.kind, e.outcome, e.lang ?? "", e.model ?? "", e.finish ?? "", (e.tools ?? []).join(","), e.version ?? "", e.country ?? ""],
+      blobs: [e.kind, e.outcome, e.lang ?? "", e.model ?? "", e.finish ?? "", (e.tools ?? []).join(","), e.version ?? "", e.country ?? "", (e.trace ?? "").slice(0, 400)],
       doubles: [
         1,
         Math.round(e.totalMs ?? 0),

@@ -4,8 +4,9 @@
  *
  * Blocks: paragraphs (single newlines → <br>), bullet and numbered lists (one nesting level), fenced code blocks,
  * headings (rendered as bold paragraphs: the chat has no heading hierarchy), horizontal rules, "> " quotes (as text).
- * Inline: **bold**, *italic* / _italic_, `code`, [links](url), bare URLs and email addresses, backslash escapes.
- * Links: http(s), mailto, tel, site-relative "/…" and "#section" only; anything else renders as plain text.
+ * Inline: **bold**, *italic* / _italic_, `code`, [links](url), bare URLs, the site's own email addresses (any other
+ * address stays plain text, so a planted one can't become a link), backslash escapes.
+ * Links: http(s), mailto, tel, "#section" and paths on this site only; anything else renders as plain text.
  *
  * Streaming-tolerant: an unclosed ** turns bold until the end of the line, a half-streamed [link](… shows only its
  * text, and an unclosed code fence renders as a code block, so partial answers never flash raw syntax.
@@ -17,6 +18,8 @@ export interface MdOptions {
   isolate?: boolean;
   /** Append the streaming cursor to the last block. */
   cursor?: boolean;
+  /** Email addresses that bare text may turn into mailto: links (the widget's contact config). */
+  emails?: string[];
 }
 
 interface Ctx extends MdOptions {
@@ -28,14 +31,19 @@ const el = <K extends keyof HTMLElementTagNameMap>(tag: K): HTMLElementTagNameMa
 const isWord = (c: string | undefined) => !!c && /[\p{L}\p{N}_]/u.test(c);
 const AUTO = /\bhttps?:\/\/[^\s<>"'`]*[^\s<>"'`.,;:!?)\]}]|[\w.+-]+@[\w-]+(?:\.[\w-]+)*\.[a-z]{2,}\b/gi;
 
-/** The href to use for a model-provided link, or null when it is not allowed (javascript:, data:, //host, …). */
+/**
+ * The href to use for a model-provided link, or null when it is not allowed (javascript:, data:, //host, …).
+ * Backslashes, whitespace and control characters are refused outright: the URL parser reads a backslash as "/" and
+ * drops tabs and newlines, so "/\evil.example" or "/<tab>/evil.example" would otherwise reach https://evil.example.
+ * A path must also resolve to this site.
+ */
 export function safeHref(raw: string): string | null {
   const h = raw.trim().replace(/^<(.*)>$/, "$1");
   if (/^#[\w-]+$/.test(h)) return h;
-  if (!/^(https?:\/\/|mailto:|tel:|\/(?!\/))/i.test(h)) return null;
+  if (/[\\\s\0-\x1f\x7f-\x9f]/.test(h) || !/^(https?:\/\/|mailto:|tel:|\/)/i.test(h)) return null;
   try {
     const u = new URL(h, location.href);
-    return /^(https?|mailto|tel):$/.test(u.protocol) ? u.href : null;
+    return /^(https?|mailto|tel):$/.test(u.protocol) && (h[0] !== "/" || u.origin === location.origin) ? u.href : null;
   } catch {
     return null;
   }
@@ -241,14 +249,16 @@ function link(parent: ParentNode, label: string, href: string, c: Ctx): void {
   parent.append(a);
 }
 
-/** Plain text: bare URLs / emails become links, then (RTL messages) Latin runs become LTR isolates. */
+/** Plain text: bare URLs and allowed emails become links, then (RTL messages) Latin runs become LTR isolates. */
 function textOut(parent: ParentNode, text: string, c: Ctx): void {
   if (c.inLink) return isolate(parent, text, c);
   let last = 0;
   for (const m of text.matchAll(AUTO)) {
-    isolate(parent, text.slice(last, m.index), c);
     const v = m[0];
-    link(parent, v, v.includes("://") ? v : `mailto:${v}`, c);
+    const url = v.includes("://");
+    if (!url && !c.emails?.some((e) => e.toLowerCase() === v.toLowerCase())) continue;
+    isolate(parent, text.slice(last, m.index), c);
+    link(parent, v, url ? v : `mailto:${v}`, c);
     last = m.index + v.length;
   }
   isolate(parent, text.slice(last), c);

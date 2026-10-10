@@ -13,9 +13,12 @@ export const DUMMY_TURNSTILE_TOKEN = "XXXX.DUMMY.TOKEN.XXXX";
 export const LITE_CHAIN = "gemini-3.1-flash-lite";
 export const EVAL_MODEL = process.env.EVAL_MODEL || LITE_CHAIN;
 
-export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNSTILE_TOKEN, models = EVAL_MODEL } = {}) {
+export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNSTILE_TOKEN, models = EVAL_MODEL, maxCalls = Infinity } = {}) {
   const modelHeader = models && models !== "default" ? { "X-Model-Chain": models } : {};
   let cookie = null;
+  // Streamed answers this client started (each is one Gemini generate request: with X-Model-Chain the local Worker
+  // neither hedges nor retries). Requests stop at `maxCalls`, so a run can't overspend the free daily quotas.
+  let calls = 0;
 
   async function health() {
     try {
@@ -38,6 +41,7 @@ export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNS
   async function ask(messages, { lang = "en", onToken, retries = 3, timeoutMs = 45_000 } = {}) {
     for (let attempt = 0; ; attempt++) {
       const t0 = performance.now();
+      if (calls >= maxCalls) return { status: 0, text: "", tools: [], meta: null, done: null, error: { code: "budget", message: `call budget of ${maxCalls} reached` }, firstTokenMs: null, totalMs: 0 };
       let res;
       try {
         res = await fetch(`${base}/api/chat`, {
@@ -72,7 +76,8 @@ export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNS
         return { status: res.status, text: "", tools: [], meta: null, done: null, error: safeJson(body), firstTokenMs: null, totalMs: performance.now() - t0 };
       }
 
-      const out = { status: res.status, text: "", tools: [], meta: null, done: null, error: null, firstTokenMs: null, totalMs: 0 };
+      calls++;
+      const out = { status: res.status, text: "", tools: [], meta: null, done: null, error: null, firstTokenMs: null, totalMs: 0, replaced: false };
       const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
       let buf = "";
       let broken = false;
@@ -99,6 +104,12 @@ export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNS
             if (out.firstTokenMs === null) out.firstTokenMs = performance.now() - t0;
             out.text += payload.t;
             onToken?.(payload.t);
+          } else if (ev === "replace") {
+            // The Worker replaced the answer (confidentiality guard): what the visitor sees is only this text.
+            if (out.firstTokenMs === null) out.firstTokenMs = performance.now() - t0;
+            out.text = payload.t;
+            out.tools = [];
+            out.replaced = true;
           } else if (ev === "tool") out.tools.push(payload);
           else if (ev === "meta") out.meta = payload;
           else if (ev === "done") out.done = payload;
@@ -106,14 +117,20 @@ export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNS
         }
       }
       out.totalMs = performance.now() - t0;
-      // A stream that ended without done/error (dropped connection, timeout): ask again, once.
-      if ((broken || (!out.done && !out.error)) && attempt < Math.min(1, retries)) continue;
+      // A stream that ended without done/error (dropped connection, timeout): ask again, once (within the budget).
+      if ((broken || (!out.done && !out.error)) && attempt < Math.min(1, retries) && calls < maxCalls) continue;
       if (broken || (!out.done && !out.error)) out.error ??= { code: "timeout", message: `no answer within ${timeoutMs / 1000} s` };
       return out;
     }
   }
 
-  return { ask, health };
+  return {
+    ask,
+    health,
+    get calls() {
+      return calls;
+    },
+  };
 }
 
 function safeJson(s) {

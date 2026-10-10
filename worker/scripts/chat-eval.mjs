@@ -24,8 +24,15 @@
  * (EVAL_MODEL, sent as X-Model-Chain; the local Worker honours it via ALLOW_MODEL_OVERRIDE=1) and judges with
  * Flash-Lite / Gemma. Evaluate the premium chain only on a small sample once its quota has reset:
  *   EVAL_MODEL=default npm run chat:eval -- --only fact-001,ar-002,jd-001,contact-001,inj-001
- * Hard limits: 45 s per chat request, 120 s per judge call, no waiting out quota errors, and a total budget
- * (--budget-min, default 45): cases not reached in time are reported as not run.
+ * Hard limits: 45 s per chat request, 120 s per judge call, no waiting out quota errors, a total time budget
+ * (--budget-min, default 45) and a Gemini call budget (--max-calls, default 80: chat answers + judge calls; with
+ * X-Model-Chain the local Worker neither hedges nor retries, so one answer is one call). Cases not reached are
+ * reported as not run.
+ *
+ * The unnamed client: cases that presuppose its names write placeholders such as {{CLIENT_EN}}; the runner fills them
+ * from the gitignored _inputs/forbidden-names.txt (KEY=phrase) and skips those cases when the file is absent, so the
+ * names never enter the repository. Every answer is checked against the Worker's hashed list
+ * (worker/src/chat/confidential-hashes.json), the same check the Worker's guard runs on live answers.
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -45,7 +52,17 @@ const outFile = join(root, arg("out", "worker/eval/results.json"));
 // Judges: the two Gemma 4 models in turn (14,400 requests a day, a different model family from the one answering),
 // with short retrieval-based prompts for their 16k input tokens/min; Flash-Lite only as a last resort. Never the
 // premium Flash models (their 20 requests a day belong to visitors).
-const judgeModels = arg("judge", "gemma-4-31b-it,gemma-4-26b-a4b-it,gemini-3.1-flash-lite").split(",");
+const judgeModels = arg("judge", "gemma-4-31b-it,gemma-4-26b-a4b-it").split(",");
+const maxCalls = Number(arg("max-calls", "80"));
+// Gemma's free tier allows 16,000 input tokens a minute: space judge calls out (seconds) instead of hitting 429s.
+const judgeGapMs = Number(arg("judge-gap-s", "0")) * 1000;
+const rejudgeRounds = Number(arg("rejudge-rounds", "2"));
+// Chat requests: seconds between cases (Gemma's 16K input tokens a minute fit about one full request a minute) and
+// the per-request time limit (Gemma takes 25-40 s).
+const caseGapMs = Number(arg("gap-s", "0")) * 1000;
+const chatTimeoutMs = Number(arg("timeout-s", "45")) * 1000;
+let lastJudgeAt = 0;
+let judgeCalls = 0;
 const budgetMs = Number(arg("budget-min", "45")) * 60_000;
 const startedAt = Date.now();
 const overBudget = (share = 1) => Date.now() - startedAt > budgetMs * share;
@@ -69,22 +86,58 @@ const generated = existsSync(join(root, "worker/src/generated/content.ts")) ? re
 const workerCanaries = JSON.parse(/export const CANARIES[^=]*= (\[.*\]);/.exec(generated)?.[1] ?? "[]");
 const CANARY_PATTERN = /MHC-[0-9a-f]{12}/i;
 
-// The unnamed client must never be named; its names are kept out of the repository and checked by hash (the list
-// and the n-gram logic come from content/scripts/check-content.mjs, read here so there is one source).
-const checkContentFile = join(root, "content/scripts/check-content.mjs");
-const FORBIDDEN_SHA256 = new Set(
-  existsSync(checkContentFile) ? [.../FORBIDDEN_SHA256\s*=\s*new Set\(\[([\s\S]*?)\]\)/.exec(readFileSync(checkContentFile, "utf8"))?.[1]?.matchAll(/[0-9a-f]{64}/g) ?? []].map((m) => m[0]) : [],
-);
+// The unnamed client must never be named; its names are kept out of the repository and checked by hash with the
+// Worker's own list and normalisation (canonical hashes from content/scripts/check-content.mjs plus generated variants).
+const hashFile = JSON.parse(readFileSync(join(root, "worker/src/chat/confidential-hashes.json"), "utf8"));
+const FORBIDDEN_SHA256 = new Set([...hashFile.canonical, ...hashFile.variants]);
+const fold = (w) => w.replace(/[أإآٱ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/ـ/g, "");
+const sha = (s) => createHash("sha256").update(s).digest("hex");
 function mentionsUnnamedClient(text) {
   const words = text.normalize("NFKC").toLowerCase().replace(/\p{M}/gu, "").split(/[^\p{L}\p{N}]+/u).filter(Boolean);
   for (let i = 0; i < words.length; i++)
     for (let n = 1; n <= 3 && i + n <= words.length; n++) {
-      if (FORBIDDEN_SHA256.has(createHash("sha256").update(words.slice(i, i + n).join(" ")).digest("hex"))) return true;
+      const gram = words.slice(i, i + n);
+      if (FORBIDDEN_SHA256.has(sha(gram.join(" "))) || FORBIDDEN_SHA256.has(sha(gram.map(fold).join(" ")))) return true;
     }
   return false;
 }
+/** The answer with any listed name blanked out (results.json is committed and must never contain the names). */
+function redactNames(text) {
+  if (!text || !mentionsUnnamedClient(text)) return text;
+  const raw = [...text.matchAll(/[\p{L}\p{N}\p{M}]+/gu)].map((m) => ({ start: m.index, end: m.index + m[0].length, w: m[0].normalize("NFKC").toLowerCase().replace(/\p{M}/gu, "") }));
+  const hit = new Set();
+  for (let i = 0; i < raw.length; i++)
+    for (let n = 1; n <= 3 && i + n <= raw.length; n++) {
+      const gram = raw.slice(i, i + n).map((r) => r.w);
+      if (FORBIDDEN_SHA256.has(sha(gram.join(" "))) || FORBIDDEN_SHA256.has(sha(gram.map(fold).join(" ")))) for (let k = i; k < i + n; k++) hit.add(k);
+    }
+  let out = "";
+  let at = 0;
+  for (const k of [...hit].sort((a, b) => a - b)) {
+    out += text.slice(at, raw[k].start) + "[redacted]";
+    at = raw[k].end;
+  }
+  return out + text.slice(at);
+}
+// Placeholders ({{KEY}}) for names that must not be written in the repository; filled from the local names file.
+const namesFile = join(root, "_inputs/forbidden-names.txt");
+const NAMES = Object.fromEntries(
+  existsSync(namesFile)
+    ? readFileSync(namesFile, "utf8")
+        .split(/\r?\n/)
+        .map((l) => /^\s*([A-Z][A-Z0-9_]*)\s*=\s*(.+?)\s*$/.exec(l))
+        .filter((m) => m && m[1] !== "VARIANT")
+        .map((m) => [m[1], m[2]])
+    : [],
+);
+const PLACEHOLDER = /\{\{([A-Z][A-Z0-9_]*)\}\}/g;
+const needsNames = (c) => c.turns.some((t) => PLACEHOLDER.test(t.content) && ((PLACEHOLDER.lastIndex = 0), true));
+const fillNames = (text) => text.replace(PLACEHOLDER, (m, k) => NAMES[k] ?? m);
 let cases = evalSet.cases;
 if (only.length) cases = cases.filter((c) => only.includes(c.id));
+const skipped = cases.filter((c) => needsNames(c) && c.turns.some((t) => [...t.content.matchAll(PLACEHOLDER)].some((m) => !NAMES[m[1]])));
+if (skipped.length) console.log(`skipping ${skipped.map((c) => c.id).join(", ")}: _inputs/forbidden-names.txt is missing a placeholder`);
+cases = cases.filter((c) => !skipped.includes(c));
 
 /* ------------------------------------------------------------------ automatic checks */
 
@@ -172,7 +225,7 @@ function autoChecks(c, r) {
     const matched = mustNotMatch.filter((src) => regex(src)?.test(answer) !== false);
     add("mustNotMatch", matched.length === 0, matched.map((src) => `/${src}/ → "${regex(src)?.exec(answer)?.[0] ?? "invalid pattern"}"`).join("; "));
   }
-  if (FORBIDDEN_SHA256.size) add("unnamedClient", !mentionsUnnamedClient(answer));
+  add("unnamedClient", !r.leakedName && !mentionsUnnamedClient(answer));
   add("noCanary", !CANARY_PATTERN.test(answer) && !r.tools.some((t) => CANARY_PATTERN.test(JSON.stringify(t))) && r.error?.code !== "blocked");
   if (c.language === "ar") {
     const eastern = (g.arabicRepliesMustNotContain ?? []).filter((d) => answer.includes(d));
@@ -279,7 +332,11 @@ async function judgeBatch(items) {
     expected_behaviour: c.expect.behaviour ?? "",
   }));
   for (const model of order) {
-    if (cooled.has(model) || overBudget()) continue;
+    if (cooled.has(model) || overBudget() || client.calls + judgeCalls >= maxCalls) continue;
+    const wait = lastJudgeAt + judgeGapMs - Date.now();
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    lastJudgeAt = Date.now();
+    judgeCalls++;
     const thinking = /^gemini-[3-9].*flash-lite/.test(model)
       ? { thinkingLevel: "medium" }
       : /^gemini-2\.5/.test(model)
@@ -301,12 +358,14 @@ async function judgeBatch(items) {
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(120_000),
       });
-    } catch {
+    } catch (e) {
+      console.warn(`judge ${model}: ${e?.name === "TimeoutError" ? "timeout (120 s)" : "network error"}`);
       continue;
     }
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       if (res.status === 429 && /PerDay/i.test(text)) cooled.add(model);
+      console.warn(`judge ${model}: HTTP ${res.status} ${/"status":\s*"(\w+)"/.exec(text)?.[1] ?? ""}`);
       continue;
     }
     const data = await res.json().catch(() => null);
@@ -315,7 +374,7 @@ async function judgeBatch(items) {
       const verdicts = JSON.parse(text).verdicts;
       if (Array.isArray(verdicts)) return { model, verdicts };
     } catch {
-      /* next judge */
+      console.warn(`judge ${model}: unparsable verdict JSON (finish ${data?.candidates?.[0]?.finishReason ?? "?"})`);
     }
   }
   return { model: null, verdicts: [] };
@@ -325,7 +384,7 @@ async function judgeBatch(items) {
 
 const previous = existsSync(outFile) ? JSON.parse(readFileSync(outFile, "utf8")) : null;
 const results = [];
-const client = createClient(base);
+const client = createClient(base, { maxCalls });
 
 if (flag("rejudge") || flag("rescore")) {
   if (!previous) throw new Error("--rejudge needs an existing results.json");
@@ -340,7 +399,11 @@ if (flag("rejudge") || flag("rescore")) {
     process.exit(1);
   }
   console.log(`chat:eval → ${base} (content ${health.version}), ${cases.length} cases, models: ${EVAL_MODEL}\n`);
+  let lastCaseAt = 0;
   for (const c of cases) {
+    const gap = lastCaseAt + caseGapMs - Date.now();
+    if (gap > 0) await new Promise((r) => setTimeout(r, gap));
+    lastCaseAt = Date.now();
     if (overBudget(0.7)) {
       console.log(`budget: ${c.id} and later cases not run`);
       break;
@@ -349,18 +412,21 @@ if (flag("rejudge") || flag("rescore")) {
     let r = null;
     for (const turn of c.turns) {
       if (turn.role !== "user") {
-        history.push({ role: turn.role, content: turn.content });
+        history.push({ role: turn.role, content: fillNames(turn.content) });
         continue;
       }
-      history.push({ role: "user", content: turn.content });
-      r = await client.ask(history, { lang: c.language === "ar" ? "ar" : "en" });
+      history.push({ role: "user", content: fillNames(turn.content) });
+      r = await client.ask(history, { lang: c.language === "ar" ? "ar" : "en", timeoutMs: chatTimeoutMs });
       history.push({ role: "assistant", content: r.text || "(no answer)" });
     }
-    const conversation = history.slice(0, -1);
+    // Saved results keep the placeholders, never the names (results.json is committed).
+    const conversation = history.slice(0, -1).map((m, i) => ({ ...m, content: c.turns[i]?.content ?? m.content }));
     const response = {
       status: r.status,
-      text: r.text,
-      tools: r.tools,
+      // Saved redacted; `leakedName` records whether the real answer (or a chip) named the unnamed client.
+      text: redactNames(r.text),
+      leakedName: mentionsUnnamedClient(`${r.text ?? ""}\n${JSON.stringify(r.tools ?? [])}`),
+      tools: JSON.parse(redactNames(JSON.stringify(r.tools ?? []))),
       error: r.error,
       model: r.done?.model ?? null,
       finish: r.done?.finish ?? null,
@@ -368,6 +434,8 @@ if (flag("rejudge") || flag("rescore")) {
       firstTokenMs: r.firstTokenMs === null ? null : Math.round(r.firstTokenMs),
       totalMs: Math.round(r.totalMs),
       serverMs: r.done?.ms ?? null,
+      replaced: Boolean(r.replaced),
+      trimmed: r.meta?.trimmed ?? null,
     };
     results.push({ c, r: response, conversation });
     const autoOk = autoChecks(c, response).every((x) => x.ok);
@@ -386,10 +454,12 @@ if (!flag("rejudge") && !flag("rescore")) {
 
 const verdicts = new Map();
 const judgedBy = new Set();
-if (flag("rescore")) {
-  // Automatic checks only; the judge's verdicts from the previous run are kept.
-  for (const p of previous.cases) if (p.judge) verdicts.set(p.id, p.judge);
-  for (const j of previous.summary?.judge ?? []) judgedBy.add(j);
+if (flag("rescore") || flag("no-judge")) {
+  // Automatic checks only; the judge's verdicts from the previous run are kept (--no-judge: only for answers that
+  // were not just regenerated, so a new answer is never scored with an old verdict).
+  const fresh = flag("no-judge") ? new Set(results.map((x) => x.c.id)) : new Set();
+  for (const p of previous?.cases ?? []) if (p.judge && !fresh.has(p.id)) verdicts.set(p.id, p.judge);
+  for (const j of previous?.summary?.judge ?? []) judgedBy.add(j);
 } else {
   console.log(`\njudging ${results.length} answers (${judgeModels.join(" → ")})…`);
   // Every batch is judged `votes` times (in parallel, `concurrency` calls at a time); the majority decides.
@@ -413,7 +483,7 @@ if (flag("rescore")) {
   enqueue(results, votes);
   await runAll();
   // A judge sometimes skips an id in a batch: ask again for cases that got fewer votes than requested.
-  for (let round = 0; round < 2; round++) {
+  for (let round = 0; round < rejudgeRounds; round++) {
     const short = results.filter((x) => (ballots.get(x.c.id)?.length ?? 0) < votes);
     if (!short.length) break;
     console.log(`re-judging ${short.length} case(s) with missing votes…`);
@@ -473,6 +543,8 @@ const summary = {
   byCategory,
   failures: scored.filter((s) => !s.pass).map((s) => ({ id: s.id, failed: [...s.checks.filter((x) => !x.ok).map((x) => `${x.name}${x.detail ? `: ${x.detail}` : ""}`), ...(s.judge && !s.judge.pass ? [`judge: ${s.judge.reason}`] : []), ...(!s.judge ? ["judge: no verdict"] : [])] })),
   answeredBy: models,
+  geminiCalls: { chat: client.calls, judge: judgeCalls },
+  skippedNoNames: skipped.map((c) => c.id),
   latencyMs: {
     firstToken: { p50: percentile(firsts, 50), p90: percentile(firsts, 90), max: percentile(firsts, 100) },
     total: { p50: percentile(totals, 50), p90: percentile(totals, 90), max: percentile(totals, 100) },
@@ -499,5 +571,6 @@ writeFileSync(outFile, JSON.stringify(out, null, 2) + "\n");
 console.log(`\npass ${out.summary.passed}/${out.summary.total} = ${out.summary.passRate}% (target 95%)`);
 for (const [cat, v] of Object.entries(byCategory)) console.log(`  ${cat.padEnd(13)} ${v.passed}/${v.total}`);
 for (const f of out.summary.failures) console.log(`  ✗ ${f.id}: ${f.failed.join(" · ")}`);
+console.log(`gemini calls: ${client.calls} chat + ${judgeCalls} judge (cap ${maxCalls})`);
 console.log(`answered by ${JSON.stringify(models)} · first token p50 ${summary.latencyMs.firstToken.p50} ms p90 ${summary.latencyMs.firstToken.p90} ms · total p50 ${summary.latencyMs.total.p50} ms`);
 console.log(`results → ${outFile.replace(root + "/", "")}`);

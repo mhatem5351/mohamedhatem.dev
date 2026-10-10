@@ -61,14 +61,17 @@ export interface ParsedChat {
   turnstileToken: string | undefined;
   /** Characters of the visitor's latest message (after sanitising and capping). */
   userChars: number;
+  /** Set when the latest message was longer than {@link CHAT_LIMITS.maxLatestUserChars}: the characters kept. */
+  trimmed?: number;
 }
 
 export type ParseResult = { ok: true; value: ParsedChat } | { ok: false; reason: string };
 
 /**
- * Validates the request body and shapes the history for the model: sanitised text, capped lengths, consecutive
- * same-role messages merged, the last {@link CHAT_LIMITS.maxMessages} messages kept, starting with a user message and
- * ending with the visitor's new one.
+ * Validates the request body and shapes the history for the model: sanitised text, capped lengths (the visitor's
+ * latest message 6,000 characters, room for a pasted job description; earlier visitor messages 1,200; answers 2,400),
+ * consecutive same-role messages merged, the last {@link CHAT_LIMITS.maxMessages} messages kept, starting with a user
+ * message and ending with the visitor's new one.
  */
 export function parseChatRequest(raw: unknown): ParseResult {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { ok: false, reason: "body" };
@@ -90,12 +93,20 @@ export function parseChatRequest(raw: unknown): ParseResult {
   let messages = merged.slice(-CHAT_LIMITS.maxMessages);
   while (messages.length && messages[0]!.role !== "user") messages = messages.slice(1);
   if (!messages.length || messages.at(-1)!.role !== "user") return { ok: false, reason: "last-not-user" };
-  messages = messages.map((m) => ({
+  const latestLength = messages.at(-1)!.content.length;
+  messages = messages.map((m, i) => ({
     role: m.role,
-    content: cap(m.content, m.role === "user" ? CHAT_LIMITS.maxUserChars : CHAT_LIMITS.maxAssistantChars),
+    content: cap(
+      m.content,
+      m.role === "assistant" ? CHAT_LIMITS.maxAssistantChars : i === messages.length - 1 ? CHAT_LIMITS.maxLatestUserChars : CHAT_LIMITS.maxUserChars,
+    ),
   }));
+  const userChars = messages.at(-1)!.content.length;
 
   const lang = body.lang === "ar" || body.lang === "en" ? body.lang : undefined;
   const token = typeof body.turnstileToken === "string" && body.turnstileToken.length <= TURNSTILE_TOKEN_MAX ? body.turnstileToken : undefined;
-  return { ok: true, value: { messages, pageLang: lang, turnstileToken: token || undefined, userChars: messages.at(-1)!.content.length } };
+  return {
+    ok: true,
+    value: { messages, pageLang: lang, turnstileToken: token || undefined, userChars, ...(latestLength > userChars ? { trimmed: userChars } : {}) },
+  };
 }

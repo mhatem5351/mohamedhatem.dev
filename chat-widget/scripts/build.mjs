@@ -32,6 +32,9 @@ const result = await build({
   entryNames: "[name]",
   chunkNames: "[name]-[hash]",
   legalComments: "none",
+  // Arabic text as UTF-8, like the site's production build (Vite), not as \uXXXX escapes (esbuild's default), so the
+  // size check measures the bytes visitors actually download.
+  charset: "utf8",
   metafile: true,
   logLevel: "warning",
 });

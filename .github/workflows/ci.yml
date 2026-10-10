@@ -1,0 +1,80 @@
+# Checks on every push and pull request (free on public repositories). No secrets: nothing here calls Gemini,
+# Cloudflare or Turnstile; the Worker and widget tests mock them.
+#   checks      content QA (secrets, the unnamed client's hashed names, every tracked file), generated files up to
+#               date, type-check, Worker + widget unit tests, widget size budget
+#   widget-e2e  the chat widget in Chromium (desktop and mobile projects, mocked API, axe)
+#   site-unit   the site's unit tests
+# Actions are pinned to commit SHAs (tag in the comment); update both together.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "24"
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - name: Content QA (secrets, hashed client names, copy rules) over every tracked file
+        run: npm run check:content
+      - name: Generate the Worker and widget content modules
+        run: node worker/scripts/gen-content.mjs --require-content
+      - run: npm run typecheck
+      - name: Unit tests (Worker + widget)
+        run: npx vitest run
+      - name: Widget size budget
+        run: npm run widget:size
+
+  widget-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: node worker/scripts/gen-content.mjs --require-content
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:widget
+
+  site-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            site/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix site
+      - run: node worker/scripts/gen-content.mjs --require-content
+      - run: npm --prefix site run test:unit

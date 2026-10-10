@@ -2,13 +2,14 @@
  * The /api/chat wire protocol, shared by the Worker and the chat widget (type-only imports on both sides).
  * Version 1. Additive changes only: new optional fields and new event names that old clients ignore.
  *
- * Request: POST /api/chat, Content-Type: application/json, body ≤ 16 KB, same-origin credentials (the session
- * cookie). The browser sends the visible conversation; the Worker keeps the last 12 messages and trims each user
- * message to 1,200 characters.
+ * Request: POST /api/chat, Content-Type: application/json, body ≤ 32 KB, same-origin credentials (the session
+ * cookie). The browser sends the visible conversation; the Worker keeps the last 12 messages and trims the visitor's
+ * latest message to 6,000 characters (room for a pasted job description) and earlier ones to 1,200.
  *
  * Response, success: 200 text/event-stream. Events, in order:
  *   meta   once, first        {@link MetaEvent}
  *   token  0..n               {@link TokenEvent}   text deltas of the answer (markdown)
+ *   replace 0..1              {@link ReplaceEvent} discard the text so far and show this text instead
  *   tool   0..n, any time     {@link ToolEvent}    a validated UI tool call the widget renders (never executed server-side)
  *   done   once, last         {@link DoneEvent}
  *   error  once, last         {@link ErrorEvent}   instead of `done` when the answer failed mid-way
@@ -22,8 +23,11 @@ export const CONTACT_PATH = "/api/contact";
 
 /** Limits the Worker enforces (the widget mirrors them to fail early with a friendly message). */
 export const CHAT_LIMITS = {
-  maxBodyBytes: 16 * 1024,
+  maxBodyBytes: 32 * 1024,
   maxMessages: 12,
+  /** The visitor's latest message: room for a pasted job description (most are 2,000-5,000 characters). */
+  maxLatestUserChars: 6000,
+  /** Earlier visitor messages in the history. */
   maxUserChars: 1200,
   maxAssistantChars: 2400,
 } as const;
@@ -42,8 +46,9 @@ export interface ChatRequest {
   lang?: Lang;
   /**
    * Turnstile token (action "chat"). Needed when there is no valid session cookie yet: send it with the first
-   * message, or after a 401 `turnstile_required`. A verified token starts a session (HttpOnly cookie, 30 min sliding,
-   * 2 h max) so later messages need no Turnstile.
+   * message, or after a 401 `turnstile_required` (no session, an expired one, or one started on another network:
+   * get a fresh token silently and resend). A verified token starts a session (HttpOnly cookie, 30 min sliding, 1 h
+   * max, bound to the visitor's network and browser) so later messages need no Turnstile.
    */
   turnstileToken?: string;
 }
@@ -57,10 +62,23 @@ export interface MetaEvent {
   lang: Lang;
   /** Session expiry (epoch ms) when this response set or refreshed the session cookie. */
   sessionExp?: number;
+  /**
+   * Present only when the visitor's latest message was longer than {@link CHAT_LIMITS.maxLatestUserChars}: how many
+   * characters of it were read (the rest was cut). The widget shows a visible note; it never happens silently.
+   */
+  trimmed?: number;
 }
 
 export interface TokenEvent {
   /** Text delta (markdown). Append to the current answer. */
+  t: string;
+}
+
+/**
+ * Discard the answer text received so far (and any tool events before it) and show `t` instead. Sent when the
+ * confidentiality guard replaces an answer that was about to name the unnamed client; `done` follows normally.
+ */
+export interface ReplaceEvent {
   t: string;
 }
 
@@ -101,6 +119,7 @@ export interface ErrorEvent {
 export type SseEvent =
   | { event: "meta"; data: MetaEvent }
   | { event: "token"; data: TokenEvent }
+  | { event: "replace"; data: ReplaceEvent }
   | { event: "tool"; data: ToolEvent }
   | { event: "done"; data: DoneEvent }
   | { event: "error"; data: ErrorEvent };
@@ -110,8 +129,10 @@ export type SseEvent =
 /**
  * Pre-stream (JSON body, HTTP status) and in-stream (`event: error`) error codes.
  *   bad_request 400 · forbidden 403 (origin) · turnstile_required 401 · turnstile_failed 403 · too_large 413 ·
- *   unsupported 415 · rate_limited 429 (Retry-After) · unavailable 503 (not configured / daily budget) ·
- *   upstream_busy (model over quota after retries) · upstream_error · timeout · blocked (output guard) ·
+ *   unsupported 415 · rate_limited 429 (Retry-After; this visitor or session is sending too fast) ·
+ *   unavailable 503 (not configured) · upstream_busy (in-stream: every model over quota; pre-stream 503: the
+ *   site-wide limit is reached, so it is busy for everyone, not this visitor's fault) · upstream_error · timeout ·
+ *   blocked (output guard: drop the partial answer, show a refusal) ·
  *   safety (model refused for safety) · empty (no answer) · internal 500
  */
 export type ErrorCode =

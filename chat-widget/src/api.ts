@@ -15,13 +15,13 @@ export const STALL_MS = 30_000;
 
 /**
  * POST /api/chat and feed every SSE event to `onEvent` (data already JSON-parsed). Resolves when the stream ends;
- * never rejects. A stream that ends without `done` / `error` counts as a dropped connection ("network").
+ * never rejects. A stream that ends without `done` / `error` counts as a dropped connection ("network"). A refusal
+ * before streaming keeps the Worker's code, e.g. a 503 `upstream_busy` (the site-wide limit) with its Retry-After.
  */
 export async function streamChat(
   url: string,
   body: ChatRequest,
   signal: AbortSignal,
-  credentials: RequestCredentials,
   onEvent: (event: string, data: unknown) => void,
 ): Promise<Outcome> {
   let res: Response;
@@ -30,7 +30,8 @@ export async function streamChat(
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
       body: JSON.stringify(body),
-      credentials,
+      // Same as "same-origin" on the site; lets a cross-origin apiBase (the local demo) send the session cookie too.
+      credentials: "include",
       signal,
     });
   } catch {
@@ -44,10 +45,12 @@ export async function streamChat(
     } catch {
       /* not JSON */
     }
-    const header = Number(res.headers.get("Retry-After"));
-    const retryAfter = err.retryAfter ?? (header > 0 ? header : undefined);
-    const code = err.error ?? (res.status === 429 ? "rate_limited" : res.status === 413 ? "too_large" : res.ok ? "internal" : res.status >= 500 ? "internal" : "bad_request");
-    return { kind: "error", code, pre: true, status: res.status, ...(retryAfter ? { retryAfter } : {}) };
+    const retryAfter = err.retryAfter || Number(res.headers.get("Retry-After"));
+    // Not the Worker's JSON: a 429 or 5xx then comes from the platform in front of it (e.g. its daily request limit),
+    // so the chat is unavailable for everyone; it isn't this visitor sending too fast.
+    const s = res.status;
+    const code = err.error ?? (s === 413 ? "too_large" : s === 429 || s > 499 ? "unavailable" : s > 399 ? "bad_request" : "internal");
+    return { kind: "error", code, pre: true, status: s, ...(retryAfter > 0 ? { retryAfter } : {}) };
   }
 
   let terminal = null as Outcome | null;

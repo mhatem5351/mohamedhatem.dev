@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { clientKey } from "../src/http";
+import { clientKey, networkKey } from "../src/http";
 import { checkLimits } from "../src/ratelimit";
-import { nextExpiry, readCookie, SESSION_MAX_S, SESSION_TTL_S, sessionCookie, signSession, verifySession } from "../src/session";
+import { checkSession, nextExpiry, readCookie, SESSION_MAX_S, SESSION_TTL_S, sessionBinding, sessionCookie, signSession } from "../src/session";
 import { verifyTurnstile } from "../src/turnstile";
 import { fakeLimiter } from "./helpers";
 
@@ -47,42 +47,76 @@ describe("rate limits", () => {
   });
 });
 
-describe("session tokens (HMAC)", () => {
+describe("session tokens (HMAC, bound to network and browser)", () => {
   const secret = "s3cret-s3cret-s3cret";
   const now = 1_790_000_000;
+  const UA = "Mozilla/5.0 (Macintosh) Chrome/141";
+  let bind = "";
+  const sign = (iat: number, exp: number, b = bind, nonce?: string) => signSession(secret, iat, exp, b, nonce);
 
-  it("round-trips", async () => {
-    const token = await signSession(secret, now, now + SESSION_TTL_S);
-    expect(token).toMatch(/^v1\.[0-9a-z]+\.[0-9a-z]+\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{43}$/);
-    expect(await verifySession(secret, token, now + 10)).toEqual({ iat: now, exp: now + SESSION_TTL_S });
+  it("round-trips, keeping the nonce when refreshed", async () => {
+    bind = await sessionBinding(secret, "203.0.113.0/24", UA);
+    expect(bind).toMatch(/^[A-Za-z0-9_-]{12}$/);
+    const token = await sign(now, now + SESSION_TTL_S);
+    expect(token).toMatch(/^v2\.[0-9a-z]+\.[0-9a-z]+\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{12}\.[A-Za-z0-9_-]{43}$/);
+    const check = await checkSession(secret, token, now + 10, bind);
+    expect(check).toEqual({ ok: true, session: { iat: now, exp: now + SESSION_TTL_S, nonce: token.split(".")[3] } });
+    const refreshed = await sign(now, now + SESSION_MAX_S, bind, token.split(".")[3]);
+    expect(refreshed.split(".")[3]).toBe(token.split(".")[3]);
   });
 
-  it("rejects tampering, a wrong secret, expiry and malformed tokens", async () => {
-    const token = await signSession(secret, now, now + SESSION_TTL_S);
+  it("a cookie replayed from another network or another browser is 'moved' (the widget re-verifies silently)", async () => {
+    const token = await sign(now, now + SESSION_TTL_S);
+    const otherNet = await sessionBinding(secret, "198.51.100.0/24", UA);
+    const otherUa = await sessionBinding(secret, "203.0.113.0/24", "node");
+    expect(await checkSession(secret, token, now, otherNet)).toEqual({ ok: false, reason: "moved" });
+    expect(await checkSession(secret, token, now, otherUa)).toEqual({ ok: false, reason: "moved" });
+    // The binding is keyed with the secret: the cookie doesn't reveal the network, and another secret binds differently.
+    expect(await sessionBinding("other-secret", "203.0.113.0/24", UA)).not.toBe(bind);
+  });
+
+  it("rejects tampering, a wrong secret, expiry, old v1 tokens and malformed tokens", async () => {
+    const token = await sign(now, now + SESSION_TTL_S);
     const parts = token.split(".");
-    const longer = [parts[0], parts[1], (now + SESSION_MAX_S).toString(36), parts[3], parts[4]].join(".");
-    expect(await verifySession(secret, longer, now)).toBeNull();
+    const longer = [parts[0], parts[1], (now + SESSION_MAX_S).toString(36), parts[3], parts[4], parts[5]].join(".");
+    expect((await checkSession(secret, longer, now, bind)).ok).toBe(false);
+    const rebound = [parts[0], parts[1], parts[2], parts[3], "AAAAAAAAAAAA", parts[5]].join(".");
+    expect(await checkSession(secret, rebound, now, "AAAAAAAAAAAA")).toEqual({ ok: false, reason: "invalid" });
     const flipped = token.slice(0, -2) + (token.endsWith("AA") ? "BB" : "AA");
-    expect(await verifySession(secret, flipped, now)).toBeNull();
-    expect(await verifySession("other-secret", token, now)).toBeNull();
-    expect(await verifySession(secret, token, now + SESSION_TTL_S)).toBeNull();
-    for (const bad of [null, "", "v1.a.b", "v2.a.b.c.d", "v1.zz.zz.zz.!!", "x".repeat(300)]) expect(await verifySession(secret, bad, now)).toBeNull();
+    expect(await checkSession(secret, flipped, now, bind)).toEqual({ ok: false, reason: "invalid" });
+    expect(await checkSession("other-secret", token, now, bind)).toEqual({ ok: false, reason: "invalid" });
+    expect(await checkSession(secret, token, now + SESSION_TTL_S, bind)).toEqual({ ok: false, reason: "expired" });
+    expect(await checkSession(secret, null, now, bind)).toEqual({ ok: false, reason: "missing" });
+    for (const bad of ["v1.a.b.c.d", "v2.a.b.c.d.e", "v2.zz.zz.zz.zz.!!", "x".repeat(300)]) expect((await checkSession(secret, bad, now, bind)).ok).toBe(false);
   });
 
-  it("rejects sessions issued in the future or older than the 2 h maximum", async () => {
-    const future = await signSession(secret, now + 3600, now + 3600 + SESSION_TTL_S);
-    expect(await verifySession(secret, future, now)).toBeNull();
-    const tooLong = await signSession(secret, now, now + SESSION_MAX_S + 60);
-    expect(await verifySession(secret, tooLong, now + 10)).toBeNull();
-    const old = await signSession(secret, now, now + SESSION_MAX_S);
-    expect(await verifySession(secret, old, now + SESSION_MAX_S - 1)).not.toBeNull();
+  it("rejects sessions issued in the future or older than the 1 h maximum", async () => {
+    expect(SESSION_MAX_S).toBe(3600);
+    const future = await sign(now + 3600, now + 3600 + SESSION_TTL_S);
+    expect((await checkSession(secret, future, now, bind)).ok).toBe(false);
+    const tooLong = await sign(now, now + SESSION_MAX_S + 60);
+    expect((await checkSession(secret, tooLong, now + 10, bind)).ok).toBe(false);
+    const old = await sign(now, now + SESSION_MAX_S);
+    expect((await checkSession(secret, old, now + SESSION_MAX_S - 1, bind)).ok).toBe(true);
+    expect(await checkSession(secret, old, now + SESSION_MAX_S, bind)).toEqual({ ok: false, reason: "expired" });
   });
 
-  it("slides the expiry once half the TTL is used, capped at iat + 2 h", () => {
+  it("slides the expiry once half the TTL is used, capped at iat + 1 h", () => {
+    const s = (exp: number) => ({ iat: now, exp, nonce: "n" });
     expect(nextExpiry(null, now)).toEqual({ iat: now, exp: now + SESSION_TTL_S });
-    expect(nextExpiry({ iat: now, exp: now + SESSION_TTL_S }, now + 60)).toBeNull();
-    expect(nextExpiry({ iat: now, exp: now + SESSION_TTL_S }, now + SESSION_TTL_S - 60)).toEqual({ iat: now, exp: now + 2 * SESSION_TTL_S - 60 });
-    expect(nextExpiry({ iat: now, exp: now + SESSION_MAX_S }, now + SESSION_MAX_S - 60)).toBeNull();
+    expect(nextExpiry(s(now + SESSION_TTL_S), now + 60)).toBeNull();
+    expect(nextExpiry(s(now + SESSION_TTL_S), now + SESSION_TTL_S - 60)).toEqual({ iat: now, exp: now + 2 * SESSION_TTL_S - 60 });
+    expect(nextExpiry(s(now + SESSION_TTL_S + 300), now + SESSION_TTL_S + 120)).toEqual({ iat: now, exp: now + SESSION_MAX_S });
+    expect(nextExpiry(s(now + SESSION_MAX_S), now + SESSION_MAX_S - 60)).toBeNull();
+  });
+
+  it("binds IPv4 by /24 and IPv6 by /48 (a phone moving inside its carrier's range keeps its session)", () => {
+    const req = (ip: string) => new Request("https://x/", { headers: { "CF-Connecting-IP": ip } });
+    expect(networkKey(req("203.0.113.9"))).toBe("203.0.113.0/24");
+    expect(networkKey(req("203.0.113.200"))).toBe(networkKey(req("203.0.113.9")));
+    expect(networkKey(req("2001:db8:85a3:1:aaaa::1"))).toBe("2001:db8:85a3::/48");
+    expect(networkKey(req("2001:db8:85a3:ffff::7"))).toBe(networkKey(req("2001:db8:85a3:1::1")));
+    expect(networkKey(req("2001:db8:85a4::1"))).not.toBe(networkKey(req("2001:db8:85a3::1")));
   });
 
   it("writes an HttpOnly, SameSite=Strict, path-scoped cookie and reads it back", () => {
@@ -122,8 +156,21 @@ describe("Turnstile verification", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  it("accepts Cloudflare test-key results (local dev) regardless of hostname", async () => {
+  it("rejects Cloudflare test-key results by default; accepts them only in local development", async () => {
     const fetcher = reply({ success: true, hostname: "example.com", metadata: { result_with_testing_key: true } });
-    expect(await verifyTurnstile({ ...base, fetcher })).toEqual({ ok: true, testKey: true });
+    expect(await verifyTurnstile({ ...base, fetcher })).toEqual({ ok: false, reason: "test-key" });
+    expect(await verifyTurnstile({ ...base, fetcher, allowTestKey: true })).toEqual({ ok: true, testKey: true });
+  });
+
+  it("refuses Cloudflare's test secrets outside local development, before any network call", async () => {
+    const fetcher = reply({ success: true, hostname: "mohamedhatem.dev", action: "chat" });
+    for (const secret of ["1x0000000000000000000000000000000AA", "2x0000000000000000000000000000000AA", "3x0000000000000000000000000000000AA"])
+      expect(await verifyTurnstile({ ...base, secret, fetcher })).toEqual({ ok: false, reason: "test-secret" });
+    expect(fetcher).not.toHaveBeenCalled();
+    expect((await verifyTurnstile({ ...base, secret: "1x0000000000000000000000000000000AA", fetcher, allowTestKey: true })).ok).toBe(true);
+  });
+
+  it("requires the hostname a real token was solved on", async () => {
+    expect(await verifyTurnstile({ ...base, fetcher: reply({ success: true, action: "chat" }) })).toEqual({ ok: false, reason: "hostname" });
   });
 });

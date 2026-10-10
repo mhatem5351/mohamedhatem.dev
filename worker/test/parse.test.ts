@@ -96,13 +96,21 @@ describe("parseChatRequest", () => {
     ]);
   });
 
-  it("caps user messages at 1,200 and assistant messages at 2,400 characters", () => {
-    const r = parseChatRequest({ messages: [user("u".repeat(5000)), bot("a".repeat(5000)), user("v".repeat(1300))] });
+  it("keeps 6,000 characters of the latest message (a pasted job description), 1,200 of earlier ones, 2,400 of answers", () => {
+    const r = parseChatRequest({ messages: [user("u".repeat(5000)), bot("a".repeat(5000)), user("v".repeat(5800))] });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.value.messages.map((m) => m.content.length)).toEqual([1200, 2400, 1200]);
-    expect(r.value.userChars).toBe(1200);
+    expect(r.value.messages.map((m) => m.content.length)).toEqual([1200, 2400, 5800]);
+    expect(r.value.userChars).toBe(5800);
+    expect(r.value.trimmed).toBeUndefined();
   });
+
+  it("reports how much of an over-long latest message was read (never a silent cut)", () => {
+    const r = parseChatRequest({ messages: [user("w".repeat(7000))] });
+    expect(r.ok && r.value.messages[0]!.content.length).toBe(6000);
+    expect(r.ok && r.value.trimmed).toBe(6000);
+  });
+
 
   it("ignores unknown languages and oversized Turnstile tokens", () => {
     const r = parseChatRequest({ messages: [user("hi")], lang: "fr", turnstileToken: "x".repeat(3000) });

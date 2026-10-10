@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { renderMarkdown, safeHref } from "../../src/markdown";
 
+const emails = ["hatem@mohamedhatem.dev", "mhatem5351@gmail.com"];
+
 const html = (src: string, opts = {}) => {
   const div = document.createElement("div");
   div.append(renderMarkdown(src, opts));
@@ -68,10 +70,54 @@ describe("markdown: links", () => {
     }
   });
 
-  it("autolinks bare URLs and emails, without trailing punctuation", () => {
-    expect(html("Email hatem@mohamedhatem.dev or see https://github.com/mhatem5351.")).toBe(
+  it("autolinks bare URLs and the site's own emails, without trailing punctuation", () => {
+    expect(html("Email hatem@mohamedhatem.dev or see https://github.com/mhatem5351.", { emails })).toBe(
       '<p>Email <a href="mailto:hatem@mohamedhatem.dev">hatem@mohamedhatem.dev</a> or see <a href="https://github.com/mhatem5351" target="_blank" rel="noopener noreferrer">https://github.com/mhatem5351</a>.</p>',
     );
+    expect(html("Write to Hatem@MohamedHatem.dev", { emails })).toBe('<p>Write to <a href="mailto:Hatem@MohamedHatem.dev">Hatem@MohamedHatem.dev</a></p>');
+  });
+
+  it("leaves any other email address as plain text (a planted address never becomes a link)", () => {
+    expect(html("Email recruiter@evil.example for details, or hatem@mohamedhatem.dev.", { emails })).toBe(
+      '<p>Email recruiter@evil.example for details, or <a href="mailto:hatem@mohamedhatem.dev">hatem@mohamedhatem.dev</a>.</p>',
+    );
+    expect(html("recruiter@evil.example")).toBe("<p>recruiter@evil.example</p>");
+  });
+
+  it("refuses paths the URL parser would turn into another host (backslash, tab, newline, other spaces)", () => {
+    for (const bad of ["/\\evil.example/login", "/\t/evil.example/login", "/\n/evil.example", "/\u2028/evil.example", "/ /evil.example", "https://evil.example\\@mohamedhatem.dev"]) {
+      expect(safeHref(bad)).toBeNull();
+    }
+    expect(html("See [apply here](/\\evil.example/login) now.")).toBe("<p>See apply here now.</p>");
+    expect(html("See [apply here](/\t/evil.example/login) now.")).toBe("<p>See apply here now.</p>");
+  });
+
+  it("allows paths on this site only", () => {
+    expect(safeHref("/cv/")).toBe(`${location.origin}/cv/`);
+    expect(safeHref("/ar/#contact")).toBe(`${location.origin}/ar/#contact`);
+    expect(html("[CV](/cv/)")).toBe(`<p><a href="${location.origin}/cv/">CV</a></p>`);
+  });
+});
+
+describe("markdown: Arabic phone numbers", () => {
+  const phone = (out: string) => out.match(/<span dir="ltr"[^>]*>([^<]*)<\/span>/)?.[1];
+
+  it("isolates the number left-to-right in plain text, + first and grouping kept, punctuation outside", () => {
+    const out = html("رقمه على واتساب +20 114 207 0946.", { isolate: true });
+    expect(out).toBe('<p>رقمه على واتساب <span dir="ltr" class="nw">+20 114 207 0946</span>.</p>');
+    expect(html("(+20 114 207 0946)", { isolate: true })).toBe('<p>(<span dir="ltr" class="nw">+20 114 207 0946</span>)</p>');
+  });
+
+  it("isolates it inside a link label (the canonical WhatsApp link) and inside bold", () => {
+    expect(html("- **واتساب:** [+20 114 207 0946](https://wa.me/201142070946)", { isolate: true })).toBe(
+      '<ul><li><strong>واتساب:</strong> <a href="https://wa.me/201142070946" target="_blank" rel="noopener noreferrer"><span dir="ltr" class="nw">+20 114 207 0946</span></a></li></ul>',
+    );
+    expect(phone(html("اتصل على **+20 114 207 0946** الآن", { isolate: true }))).toBe("+20 114 207 0946");
+    expect(phone(html("[+20 114 207 0946](tel:+201142070946)", { isolate: true }))).toBe("+20 114 207 0946");
+  });
+
+  it("leaves English answers alone", () => {
+    expect(html("WhatsApp: +20 114 207 0946")).toBe("<p>WhatsApp: +20 114 207 0946</p>");
   });
 });
 

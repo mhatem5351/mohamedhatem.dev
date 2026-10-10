@@ -30,8 +30,11 @@
     { "name": "RL_CHAT", "namespace_id": "2601", "simple": { "limit": 8, "period": 60 } },
     // …and at most 3 in any 10 seconds (burst).
     { "name": "RL_CHAT_BURST", "namespace_id": "2602", "simple": { "limit": 3, "period": 10 } },
-    // Whole site: at most 60 Gemini calls a minute per location (cost / quota circuit breaker).
+    // Whole site: at most 60 Gemini calls a minute per location (quota circuit breaker). Only requests that passed the
+    // session or Turnstile check count, so unverified traffic can't trip it for everyone.
     { "name": "RL_CHAT_GLOBAL", "namespace_id": "2603", "simple": { "limit": 60, "period": 60 } },
+    // Per chat session (keyed by its random nonce, so it follows the visitor across IPs): 6 messages a minute.
+    { "name": "RL_CHAT_SESSION", "namespace_id": "2605", "simple": { "limit": 6, "period": 60 } },
     // Contact form per IP: 3 a minute.
     { "name": "RL_CONTACT", "namespace_id": "2604", "simple": { "limit": 3, "period": 60 } },
   ],
@@ -43,16 +46,22 @@
     "MAIL_TO": "mhatem5351@gmail.com",
     "GEMINI_MODEL": "gemini-3.8-flash",
     // Free tier (AI Studio, project gen-lang-client-0776950335): every Flash model 5 RPM / 20 RPD, Flash-Lite 3.5 and
-    // 3.1 15 RPM / 500 RPD, 2.5 Flash-Lite 10 RPM / 20 RPD, Gemma 4 30 RPM / 16k input tokens per minute (it gets a
-    // compact prompt). In order: ~120 premium answers a day, then ~1,000 Flash-Lite, then the rest. A 429 or 503 moves
-    // to the next model at once and cools the model down for every isolate in the location (worker/README.md →
-    // "Model selection"). Paid key instead: point GEMINI_API_KEY at it and set this to "".
-    "GEMINI_FALLBACK_MODELS": "gemini-3.7-flash,gemini-3.6-flash,gemini-3.5-flash,gemini-3-flash-preview,gemini-2.5-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-2.5-flash-lite,gemma-4-31b-it",
-    "GEMINI_HEDGE_MS": "8000",
+    // 3.1 15 RPM / 500 RPD, 2.5 Flash-Lite 20 RPD, Gemma 4 30 RPM / 16k input tokens per minute (compact prompt; long
+    // conversations are routed elsewhere). gemini-2.5-flash comes second because it is the fast one (no thinking,
+    // first token 0.7-1.5 s in production), so it is also the first hedge target. In order: ~120 premium answers a
+    // day, then ~1,000 Flash-Lite, then the rest. A 429 or 503 moves to the next model at once and cools the model
+    // down (worker/README.md → "Model selection"). Paid key instead: point GEMINI_API_KEY at it and set this to "".
+    "GEMINI_FALLBACK_MODELS": "gemini-2.5-flash,gemini-3.7-flash,gemini-3.6-flash,gemini-3.5-flash,gemini-3-flash-preview,gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-2.5-flash-lite,gemma-4-31b-it,gemma-4-26b-a4b-it",
+    // No first token after this long: start a fast model in parallel, which usually answers within ~1 s (production
+    // with 8 s: p90 time to first token 9-13 s, every slow answer a stalled first model followed by the hedge).
+    "GEMINI_HEDGE_MS": "3200",
   },
   // Secrets (wrangler secret put …; locally .dev.vars from `npm run dev-vars`):
   //   GEMINI_API_KEY · TURNSTILE_SECRET · SESSION_SECRET
-  "observability": { "enabled": true },
+  // Never set in production: ALLOW_MODEL_OVERRIDE, ALLOW_TURNSTILE_TEST (local .dev.vars only).
+  // Only the Worker's own console lines are kept (no IPs, no message text); automatic invocation logs would store request
+  // metadata such as the client IP, which /privacy/ promises is never logged.
+  "observability": { "enabled": true, "logs": { "enabled": true, "invocation_logs": false } },
   // `npm run dev:worker` → http://127.0.0.1:8790 (8787 is often taken by other local Workers).
   "dev": { "ip": "127.0.0.1", "port": 8790 },
 }

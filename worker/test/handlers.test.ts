@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildContactEmail, escapeHtml } from "../src/contact/email";
 import { contactRef, validateContact } from "../src/contact/validate";
 import worker from "../src/index";
-import { handleChat } from "../src/chat/handler";
+import { handleChat, SESSION_MESSAGE_CAP } from "../src/chat/handler";
 import { chatRequest, fakeLimiter, finalChunk, geminiSse, makeCtx, makeEnv, ORIGIN, readSse, textChunk } from "./helpers";
 
 /** Turnstile siteverify mock on the global fetch (the Worker calls it directly). */
@@ -42,12 +42,13 @@ describe("POST /api/chat", () => {
     expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(res.headers.get("Content-Security-Policy")).toContain("default-src 'none'");
     expect(res.headers.get("Cache-Control")).toContain("no-store");
-    expect(res.headers.get("Set-Cookie")).toMatch(/^mh_chat=v1\..+; Path=\/api\/chat; Max-Age=1800; HttpOnly; Secure; SameSite=Strict$/);
+    expect(res.headers.get("Set-Cookie")).toMatch(/^mh_chat=v2\..+; Path=\/api\/chat; Max-Age=1800; HttpOnly; Secure; SameSite=Strict$/);
     const events = await readSse(res);
     await Promise.all(ctx.pending);
-    expect(events.map((e) => e.event)).toEqual(["meta", "token", "done"]);
+    expect(events.map((e) => e.event)).toEqual(["meta", "token", "token", "done"]); // the last words come with the end
     expect(events[0]!.data).toMatchObject({ lang: "en", sessionExp: expect.any(Number) });
-    expect(events[1]!.data.t).toBe("Hatem leads AI engineering at Globant.");
+    expect(events[0]!.data.trimmed).toBeUndefined();
+    expect(events.filter((e) => e.event === "token").map((e) => e.data.t).join("")).toBe("Hatem leads AI engineering at Globant.");
     // Analytics: counts and latency only, never the text or the IP.
     expect(env.points).toHaveLength(1);
     const point = JSON.stringify(env.points[0]);
@@ -97,7 +98,7 @@ describe("POST /api/chat", () => {
     const noOrigin = new Request(`${ORIGIN}/api/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(first) });
     expect((await handleChat(noOrigin, makeEnv(), makeCtx())).status).toBe(403);
     expect((await chat(first, { headers: { "Content-Type": "text/plain" } })).res.status).toBe(415);
-    expect((await chat({ ...first, messages: [{ role: "user", content: "x".repeat(17_000) }] })).res.status).toBe(413);
+    expect((await chat({ ...first, messages: [{ role: "user", content: "x".repeat(33_000) }] })).res.status).toBe(413);
     expect((await chat("{not json")).res.status).toBe(400);
     expect((await chat({ messages: [{ role: "assistant", content: "hi" }] })).res.status).toBe(400);
   });
@@ -301,5 +302,131 @@ describe("POST /api/contact", () => {
     expect(statuses).toEqual([200, 200, 200, 429]);
     expect((await worker.fetch(contactRequest(validContact, { Origin: "https://evil.example" }), makeEnv(), makeCtx())).status).toBe(403);
     expect((await worker.fetch(contactRequest(validContact, { "Content-Type": "text/plain" }), makeEnv(), makeCtx())).status).toBe(415);
+  });
+});
+
+describe("POST /api/chat: quota abuse controls (SEC-1, SEC-2, AST-05)", () => {
+  const first = { messages: [{ role: "user", content: "What does he do?" }], lang: "en", turnstileToken: "tok" };
+  const ask = (content = "And before?") => ({ messages: [{ role: "user", content }] });
+  const UA = "Mozilla/5.0 (Macintosh) Chrome/141";
+  const session = async (env = makeEnv(), ip = "203.0.113.7") => {
+    const r = await chat(first, { env, headers: { "CF-Connecting-IP": ip, "User-Agent": UA } });
+    await readSse(r.res);
+    return r.res.headers.get("Set-Cookie")!.split(";")[0]!;
+  };
+
+  it("the site-wide limit is never spent by requests that fail before verification", async () => {
+    const global = fakeLimiter(100);
+    const env = makeEnv({ RL_CHAT_GLOBAL: global as unknown as RateLimit });
+    expect((await chat("{not json", { env })).res.status).toBe(400);
+    expect((await chat(ask(), { env })).res.status).toBe(401);
+    expect((await chat({ ...first, messages: [{ role: "user", content: "x".repeat(33_000) }] }, { env })).res.status).toBe(413);
+    expect((await chat(first, { env, headers: { Origin: "https://evil.example" } })).res.status).toBe(403);
+    stubSiteverify({ success: false });
+    expect((await chat(first, { env })).res.status).toBe(403);
+    expect(global.keys).toEqual([]);
+    stubSiteverify();
+    const ok = await chat(first, { env });
+    await readSse(ok.res);
+    expect(global.keys).toEqual(["chat:global"]);
+  });
+
+  it("when the site-wide limit trips, verified visitors get 503 upstream_busy (busy for everyone), not 'too fast'", async () => {
+    const env = makeEnv({ RL_CHAT_GLOBAL: fakeLimiter(0) as unknown as RateLimit });
+    const r = await chat(first, { env });
+    expect(r.res.status).toBe(503);
+    expect(r.res.headers.get("Retry-After")).toBe("60");
+    expect(await r.res.json()).toMatchObject({ error: "upstream_busy", retryAfter: 60 });
+    expect(r.fetcher).not.toHaveBeenCalled();
+  });
+
+  it("a session cookie replayed from another network or another browser needs a new Turnstile check", async () => {
+    const env = makeEnv();
+    const cookie = await session(env);
+    const sameNet = await chat(ask(), { env, headers: { Cookie: cookie, "CF-Connecting-IP": "203.0.113.200", "User-Agent": UA } });
+    expect(sameNet.res.status).toBe(200); // a phone moving inside its carrier's /24 keeps the session
+    await readSse(sameNet.res);
+    const otherNet = await chat(ask(), { env, headers: { Cookie: cookie, "CF-Connecting-IP": "198.51.100.7", "User-Agent": UA } });
+    expect(otherNet.res.status).toBe(401);
+    expect(await otherNet.res.json()).toMatchObject({ error: "turnstile_required" });
+    const script = await chat(ask(), { env, headers: { Cookie: cookie, "CF-Connecting-IP": "203.0.113.7", "User-Agent": "node" } });
+    expect(script.res.status).toBe(401);
+    expect(otherNet.fetcher).not.toHaveBeenCalled();
+    // The silent re-verify the widget does: a fresh token on the new network starts a new session.
+    const again = await chat({ ...ask(), turnstileToken: "tok2" }, { env, headers: { Cookie: cookie, "CF-Connecting-IP": "198.51.100.7", "User-Agent": UA } });
+    expect(again.res.status).toBe(200);
+    expect(again.res.headers.get("Set-Cookie")).toMatch(/^mh_chat=v2\./);
+    await readSse(again.res);
+  });
+
+  it("per-session rate limit, keyed by the session (it follows the visitor, not the IP)", async () => {
+    const perSession = fakeLimiter(1);
+    const env = makeEnv({ RL_CHAT_SESSION: perSession as unknown as RateLimit });
+    const cookie = await session(env);
+    const nonce = cookie.split("=")[1]!.split(".")[3];
+    const one = await chat(ask(), { env, headers: { Cookie: cookie, "User-Agent": UA } });
+    expect(one.res.status).toBe(200);
+    await readSse(one.res);
+    const two = await chat(ask(), { env, headers: { Cookie: cookie, "User-Agent": UA } });
+    expect(two.res.status).toBe(429);
+    expect(await two.res.json()).toMatchObject({ error: "rate_limited", retryAfter: 60 });
+    expect(perSession.keys).toEqual([`chat-session:${nonce}`, `chat-session:${nonce}`]);
+  });
+
+  it(`after ${SESSION_MESSAGE_CAP} messages a session needs a fresh Turnstile check (per-location budget in the Cache API)`, async () => {
+    const store = new Map<string, string>();
+    vi.stubGlobal("caches", {
+      default: {
+        match: async (k: string) => (store.has(k) ? new Response(store.get(k)) : undefined),
+        put: async (k: string, r: Response) => void store.set(k, await r.text()),
+      },
+    });
+    const env = makeEnv();
+    const cookie = await session(env);
+    const key = [...store.keys()].find((k) => k.includes("__chat-session/")) ?? `${ORIGIN}/__chat-session/${cookie.split("=")[1]!.split(".")[3]}`;
+    store.set(key, String(SESSION_MESSAGE_CAP - 1));
+    const last = await chat(ask(), { env, headers: { Cookie: cookie, "User-Agent": UA } });
+    expect(last.res.status).toBe(200);
+    await readSse(last.res);
+    await Promise.all(last.ctx.pending);
+    const over = await chat(ask(), { env, headers: { Cookie: cookie, "User-Agent": UA } });
+    expect(over.res.status).toBe(401);
+  });
+
+  it("Turnstile's test secret is refused unless ALLOW_TURNSTILE_TEST=1 (local dev); test-key results too", async () => {
+    stubSiteverify({ success: true, hostname: "example.com", metadata: { result_with_testing_key: true } });
+    const prod = await chat(first, { env: makeEnv({ TURNSTILE_SECRET: "1x0000000000000000000000000000000AA" }) });
+    expect(prod.res.status).toBe(403);
+    const realSecretTestToken = await chat(first, { env: makeEnv() });
+    expect(realSecretTestToken.res.status).toBe(403);
+    const dev = await chat(first, { env: makeEnv({ TURNSTILE_SECRET: "1x0000000000000000000000000000000AA", ALLOW_TURNSTILE_TEST: "1" }) });
+    expect(dev.res.status).toBe(200);
+    await readSse(dev.res);
+  });
+});
+
+describe("POST /api/chat: per-turn wiring", () => {
+  const body = (content: string) => ({ messages: [{ role: "user", content }], lang: "en", turnstileToken: "tok" });
+  const systemOf = (f: ReturnType<typeof gemini>) => JSON.parse(String((f.mock.calls[0] as unknown as [string, RequestInit])[1].body)).systemInstruction.parts[0].text as string;
+
+  it("a 6,000-character job description reaches the model whole; a longer one is cut visibly (meta.trimmed)", async () => {
+    const jd = `Is he a fit?\n\nRequirements:\n${"- Python and LangGraph in production\n".repeat(160)}`.slice(0, 5900);
+    const whole = await chat(body(jd));
+    const events = await readSse(whole.res);
+    expect(events[0]!.data.trimmed).toBeUndefined();
+    const sent = JSON.parse(String((whole.fetcher.mock.calls[0] as unknown as [string, RequestInit])[1].body)).contents.at(-1).parts[0].text;
+    expect(sent).toContain(jd.slice(-200));
+    expect(systemOf(whole.fetcher)).toContain("# This message asks about his fit for a role");
+
+    const long = await chat(body("y".repeat(7000)));
+    expect((await readSse(long.res))[0]!.data.trimmed).toBe(6000);
+  });
+
+  it("the contact card is shown only for contact or hiring questions", async () => {
+    const answer = () => vi.fn(async () => geminiSse([textChunk('Not stated.<ui>{"contact":"general","section":null,"followups":[]}</ui>'), finalChunk()]));
+    const metric = await chat(body("By what percentage did AIP v2 improve accuracy?"), { fetcher: answer() });
+    expect((await readSse(metric.res)).some((e) => e.event === "tool")).toBe(false);
+    const contact = await chat(body("How can I reach him on WhatsApp?"), { fetcher: answer() });
+    expect((await readSse(contact.res)).find((e) => e.event === "tool")?.data.name).toBe("show_contact_card");
   });
 });

@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { STRINGS } from "../../src/i18n";
 import { expect, test, type Page } from "@playwright/test";
-import { answer, ask, bubble, dialog, log, mock, openDemo, setup } from "./helpers";
+import { answer, ask, bubble, dialog, input, log, mock, openDemo, setup } from "./helpers";
 
 /** WCAG 2.0–2.2 A/AA rules, scoped to the widget (the demo page itself is not under test). */
 async function axe(page: Page) {
@@ -77,4 +77,54 @@ test("axe: mobile sheet @mobile", async ({ page }) => {
   await ask(page, "Contact?");
   await expect(page.getByRole("group", { name: "Get in touch with Hatem" })).toBeVisible();
   expect(await axe(page)).toEqual([]);
+});
+
+test("axe: over-limit notice, counter and the trimmed note (EN, dark)", async ({ page }) => {
+  await openDemo(page, "theme=dark");
+  await bubble(page).click();
+  await input(page).fill("x".repeat(6100));
+  await expect(page.locator("[data-mh-chat] .ln")).not.toBeEmpty();
+  expect(await axe(page)).toEqual([]);
+  await mock(page, answer("Ok."));
+  await input(page).press("Enter");
+  await expect(page.locator("[data-mh-chat] .msg.u .note")).toBeVisible();
+  expect(await axe(page)).toEqual([]);
+});
+
+test.describe("forced colors (Windows High Contrast)", () => {
+  const edge = (el: Element) => {
+    const s = getComputedStyle(el);
+    return { width: s.borderTopWidth, style: s.borderTopStyle, transparent: s.borderTopColor === "rgba(0, 0, 0, 0)" };
+  };
+  const ring = (el: Element) => {
+    const s = getComputedStyle(el);
+    return { width: s.outlineWidth, style: s.outlineStyle };
+  };
+
+  test("the bubble and the panel's borderless controls get a painted edge; focus shows an outline", async ({ page }) => {
+    await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+    await openDemo(page);
+    expect(await bubble(page).evaluate(edge)).toEqual({ width: "1px", style: "solid", transparent: false });
+    await bubble(page).focus();
+    expect(await bubble(page).evaluate(ring)).toEqual({ width: "2px", style: "solid" });
+
+    await bubble(page).click();
+    await expect(dialog(page)).toBeVisible();
+    for (const sel of ["button.ib", "button.go"]) {
+      expect(await page.locator(`[data-mh-chat] ${sel}`).first().evaluate(edge)).toEqual({ width: "1px", style: "solid", transparent: false });
+    }
+    await input(page).focus();
+    await page.keyboard.type("Hi");
+    expect(await input(page).evaluate(ring)).toEqual({ width: "2px", style: "solid" });
+    expect(await input(page).evaluate(edge)).toMatchObject({ width: "1px", transparent: false });
+    await mock(page, answer("Hello."));
+    await input(page).press("Enter");
+    await expect(log(page)).toContainText("Hello.");
+    expect(await page.locator("[data-mh-chat] .ub").evaluate(edge)).toEqual({ width: "1px", style: "solid", transparent: false });
+  });
+
+  test("without forced colors the new borders stay invisible", async ({ page }) => {
+    await openDemo(page);
+    expect(await bubble(page).evaluate(edge)).toMatchObject({ transparent: true });
+  });
 });

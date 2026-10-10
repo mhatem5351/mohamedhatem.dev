@@ -1,31 +1,51 @@
 import { CANARIES, KNOWLEDGE, SYSTEM_PROMPT } from "../generated/content";
 import { FRIENDLY } from "../http";
+import { CONFIDENTIAL_FOLLOWUPS, CONFIDENTIAL_REPLY, ConfidentialMatcher } from "./confidential";
 import { DirectiveExtractor } from "./directive";
 import { CooldownStore, secondsToPacificMidnight } from "./cooldown";
-import { buildBody, chunks, isLite, meaningful, openStream, UpstreamError, type Chunk, type Usage } from "./gemini";
+import {
+  buildBody,
+  chunks,
+  estimateRequestTokens,
+  inputTokenLimit,
+  isFast,
+  meaningful,
+  openStream,
+  UpstreamError,
+  type Chunk,
+  type Usage,
+} from "./gemini";
 import { buildFingerprints, OutputGuard } from "./guard";
-import { buildLinkCheck, LinkFilter } from "./links";
-import { COMPACT_RULES, REMINDERS, SECURITY_RULES, UI_DIRECTIVE, type GeminiContent } from "./prompt";
-import type { DoneEvent, ErrorCode, ErrorEvent, ToolName } from "./protocol";
+import { answerableFollowup } from "./intent";
+import { buildLinkCheck, buildPhoneFormats, LinkFilter, PhoneFilter } from "./links";
+import { COMPACT_RULES, CONFIDENTIAL_HINT, JD_RULES, REMINDERS, SECURITY_RULES, UI_DIRECTIVE, type GeminiContent } from "./prompt";
+import type { DoneEvent, ErrorCode, ErrorEvent, Lang, ToolEvent, ToolName } from "./protocol";
 
 /**
  * One answer, streamed: picks the fastest healthy model, relays the text through the UI-directive extractor, the
- * link guard and the output guard, then sends the validated UI events and exactly one `done` or `error` event.
+ * link guard, the phone-number canonicaliser and the output guard, then sends the validated UI events and exactly
+ * one `done` or `error` event.
  *
- * Model chain: [primary, ...fallbacks] minus the models known to be cooling down, at most {@link MAX_ATTEMPTS}
- * Gemini requests per answer, one per model.
- *   - The first model starts at once. If nothing has come back after `hedgeMs`, a second one starts in parallel
- *     ("hedging": Gemini's first-token latency swings from 1 s to over 60 s under load), preferring a Flash-Lite model
- *     because they are the fast ones; the first to produce content wins and the other request is aborted.
+ * Model chain: [primary, ...fallbacks] minus the models known to be cooling down and the models whose free tier
+ * can't take this request's input tokens in a minute (Gemma: 16K), at most {@link MAX_ATTEMPTS} Gemini requests per
+ * answer, one per model.
+ *   - The first model starts at once. If nothing has come back after `hedgeMs` (~3 s), a second one starts in
+ *     parallel ("hedging": Gemini's first-token latency swings from 1 s to over 60 s under load), preferring a fast
+ *     model (Gemini 2.5 Flash without thinking, or Flash-Lite at minimal thinking); the first to produce content wins
+ *     and the other request is aborted.
  *   - A model that fails before the first token (429 quota / rate limit, 503 overload, 5xx, network) hands over to
  *     the next one immediately; the visitor never sees it.
- *   - 429 and 503 also put the model on a cooldown shared by every isolate in the Cloudflare location
- *     (cooldown.ts): a daily quota until Google's RetryInfo, else next midnight Pacific; a per-minute limit 60 s; an
- *     overload until RetryInfo, else 30 s. Free tier: 20 requests a day for each Flash model, 500 for Flash-Lite.
+ *   - 429 and 503 also put the model on a cooldown (cooldown.ts), kept in the isolate and in the location's Cache
+ *     API: a daily quota at least an hour (Google's RetryInfo when longer, else until midnight Pacific); a per-minute
+ *     limit 60 s; an overload until RetryInfo, else 30 s. Free tier: 20 requests a day for each Flash model, 500 for
+ *     Flash-Lite 3.5 and 3.1.
  *   - Everything cooling or failing: `error upstream_busy` with a retry time; the widget offers the contact card.
+ *
+ * Confidentiality (confidential.ts): if the answer is about to name the unnamed client, it is replaced by a fixed,
+ * localised reply (`replace` event, or plain tokens when nothing was shown yet), never by a generic error.
  */
 export interface Sink {
-  send(event: "meta" | "token" | "tool" | "done" | "error", data: unknown): void;
+  send(event: "meta" | "token" | "replace" | "tool" | "done" | "error", data: unknown): void;
   ping(): void;
 }
 
@@ -39,6 +59,19 @@ export interface AnswerDeps {
   timeouts?: Partial<Timeouts>;
   /** Shared model cooldowns (defaults to this isolate's memory only). */
   cooldowns?: CooldownStore;
+  /** One request per model, never a retry (local evaluation: every Gemini call is counted against a budget). */
+  noRetry?: boolean;
+  /** Answer language (for the fixed confidentiality reply). */
+  lang?: Lang;
+  /**
+   * The visitor asked to reach or hire him, or is assessing him for a role (intent.ts). Without it the contact card
+   * is dropped even when the model asks for it.
+   */
+  contactAllowed?: boolean;
+  /** This turn assesses a job description: hedges keep normal thinking (accuracy over speed). */
+  jd?: boolean;
+  /** Names to keep out of answers (tests inject their own). */
+  confidential?: ConfidentialMatcher;
 }
 
 /**
@@ -62,7 +95,8 @@ export interface Timeouts {
 export const DEFAULT_TIMEOUTS: Timeouts = { first: 40_000, idle: 20_000, total: 75_000, ping: 8_000 };
 
 export interface AnswerResult {
-  outcome: "ok" | ErrorCode | "aborted";
+  /** "redacted": the confidentiality guard replaced the answer (sent with `done`). */
+  outcome: "ok" | "redacted" | ErrorCode | "aborted";
   model: string;
   fallback: boolean;
   finish?: DoneEvent["finish"];
@@ -82,17 +116,37 @@ const RETRYABLE = new Set<ErrorCode>(["upstream_busy", "upstream_error", "timeou
  * Runs of words that occur in the private instructions but not in the public knowledge. Built once per isolate, in
  * the global scope (isolate startup, ~4 ms) rather than inside the first request's 10 ms CPU budget.
  */
-const FINGERPRINTS = buildFingerprints(`${SYSTEM_PROMPT}\n\n${SECURITY_RULES}\n\n${UI_DIRECTIVE}\n\n${REMINDERS}\n\n${COMPACT_RULES}`, KNOWLEDGE);
+const FINGERPRINTS = buildFingerprints(
+  [SYSTEM_PROMPT, SECURITY_RULES, UI_DIRECTIVE, REMINDERS, COMPACT_RULES, JD_RULES, CONFIDENTIAL_HINT].join("\n\n"),
+  KNOWLEDGE,
+);
 export function promptFingerprints(): Map<string, number> {
   return FINGERPRINTS;
 }
 
 /** URLs the answer may link to: the ones written in the knowledge base and the instructions, plus the site. */
 const LINK_CHECK = buildLinkCheck([KNOWLEDGE, SYSTEM_PROMPT]);
+/** The owner's phone number as the knowledge base writes it (any other spelling of it is rewritten to this). */
+const PHONE_FORMATS = buildPhoneFormats([KNOWLEDGE, SYSTEM_PROMPT]);
+/** The unnamed client's hashed names (built once per isolate). */
+export const CONFIDENTIAL = new ConfidentialMatcher();
 
 /** The models to try, in order, without the ones cooling down. */
 export function modelChain(primary: string, fallbacks: string[], cooldowns: CooldownStore, now = Date.now()): string[] {
   return [...new Set([primary, ...fallbacks].filter(Boolean))].filter((m) => !cooldowns.isCooling(m, now));
+}
+
+/**
+ * The conversation for a model with a small per-minute input quota: the oldest turns are dropped (in pairs, so it
+ * still starts with the visitor) until the estimate fits; null when even the latest message alone doesn't fit.
+ */
+export function fitContents(system: string, contents: GeminiContent[], limit: number): GeminiContent[] | null {
+  let c = contents;
+  while (estimateRequestTokens(system, c) > limit) {
+    if (c.length <= 1) return null;
+    c = c.slice(c.length > 2 ? 2 : 1);
+  }
+  return c;
 }
 
 class Blocked extends Error {}
@@ -109,9 +163,11 @@ export async function streamAnswer(
 ): Promise<AnswerResult> {
   const t = { ...DEFAULT_TIMEOUTS, ...deps.timeouts };
   const t0 = Date.now();
-  const guard = new OutputGuard(CANARIES, promptFingerprints());
+  const names = deps.confidential ?? CONFIDENTIAL;
+  const guard = new OutputGuard(CANARIES, promptFingerprints(), names);
   const directive = new DirectiveExtractor();
   const links = new LinkFilter(LINK_CHECK);
+  const phones = new PhoneFilter(PHONE_FORMATS);
   const usage: Usage = { input: 0, output: 0, thoughts: 0, cached: 0 };
   const sentTools: ToolName[] = [];
   const trace: string[] = [];
@@ -151,28 +207,61 @@ export async function streamAnswer(
     if (!v.ok) throw new Blocked(v.reason);
     emit(v.emit);
   };
+  const tool = (ev: ToolEvent) => {
+    sentTools.push(ev.name);
+    sink.send("tool", ev);
+  };
+  /** The answer was about to name the unnamed client: show the fixed reply instead of anything already streamed. */
+  const redact = (): AnswerResult => {
+    const lang: Lang = deps.lang === "ar" ? "ar" : "en";
+    const text = CONFIDENTIAL_REPLY[lang];
+    if (guard.started) sink.send("replace", { t: text });
+    else emit(text);
+    firstMs ??= Date.now() - t0;
+    trace.push("redacted");
+    tool({ name: "suggest_followups", args: { questions: CONFIDENTIAL_FOLLOWUPS[lang] } });
+    const data: DoneEvent = { finish: "stop", usage, ms: { first: firstMs, total: Date.now() - t0 }, model };
+    sink.send("done", data);
+    return result("redacted", "stop");
+  };
 
   try {
     const cooldowns = deps.cooldowns ?? new CooldownStore();
     const all = [...new Set([deps.primary, ...deps.fallbacks].filter(Boolean))];
     await cooldowns.load(all);
-    const chain = modelChain(deps.primary, deps.fallbacks, cooldowns);
+    const systemFor = typeof system === "string" ? () => system : system;
+    // Per-model input: models with a small tokens-per-minute quota get a shortened history, or are skipped.
+    const inputs = new Map<string, GeminiContent[]>();
+    const chain = modelChain(deps.primary, deps.fallbacks, cooldowns).filter((m) => {
+      const limit = inputTokenLimit(m);
+      if (limit > 100_000) return true; // a 32 KB request can't come near it: skip the estimate (CPU budget)
+      const fit = fitContents(systemFor(m), contents, limit);
+      if (fit) inputs.set(m, fit);
+      else trace.push(`${m}:too-long`);
+      return Boolean(fit);
+    });
     if (!chain.length) {
       // Every model is over quota or overloaded: answer at once instead of making the visitor wait for failures.
-      const soonest = Math.min(...all.map((m) => cooldowns.until(m)));
+      const cooling = all.map((m) => cooldowns.until(m)).filter((u) => u > 0);
       trace.push("all-cooling");
-      return fail("upstream_busy", Math.max(1, Math.ceil((soonest - Date.now()) / 1000)));
+      return fail("upstream_busy", cooling.length ? Math.max(1, Math.ceil((Math.min(...cooling) - Date.now()) / 1000)) : 60);
     }
-    const systemFor = typeof system === "string" ? () => system : system;
-    const won = await pickModel(chain, (m) => buildBody(systemFor(m), contents, m), { ...deps, cooldowns }, run.signal, t0 + t.first, trace);
+    const won = await pickModel(
+      chain,
+      (m, hedge) => buildBody(systemFor(m), inputs.get(m) ?? contents, m, { fast: hedge && !deps.jd }),
+      { ...deps, cooldowns },
+      run.signal,
+      t0 + t.first,
+      trace,
+    );
     model = won.model;
 
     let finishReason: string | undefined;
     let blockReason: string | undefined;
     let last: Usage | undefined;
     const handle = (c: Chunk) => {
-      // model text → UI directive cut out → links checked → output guard → browser
-      if (c.text) show(links.push(directive.push(c.text)));
+      // model text → UI directive cut out → links checked → phone number canonical → output guard → browser
+      if (c.text) show(phones.push(links.push(directive.push(c.text))));
       if (c.finishReason) finishReason = c.finishReason;
       if (c.blockReason) blockReason = c.blockReason;
       if (c.usage) last = c.usage;
@@ -187,8 +276,9 @@ export async function streamAnswer(
     if (last) Object.assign(usage, last);
     if (signal.aborted) return result("aborted");
 
-    show(links.push(directive.flush()));
-    show(links.flush());
+    show(phones.push(links.push(directive.flush())));
+    show(phones.push(links.flush()));
+    show(phones.flush());
     const tail = guard.flush();
     if (!tail.ok) throw new Blocked(tail.reason);
     emit(tail.emit);
@@ -198,17 +288,28 @@ export async function streamAnswer(
     if (!visible) return fail("empty");
 
     // UI events go out after the text (the widget shows them under the answer). Follow-up chips are visible text
-    // too, so they get the canary check.
+    // too: no canary, no confidential name, and only questions the knowledge base can answer.
+    const canaryFree = (q: string) => new OutputGuard(CANARIES, new Map()).push(q).ok;
     for (const ev of directive.events()) {
-      if (ev.name === "suggest_followups" && !new OutputGuard(CANARIES, new Map()).push(ev.args.questions.join(" | ")).ok) continue;
-      sentTools.push(ev.name);
-      sink.send("tool", ev);
+      if (ev.name === "show_contact_card" && !deps.contactAllowed) continue;
+      if (ev.name === "suggest_followups") {
+        const questions = ev.args.questions.filter((q) => canaryFree(q) && !names.mentions(q) && answerableFollowup(q));
+        if (questions.length) tool({ name: "suggest_followups", args: { questions } });
+        continue;
+      }
+      tool(ev);
     }
     if (SAFETY_REASONS.has(finishReason ?? "")) return fail("safety");
     return done(finishReason === "MAX_TOKENS" ? "length" : "stop");
   } catch (e) {
     if (signal.aborted) return result("aborted");
-    if (e instanceof Blocked) return fail("blocked");
+    if (e instanceof Blocked) return e.message === "confidential" ? redact() : fail("blocked");
+    // Failed mid-answer: the words the guard was still holding back belong to the partial answer the widget keeps.
+    if (guard.answer) {
+      const held = guard.flush();
+      if (!held.ok) return held.reason === "confidential" ? redact() : fail("blocked");
+      emit(held.emit);
+    }
     if (e instanceof UpstreamError) {
       if (e.kind === "aborted") return result("aborted");
       if (e.kind === "quota" || e.kind === "busy") return fail("upstream_busy", Math.min(e.retryAfterS ?? 20, e.kind === "quota" ? 3600 : 60));
@@ -270,8 +371,8 @@ type Settled = { c: Contender; ok: true; v: Awaited<Contender["opened"]> } | { c
  */
 export async function pickModel(
   chain: string[],
-  bodyFor: (model: string) => Record<string, unknown>,
-  deps: Pick<AnswerDeps, "apiKey" | "hedgeMs" | "fetcher"> & { cooldowns: CooldownStore },
+  bodyFor: (model: string, hedge: boolean) => Record<string, unknown>,
+  deps: Pick<AnswerDeps, "apiKey" | "hedgeMs" | "fetcher" | "noRetry"> & { cooldowns: CooldownStore },
   signal: AbortSignal,
   deadline: number,
   trace: string[] = [],
@@ -283,10 +384,10 @@ export async function pickModel(
   const attempts = () => contenders.length - rejected429;
   const canStart = () => waiting.length > 0 && attempts() < MAX_ATTEMPTS;
 
-  /** Starts the next model: in chain order, or for a hedge the first fast (Flash-Lite) model left. */
+  /** Starts the next model: in chain order, or for a hedge the first fast model left (with fast settings). */
   const startNext = (hedging = false): boolean => {
     if (!canStart()) return false;
-    const i = hedging ? Math.max(0, waiting.findIndex(isLite)) : 0;
+    const i = hedging ? Math.max(0, waiting.findIndex(isFast)) : 0;
     const model = waiting.splice(i, 1)[0]!;
     const isLast = waiting.length === 0 || attempts() + 1 >= MAX_ATTEMPTS;
     const ctrl = linked(signal);
@@ -294,12 +395,12 @@ export async function pickModel(
       const res = await openStream({
         apiKey: deps.apiKey,
         model,
-        body: bodyFor(model),
+        body: bodyFor(model, hedging),
         signal: ctrl.signal,
         deadline,
         fetcher: deps.fetcher,
         // Retrying a busy model only makes sense when nothing else can answer.
-        maxAttempts: isLast ? 3 : 1,
+        maxAttempts: isLast && !deps.noRetry ? 3 : 1,
       });
       const rest = chunks(res, ctrl.signal);
       for (;;) {
@@ -380,9 +481,14 @@ export async function pickModel(
   }
 }
 
-/** How long a failed model should be skipped: 429 and 503 only (other failures are not about the model's capacity). */
+/**
+ * How long a failed model should be skipped: 429 and 503 only (other failures are not about the model's capacity).
+ * A daily quota (20 requests a day for each Flash model) is skipped for at least an hour even when Google's RetryInfo
+ * suggests less: in production, models whose daily quota was spent were tried again minutes later and failed again,
+ * costing every such answer an extra round trip per exhausted model.
+ */
 export function cooldownSeconds(e: UpstreamError, now = new Date()): number {
-  if (e.kind === "quota") return e.retryAfterS ?? (e.daily ? secondsToPacificMidnight(now) : 3600);
+  if (e.kind === "quota") return e.daily ? Math.max(e.retryAfterS ?? secondsToPacificMidnight(now), 3600) : (e.retryAfterS ?? 3600);
   // Per-minute limits (free tier: 5 RPM for Flash, 10–15 for Flash-Lite, 16k input tokens/min for Gemma).
   if (e.kind === "busy" && e.status === 429) return Math.min(Math.max(e.retryAfterS ?? 0, 60), 300);
   if (e.kind === "busy" && e.status === 503) return Math.min(e.retryAfterS ?? 30, 300);

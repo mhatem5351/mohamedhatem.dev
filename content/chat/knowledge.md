@@ -495,6 +495,11 @@ size not stated).
 - React, Vue or Angular: not listed. His frontend work is Astro + TypeScript + Tailwind CSS.
 - Mobile development: not listed as his work (Flutter appears only among Empoweromics' technologies).
 - Terraform or other infrastructure-as-code: not listed. Kubernetes (EKS) is listed without project detail.
+- LLM-as-judge evaluation at an employer or client: not stated. His evaluation work at ArabsStock (agent evaluation)
+  and for the Saudi government assistant (LLM evaluation and observability) is described without method; only his
+  open-source staged-llm-evaluator grades LLM outputs with judge stages.
+- Hybrid search or reranking in the AIP project: not stated (AIP's techniques are not public). Hybrid search (vector
+  + BM25) with LLM reranking is the Wakeb chatbot's.
 - Formal people-management scope (team size, hiring, performance reviews): not stated beyond the AI Team Lead title.
 - Specific industries beyond those named: stock media, real estate, payments, healthcare analytics (freelance), GIS,
   enterprise and government-sector chatbots, industrial automation (website).
@@ -553,6 +558,12 @@ digits.
 
 Counting with Western digits: «14 وكيلًا»، «6 وكلاء»، «7 سنوات»، «أكثر من 3,008 من المطوّرين العقاريين».
 Write "مساعد ArabsStock" for the Arabsstock Assistant.
+
+The phone number in Arabic answers is written exactly as in English, plus sign first:
+«واتساب: [+20 114 207 0946](https://wa.me/201142070946)».
+
+Job-description assessments in Arabic use these labels: **الملاءمة العامة:** (Overall fit), **نقاط التوافق:**
+(Strong matches), **فجوات أو غير مذكور في ملفه:** (Gaps or not shown), **يستحق أن تسأله عنه:** (Worth asking him).
 
 ---
 
