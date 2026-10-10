@@ -1,9 +1,16 @@
 ---
 /**
- * "Shipped at" row (DESIGN.md 12.7): single-colour marks (CSS masks of design/assets/logos/mono) tinted muted, each
- * with its name as real text (Tabaqat's mark is its wordmark, so its name is visually hidden). Static, not links.
+ * "Shipped at" row (DESIGN.md 12.7): each company's official logo in its real colours (design/assets/logos/brand,
+ * built by design/scripts/brand/brand-logos.mjs; sources in design/assets/logos/SOURCES.md), optically balanced
+ * (equal visual area, so a long wordmark sits lower than a stacked lockup). One file per theme: the dark page uses the
+ * company's official reversed artwork, or a light rendition of only the parts that would vanish, so every logo holds
+ * 3:1 against the page. The file for the other theme is display:none and, being lazy, never downloads.
+ * The logos carry the company name as alt text; MDP is known by its symbol and initials, so its name is real text
+ * and the symbol is decorative. Static, not links.
  */
-import logos from "~/assets/logos/logos.json";
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+import brand from "~/assets/logos/brand/brand.json";
 import { messages, type Locale } from "~/lib/i18n";
 
 interface Props {
@@ -11,24 +18,42 @@ interface Props {
 }
 const { locale } = Astro.props;
 const m = messages(locale);
-type LogoEntry = { name: string; fullName?: string };
-const data = logos.logos as unknown as Record<string, LogoEntry>;
-const ROW = ["globant", "wakeb", "arabsstock", "empoweromics", "tabaqat", "mdp"] as const;
-const WORDMARK = new Set(["tabaqat"]);
+
+type File = { file: string; height: number; width: number };
+type Entry = { name: string; symbolOnly: boolean; files: { light: File; dark: File } };
+const files = import.meta.glob<{ default: ImageMetadata }>("../../assets/logos/brand/*.{svg,png}", { eager: true });
+const src = (f: string) => files[`../../assets/logos/brand/${f}`]!.default;
+const ROW = Object.entries(brand.logos as Record<string, Entry>);
 ---
 <div class="logos">
   <p class="eyebrow logos__label">{m.metrics.logosLabel}</p>
   <ul class="logos__list" role="list">
     {
-      ROW.map((key) => {
-        // Wakeb's mark needs its full name; MDP is known by its initials.
-        const name = (key === "wakeb" ? data[key]?.fullName : data[key]?.name) ?? key;
+      ROW.map(([key, e]) => {
+        const alt = e.symbolOnly ? "" : e.name;
+        const same = e.files.light.file === e.files.dark.file;
+        const img = (f: File, cls: string) => (
+          <Image
+            src={src(f.file)}
+            alt={alt}
+            width={f.width}
+            height={f.height}
+            densities={f.file.endsWith(".png") ? [1, 2, 3] : undefined}
+            quality={92}
+            class={cls}
+            loading="lazy"
+            decoding="async"
+          />
+        );
         return (
-          <li class="logo-mark">
-            <span class={`mask mask--${key}`} aria-hidden="true" />
-            <span class={WORDMARK.has(key) ? "sr-only" : "logo-mark__name"} lang="en">
-              {name}
-            </span>
+          <li class={`brand-logo brand-logo--${key}`} lang="en">
+            {same ? img(e.files.light, "brand-logo__img") : (
+              <>
+                {img(e.files.light, "brand-logo__img brand-logo__light")}
+                {img(e.files.dark, "brand-logo__img brand-logo__dark")}
+              </>
+            )}
+            {e.symbolOnly && <span class="brand-logo__name">{e.name}</span>}
           </li>
         );
       })

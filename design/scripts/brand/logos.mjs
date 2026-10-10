@@ -22,6 +22,7 @@ const SRC = path.join(INPUTS, "logos");
 const UP = 8;               // upscale factor for tracing
 const N = 100 * UP;         // upscaled size
 const TILE_SIZES = [96, 160];
+const SYMBOL_TILES = new Set(["wakeb", "empoweromics", "tabaqat"]); // built by brand-logos.mjs
 const MONO_UNITS = 100;     // mono viewBox height
 const ROW_H = 28;           // nominal credibility-row height (px) used for the recommended heights
 const ARGS = new Set(process.argv.slice(2));
@@ -597,10 +598,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const aspect = +vb[1] / +vb[2];
     const { coverage } = await inkStats(r.svg);
     const h = recommendedHeight(aspect, coverage, cfg.optical ?? 1);
-    // tiles
+    // tiles (Wakeb, Empoweromics and Tabaqat get symbol tiles from official high-resolution artwork in
+    // brand-logos.mjs, which also writes logic-controls; this script leaves those files alone)
     const spec = await tileSpec(slug, cfg, r);
     const tiles = {};
-    for (const S of TILE_SIZES) {
+    for (const S of SYMBOL_TILES.has(slug) ? [] : TILE_SIZES) {
       const png = await composeTile(S, spec);
       const base = path.join(out.tiles, `${slug}-${S}`);
       // flat-colour tiles (vector / monogram): lossless WebP and full-colour PNG stay tiny and artefact-free;
@@ -612,6 +614,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       fs.writeFileSync(base + ".webp", lossless && lossless.length <= lossy.length * 1.25 ? lossless : lossy);
       tiles[S] = { png: `tiles/${slug}-${S}.png`, webp: `tiles/${slug}-${S}.webp` };
     }
+    if (SYMBOL_TILES.has(slug)) for (const S of TILE_SIZES) tiles[S] = { png: `tiles/${slug}-${S}.png`, webp: `tiles/${slug}-${S}.webp` };
     manifest[slug] = {
       name: cfg.name,
       ...(cfg.fullName ? { fullName: cfg.fullName } : {}),

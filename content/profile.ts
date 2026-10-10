@@ -902,34 +902,34 @@ const experience: readonly Role[] = [
     location: l("Remote, from Cairo", "عن بُعد من القاهرة"),
     workMode: "remote",
     summary: l(
-      "Leading AI engineering on the STA project.",
-      "قيادة هندسة الذكاء الاصطناعي في مشروع STA.",
+      "Leading AI engineering on the Saudi Tourism Authority (STA) project.",
+      "قيادة هندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA).",
     ),
     bullets: [
-      // Wording from the approved GitHub README ("Leading AI engineering on the STA project: …"); LinkedIn and the CV
-      // describe the same scope (multi-agent LLM orchestration, LLM serving, scalable RAG pipelines).
+      // Confirmed by Mohamed (2026-10-10) from the project documents: one agentic LangGraph runtime (not multi-agent)
+      // on managed models, accepted in the client's UAT (so never "in production"). He approved naming the client and
+      // the visitor assistant, Noura. Nothing beyond this sentence until the STA case study is written.
       factB(
-        ["STA project", "مشروع STA"],
-        "Leading AI engineering on the STA project: multi-agent LLM orchestration, LLM serving and scalable RAG pipelines in production.",
-        "قيادة هندسة الذكاء الاصطناعي في مشروع STA: تنسيق الوكلاء المتعددين، وخدمة النماذج اللغوية، وخطوط RAG قابلة للتوسع، في بيئة الإنتاج.",
-        "github",
-        "linkedin",
-        "cv",
+        ["Saudi Tourism Authority (STA) project", "مشروع الهيئة السعودية للسياحة (STA)"],
+        "Leading AI engineering on the Saudi Tourism Authority (STA) project: an agentic LLM runtime (LangGraph) with retrieval, human-approval gates and evaluation, serving Noura, the public visitor assistant, and an internal staff assistant, in Arabic and English.",
+        "قيادة هندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA): بيئة تشغيل وكيلية للنماذج اللغوية (LangGraph) تجمع الاسترجاع وبوابات الموافقة البشرية والتقييم، وتخدم «نورة»، المساعدة العامة للزوار، ومساعدًا داخليًا للموظفين، بالعربية والإنجليزية.",
+        "mohamed",
       ),
     ],
     cvBullets: [
+      // The CV's 230-character line budget: the same facts as the site's bullet, a few words tighter.
       factB(
-        ["STA project", "مشروع STA"],
-        "Leading AI engineering on the STA project: production-grade multi-agent LLM orchestration, LLM serving and scalable RAG pipelines.",
-        "قيادة هندسة الذكاء الاصطناعي في مشروع STA: تنسيق الوكلاء المتعددين، وخدمة النماذج اللغوية، وخطوط RAG قابلة للتوسع، في أنظمة جاهزة للإنتاج.",
-        "github", "linkedin", "cv",
+        ["Saudi Tourism Authority (STA) project", "مشروع الهيئة السعودية للسياحة (STA)"],
+        "Leading AI engineering on the Saudi Tourism Authority (STA) project: an agentic LangGraph runtime with retrieval, human-approval gates and evaluation for Noura, the visitor assistant, and a staff assistant, in Arabic and English.",
+        "قيادة هندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA): بيئة تشغيل وكيلية على LangGraph تجمع الاسترجاع وبوابات الموافقة البشرية والتقييم، وتخدم «نورة» مساعدة الزوار ومساعدًا للموظفين، بالعربية والإنجليزية.",
+        "mohamed",
       ),
     ],
-    tech: [l("Multi-agent orchestration", "تنسيق الوكلاء المتعددين"), l("LLM serving", "خدمة النماذج اللغوية"), "RAG"],
+    tech: ["LangGraph", l("Agentic LLM runtime", "بيئة تشغيل وكيلية للنماذج اللغوية"), l("Retrieval", "الاسترجاع"), l("Human-approval gates", "بوابات الموافقة البشرية"), l("Evaluation", "التقييم")],
     caseStudies: [],
     honors: [],
     primary: true,
-    source: ["linkedin", "github", "cv"],
+    source: ["mohamed", "linkedin", "github"],
   },
   {
     id: "wakeb",
@@ -2404,8 +2404,8 @@ const skills: readonly SkillGroup[] = [
       "تنسيق الوكلاء المتعددين في بيئة الإنتاج، من 6 وكلاء إلى 14 وكيلًا.",
     ),
     skills: [
-      { name: same("LangGraph"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot", "project:staged-llm-evaluator"], source: ["cv", "linkedin", "github"] },
-      { name: l("Multi-agent systems", "الأنظمة متعددة الوكلاء"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot", "role:globant"], source: ["cv", "linkedin", "github"] },
+      { name: same("LangGraph"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot", "role:globant", "project:staged-llm-evaluator"], source: ["cv", "linkedin", "github", "mohamed"] },
+      { name: l("Multi-agent systems", "الأنظمة متعددة الوكلاء"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
       { name: same("LangChain"), evidence: [], source: ["cv", "linkedin"] },
       { name: same("OpenAI API"), evidence: ["role:arabsstock", "project:staged-llm-evaluator", "project:prompt-reliability-harness"], source: ["cv", "linkedin", "github"] },
       { name: same("Qwen"), evidence: ["case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
@@ -2463,7 +2463,7 @@ const skills: readonly SkillGroup[] = [
       "أن تعرف أن النموذج مصيب قبل أن يكتشف المستخدم أنه مخطئ.",
     ),
     skills: [
-      { name: l("LLM evaluation", "تقييم النماذج اللغوية"), evidence: ["case:gov-bilingual-assistant", "role:arabsstock", "project:staged-llm-evaluator"], source: ["cv", "linkedin", "github"] },
+      { name: l("LLM evaluation", "تقييم النماذج اللغوية"), evidence: ["case:gov-bilingual-assistant", "role:arabsstock", "role:globant", "project:staged-llm-evaluator"], source: ["cv", "linkedin", "github", "mohamed"] },
       { name: l("Observability & tracing", "المراقبة والتتبّع"), evidence: ["case:gov-bilingual-assistant"], source: ["cv", "linkedin", "github"] },
       { name: l("Prompt robustness testing", "اختبار ثبات الموجّهات"), evidence: ["project:prompt-reliability-harness"], source: ["github"] },
       { name: l("Guardrails", "حواجز الحماية"), evidence: ["project:rag-answering-service", "project:staged-llm-evaluator"], source: ["github"] },

@@ -49,8 +49,10 @@ export interface MatrixRow {
 
 export const MATRIX_ROWS: readonly MatrixRow[] = [
   // Agents and LLMs
-  { key: "multiAgent", group: "agents", cells: { globant: "role:globant", wakeb: "case:wakeb-bilingual-chatbot", arabsstock: "case:arabsstock-assistant" } },
-  { key: "langgraph", group: "agents", cells: { wakeb: "case:wakeb-bilingual-chatbot", arabsstock: "case:arabsstock-assistant", oss: "project:staged-llm-evaluator" } },
+  // Globant (STA): one agentic LangGraph runtime with retrieval, human-approval gates and evaluation, on managed models,
+  // so a LangGraph, RAG and evaluation dot, but neither "multi-agent" nor self-hosted serving.
+  { key: "multiAgent", group: "agents", cells: { wakeb: "case:wakeb-bilingual-chatbot", arabsstock: "case:arabsstock-assistant" } },
+  { key: "langgraph", group: "agents", cells: { globant: "role:globant", wakeb: "case:wakeb-bilingual-chatbot", arabsstock: "case:arabsstock-assistant", oss: "project:staged-llm-evaluator" } },
   { key: "mcp", group: "agents", cells: { wakeb: "case:wakeb-bilingual-chatbot" } },
   { key: "openai", group: "agents", cells: { arabsstock: "role:arabsstock", oss: "project:prompt-reliability-harness" } },
   // Retrieval
@@ -58,12 +60,12 @@ export const MATRIX_ROWS: readonly MatrixRow[] = [
   { key: "hybrid", group: "retrieval", cells: { wakeb: "case:wakeb-bilingual-chatbot" } },
   { key: "semantic", group: "retrieval", cells: { wakeb: "case:aip-semantic-search", arabsstock: "case:arabsstock-assistant" } },
   // Serving and MLOps
-  { key: "serving", group: "serving", cells: { globant: "role:globant", wakeb: "case:wakeb-bilingual-chatbot", arabsstock: "role:arabsstock" } },
+  { key: "serving", group: "serving", cells: { wakeb: "case:wakeb-bilingual-chatbot", arabsstock: "role:arabsstock" } },
   { key: "fastapi", group: "serving", cells: { wakeb: "case:wakeb-bilingual-chatbot", arabsstock: "case:arabsstock-assistant", oss: "project:rag-answering-service" } },
   { key: "docker", group: "serving", cells: { wakeb: "role:wakeb", arabsstock: "role:arabsstock", earlier: "case:logic-controls-website" } },
   { key: "prefect", group: "serving", cells: { tabaqat: "case:tabaqat-gis" } },
   // Quality
-  { key: "evaluation", group: "quality", cells: { wakeb: "case:gov-bilingual-assistant", arabsstock: "role:arabsstock", oss: "project:staged-llm-evaluator" } },
+  { key: "evaluation", group: "quality", cells: { globant: "role:globant", wakeb: "case:gov-bilingual-assistant", arabsstock: "role:arabsstock", oss: "project:staged-llm-evaluator" } },
   { key: "frontendQa", group: "quality", cells: { earlier: "case:logic-controls-website", oss: "project:logic-controls-website" } },
   // Data and ML
   { key: "nlp", group: "data", cells: { wakeb: "case:wakeb-bilingual-chatbot", empoweromics: "case:empoweromics-ml", oss: "project:arabic-sentiment-analysis" } },

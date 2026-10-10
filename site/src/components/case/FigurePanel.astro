@@ -3,9 +3,11 @@
  * A designed architecture diagram (pages.css §4): framed panel with a mono title bar, the SVG inlined twice (wide and
  * compact; a container query shows one, the hidden one is display:none and so out of the accessibility tree), then
  * the caption, the architecture disclaimer, the numbered callouts (numbers match the drawing) and the long text
- * description. Diagrams stay LTR on Arabic pages; their title/desc, caption and callouts are Arabic there.
+ * description. Diagrams stay LTR on Arabic pages; their title/desc, caption and callouts are Arabic there. The drawing
+ * moves while on screen (a request travelling its main path, src/scripts/motion.ts); its pause button sits in the bar.
  */
 import Icon from "~/components/ui/Icon.astro";
+import MotionToggle from "~/components/ui/MotionToggle.astro";
 import { diagram, diagramSvg, type DiagramId } from "~/lib/diagrams";
 import { format, messages, type Locale } from "~/lib/i18n";
 
@@ -30,8 +32,9 @@ const compact = diagramSvg(id, "compact", { locale });
     <div class="fig-panel__bar" dir="ltr">
       <span class="fig-panel__id">Fig. {n}</span>
       <span class="fig-panel__title" lang="en">{id} · architecture</span>
+      <MotionToggle locale={locale} />
     </div>
-    <div class="fig-panel__canvas" dir="ltr">
+    <div class="fig-panel__canvas" dir="ltr" data-motion="dg-play">
       <div class="dg-variant dg-variant--wide" set:html={wide} />
       <div class="dg-variant dg-variant--compact" set:html={compact} />
     </div>

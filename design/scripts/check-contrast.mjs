@@ -27,13 +27,13 @@ function block(selectorRe) {
   for (const [, k, v] of body.matchAll(/--color-([\w-]+):\s*([^;]+);/g)) vars[k] = v.trim();
   return vars;
 }
+// Dark is the default theme (`:root:not([data-theme="light"])`); light applies with html[data-theme="light"].
 const THEMES = {
   light: block(/(^|\n):root\s*\{/),
-  dark: block(/:root\[data-theme="dark"\]\s*\{/),
+  dark: block(/:root:not\(\[data-theme="light"\]\)\s*\{/),
 };
-// the prefers-color-scheme block must match the explicit dark block exactly
-const media = block(/:root:not\(\[data-theme="light"\]\)\s*\{/);
-const drift = Object.keys(THEMES.dark).filter(k => THEMES.dark[k] !== media[k]);
+// every colour token needs a dark value (a missing one would leak the light value into the default theme)
+const drift = Object.keys(THEMES.light).filter(k => !(k in THEMES.dark));
 
 // ---- colour maths ---------------------------------------------------------------------------
 function parse(c) {
@@ -110,7 +110,7 @@ if (asJson) {
       console.log(`  ${r.pass ? (r.min ? "ok  " : "info") : "FAIL"} ${pad(r.fg, 19)} on ${pad(r.bg, 18)} ${pad(r.ratio.toFixed(2), 6)} (min ${r.min || "-"})  ${r.use}`);
     console.log("");
   }
-  if (drift.length) console.log("DRIFT: prefers-color-scheme block differs from [data-theme=dark] for: " + drift.join(", "));
+  if (drift.length) console.log("DRIFT: no dark (default theme) value for: " + drift.join(", "));
   console.log(`${rows.length} pairs checked, ${fails.length} failures${drift.length ? ", theme drift detected" : ""}.`);
 }
 process.exit(fails.length || drift.length ? 1 : 0);

@@ -40,7 +40,7 @@ const GROUP_COLOR: Record<string, string> = {
   <div class="container">
     <SectionHeader index="07" eyebrow={m.skills.eyebrow} title={m.skills.title} titleId="skills-title" lede={m.skills.lead} />
 
-    <div class="card card--pad matrix-card">
+    <div class="card card--pad matrix-card" data-motion-once>
       <div class="matrix-card__head">
         <h3 class="matrix-card__title" id="matrix-title">{mx.title}</h3>
         <p class="matrix-card__lead">{mx.lead}</p>
@@ -180,3 +180,8 @@ const GROUP_COLOR: Record<string, string> = {
     </div>
   </div>
 </section>
+
+<script>
+  // The receipts pop in column by column the first time the matrix is on screen (components.css 20a).
+  import "~/scripts/motion.ts";
+</script>

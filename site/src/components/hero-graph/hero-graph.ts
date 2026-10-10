@@ -4,7 +4,8 @@
  *   - one deterministic timeline per loop, driven by requestAnimationFrame;
  *   - starts when the page is idle, freezes offscreen / in hidden tabs, never runs under
  *     prefers-reduced-motion (the server markup already is the still "snapshot" frame);
- *   - pause control (WCAG 2.2.2), pointer parallax, hover / focus highlight,
+ *   - pause control (WCAG 2.2.2; the site-wide motion preference, shared with the living charts), pointer parallax,
+ *     hover / focus highlight,
  *     roving-tabindex keyboard model and a toggletip per node.
  * Usage: import "hero-graph.js" (auto-inits every [data-hero-graph]) or call mountHeroGraph(el).
  */
@@ -12,6 +13,7 @@ import {
   CAT, ORDER, ROUTE, ROUTE_TOOLS, VIEW, catOf, pathD, seg, segLen,
   type Dir, type Id, type NodeId, type Pt,
 } from "./graph-data";
+import { motionPaused, onMotionChange, setMotionPaused } from "../../scripts/motion-pref";
 
 export interface HeroGraphOptions {
   dir?: Dir;
@@ -28,7 +30,6 @@ export interface HeroGraphController {
 interface Hop { a: Id; b: Id; t0: number; d: number; cmd?: NodeId }
 interface Plan { hops: Hop[]; lit: [Id, number, number][]; arr: [Id, number][]; end: number }
 
-const KEY = "hero-graph:paused";
 const TAIL = 56, TAIL_H = 32, RIPPLE = 640, LEAD = 700;
 const IDS: Id[] = [...ORDER, "query", "answer"];
 const INST = new WeakMap<HTMLElement, HeroGraphController>();
@@ -89,16 +90,14 @@ export function mountHeroGraph(host: HTMLElement, opts: HeroGraphOptions = {}): 
 
   let paused = false, live = false, isRun = false, running = false, inView = true, visible = true, destroyed = false;
   let reduced = opts.reducedMotion ?? (host.dataset.motion === "reduce" || mq.matches);
-  try { paused = localStorage.getItem(KEY) === "1"; } catch { /* storage blocked */ }
+  // the site-wide motion preference: this button and the living charts' pause buttons share it
+  paused = motionPaused();
   let cancelIdle = (): void => {};
   let teardown = (): void => {};
   let sync = (): void => {};
 
-  const setPaused = (v: boolean): void => {
-    paused = v;
-    try { localStorage.setItem(KEY, v ? "1" : "0"); } catch { /* storage blocked */ }
-    sync();
-  };
+  const setPaused = (v: boolean): void => setMotionPaused(v);
+  onMotionChange(v => { paused = v; sync(); }, ac.signal);
   const ctl: HeroGraphController = {
     play: () => setPaused(false),
     pause: () => setPaused(true),

@@ -7,10 +7,10 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { ar } from "@content/i18n/ar.ts";
-import { en } from "@content/i18n/en.ts";
+import { en, type Messages } from "@content/i18n/en.ts";
 import { expect, test, useTheme } from "./fixtures";
 
-type M = typeof en;
+type M = Messages;
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const host = (page: Page) => page.locator("[data-mh-chat]");
 const launcher = (page: Page, m: M) => page.getByRole("button", { name: m.chat.avatar.name, exact: true });

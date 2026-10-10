@@ -1,6 +1,6 @@
 # mohamedhatem.dev: art direction and design system
 
-Version 1.0 · 2026-10-09 · owner: design (phase 1) · consumers: the Astro build (phase 2), the chat widget, content.
+Version 1.1 · 2026-10-10 (dark by default, living charts, brand-colour logos; 1.0: 2026-10-09) · owner: design (phase 1) · consumers: the Astro build (phase 2), the chat widget, content.
 
 Everything in this document is implemented in `design/prototypes/*.html` (open them over http, see `HANDOFF.md`)
 and in `design/tokens.css`. Where this document and a prototype disagree, the prototype's CSS is the more precise
@@ -70,8 +70,10 @@ the day real, attributable quotes exist; never placeholder or paraphrased quotes
 1. **Show the system.** Prefer a diagram, a trace, a live graph or the working assistant over an adjective.
 2. **Receipts, not claims.** Every number and claim maps to `_inputs/` (CV, LinkedIn, GitHub). If a slot would need an
    invented number, the slot disappears. (See section 17.)
-3. **Motion means data flow.** Things move only to show a request travelling, a panel opening or state changing.
-   Nothing loops for decoration except the hero graph, which has a pause button and stops offscreen.
+3. **Motion means data flow.** Things move to show a request travelling, a panel opening or state changing. The
+   charts are alive: the hero graph and every architecture diagram run a request through their components, the
+   experience trace pings "now". Every loop runs only while on screen, stops in hidden tabs, and has a visible pause
+   button; one choice pauses them all (section 7).
 4. **Two languages, one design.** Arabic is designed, not mirrored-and-hoped: its own sizes, line-heights and copy.
 5. **Fast is a feature.** Text is the LCP, fonts are subset and preloaded, JS is islands only.
 6. **Warm precision.** Paper and ink, hairlines, mono annotations, one accent. Colour encodes category quietly.
@@ -160,14 +162,19 @@ Glows ≤ 16% opacity and only behind the hero graph and OG images.
 
 ### 3.4 Theme mechanics
 
-- Default follows `prefers-color-scheme`. The desktop icon button **flips what you see** on every click (light ↔ dark);
-  landing on the OS's own theme returns to "system" (so a light-OS visitor gets system → dark → system), and no click
-  is ever a no-op. The mobile menu has a three-segment control (Auto / Light / Dark) that can pin either. Choice
-  persists in `localStorage["mh-theme"]`; "system" removes the override.
-- An `is:inline` script in `<head>` sets `html[data-theme]` before first paint; without JS the
-  `@media (prefers-color-scheme: dark)` block in `tokens.css` applies the same values (the checker fails the build if
-  the two dark blocks ever drift).
-- `<meta name="theme-color">` twice, with `media="(prefers-color-scheme: light|dark)"` (#FBF8F3 / #0C151D).
+- **Dark is the default for every visitor**, whatever the OS setting. The desktop icon button flips what you see on
+  every click (dark ↔ light) and shows the current theme ("Theme: Dark"); the mobile menu has a two-segment control
+  (Light / Dark). The visitor's explicit choice persists in `localStorage["mh-theme"]` ("light" or "dark"); nothing
+  stored means dark.
+- In `tokens.css` the dark values sit on `:root:not([data-theme="light"])`, so the page is dark before any script and
+  without JS; the light values apply only with `html[data-theme="light"]`. An `is:inline` script in `<head>` sets
+  `html[data-theme]` before first paint (light only for a visitor who chose it). `check-contrast.mjs` fails if a colour
+  token has no dark value.
+- `<meta name="theme-color" content="#0C151D">` and `<meta name="color-scheme" content="dark">`, so the browser's
+  first frame and its chrome are dark; the boot script switches both to light (`data-light`, the page's own light
+  colour: the CV's band is #F4EFE6) for a visitor who chose light, and the toggle keeps them in step. The web
+  manifest's theme and background colours are #0C151D. The CV's A4 sheet stays paper-white inside the dark page, and
+  print is unchanged (white).
 - Dark mode is not inverted light mode: surfaces step *up* in lightness for elevation, shadows deepen, glows rise to
   16%, and a 1 px top inner highlight (`--inset-highlight`) gives cards their edge.
 
@@ -321,6 +328,9 @@ Motion is an enhancement: every component is complete and usable with no motion 
 | Hero graph parallax | satellites ±6 px, hub ±2 px | rAF + lerp | pointer move (fine pointers) | off |
 | Ask bar | typed example questions; caret blink | 45 ms/char, 1.1 s caret | auto | static placeholder, no caret blink |
 | Live dot (hero caption) | single ping ring | 2.4 s | auto | static dot |
+| Architecture diagrams (cards, What I build, case-study figures, next case) | one request per loop travels the main path as a **comet** (bright head with a halo and two trailing dots, in the colour of the node it reaches); each node it reaches **lights up** as it lands (tint fill + category stroke, fading); members of a target group ripple in reading order (the 14 agents); slow **packets** drift along async (dashed) edges; the orchestrator's dashed ring **breathes** | hop 0.72 s (0.5 s on thumbnails), loop = hop / 0.12 (6 s / 4.2 s), hero easing; landing 3 % up, gone by 24 %; packets ~48 px/s; ring 3.6 s | while on screen (IntersectionObserver), tab visible, not paused; restarts from the top each time it comes into view | the static drawing, unchanged; no pause button |
+| Experience trace | bars **grow** from their start date (scaleX), row by row; then the current role's bar ends in a **"now" dot** that pings | 1 s per bar, 60 ms stagger; ping 2.4 s | grow: once, the first time the trace is on screen (only if it was below the fold at load); ping: while on screen | bars in place, no dot |
+| Skills matrix | the receipts (dots) **pop in** column by column | 0.5 s spring, 70 ms per column + 45 ms per group | once, the first time the matrix is on screen | dots in place |
 | Section reveal | opacity 0→1 + translateY 14→0, stagger 70 ms | 640 ms `--ease-out` | IntersectionObserver, once | none (content visible) |
 | Card hover | lift −2 px + shadow-md | 240 ms | hover | colour/border only |
 | Button / arrow | arrow nudges 3 px in reading direction | 240 ms | hover | none |
@@ -334,9 +344,14 @@ Motion is an enhancement: every component is complete and usable with no motion 
 | Chat caret | teal block caret blink | 1 s steps | streaming | solid caret |
 | Theme switch | none (instant) | n/a | n/a | n/a |
 
-Rules: animate only `transform` and `opacity` (and SVG `stroke-dashoffset`); no scroll-jacking; no parallax on scroll;
-nothing flashes more than 3 times per second; the only auto-playing loop longer than 5 s (hero graph) has a visible
-pause control (WCAG 2.2.2) and the choice persists. The chat avatar's automatic motion comes in three short bursts,
+Rules: animate only `transform` and `opacity`, which browsers run on the compositor (the living charts measure
+~0 main-thread time while on screen, section 15); no scroll-jacking; no parallax on scroll; nothing flashes more than
+3 times per second. Every auto-playing loop longer than 5 s (the hero graph, each diagram, the trace's "now" ping) has
+a visible pause button in its own corner (the hero graph's top-end corner; a diagram's top-left corner, which every
+drawing keeps clear, or its figure's title bar; the trace's footer), all styled like the hero's (32 px, pause/play
+glyphs, a tooltip naming the action), and all of them share one site-wide choice that persists
+(`localStorage["hero-graph:paused"]`, the key predates the charts): pausing anywhere pauses everything, everywhere,
+and shows the still drawings. Loops run only while on screen and stop in hidden tabs. The chat avatar's automatic motion comes in three short bursts,
 each over within 5 s, and then stops; it moves again only while hovered or focused. CSS motion lives inside
 `@media (prefers-reduced-motion: no-preference)`; JS checks `matchMedia` and listens for changes.
 
@@ -367,12 +382,15 @@ each over within 5 s, and then stops; it moves again only while hovered or focus
   category-coloured nodes (`orbit-ring.svg` layered over a circle-cropped `<img>`), used in Contact. The beige studio
   backdrop of the original harmonises with the paper palette; no background removal.
   Formats: AVIF + WebP at 96 / 192 / 320 / 480 / 640, JPEG fallback at one size per crop.
-- **Company logos** (`design/assets/logos/`): `tiles/` keep each official logo in a 22%-radius tile on its native
-  background with an inner hairline, so it reads in both themes (trace rows, education, certs). `mono/` are
-  single-colour vector marks for the "Shipped at" row, tinted `--color-muted` (ink-2 on hover), each paired with its
-  name in Space Grotesk so symbol-only marks (G›, AR, house) are still recognisable. Crests (Cairo, Tanta) use text
-  monograms in mono contexts. **MTC uses a monogram** (the LinkedIn logo is a different college). `logos.json` has the
-  optically normalised widths/heights for a 28 px row.
+- **Company logos** (`design/assets/logos/`, every source in `SOURCES.md`): `tiles/` keep each official logo in a
+  22%-radius tile on its native background with an inner hairline, so it reads in both themes (work cards beside the
+  eyebrow, trace rows, education, certs); Wakeb Data, Empoweromics, Tabaqat and Logic Controls are symbol tiles built
+  from official high-resolution artwork. `brand/` holds the "Shipped at" row: each company's **official logo in its
+  real colours**, one file per theme (the dark page uses the official reversed artwork, or a light rendition of only
+  the parts that would fall under 3:1, keeping every brand accent), optically balanced to equal visual area
+  (`brand/brand.json`, built by `scripts/brand/brand-logos.mjs`). `mono/` are single-colour marks (case-study meta).
+  Crests (Cairo, Tanta) use text monograms in mono contexts. **MTC uses a monogram** (the LinkedIn logo is a different
+  college). Never a client's logo for unnamed clients: the Saudi government assistant's card shows Wakeb Data.
 - **Showcase screenshots** (`design/assets/showcase/`): logic-controls.com desktop (EN, AR) and phone (EN, AR) and the
   HMI panel, AVIF + WebP at 390 / 780 / 960 / 1440 / 1920. Shown inside a neutral browser frame and a dark phone
   bezel. Never show or name the Logic Controls founder.
@@ -424,6 +442,10 @@ solid = synchronous, dashed = async / batch; numbered saffron callouts that the 
 CSS variables when inlined; standalone files carry a `prefers-color-scheme` fallback. Wide variant (~1120 px),
 compact vertical variant (≤ 360 px) for phones, 16:10 thumbnail for cards. Diagrams stay **LTR in Arabic pages**
 (technical flow notation), with Arabic captions and callout text.
+**Living:** each diagram's `main` path (specs.mjs) is one request; the generator marks the nodes a hop reaches
+(`--at`, `--k`) and draws a landing overlay (`.dg-hl`), and the site's runtime (`site/src/scripts/motion.ts`) draws
+the comets and the async packets as transform animations, applies the landings and the ring's breath, and runs a
+diagram only while it is on screen (section 7.2). Standalone files keep the opt-in dash pulses (`.dg-play`).
 
 ---
 
@@ -453,13 +475,14 @@ component mapping is in `HANDOFF.md`.
 Sticky, 64 px, `bg` at 82% with `backdrop-filter: saturate(1.5) blur(14px)`; hairline appears after 8 px of scroll.
 Start: monogram (32 px) + "Mohamed Hatem" (Space Grotesk 600, 17 px) + role ("AI Team Lead", muted, separated by a
 hairline; hidden < 768). Centre-end: links Work · Experience · Open source · CV · Contact (≥ 1024). End: language switch
-(globe + other-language label), theme toggle (icon of the current mode; label "Theme: system/light/dark"), **Ask my AI**
+(globe + other-language label), theme toggle (icon of the current theme, dark by default; label "Theme: Dark" /
+"Theme: Light"), **Ask my AI**
 (accent button, 36 px; "Ask AI" < 768), menu button (< 1024). Skip link is the first focusable element.
 `aria-current="page"` on the active link (section scroll-spy optional, `aria-current="true"`).
 
 ### 12.2 Mobile menu (`.menu-sheet`)
 Fixed sheet under the nav (< 1024): large Space Grotesk links with hairlines and arrows, then the language switch and
-a three-way segmented theme control (Auto / Light / Dark, `aria-pressed`). Closes on Escape, outside click or link
+a two-way segmented theme control (Light / Dark, `aria-pressed`; Dark is pressed by default). Closes on Escape, outside click or link
 click; focus returns to the menu button; `aria-expanded` on the button.
 
 ### 12.3 Buttons (`.btn`)
@@ -494,9 +517,11 @@ Millions of stock assets made searchable · A100 GPUs serving Qwen through vLLM.
 content, not effects).
 
 ### 12.7 Logo row (`.logos`)
-Mono label "Shipped at" + mono marks with names (Globant, Wakeb Data, ArabsStock, Empoweromics, Tabaqat (wordmark),
-MDP), `--color-muted`, ink-2 on hover. Static (no marquee: nothing auto-moves, nothing to pause). Wraps on small
-screens. Logos are not links (avoid sending recruiters away); names are real text for screen readers.
+Mono label "Shipped at" + each company's official logo in its real colours (Globant, Wakeb Data, ArabsStock,
+Empoweromics, Tabaqat, and MDP's symbol with its initials as text), optically balanced (equal visual area: ArabsStock's
+long wordmark sits at 16.5 px, Tabaqat's stacked lockup at 35 px), one file per theme (section 9), the company name as
+alt text. Static (no marquee: nothing auto-moves, nothing to pause). One line from 64rem; wraps (and scales to 84 %)
+on small screens. Logos are not links (avoid sending recruiters away).
 
 ### 12.8 Section header (`.sec-head`)
 Index number (mono, accent) + mono label on a hairline that runs to the container edge; H2 (`3xl`, ≤ 22ch) and an
@@ -508,7 +533,9 @@ cards: icon tile, title (`lg`), two-line body (sm), mono stack line (first item 
 links to the logic-controls.com case study.
 
 ### 12.10 Case-study cards (`.work`)
-Card with a 3 px category bar, a 16:10 media area (diagram thumbnail on an 18 px dot grid fading down), eyebrow
+Card with a 3 px category bar, a 16:10 media area (diagram thumbnail on an 18 px dot grid fading down; the diagram
+moves while on screen, with its pause button in the media's top-left corner), the company's logo tile (24 px, 28 px on
+the feature card; the employer's, or Logic Controls for the freelance site) beside the eyebrow, eyebrow
 in one pattern everywhere, "COMPANY / YEARS" ("COMPANY / ROLE / YEARS" on the feature card; work dated only by a role
 shared with other case studies reads "WAKEB DATA / DURING 2024–2026"), title (`xl`; `2xl` on the feature; hyphenated
 compounds such as "self-hosted" never break at their hyphen), summary, optional 3 factual bullets with ring markers,
@@ -541,6 +568,8 @@ full-time, tinted fill + outline = part-time / freelance, outline only = study; 
 dashed "now" line. Rows are `<details>/<summary>` (works without JS); open rows show an attribute list (mono keys:
 type, stack, focus, honour) and bullets. Enhancement: single-open accordion, ArrowUp/ArrowDown/Home/End between rows.
 Phones: the axis hides, each row shows a full-width mini lane under the role. Arabic: time runs right-to-left.
+Motion: the bars grow in from their start dates the first time the trace is on screen, and the current role's bar ends
+in a "now" dot that pings while the trace is on screen (pause button at the end of the footer, after the keyboard hint).
 
 ### 12.13 Repo cards (`.repo`)
 Icon tile + "mhatem5351 /" (mono) + repo name (Space Grotesk 600) + external arrow; description; chips. Category bar on
@@ -563,7 +592,8 @@ widget. It never shows a fabricated answer.
 ### 12.15 Skills matrix (`.matrix`)
 A real `<table>`: skills as row headers grouped under category rows (`colgroup` headers coloured by category), columns
 = Globant, Wakeb, ArabsStock, Tabaqat, Empoweromics, Freelance & earlier, Open source. Filled category dot = used there
-(with hidden "yes" text), small neutral dot = not used. Mapping comes only from the sources (see `HANDOFF.md` for the
+(with hidden "yes" text), small neutral dot = not used; the filled dots pop in column by column the first time the
+table is on screen. Mapping comes only from the sources (see `HANDOFF.md` for the
 data). Horizontal scroll inside the card below 46rem (`position: relative` on the scroller so hidden text can't
 overflow the page), with the skill column first. **Phones (< 40rem):** the same data as a list, one entry per skill
 followed by small group-coloured chips of the places it was used (no seven-column table to swipe). Legend + "Also:"
@@ -662,7 +692,8 @@ checks the PDFs' page text). Names never break inside ("Umm Al-Qura University",
   movement; chat fully operable (Enter sends, Shift+Enter newline, Escape closes, focus returns); "/" opens the chat.
 - Structure: one H1 per page; landmark regions (`header`, `nav` with labels, `main`, `footer`); sections labelled by
   their H2; tables with real headers; lists as lists.
-- Motion: reduced-motion honoured everywhere; the hero graph has a pause control (2.2.2).
+- Motion: reduced-motion honoured everywhere (still drawings, no pause buttons); every loop longer than 5 s has a
+  visible pause control and one choice pauses them all (2.2.2).
 - Language: `lang` on `<html>` and on every other-language fragment (`lang="ar"` chip on EN pages, `lang="en"` terms
   where needed); `dir` on mixed runs.
 - Images: portraits and logos decorative where adjacent text says the same; diagrams carry `<title>` + `<desc>` and a
@@ -678,6 +709,11 @@ checks the PDFs' page text). Names never break inside ("Umm Al-Qura University",
   enhancement (< 1 KB), copy buttons and ask-bar (< 2 KB). The chat widget loads on first intent; the launcher's avatar
   (art + motion CSS + behaviour, ≈ 7 KB gzip, target ≤ 12 KB) after load, on idle.
 - CSS: one stylesheet, ≤ 25 KB gzip. Images: AVIF first, WebP fallback, `loading="lazy"` below the fold.
+- Motion CPU: the living charts animate only transform and opacity, on the compositor. Measured in Chromium
+  (`Performance.getMetrics`, 8 s idle with the chart on screen): 0.03–0.04 % main-thread time on the home charts and
+  0.06–0.17 % on case-study figures, the same as a still page (0.03–0.05 %); offscreen, in hidden tabs and when paused,
+  nothing runs. (The design's dash pulses, `stroke-dashoffset`, cost 3–10 % because every frame needed a style
+  recalc; they stay only in the standalone SVG files.)
 
 ## 16. Voice (copy)
 
@@ -687,7 +723,7 @@ First person, plain, specific. Verbs over adjectives ("I built", "I owned"). Bri
 ## 17. Honesty rules (binding)
 
 Only facts from `_inputs/` (CV, LinkedIn snapshot, GitHub README and repos). Title **AI Team Lead at Globant**;
-experience **7 years**; client names only at the disclosed level ("STA project", "AIP project"; ArabsStock is public); the Wakeb government
+experience **7 years**; client names only at the disclosed level ("AIP project"; ArabsStock is public; at Globant, the Saudi Tourism Authority (STA) project and its visitor assistant Noura, named with Mohamed's approval, never as multi-agent or "in production"); the Wakeb government
 assistant's client is described only as "a Saudi government client". No invented metrics, team sizes, agent names, results or quotes; when a
 design slot would need one, remove the slot. Never feature the Logic Controls founder. MTC is a monogram.
 

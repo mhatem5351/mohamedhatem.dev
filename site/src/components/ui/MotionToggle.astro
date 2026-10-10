@@ -1,0 +1,35 @@
+---
+/**
+ * Pause / play for the living charts (WCAG 2.2.2), styled like the hero graph's pause button: a 32 px button with the
+ * same two glyphs and a tooltip naming what a press will do. Every one of them, and the hero graph's, toggles the one
+ * site-wide motion preference (src/scripts/motion.ts), so they always agree. Hidden without JavaScript (nothing moves
+ * then) and under prefers-reduced-motion (nothing moves either); it is in the markup from the start, so showing it
+ * never shifts the layout. `dir` follows the page, so its corner and tooltip sit on the reading side even inside the
+ * diagrams' LTR frames.
+ */
+import { dirOf, messages, type Locale } from "~/lib/i18n";
+
+interface Props {
+  locale: Locale;
+  /** "corner": over the top-left of a drawing (the diagrams are LTR and keep that corner clear); "up": tooltip above. */
+  variant?: "corner" | "up";
+  class?: string;
+}
+const { locale, variant, class: className } = Astro.props;
+const m = messages(locale);
+---
+<button
+  type="button"
+  class:list={["mo-btn", variant && `mo-btn--${variant}`, className]}
+  dir={dirOf(locale)}
+  data-motion-toggle
+  aria-pressed="false"
+  aria-label={m.motion.pause}
+  data-pause={m.motion.pause}
+  data-play={m.motion.play}
+>
+  <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path class="mo-i-pause" d="M5.75 4.25v7.5M10.25 4.25v7.5"></path><path class="mo-i-play" d="M5.6 3.9v8.2L12.2 8z"></path></svg>
+</button>
+<script>
+  import "~/scripts/motion.ts";
+</script>

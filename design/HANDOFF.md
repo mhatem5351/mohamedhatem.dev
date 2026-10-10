@@ -77,22 +77,25 @@ Copy `design/tokens.tailwind.css` to `src/styles/tokens.tailwind.css` (regenerat
 - Logical properties only: `ms-/me-/ps-/pe-/text-start/text-end/border-s/border-e/rounded-s*/rounded-e*`, and
   **`inset-s-*` / `inset-e-*`** (Tailwind 4.2 deprecated `start-*` / `end-*`). No `left-*`/`right-*`/`ml-*`/`mr-*`.
 - Contrast gate: add `node design/scripts/check-contrast.mjs src/styles/tokens.css` (or the design copy) to CI; it
-  exits 1 on any failing pair or if the two dark blocks drift.
+  exits 1 on any failing pair or if a colour token has no dark (default) value.
 
-### 1.2 Theme (no flash)
+### 1.2 Theme (no flash): dark by default
+
+Dark is every visitor's default, whatever the OS; light only when chosen. The tokens already make the page dark
+without any script (`:root:not([data-theme="light"])`), so the boot script only has to apply a stored "light":
 
 ```astro
+<meta name="theme-color" content="#0C151D" data-light="#FBF8F3" data-dark="#0C151D">
+<meta name="color-scheme" content="dark">
 <script is:inline>
-  (() => { let m; try { m = localStorage.getItem("mh-theme"); } catch {}
-    const dark = m === "dark" || (m !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
-    document.documentElement.dataset.theme = dark ? "dark" : "light"; })();
+  (() => { const d = document.documentElement; let m; try { m = localStorage.getItem("mh-theme"); } catch {}
+    const light = m === "light"; d.dataset.theme = light ? "light" : "dark";
+    if (light) { const c = document.querySelector('meta[name="theme-color"]'); if (c) c.content = c.dataset.light;
+      document.querySelector('meta[name="color-scheme"]').content = "light"; } })();
 </script>
-<meta name="theme-color" content="#FBF8F3" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0C151D" media="(prefers-color-scheme: dark)">
 ```
-Toggle: every click flips the visible theme (light ↔ dark); when the result equals the OS theme it goes back to system
-(store `"light"`/`"dark"`, remove the key for system), so no click is a no-op; listen to the media query while in
-system mode. Mobile menu uses a 3-way segmented control. Labels from `content/i18n` `theme.*`.
+Toggle: every click flips the visible theme (dark ↔ light) and stores the choice (`"light"` or `"dark"`); the metas
+follow. Mobile menu: a 2-way segmented control (Light / Dark). Labels from `content/i18n` `theme.*`.
 
 ### 1.3 Fonts (Astro 6+ Fonts API, stable)
 

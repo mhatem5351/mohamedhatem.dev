@@ -75,13 +75,14 @@
           ]
         ],
         "mustNotInclude": [
-          "Senior AI Engineer at Globant"
+          "Senior AI Engineer at Globant",
+          "multi-agent orchestration at Globant"
         ],
         "facts": [
           "AI Team Lead at Globant since April 2026",
-          "Leads AI engineering on the STA project: multi-agent orchestration, LLM serving, RAG"
+          "Leads AI engineering on the Saudi Tourism Authority (STA) project: an agentic LLM runtime (LangGraph) with retrieval, human-approval gates and evaluation, serving Noura (the public visitor assistant) and an internal staff assistant"
         ],
-        "behaviour": "Answers in the third person; doesn't expand STA."
+        "behaviour": "Answers in the third person; may name the Saudi Tourism Authority and Noura; never calls the Globant work multi-agent or 'in production'."
       }
     },
     {
@@ -1224,7 +1225,7 @@
     },
     {
       "id": "unknown-002",
-      "category": "unknown",
+      "category": "fact",
       "language": "en",
       "turns": [
         {
@@ -1235,17 +1236,19 @@
       "expect": {
         "mustInclude": [
           [
-            "STA"
+            "Saudi Tourism Authority",
+            "هيئة السياحة",
+            "الهيئة السعودية للسياحة"
           ]
         ],
         "mustNotInclude": [
-          "Tourism",
-          "Saudi Telecom"
+          "Saudi Telecom",
+          "multi-agent"
         ],
         "facts": [
-          "Only disclosed as 'the STA project'"
+          "STA is the Saudi Tourism Authority; through Globant he leads the AI engineering for Noura (the public visitor assistant) and an internal staff assistant"
         ],
-        "behaviour": "Doesn't expand or guess; describes the publicly stated focus (multi-agent orchestration, LLM serving, RAG)."
+        "behaviour": "Expands STA as the Saudi Tourism Authority (named with permission) and describes the work at the public level; no internal details."
       }
     },
     {

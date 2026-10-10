@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
-import { KEY_PAGES, NOT_FOUND, PAGES } from "./pages";
+import { NOT_FOUND, PAGES } from "./pages";
 import { expect, test, useTheme } from "./fixtures";
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
@@ -23,22 +23,26 @@ async function axe(page: Page) {
 }
 
 test.describe("axe: zero WCAG 2.2 AA violations", () => {
-  for (const theme of ["light", "dark"] as const) {
-    for (const path of theme === "light" ? [...PAGES, ...NOT_FOUND] : KEY_PAGES) {
+  // Dark is every visitor's default (no stored choice, as on a first visit); light is the visitor's choice.
+  for (const theme of ["dark", "light"] as const) {
+    for (const path of [...PAGES, ...NOT_FOUND]) {
       test(`${path} (${theme})`, async ({ page }) => {
-        await useTheme(page, theme);
+        if (theme === "light") await useTheme(page, "light");
         await page.goto(path, { waitUntil: "networkidle" });
+        await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
         await revealAll(page);
         expect(await axe(page)).toEqual([]);
       });
     }
   }
 
-  test("mobile menu open (light) @mobile", async ({ page, isMobile }) => {
-    test.skip(!isMobile, "menu sheet is for small screens");
-    await page.goto("/", { waitUntil: "networkidle" });
-    await page.locator("[data-menu-button]").click();
-    await expect(page.locator("[data-menu-sheet]")).toBeVisible();
-    expect(await axe(page)).toEqual([]);
-  });
+  for (const theme of ["dark", "light"] as const)
+    test(`mobile menu open (${theme}) @mobile`, async ({ page, isMobile }) => {
+      test.skip(!isMobile, "menu sheet is for small screens");
+      if (theme === "light") await useTheme(page, "light");
+      await page.goto("/", { waitUntil: "networkidle" });
+      await page.locator("[data-menu-button]").click();
+      await expect(page.locator("[data-menu-sheet]")).toBeVisible();
+      expect(await axe(page)).toEqual([]);
+    });
 });

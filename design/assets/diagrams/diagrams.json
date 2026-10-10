@@ -144,20 +144,20 @@
         "wide": {
           "file": "assets/diagrams/arabsstock-assistant.svg",
           "viewBox": "0 0 1120 760",
-          "bytes": 22002,
-          "gzip": 5141
+          "bytes": 23375,
+          "gzip": 5413
         },
         "compact": {
           "file": "assets/diagrams/arabsstock-assistant-compact.svg",
           "viewBox": "0 0 352 1576",
-          "bytes": 21910,
-          "gzip": 5092
+          "bytes": 23282,
+          "gzip": 5363
         },
         "thumb": {
           "file": "assets/diagrams/arabsstock-assistant-thumb.svg",
           "viewBox": "0 0 400 250",
-          "bytes": 9455,
-          "gzip": 2577
+          "bytes": 11526,
+          "gzip": 2880
         }
       },
       "ids": {
@@ -267,20 +267,20 @@
         "wide": {
           "file": "assets/diagrams/wakeb-multi-agent-chatbot.svg",
           "viewBox": "0 0 1120 432",
-          "bytes": 18239,
-          "gzip": 4243
+          "bytes": 20123,
+          "gzip": 4554
         },
         "compact": {
           "file": "assets/diagrams/wakeb-multi-agent-chatbot-compact.svg",
           "viewBox": "0 0 352 1088",
-          "bytes": 18107,
-          "gzip": 4191
+          "bytes": 19981,
+          "gzip": 4496
         },
         "thumb": {
           "file": "assets/diagrams/wakeb-multi-agent-chatbot-thumb.svg",
           "viewBox": "0 0 400 250",
-          "bytes": 11560,
-          "gzip": 2850
+          "bytes": 13168,
+          "gzip": 3125
         }
       },
       "ids": {
@@ -381,20 +381,20 @@
         "wide": {
           "file": "assets/diagrams/llm-serving-a100.svg",
           "viewBox": "0 0 1120 352",
-          "bytes": 16091,
-          "gzip": 4053
+          "bytes": 17289,
+          "gzip": 4280
         },
         "compact": {
           "file": "assets/diagrams/llm-serving-a100-compact.svg",
           "viewBox": "0 0 352 912",
-          "bytes": 15307,
-          "gzip": 3915
+          "bytes": 16498,
+          "gzip": 4139
         },
         "thumb": {
           "file": "assets/diagrams/llm-serving-a100-thumb.svg",
           "viewBox": "0 0 400 250",
-          "bytes": 8184,
-          "gzip": 2506
+          "bytes": 9033,
+          "gzip": 2687
         }
       },
       "ids": {
@@ -475,20 +475,20 @@
         "wide": {
           "file": "assets/diagrams/hybrid-rag.svg",
           "viewBox": "0 0 1120 296",
-          "bytes": 11492,
-          "gzip": 3031
+          "bytes": 12596,
+          "gzip": 3242
         },
         "compact": {
           "file": "assets/diagrams/hybrid-rag-compact.svg",
           "viewBox": "0 0 352 648",
-          "bytes": 11533,
-          "gzip": 3017
+          "bytes": 12633,
+          "gzip": 3225
         },
         "thumb": {
           "file": "assets/diagrams/hybrid-rag-thumb.svg",
           "viewBox": "0 0 400 250",
-          "bytes": 7584,
-          "gzip": 2202
+          "bytes": 8516,
+          "gzip": 2391
         }
       },
       "ids": {
@@ -571,20 +571,20 @@
         "wide": {
           "file": "assets/diagrams/empoweromics-message-routing.svg",
           "viewBox": "0 0 1120 584",
-          "bytes": 18024,
-          "gzip": 4283
+          "bytes": 19297,
+          "gzip": 4500
         },
         "compact": {
           "file": "assets/diagrams/empoweromics-message-routing-compact.svg",
           "viewBox": "0 0 352 1064",
-          "bytes": 16095,
-          "gzip": 4161
+          "bytes": 17029,
+          "gzip": 4357
         },
         "thumb": {
           "file": "assets/diagrams/empoweromics-message-routing-thumb.svg",
           "viewBox": "0 0 400 250",
-          "bytes": 10553,
-          "gzip": 2668
+          "bytes": 11814,
+          "gzip": 2876
         }
       },
       "ids": {

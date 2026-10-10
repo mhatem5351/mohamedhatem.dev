@@ -28,7 +28,7 @@ export interface HeadProps {
   /** For ogType "article": publication and last-change dates (YYYY-MM-DD) for the article:* tags. */
   article?: { published: string; modified: string };
   jsonLd?: readonly object[];
-  /** Browser-chrome colours (default: the page background in each theme). */
+  /** Browser-chrome colours (default: the page background in each theme; dark is the default theme). */
   themeColor?: { light: string; dark: string };
   /**
    * Fonts to preload beyond the defaults: the display face on EN pages; on AR pages all three Plex Arabic weights
@@ -81,19 +81,29 @@ const alternates = indexable
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>{title}</title>
 <meta name="description" content={description} />
+{/*
+  Dark is the default for every visitor, whatever the OS setting; light only when the visitor picked it (stored in
+  localStorage "mh-theme"). The metas say dark, so the browser's first frame and its chrome are dark too; the boot
+  script (after them, so it can reach them) switches the page, the canvas and the chrome to light before first paint
+  for a visitor who chose light. scripts/site.ts keeps them in step with the toggle.
+*/}
+<meta name="theme-color" content={themeColor.dark} data-light={themeColor.light} data-dark={themeColor.dark} />
+<meta name="color-scheme" content="dark" />
 <script is:inline>
   (() => {
     const d = document.documentElement;
     d.classList.add("js");
     let m;
     try { m = localStorage.getItem("mh-theme"); } catch {}
-    const dark = m === "dark" || (m !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
-    d.dataset.theme = dark ? "dark" : "light";
+    const light = m === "light";
+    d.dataset.theme = light ? "light" : "dark";
+    if (light) {
+      const c = document.querySelector('meta[name="theme-color"]');
+      if (c) c.content = c.dataset.light;
+      document.querySelector('meta[name="color-scheme"]').content = "light";
+    }
   })();
 </script>
-<meta name="theme-color" content={themeColor.light} media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content={themeColor.dark} media="(prefers-color-scheme: dark)" />
-<meta name="color-scheme" content="light dark" />
 {indexable ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
 {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
 <Font cssVariable="--font-face-display" preload={locale === "en" || latinOnArabicCase} />

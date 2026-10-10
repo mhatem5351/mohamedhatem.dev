@@ -152,8 +152,8 @@
 @media (max-width: 22.49rem) { .brand > span:not(.brand__mark) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 @media (min-width: 80rem) { .nav__ask .label-short { display: none; } }
 /* theme toggle shows the icon of the *current* mode */
-.theme-toggle .i-sun, .theme-toggle .i-moon, .theme-toggle .i-system { display: none; }
-.theme-toggle[data-mode="light"] .i-sun, .theme-toggle[data-mode="dark"] .i-moon, .theme-toggle[data-mode="system"] .i-system { display: block; }
+.theme-toggle .i-sun, .theme-toggle .i-moon { display: none; }
+.theme-toggle[data-mode="light"] .i-sun, .theme-toggle[data-mode="dark"] .i-moon { display: block; }
 
 /* Mobile menu sheet (< 64rem): drops from the nav, links + language + theme segmented control */
 .menu-sheet { position: fixed; inset-inline: 0; inset-block-start: 4rem; z-index: calc(var(--z-nav) - 1); max-height: calc(100dvh - 4rem); overflow-y: auto;
@@ -271,13 +271,17 @@
 :lang(ar) .metric__label { max-width: 20ch; }
 .logos { display: grid; gap: 1rem; padding-block: 1.75rem .25rem; }
 @media (min-width: 64rem) { .logos { grid-template-columns: auto 1fr; align-items: center; gap: 2.5rem; } }
-.logos__list { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 1.125rem 2.25rem; }
+.logos__list { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem 2.25rem; }
 @media (min-width: 64rem) { .logos__list { justify-content: space-between; flex-wrap: nowrap; gap: 1.5rem; } }
-.logo-mark { display: inline-flex; align-items: center; gap: .625rem; color: var(--color-muted); transition: color var(--duration-fast) var(--ease-standard); }
-.logo-mark:hover { color: var(--color-ink-2); }
-.logo-mark .mask { display: block; flex: none; background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
-.logo-mark__name { font-family: var(--font-display); font-weight: 600; font-size: 1.0625rem; letter-spacing: -.015em; white-space: nowrap; }
-:lang(ar) .logo-mark__name:not([lang="en"]) { font-family: var(--font-arabic); font-weight: 600; letter-spacing: 0; }
+/* Official logos in their real colours (LogoRow.astro), sized by the image's own width/height (optically balanced in
+   design/assets/logos/brand/brand.json). One file per theme: dark is the default page, light the visitor's choice. */
+.brand-logo { display: inline-flex; align-items: center; gap: .5rem; flex: none; }
+.brand-logo__img { display: block; flex: none; height: auto; }
+.brand-logo__light { display: none; }
+:root[data-theme="light"] .brand-logo__light { display: block; }
+:root[data-theme="light"] .brand-logo__dark { display: none; }
+.brand-logo__name { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; line-height: 1; letter-spacing: -.02em; color: var(--color-ink); white-space: nowrap; }
+@media (max-width: 29.99rem) { .logos__list { gap: 1.125rem 1.75rem; zoom: .84; } }
 
 /* ---------- 11. Capabilities (bento) ---------- */
 .bento { display: grid; gap: var(--grid-gap); grid-template-columns: 1fr; }
@@ -336,7 +340,11 @@
     .work-list > .work.work--span-md > .work__body { grid-row: span 4; grid-template-rows: subgrid; }
   }
 }
-.work__meta { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+.work__meta { display: flex; flex-wrap: nowrap; align-items: center; gap: .625rem; }
+/* The company's logo tile beside the eyebrow (the official mark on its own background, 22 % radius). */
+.work__logo { display: block; flex: none; width: 1.5rem; height: 1.5rem; border-radius: .375rem; object-fit: cover; box-shadow: 0 0 0 1px var(--color-line); }
+.work--feature .work__logo { width: 1.75rem; height: 1.75rem; border-radius: .4375rem; }
+.next-case__org { display: flex; align-items: center; gap: .625rem; }
 /* The card eyebrow (company / role / years) wraps instead of overflowing the card on narrow screens or with user text spacing. */
 .work__meta .eyebrow { flex-wrap: wrap; row-gap: .125rem; }
 .work__title { font-size: var(--text-xl); line-height: var(--text-xl--line-height); letter-spacing: var(--text-xl--letter-spacing); overflow-wrap: break-word; hyphens: manual; }
@@ -587,6 +595,73 @@ textarea.input { min-height: 8.5rem; resize: vertical; }
 @media (prefers-reduced-motion: no-preference) {
   .js [data-reveal] { opacity: 0; transform: translateY(14px); transition: opacity var(--duration-slower) var(--ease-out), transform var(--duration-slower) var(--ease-out); transition-delay: calc(var(--i, 0) * 70ms); }
   .js [data-reveal].is-in { opacity: 1; transform: none; }
+}
+
+/* ---------- 20a. Living charts (src/scripts/motion.ts; DESIGN.md 7.2) ----------
+   Diagrams move while on screen ([data-motion] gets .dg-play, see diagram.css), the experience trace's bars grow in
+   and its current role pings "now", the skills matrix's dots pop in once. Only transform, opacity and a few small SVG
+   properties animate; all of it sits behind prefers-reduced-motion: no-preference, and pausing shows the still
+   drawings. */
+
+/* Pause / play (components/ui/MotionToggle.astro), the hero graph's button in the charts' places. */
+.mo-btn {
+  position: relative; z-index: 2; display: none; place-items: center; box-sizing: border-box; width: 2rem; height: 2rem; padding: 0; flex: none;
+  border: 1px solid var(--color-line); border-radius: .5rem; background: var(--color-surface); color: var(--color-muted);
+  box-shadow: var(--shadow-xs); cursor: pointer; font: inherit;
+  transition: color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+}
+.js .mo-btn { display: grid; }
+.mo-btn:hover { color: var(--color-ink); border-color: var(--color-line-strong); }
+.mo-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.mo-btn svg { width: 14px; height: 14px; overflow: visible; }
+.mo-i-pause { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.mo-i-play { fill: currentColor; stroke: currentColor; stroke-width: 1.2; stroke-linejoin: round; }
+.mo-btn[aria-pressed="true"] .mo-i-pause, .mo-btn[aria-pressed="false"] .mo-i-play { display: none; }
+.mo-btn::after {
+  content: attr(data-pause); position: absolute; z-index: 3; top: calc(100% + 6px); inset-inline-end: 0;
+  padding: 4px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none;
+  background: var(--color-surface-inverse); color: var(--color-on-inverse);
+  font: 500 12px/1.35 var(--font-sans); letter-spacing: 0; text-transform: none; opacity: 0; transition: opacity var(--duration-fast) var(--ease-standard);
+}
+.mo-btn[aria-pressed="true"]::after { content: attr(data-play); }
+.mo-btn:hover::after, .mo-btn:focus-visible::after { opacity: 1; }
+/* Over a drawing: its top-left corner, which every diagram keeps clear (diagrams are LTR on every page). */
+.mo-btn--corner { position: absolute; top: .625rem; left: .625rem; }
+.work__media > .mo-btn, .feature-art > .mo-btn { position: absolute; width: 2rem; height: 2rem; object-fit: initial; }
+.mo-btn--corner::after { inset-inline-end: auto; left: 0; }
+/* In a figure's title bar (always LTR): at its far end, the tooltip opening inwards. */
+.fig-panel__bar > .mo-btn { margin-left: auto; width: 1.875rem; height: 1.875rem; box-shadow: none; }
+.fig-panel__bar > .mo-btn::after { inset-inline-end: auto; right: 0; }
+.mo-btn--up::after { top: auto; bottom: calc(100% + 6px); }
+@media (prefers-reduced-motion: reduce) { .js .mo-btn { display: none; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Experience trace: the bars grow from their start date, row by row, the first time the trace is on screen. */
+  .trace[data-armed].is-in .span__bar { transition: transform 1s var(--ease-out) calc(var(--row, 0) * 60ms); }
+  .trace[data-armed]:not(.is-in) .span__bar { transform: scaleX(0); }
+  .span__bar { transform-origin: 0 50%; }
+  [dir="rtl"] .span__bar { transform-origin: 100% 50%; }
+  .trace__rows > .span:nth-child(3) { --row: 1; } .trace__rows > .span:nth-child(4) { --row: 2; }
+  .trace__rows > .span:nth-child(5) { --row: 3; } .trace__rows > .span:nth-child(6) { --row: 4; }
+  .trace__rows > .span:nth-child(7) { --row: 5; } .trace__rows > .span:nth-child(8) { --row: 6; }
+  .trace__rows > .span:nth-child(9) { --row: 7; } .trace__rows > .span:nth-child(10) { --row: 8; }
+  .trace__rows > .span:nth-child(11) { --row: 9; } .trace__rows > .span:nth-child(n + 12) { --row: 10; }
+  /* "now": the current role's bar ends in a live dot that pings, like the hero's live caption (loops: pausable). */
+  .span__bar--live:not(.span__bar--study)::before, .span__bar--live:not(.span__bar--study)::after {
+    content: ""; position: absolute; inset-block-start: 50%; inset-inline-end: -.3125rem; width: .625rem; height: .625rem;
+    margin-block-start: -.3125rem; border-radius: 50%; background: var(--bar); opacity: 0; pointer-events: none;
+  }
+  .span__bar--live:not(.span__bar--study)::after { box-shadow: 0 0 0 3px color-mix(in srgb, var(--bar) 24%, transparent); transition: opacity .4s var(--ease-out); }
+  .trace.is-live .span__bar--live:not(.span__bar--study)::after { opacity: 1; transition-delay: 1.1s; }
+  .trace.is-live .span__bar--live:not(.span__bar--study)::before { animation: trace-now 2.4s var(--ease-out) 1.1s infinite; }
+  @keyframes trace-now { 0% { transform: scale(1); opacity: .55; } 70%, 100% { transform: scale(2.8); opacity: 0; } }
+
+  /* Skills matrix: the receipts pop in column by column, once. */
+  .matrix-card[data-armed].is-in .matrix .y { transition: transform .5s var(--ease-spring, var(--ease-out)) calc(var(--c, 0) * 70ms + var(--g, 0) * 45ms), opacity .3s var(--ease-out) calc(var(--c, 0) * 70ms + var(--g, 0) * 45ms); }
+  .matrix-card[data-armed]:not(.is-in) .matrix .y { transform: scale(0); opacity: 0; }
+  .matrix td:nth-child(3) { --c: 1; } .matrix td:nth-child(4) { --c: 2; } .matrix td:nth-child(5) { --c: 3; }
+  .matrix td:nth-child(6) { --c: 4; } .matrix td:nth-child(7) { --c: 5; } .matrix td:nth-child(8) { --c: 6; }
+  .matrix tbody:nth-of-type(2) { --g: 1; } .matrix tbody:nth-of-type(3) { --g: 2; } .matrix tbody:nth-of-type(4) { --g: 3; } .matrix tbody:nth-of-type(n + 5) { --g: 4; }
 }
 
 /* ---------- 20b. Shared refinements (folded in from pages.css) ---------- */

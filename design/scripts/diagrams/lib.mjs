@@ -16,7 +16,8 @@ export function readTokens() {
   const css = fs.readFileSync(new URL("tokens.css", DESIGN), "utf8");
   const block = (sel) => { const i = css.indexOf(sel); const s = css.indexOf("{", i); return css.slice(s + 1, css.indexOf("}", s)); };
   const parse = (b) => Object.fromEntries([...b.matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
-  return { light: parse(block(":root {")), dark: parse(block(':root[data-theme="dark"] {')) };
+  // dark is the default theme block; light is the base :root (html[data-theme="light"])
+  return { light: parse(block(":root {")), dark: parse(block(':root:not([data-theme="light"]) {')) };
 }
 const TOK = readTokens();
 
@@ -87,11 +88,23 @@ export function css(cats = CATS, { full = false } = {}) {
   r.push(`.dg-lg{font:500 11px/1 ${MONO};fill:var(--_mut)}.dg-lsw{stroke:var(--nl);stroke-width:1}`);
   r.push(`.dg-dot{fill:var(--ni,var(--_mut))}.dg-mute{fill:var(--_mut)}.dg-ink2{fill:var(--_ink2)}`);
   // Opt-in motion: add class "dg-play" to the <svg> (or any ancestor). Static and complete without it.
+  // One loop = one request travelling the main path (--i: hop index, --L: path length), each hop lasting --dg-hop
+  // (12% of the loop); the node it reaches lights up as it lands (.dg-hl, --at: arrival index, --k: wave order inside
+  // a group); the orchestrator's ring breathes. Standalone, the pulses are dashes (.dg-p, stroke-dashoffset). A page
+  // runtime may instead draw them as comets moved by transform (.dg-cm, plus .dg-bgp packets drifting along async
+  // edges) and add "dg-comets", which hides the dashes: transform and opacity animate off the main thread.
+  r.push(`.dg{--dg-hop:.72s}.dg-thumb{--dg-hop:.5s}`);
   r.push(`.dg-p{fill:none;stroke:var(--pf,var(--_teal-f));stroke-width:3;stroke-linecap:round;opacity:0;stroke-dasharray:18px var(--L);stroke-dashoffset:18px}.dg-ph{stroke-width:9;stroke-opacity:.22}`);
-  r.push(`.dg-play .dg-p{opacity:1;animation:dg-p 6s cubic-bezier(.65,0,.35,1) infinite;animation-delay:calc(var(--i) * .72s)}`);
-  r.push(`.dg-play.dg-paused .dg-p,.dg-paused .dg-play .dg-p{animation-play-state:paused}`);
+  r.push(`.dg-hl{fill:var(--nb,var(--_teal-b));stroke:var(--pf,var(--_teal-f));stroke-width:2;opacity:0}`);
+  r.push(`.dg-cm,.dg-bgp{opacity:0;pointer-events:none}.dg-cm-h,.dg-cm-t{fill:var(--pf,var(--_teal-f))}.dg-cm-h{opacity:.22}.dg-cm-c{fill:var(--ni,var(--_teal));stroke:var(--pf,var(--_teal-f));stroke-width:1.5}.dg-bgp{fill:var(--_ink2)}`);
+  r.push(`.dg-play .dg-p{opacity:1;animation:dg-p calc(var(--dg-hop) / .12) cubic-bezier(.65,0,.35,1) infinite;animation-delay:calc(var(--i) * var(--dg-hop))}.dg-comets .dg-p{display:none}`);
+  r.push(`.dg-play .dg-hl{animation:dg-hit calc(var(--dg-hop) / .12) cubic-bezier(.16,1,.3,1) infinite;animation-delay:calc((var(--at) - .25) * var(--dg-hop) + var(--k,0) * 40ms)}`);
+  r.push(`.dg-play .dg-ring{animation:dg-breathe 3.6s ease-in-out infinite}`);
+  for (const k of ["p", "hl", "ring"]) r.push(`.dg-play.dg-paused .dg-${k},.dg-paused .dg-play .dg-${k}{animation-play-state:paused}`);
   r.push(`@keyframes dg-p{0%{stroke-dashoffset:18px}12%,100%{stroke-dashoffset:calc(var(--L) * -1)}}`);
-  r.push(`@media (prefers-reduced-motion:reduce){.dg-p{animation:none!important;opacity:0!important}}`);
+  r.push(`@keyframes dg-hit{0%,24%,100%{opacity:0}3%{opacity:1}}`);
+  r.push(`@keyframes dg-breathe{50%{opacity:.35}}`);
+  r.push(`@media (prefers-reduced-motion:reduce){.dg-p,.dg-hl,.dg-cm,.dg-bgp{animation:none!important;opacity:0!important}.dg-ring{animation:none!important}}`);
   return r.join("");
 }
 
@@ -107,9 +120,11 @@ export function splitRules(cssText) {
 // drop rules whose class selectors never occur in the markup (per-file CSS stays small)
 export function shake(cssText, markup) {
   const present = new Set([...markup.matchAll(/class="([^"]+)"/g)].flatMap((m) => m[1].split(/\s+/)));
-  const always = new Set(["dg", "dg-play", "dg-paused"]);
+  const always = new Set(["dg", "dg-play", "dg-paused", "dg-comets", "dg-wide", "dg-compact", "dg-thumb"]);
   const ok = (sel) => [...sel.matchAll(/\.(dg-[\w-]+)/g)].every((m) => always.has(m[1]) || present.has(m[1]));
   return splitRules(cssText).filter((rule) => {
+    if (rule.startsWith("@keyframes dg-hit")) return present.has("dg-hl");
+    if (rule.startsWith("@keyframes dg-breathe")) return present.has("dg-ring");
     if (rule.startsWith("@keyframes")) return present.has("dg-p");
     if (rule.startsWith("@media (prefers-reduced-motion")) return present.has("dg-p");
     if (rule.startsWith("@media")) return true;
@@ -273,16 +288,21 @@ export class Diagram {
     const stroke = n.kind === "orch" ? 2 : 1.5;
     this.boxes.set(n.id, { x, y, w, h, cy: y + h / 2, shape, ring, stroke, cat }); // ports use the silhouette centre
     const cls = `dg-n dg-${n.kind}${cat ? ` dg-c-${cat}` : ""}`;
-    let s = `<g class="${cls}">`;
+    // motion hooks: when the main-path pulse reaches this node (or the group it sits in), as --at / --k
+    const hit = this.arrivalOf(n.id, { x, y, w, h });
+    let s = `<g class="${cls}"${hit ? ` style="--at:${hit.at}${hit.k ? `;--k:${hit.k}` : ""}"` : ""}>`;
     const rx0 = n.rx ?? 10;
     for (let i = n.stack ?? 0; i > 0; i--) s += `<rect class="dg-b dg-stk" x="${x + i * 8}" y="${y - i * 6}" width="${w - i * 16}" height="${h}" rx="${rx0}"/>`;
     if (ring) s += `<rect class="dg-ring" x="${x - 4}" y="${y - 4}" width="${w + 8}" height="${h + 8}" rx="${rx0 + 4}"/>`;
     if (shape === "cyl") {
       const rx = w / 2;
-      s += `<path class="dg-b" d="M${x} ${y + ry}A${rx} ${ry} 0 0 1 ${x + w} ${y + ry}V${y + h - ry}A${rx} ${ry} 0 0 1 ${x} ${y + h - ry}Z"/>`;
+      const body = `d="M${x} ${y + ry}A${rx} ${ry} 0 0 1 ${x + w} ${y + ry}V${y + h - ry}A${rx} ${ry} 0 0 1 ${x} ${y + h - ry}Z"`;
+      s += `<path class="dg-b" ${body}/>`;
+      if (hit) s += `<path class="dg-hl" ${body}/>`;
       s += `<path class="dg-rim" d="M${x} ${y + ry}A${rx} ${ry} 0 0 0 ${x + w} ${y + ry}"/>`;
     } else {
       s += `<rect class="dg-b" x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx0}"/>`;
+      if (hit) s += `<rect class="dg-hl" x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx0}"/>`;
     }
     const mode = n.tile ? "tile" : n.align === "center" ? (n.t ? "center" : "icon") : "row";
     const gName = n.g === undefined ? glyph0 : n.g;
@@ -345,6 +365,20 @@ export class Diagram {
     for (const [k, v] of Object.entries({ x, y, w, h })) if (v % 4 !== 0 && !n.offgrid) this.warn.push(`${n.id}.${k}=${v} off the 4px half-grid`);
     if (n.co) s += this.callout(n.co, x + w - (n.coIn ?? 8), y - (n.coUp ?? 0));
     return s;
+  }
+
+  // When the main-path pulse reaches a node: its hop index + 1 (0 = where the first hop leaves). A node inside a
+  // target group lights up with the group, in reading order (k), so a row of agents ripples as the request lands.
+  arrivalOf(id, b) {
+    const at = this.arrive?.get(id);
+    if (at !== undefined) return { at, k: 0 };
+    for (const [gid, gat] of this.arrive ?? []) {
+      const g = this.boxes.get(gid);
+      if (!g?.group || b.x < g.x || b.y < g.y || b.x + b.w > g.x + g.w || b.y + b.h > g.y + g.h) continue;
+      const k = (this.wave[gid] = (this.wave[gid] ?? -1) + 1);
+      return { at: gat, k };
+    }
+    return null;
   }
 
   callout(num, cx, cy) {
@@ -437,6 +471,17 @@ export class Diagram {
   render() {
     const S = this.s;
     let groups = "", nodes = "", edges = "", pulses = "", extra = "";
+    // arrivals along the main path (see arrivalOf): first hop's sources leave at 0, each hop's target arrives at i + 1
+    this.arrive = new Map(); this.wave = {};
+    const byId = new Map((S.edges ?? []).map((e, i) => [e.id ?? i, e]));
+    (S.main ?? []).forEach((step, i) => {
+      for (const eid of [step].flat()) {
+        const e = byId.get(eid); if (!e) continue;
+        const from = e.from.split(":")[0], to = e.to.split(":")[0];
+        if (i === 0 && !this.arrive.has(from)) this.arrive.set(from, 0);
+        if (!this.arrive.has(to)) this.arrive.set(to, i + 1);
+      }
+    });
     for (const g of S.groups ?? []) groups += this.group(g);
     for (const n of S.nodes) nodes += this.node(n);
     const edgeOut = {};

@@ -226,8 +226,7 @@ a.co { text-decoration: none; }
 .next-case:hover .next-case__arrow { background: var(--color-accent-solid); border-color: var(--color-accent-solid); color: var(--color-on-accent); }
 .cta-band { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 1.25rem; align-content: center; padding: clamp(1.5rem, 1.1rem + 1.5vw, 2.25rem); border-radius: var(--radius-lg); background: var(--color-surface-inverse); color: var(--color-on-inverse); box-shadow: var(--shadow-lg); }
 /* dark mode: keep the band dark (a deep teal panel) instead of flipping to the light inverse surface */
-:root[data-theme="dark"] .cta-band { --color-surface-inverse: #10302E; --color-on-inverse: #ECF1F4; border: 1px solid #1E4B47; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cta-band { --color-surface-inverse: #10302E; --color-on-inverse: #ECF1F4; border: 1px solid #1E4B47; } }
+:root:not([data-theme="light"]) .cta-band { --color-surface-inverse: #10302E; --color-on-inverse: #ECF1F4; border: 1px solid #1E4B47; }
 .cta-band::before { content: ""; position: absolute; inset: 0; z-index: -1; background-image: radial-gradient(circle at 2px 2px, color-mix(in srgb, var(--color-on-inverse) 14%, transparent) 1.1px, transparent 1.4px); background-size: 22px 22px; -webkit-mask-image: radial-gradient(70% 90% at 100% 0%, #000, transparent 75%); mask-image: radial-gradient(70% 90% at 100% 0%, #000, transparent 75%); }
 [dir="rtl"] .cta-band::before { -webkit-mask-image: radial-gradient(70% 90% at 0% 0%, #000, transparent 75%); mask-image: radial-gradient(70% 90% at 0% 0%, #000, transparent 75%); }
 .cta-band::after { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(24rem 16rem at 100% 0%, color-mix(in srgb, var(--color-teal-fill) 28%, transparent), transparent 70%); }

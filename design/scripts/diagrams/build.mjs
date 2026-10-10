@@ -95,9 +95,16 @@ const SPEC_COMMENT = `/*
  *            Inline in the page and the site tokens (and its [data-theme]) win.
  * Direction  diagrams are LTR and English on every page (direction:ltr + unicode-bidi:isolate on the root);
  *            only captions, callouts and descriptions are translated.
- * Motion     opt-in: add class "dg-play" to the <svg> (or an ancestor) and pulses travel along the main path
- *            (6 s loop, 0.72 s per hop); add "dg-paused" to pause. Nothing animates by default and
- *            prefers-reduced-motion removes the pulses entirely. Loops > 5 s need a visible pause control.
+ * Motion     opt-in: add class "dg-play" to the <svg> (or an ancestor) and one request travels the main path per
+ *            loop: a pulse per hop in the colour of the node it reaches (--i hop index, --L path length; 0.72 s
+ *            per hop, 0.5 s on thumbnails, loop = hop / 0.12); each node it reaches lights up as it lands (.dg-hl
+ *            overlay; --at arrival index, 0 = where the request leaves; --k ripples the members of a target group
+ *            in reading order); the orchestrator's ring breathes. Standalone the pulses are dashes; the site's
+ *            runtime (site/src/scripts/motion.ts) draws them as comets moved by transform, adds slow packets on
+ *            async edges and sets "dg-comets" (transform and opacity only: off the main thread). Add "dg-paused"
+ *            to pause. Nothing animates by default; prefers-reduced-motion removes it all (the static drawing is
+ *            unchanged). Loops > 5 s need a visible pause control. The --* values are style attributes here; the
+ *            site turns them into data-vars (strict CSP) and its runtime applies them.
  */
 `;
 const fullCss = css(CATS);

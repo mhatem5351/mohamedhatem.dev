@@ -21,6 +21,21 @@ describe("diagrams", () => {
       }
   });
 
+  it("keeps the motion values as data-vars: every pulse has a length and hop, every lit node an arrival", () => {
+    for (const d of DIAGRAMS)
+      for (const v of ["wide", "compact", "thumb"] as const) {
+        const svg = diagramSvg(d.id, v);
+        const pulses = [...svg.matchAll(/<path [^>]*class="dg-p[ "][^>]*>/g)].map((x) => x[0]);
+        expect(pulses.length, `${d.id}/${v} pulses`).toBeGreaterThan(0);
+        for (const p of pulses) expect(p, `${d.id}/${v}`).toMatch(/data-vars="--L:\d+px;--i:\d+"/);
+        // each highlight overlay sits in a node that says when the request reaches it
+        const nodes = [...svg.matchAll(/<g class="dg-n[^"]*"([^>]*)>(?:(?!<\/?g[ >])[\s\S])*?class="dg-hl"/g)];
+        expect(nodes.length, `${d.id}/${v} lit nodes`).toBeGreaterThan(1);
+        for (const [, attrs] of nodes) expect(attrs).toMatch(/data-vars="--at:\d+(;--k:\d+)?"/);
+        expect(svg.match(/class="dg-hl"/g)!.length).toBe(nodes.length);
+      }
+  });
+
   it("makes thumbnails decorative and keeps internal references unique", () => {
     const svg = diagramSvg("arabsstock-assistant", "thumb", { decorative: true, idSuffix: "card" });
     expect(svg).toMatch(/aria-hidden="true"/);

@@ -209,7 +209,8 @@ export function mountAvatar({ host, root, button }: ChatLauncher, copy: AvatarCo
   /** One blink of `a` (the launcher's avatar or the header's) after `ms`. */
   const blink = (a: Element | null, ms: number) =>
     setTimeout(() => !quiet() && a?.isConnected && a.classList.add("blink"), ms);
-  root.addEventListener("animationend", (e) => {
+  root.addEventListener("animationend", (ev) => {
+    const e = ev as AnimationEvent;
     const a = (e.target as Element).closest?.(".ava,.avh");
     if (e.animationName === "mhbl") a?.classList.remove("blink");
     if (e.animationName === "mhwv") a?.classList.remove("wave");

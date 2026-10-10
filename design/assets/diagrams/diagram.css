@@ -28,9 +28,16 @@
  *            Inline in the page and the site tokens (and its [data-theme]) win.
  * Direction  diagrams are LTR and English on every page (direction:ltr + unicode-bidi:isolate on the root);
  *            only captions, callouts and descriptions are translated.
- * Motion     opt-in: add class "dg-play" to the <svg> (or an ancestor) and pulses travel along the main path
- *            (6 s loop, 0.72 s per hop); add "dg-paused" to pause. Nothing animates by default and
- *            prefers-reduced-motion removes the pulses entirely. Loops > 5 s need a visible pause control.
+ * Motion     opt-in: add class "dg-play" to the <svg> (or an ancestor) and one request travels the main path per
+ *            loop: a pulse per hop in the colour of the node it reaches (--i hop index, --L path length; 0.72 s
+ *            per hop, 0.5 s on thumbnails, loop = hop / 0.12); each node it reaches lights up as it lands (.dg-hl
+ *            overlay; --at arrival index, 0 = where the request leaves; --k ripples the members of a target group
+ *            in reading order); the orchestrator's ring breathes. Standalone the pulses are dashes; the site's
+ *            runtime (site/src/scripts/motion.ts) draws them as comets moved by transform, adds slow packets on
+ *            async edges and sets "dg-comets" (transform and opacity only: off the main thread). Add "dg-paused"
+ *            to pause. Nothing animates by default; prefers-reduced-motion removes it all (the static drawing is
+ *            unchanged). Loops > 5 s need a visible pause control. The --* values are style attributes here; the
+ *            site turns them into data-vars (strict CSP) and its runtime applies them.
  */
 .dg{--_cv:var(--dg-canvas,var(--color-bg,#FBF8F3));--_nd:var(--dg-node,var(--color-surface,#FFFEFB));--_ink:var(--color-ink,#14212B);--_ink2:var(--color-ink-2,#33414C);--_mut:var(--color-muted,#5A6670);--_lns:var(--color-line-strong,#D6CCBA);--_edge:var(--color-line-input,#8E8676);--_grid:var(--color-graph-grid,#DDD3C2);--_teal:var(--color-teal,#0A766C);--_teal-f:var(--color-teal-fill,#16A394);--_teal-b:var(--color-teal-tint,#E3F1EE);--_teal-l:var(--color-teal-tint-line,#B9DFD8);--_saffron:var(--color-saffron,#9C5800);--_saffron-f:var(--color-saffron-fill,#E9A23B);--_saffron-b:var(--color-saffron-tint,#FAEFDC);--_saffron-l:var(--color-saffron-tint-line,#F0D3A4);--_coral:var(--color-coral,#B3421C);--_coral-f:var(--color-coral-fill,#E4683F);--_coral-b:var(--color-coral-tint,#FAE7DF);--_coral-l:var(--color-coral-tint-line,#F0BFA9);--_sky:var(--color-sky,#2B65A6);--_sky-f:var(--color-sky-fill,#4A8FD6);--_sky-b:var(--color-sky-tint,#E4EDF7);--_sky-l:var(--color-sky-tint-line,#B7CDE8);--_sage:var(--color-sage,#55702A);--_sage-f:var(--color-sage-fill,#89A447);--_sage-b:var(--color-sage-tint,#ECF1DF);--_sage-l:var(--color-sage-tint-line,#CBD8A9);--_slate:var(--color-slate,#4A6072);--_slate-f:var(--color-slate-fill,#7F99AE);--_slate-b:var(--color-slate-tint,#E8EDF1);--_slate-l:var(--color-slate-tint-line,#C3CFD9);direction:ltr;unicode-bidi:isolate;font-family:"Inter Variable",Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
 @media (prefers-color-scheme:dark){.dg{--_cv:var(--dg-canvas,var(--color-bg,#0C151D));--_nd:var(--dg-node,var(--color-surface,#111D27));--_ink:var(--color-ink,#ECF1F4);--_ink2:var(--color-ink-2,#C9D3DA);--_mut:var(--color-muted,#97A5B1);--_lns:var(--color-line-strong,#2C3E4D);--_edge:var(--color-line-input,#5E7384);--_grid:var(--color-graph-grid,#1F2E3A);--_teal:var(--color-teal,#3DD6C3);--_teal-f:var(--color-teal-fill,#2CC2B0);--_teal-b:var(--color-teal-tint,#10302E);--_teal-l:var(--color-teal-tint-line,#1E4B47);--_saffron:var(--color-saffron,#F4B95A);--_saffron-f:var(--color-saffron-fill,#EFAE48);--_saffron-b:var(--color-saffron-tint,#2E2614);--_saffron-l:var(--color-saffron-tint-line,#4D3C1A);--_coral:var(--color-coral,#FF916E);--_coral-f:var(--color-coral-fill,#F57A54);--_coral-b:var(--color-coral-tint,#33201A);--_coral-l:var(--color-coral-tint-line,#563226);--_sky:var(--color-sky,#7DB6F0);--_sky-f:var(--color-sky-fill,#5EA2E6);--_sky-b:var(--color-sky-tint,#15283A);--_sky-l:var(--color-sky-tint-line,#23405C);--_sage:var(--color-sage,#B2CC72);--_sage-f:var(--color-sage-fill,#9DB95A);--_sage-b:var(--color-sage-tint,#1F2A17);--_sage-l:var(--color-sage-tint-line,#344524);--_slate:var(--color-slate,#AFC3D3);--_slate-f:var(--color-slate-fill,#8AA5BB);--_slate-b:var(--color-slate-tint,#1C2A35);--_slate-l:var(--color-slate-tint-line,#2D4050)}}
@@ -70,9 +77,25 @@
 .dg-dot{fill:var(--ni,var(--_mut))}
 .dg-mute{fill:var(--_mut)}
 .dg-ink2{fill:var(--_ink2)}
+.dg{--dg-hop:.72s}
+.dg-thumb{--dg-hop:.5s}
 .dg-p{fill:none;stroke:var(--pf,var(--_teal-f));stroke-width:3;stroke-linecap:round;opacity:0;stroke-dasharray:18px var(--L);stroke-dashoffset:18px}
 .dg-ph{stroke-width:9;stroke-opacity:.22}
-.dg-play .dg-p{opacity:1;animation:dg-p 6s cubic-bezier(.65,0,.35,1) infinite;animation-delay:calc(var(--i) * .72s)}
+.dg-hl{fill:var(--nb,var(--_teal-b));stroke:var(--pf,var(--_teal-f));stroke-width:2;opacity:0}
+.dg-cm,.dg-bgp{opacity:0;pointer-events:none}
+.dg-cm-h,.dg-cm-t{fill:var(--pf,var(--_teal-f))}
+.dg-cm-h{opacity:.22}
+.dg-cm-c{fill:var(--ni,var(--_teal));stroke:var(--pf,var(--_teal-f));stroke-width:1.5}
+.dg-bgp{fill:var(--_ink2)}
+.dg-play .dg-p{opacity:1;animation:dg-p calc(var(--dg-hop) / .12) cubic-bezier(.65,0,.35,1) infinite;animation-delay:calc(var(--i) * var(--dg-hop))}
+.dg-comets .dg-p{display:none}
+.dg-play .dg-hl{animation:dg-hit calc(var(--dg-hop) / .12) cubic-bezier(.16,1,.3,1) infinite;animation-delay:calc((var(--at) - .25) * var(--dg-hop) + var(--k,0) * 40ms)}
+.dg-play .dg-ring{animation:dg-breathe 3.6s ease-in-out infinite}
 .dg-play.dg-paused .dg-p,.dg-paused .dg-play .dg-p{animation-play-state:paused}
+.dg-play.dg-paused .dg-hl,.dg-paused .dg-play .dg-hl{animation-play-state:paused}
+.dg-play.dg-paused .dg-ring,.dg-paused .dg-play .dg-ring{animation-play-state:paused}
 @keyframes dg-p{0%{stroke-dashoffset:18px}12%,100%{stroke-dashoffset:calc(var(--L) * -1)}}
-@media (prefers-reduced-motion:reduce){.dg-p{animation:none!important;opacity:0!important}}
+@keyframes dg-hit{0%,24%,100%{opacity:0}3%{opacity:1}}
+@keyframes dg-breathe{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.dg-p,.dg-hl,.dg-cm,.dg-bgp{animation:none!important;opacity:0!important}
+.dg-ring{animation:none!important}}

@@ -1,10 +1,11 @@
 ---
 /**
  * 01 What I build (DESIGN.md 12.9): a bento of six capability cards. The feature card carries the multi-agent
- * chatbot diagram (decorative thumbnail on a dot-grid inset); "Front end, too" links to the logic-controls.com case
+ * chatbot diagram (decorative thumbnail on a dot-grid inset, moving while on screen, with its pause button); "Front end, too" links to the logic-controls.com case
  * study (the front-end showcase lives there).
  */
 import Icon from "~/components/ui/Icon.astro";
+import MotionToggle from "~/components/ui/MotionToggle.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
 import { diagramSvg } from "~/lib/diagrams";
 import { localePath, messages, type Locale } from "~/lib/i18n";
@@ -52,7 +53,10 @@ const featureArt = diagramSvg("wakeb-multi-agent-chatbot", "thumb", { decorative
             })()
           }
         </div>
-        <div class="feature-art" dir="ltr" set:html={featureArt} />
+        <div class="feature-art" dir="ltr" data-motion="dg-play">
+          <Fragment set:html={featureArt} />
+          <MotionToggle locale={locale} variant="corner" />
+        </div>
       </article>
       {
         cards.map(({ key, icon, tile }, i) => {

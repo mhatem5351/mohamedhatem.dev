@@ -212,7 +212,8 @@ export async function buildIcons({ quiet = false } = {}) {
 // theme variables re-scoped to a panel so light and dark can sit side by side on one page
 function themeVars(theme) {
   const css = fs.readFileSync(path.join(DESIGN, "tokens.css"), "utf8");
-  const m = css.match(theme === "dark" ? /:root\[data-theme="dark"\]\s*\{/ : /:root\s*\{/);
+  // dark is the default theme (`:root:not([data-theme="light"])`); light is `:root` with html[data-theme="light"]
+  const m = css.match(theme === "dark" ? /:root:not\(\[data-theme="light"\]\)\s*\{/ : /:root\s*\{/);
   const start = m.index + m[0].length;
   const end = css.indexOf("}", start);
   const body = css.slice(start, end);

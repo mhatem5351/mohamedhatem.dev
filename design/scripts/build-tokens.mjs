@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Single source of truth for the mohamedhatem.dev design tokens.
 // Generates:
-//   design/tokens.css           plain CSS custom properties (light :root, dark via [data-theme=dark] + prefers-color-scheme)
-//   design/tokens.tailwind.css  the same tokens wrapped for Tailwind CSS 4 (`@theme` for light defaults, dark overrides outside)
+//   design/tokens.css           plain CSS custom properties: dark is the default for every visitor (and without JS);
+//                               the light values apply only once the visitor picks light (html[data-theme="light"])
+//   design/tokens.tailwind.css  the same tokens wrapped for Tailwind CSS 4 (`@theme` carries the light values, the
+//                               default dark overrides sit outside it)
 //   design/tokens.json          machine-readable copy (used by check-contrast.mjs and the build agent)
 // Run: node design/scripts/build-tokens.mjs
 import fs from "node:fs";
@@ -227,25 +229,17 @@ const arabicVars = Object.entries(ARABIC).map(([k, v]) => `  --${k}: ${v};`).joi
 const darkBlock = themeVars(1);
 
 const css = `${HEADER}
-/* ---- light (default) + static tokens ---- */
+/* ---- static tokens (always) + the light theme values (in effect only with html[data-theme="light"], the visitor's choice) ---- */
 :root {
   color-scheme: light;
 ${staticVars()}
 ${themeVars(0)}
 }
 
-/* ---- dark: explicit choice ---- */
-:root[data-theme="dark"] {
+/* ---- dark: the default for every visitor, whatever the OS setting (no saved choice, data-theme="dark", no JS) ---- */
+:root:not([data-theme="light"]) {
   color-scheme: dark;
 ${darkBlock}
-}
-
-/* ---- dark: system preference when the visitor has not chosen ---- */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-${darkBlock.replace(/^  /gm, "    ")}
-  }
 }
 
 /* ---- Arabic / RTL: fonts, line-heights, size compensation, no tracking ---- */
@@ -261,7 +255,8 @@ const tw = `${HEADER}
 /* Usage (src/styles/global.css):
      @import "tailwindcss";
      @import "./tokens.tailwind.css";
-     @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+     @custom-variant dark (&:where(:root:not([data-theme=light]), :root:not([data-theme=light]) *));
+   Dark is the default theme; light applies only with html[data-theme="light"] (the visitor's choice).
    Semantic colour utilities switch theme automatically (bg-bg, bg-surface, text-ink, text-muted,
    border-line, text-accent, bg-accent-solid, text-on-accent ...). Use the dark: variant only for
    non-colour differences. */
@@ -272,15 +267,9 @@ ${themeVars(0)}
 }
 
 :root { color-scheme: light; }
-:root[data-theme="dark"] {
+:root:not([data-theme="light"]) {
   color-scheme: dark;
 ${darkBlock}
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-${darkBlock.replace(/^  /gm, "    ")}
-  }
 }
 :root:lang(ar), [lang="ar"] {
 ${arabicVars}

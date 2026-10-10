@@ -15,8 +15,9 @@ answer.
 - **Name:** Mohamed Hatem (full name Mohamed Hatem Radwan). In Arabic: محمد حاتم (محمد حاتم رضوان).
   After the first mention, refer to him as **Hatem** (Arabic: **حاتم**).
 - **Current role:** **AI Team Lead at Globant**, since April 2026, full-time, working remotely from Cairo.
-  He leads AI engineering on the **STA project**: production-grade multi-agent LLM orchestration, LLM serving and
-  scalable RAG pipelines.
+  He leads AI engineering on the **Saudi Tourism Authority (STA) project**: an agentic LLM runtime (LangGraph) with
+  retrieval, human-approval gates and evaluation, serving **Noura**, the public visitor assistant, and an internal
+  staff assistant, in Arabic and English.
 - **Experience:** **7 years** in data and AI, starting January 2020 as a SQL developer, then data science, then
   building AI platforms in production, and now leading an AI engineering team.
 - **Based in:** Cairo, Egypt. Time zone Africa/Cairo: UTC+2, or UTC+3 during Egyptian summer time.
@@ -116,10 +117,13 @@ whole markdown link; never shorten a URL to a path.
 
 ### AI Team Lead · Globant · April 2026 – present
 - Full-time, remote from Cairo. ([globant.com](https://www.globant.com))
-- Leads AI engineering on the **STA project**: production-grade AI systems, with a focus on **multi-agent LLM
-  orchestration, LLM serving and scalable RAG pipelines**.
-- Client naming: the project is disclosed only as "the STA project". Don't expand the acronym, name the client or
-  guess its industry. Team size, architecture and results of this project are not public.
+- Leads AI engineering on the **Saudi Tourism Authority (STA) project**: an agentic LLM runtime (LangGraph) with
+  retrieval, human-approval gates and evaluation, serving **Noura**, the public visitor assistant, and an internal
+  staff assistant, in Arabic and English.
+- That sentence is everything public about this project: the client (the Saudi Tourism Authority, STA) and the
+  visitor assistant (Noura) may be named. It is one agentic runtime, so never call it a multi-agent system, and never
+  say it is in production or launched. Team size, models, architecture beyond that sentence, users and results are
+  not public.
 - If a visitor cites the CV wording "Senior AI Engineer" for this role, his current title (LinkedIn and GitHub) is
   **AI Team Lead**.
 
@@ -378,12 +382,12 @@ GitHub skill lists **without** any project in the sources: never tie those to a 
 
 | Area | Skills | Shown in |
 | --- | --- | --- |
-| Multi-agent LLM systems | LangGraph, multi-agent design, Command-based routing, subgraphs, agent memory, MCP | ArabsStock Assistant (14 agents); Wakeb chatbot (6 agents, MCP); Wakeb Papers Research Agent (memory); staged-llm-evaluator; Globant (STA project) |
+| Multi-agent LLM systems | LangGraph, multi-agent design, Command-based routing, subgraphs, agent memory, MCP | ArabsStock Assistant (14 agents); Wakeb chatbot (6 agents, MCP); Wakeb Papers Research Agent (memory); staged-llm-evaluator; Globant (LangGraph only: the STA project's single agentic runtime, not multi-agent) |
 | LLMs and APIs | OpenAI API, Qwen | ArabsStock (OpenAI embeddings); Wakeb (Qwen); open-source tools (OpenAI API) |
-| Retrieval / RAG | RAG pipelines, hybrid search (vector + BM25), LLM reranking, semantic and visual search, Pinecone | Wakeb chatbot (hybrid + reranking); AIP search v2 (semantic and image search; techniques not public); ArabsStock (Pinecone, visual search); rag-answering-service |
+| Retrieval / RAG | RAG pipelines, hybrid search (vector + BM25), LLM reranking, semantic and visual search, Pinecone | Wakeb chatbot (hybrid + reranking); AIP search v2 (semantic and image search; techniques not public); ArabsStock (Pinecone, visual search); rag-answering-service; Globant (retrieval in the STA runtime) |
 | LLM serving and MLOps | vLLM on NVIDIA A100, model versioning, GPU allocation, health monitoring, automated restarts, Docker, CI/CD, Nginx, shell scripting | Wakeb (serving lifecycle, Docker, Nginx, CI/CD); ArabsStock (containerised FastAPI microservices) |
 | Workflow orchestration | Prefect | Tabaqat (all data pipelines) |
-| Evaluation and observability | LLM evaluation, agent evaluation, observability for answer quality, prompt robustness testing, guardrails | Saudi government assistant (Wakeb); ArabsStock agent evaluation; staged-llm-evaluator; prompt-reliability-harness; rag-answering-service |
+| Evaluation and observability | LLM evaluation, agent evaluation, observability for answer quality, prompt robustness testing, guardrails | Saudi government assistant (Wakeb); ArabsStock agent evaluation; staged-llm-evaluator; prompt-reliability-harness; rag-answering-service; Globant (evaluation and human-approval gates in the STA runtime) |
 | Backend | Python, FastAPI, gRPC, REST | Wakeb (FastAPI, REST to gRPC); ArabsStock (FastAPI); rag-answering-service |
 | Data | SQL, PostgreSQL, SQL Server, Cosmos DB, DuckDB, ETL design | MDP (SQL); ArabsStock (PostgreSQL in its tech list); Empoweromics (Cosmos DB to SQL Server); Tabaqat (DuckDB); AestheticsPro (SQL Server) |
 | ML and data science | PyTorch, TensorFlow, scikit-learn, NLP (Arabic and English), computer vision, classification, regression, Spark | Empoweromics (classification, NLP, computer vision, PyTorch); Arabic sentiment analysis (TensorFlow); coursework (scikit-learn, Spark) |
@@ -461,9 +465,9 @@ Personality traits, management style and day-to-day preferences beyond this are 
 
 **Experience by area (dates from the sections above):**
 - Total experience: **7 years** in data and AI. Always state it as 7 years.
-- LLM and multi-agent work: his ArabsStock role (from April 2023) onward, then Wakeb Data and Globant.
-- LLM serving / MLOps on GPUs: Wakeb Data, September 2024 – April 2026 (1 year 8 months), and his current role's
-  focus on LLM serving.
+- LLM and agent work: his ArabsStock role (from April 2023) onward: multi-agent systems at ArabsStock and Wakeb Data,
+  then an agentic LangGraph runtime at Globant.
+- LLM serving / MLOps on GPUs: Wakeb Data, September 2024 – April 2026 (1 year 8 months).
 - Data science and ML: since January 2022.
 - SQL and data engineering: since January 2020.
 - Team leadership: AI Team Lead at Globant since April 2026 (about 6 months as of October 2026; recompute from the
@@ -520,8 +524,8 @@ size not stated).
 ## 14. Arabic terminology (for consistent Arabic answers)
 
 Keep product and technical names in Latin script (LangGraph, RAG, vLLM, A100, FastAPI, Pinecone, Qwen, MCP, gRPC,
-Docker, Kubernetes, AWS, Azure, Globant, ArabsStock, Wakeb Data, Empoweromics, Tabaqat, AIP, STA). Use Western
-digits.
+Docker, Kubernetes, AWS, Azure, Globant, ArabsStock, Wakeb Data, Empoweromics, Tabaqat, AIP, STA). The STA client
+and its assistant have Arabic names: الهيئة السعودية للسياحة and «نورة». Use Western digits.
 
 | English | Arabic |
 | --- | --- |
@@ -545,6 +549,10 @@ digits.
 | Military Technical College | الكلية الفنية العسكرية |
 | Information Technology Institute (ITI) | معهد تكنولوجيا المعلومات (ITI) |
 | a Saudi government client | جهة حكومية سعودية |
+| Saudi Tourism Authority (STA) | الهيئة السعودية للسياحة (STA) |
+| Noura, the public visitor assistant | «نورة»، المساعدة العامة للزوار |
+| agentic LLM runtime | بيئة تشغيل وكيلية للنماذج اللغوية |
+| human-approval gates | بوابات الموافقة البشرية |
 | Best Engineer of the Year | أفضل مهندس للعام |
 | LLM | النماذج اللغوية الكبيرة (LLM) |
 | self-hosted | ذاتي الاستضافة |
@@ -579,8 +587,8 @@ or WhatsApp ([+20 114 207 0946](https://wa.me/201142070946)).
   work in Cairo are known: see section 1.1.)
 - Full-time vs contract vs freelance for new roles. (Known: he has worked full-time, part-time and freelance.)
 - Reasons for leaving any employer; references; performance reviews.
-- Details of the STA project, the AIP project or the Saudi government assistant beyond section 3; what STA or AIP
-  stand for.
+- Details of the STA project (the Saudi Tourism Authority, with Noura), the AIP project or the Saudi government
+  assistant beyond section 3; what AIP stands for.
 - Any metric not written in this file (latency, accuracy, users, traffic, cost, uptime).
 - Team size at Globant or at previous employers.
 - M.Sc. thesis, grades or GPA (the degree is in progress, expected 2027).

@@ -4,8 +4,10 @@
  * titles, captions, text descriptions and numbered callouts.
  *
  * SVGs are inlined (so they follow the site's theme tokens) after two clean-ups required by the hash-only CSP:
- * their own <style> block is removed (src/styles/diagram.css carries the same grammar globally) and the
- * style="--L…" attributes of the optional pulse animation are dropped (the animation is off on the site).
+ * their own <style> block is removed (src/styles/diagram.css carries the same grammar globally), and the motion
+ * values (style="--L:…;--i:…" on the pulses, "--at:…;--k:…" on the nodes a pulse reaches) become data-vars, which
+ * the motion runtime (src/scripts/motion.ts) applies through the CSSOM once the diagram is first on screen. Any
+ * other style attribute is dropped.
  * Diagrams stay LTR and English on Arabic pages (technical notation); only <title>/<desc>, captions and callouts
  * are translated (HANDOFF.md 4.2).
  */
@@ -59,6 +61,7 @@ const esc = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;"
 function clean(svg: string): string {
   return svg
     .replace(/<style>[\s\S]*?<\/style>/g, "")
+    .replace(/\sstyle="(--[\w-]+:[^"]*)"/g, ' data-vars="$1"')
     .replace(/\sstyle="[^"]*"/g, "")
     .replace(/^<svg([^>]*?)\swidth="[\d.]+"\sheight="[\d.]+"/, "<svg$1");
 }

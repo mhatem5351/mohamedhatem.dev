@@ -5,10 +5,13 @@
  * work without JS; the script adds a single-open accordion and ArrowUp/ArrowDown/Home/End between rows.
  * Bar positions come from src/lib/trace.ts as month "digit classes" that src/styles/home-a.css turns into
  * percentages (no style="": the CSP is hash-only).
+ * Motion (src/scripts/motion.ts, components.css 20a): the bars grow in row by row the first time the trace is on
+ * screen, and while it is on screen the current role's bar ends in a "now" dot that pings (pause button in the foot).
  */
 import type { Role } from "@content/profile.ts";
 import Icon from "~/components/ui/Icon.astro";
 import LogoTile from "~/components/ui/LogoTile.astro";
+import MotionToggle from "~/components/ui/MotionToggle.astro";
 import DateRun from "~/components/work/DateRun.astro";
 import Emph from "~/components/ui/Emph.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
@@ -80,7 +83,7 @@ function view(row: TraceRow): { title: string; org: string; dates: string; logo:
 <section class="section" id="experience" aria-labelledby="exp-title">
   <div class="container">
     <SectionHeader index="03" eyebrow={m.experience.eyebrow} title={m.experience.title} titleId="exp-title" lede={m.experience.lead} />
-    <div class={`card trace ${axisClasses(now)}`} data-trace>
+    <div class={`card trace ${axisClasses(now)}`} data-trace data-motion="is-live" data-motion-once>
       <div class="trace__head">
         <span class="eyebrow">{t.roleColumn}</span>
         <div class="axis" aria-hidden="true">
@@ -195,7 +198,10 @@ function view(row: TraceRow): { title: string; org: string; dates: string; logo:
           <span><i class="pt"></i>{t.partTime}</span>
           <span><i class="st"></i>{t.study}</span>
         </div>
-        <span class="t-xs muted trace__hint">{t.keyboardHint}</span>
+        <span class="trace__foot-end">
+          <span class="t-xs muted trace__hint">{t.keyboardHint}</span>
+          <MotionToggle locale={locale} variant="up" />
+        </span>
       </div>
     </div>
   </div>
@@ -212,6 +218,12 @@ function view(row: TraceRow): { title: string; org: string; dates: string; logo:
     width: 1rem;
     height: 1rem;
     color: var(--color-saffron);
+  }
+  .trace__foot-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-inline-start: auto;
   }
   .span__cases {
     display: flex;

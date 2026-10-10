@@ -1,15 +1,18 @@
 ---
 /**
  * The next case study in display order (pages.css §11): one card, whole card is a link (stretched title anchor),
- * with the next system's decorative diagram thumbnail (or, for logic-controls.com, its desktop screenshot).
+ * with the next system's decorative diagram thumbnail (moving while on screen, with its pause button) or, for
+ * logic-controls.com, its desktop screenshot. The drawing and the screenshot are decorative (aria-hidden / alt="").
  */
 import { Image } from "astro:assets";
 import Icon from "~/components/ui/Icon.astro";
 import Ltr from "~/components/ui/Ltr.astro";
+import LogoTile from "~/components/ui/LogoTile.astro";
+import MotionToggle from "~/components/ui/MotionToggle.astro";
 import type { CaseStudy } from "@content/profile.ts";
 import { diagramSvg } from "~/lib/diagrams";
 import { localePath, messages, tr, type Locale } from "~/lib/i18n";
-import { PATHS } from "~/lib/site";
+import { PATHS, profile } from "~/lib/site";
 import { accentOf, diagramsOf, eyebrowParts } from "~/lib/case";
 import lcDesktopEn from "~/assets/showcase/lc-desktop-en-960.webp";
 import lcDesktopAr from "~/assets/showcase/lc-desktop-ar-960.webp";
@@ -25,12 +28,21 @@ const thumb = diagramsOf(cs)[0];
 const svg = thumb ? diagramSvg(thumb, "thumb", { decorative: true, idSuffix: "next" }) : undefined;
 const shot = cs.slug === "logic-controls-website" ? (locale === "ar" ? lcDesktopAr : lcDesktopEn) : undefined;
 const isLatin = (s: string) => !/[؀-ۿ]/.test(s);
+const role = cs.roleId ? profile.experience.find((r) => r.id === cs.roleId) : undefined;
+const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monogram } : { file: "logic-controls", monogram: "LC" };
 ---
 <article class:list={["card card--link work next-case", `accent-${accentOf(cs)}`, !(svg || shot) && "next-case--plain"]}>
   {
     (svg || shot) && (
-      <div class="work__media" aria-hidden="true">
-        {svg ? <Fragment set:html={svg} /> : shot && <Image src={shot} alt="" width={480} widths={[480, 960]} sizes="(min-width: 64rem) 22rem, 100vw" loading="lazy" />}
+      <div class="work__media" dir="ltr" data-motion={svg ? "dg-play" : undefined}>
+        {svg ? (
+          <>
+            <Fragment set:html={svg} />
+            <MotionToggle locale={locale} variant="corner" />
+          </>
+        ) : (
+          shot && <Image src={shot} alt="" width={480} widths={[480, 960]} sizes="(min-width: 64rem) 22rem, 100vw" loading="lazy" />
+        )}
       </div>
     )
   }
@@ -39,8 +51,11 @@ const isLatin = (s: string) => !/[؀-ۿ]/.test(s);
       <span class="eyebrow">{m.work.nextCase}</span>
       <span class="next-case__arrow" aria-hidden="true"><Icon name="arrow-right" size="sm" /></span>
     </div>
+    <span class="next-case__org">
+    <LogoTile file={logo.file} monogram={logo.monogram} size={24} class="work__logo" />
     <span class="eyebrow eyebrow--ink">
       {isLatin(eb.company) ? <span lang="en">{eb.company}</span> : eb.company}<span class="sep" aria-hidden="true">/</span><Ltr>{eb.years}</Ltr>
+    </span>
     </span>
     <h3 class="work__title"><a class="stretched" href={localePath(PATHS.work(cs.slug), locale)}>{tr(cs.title, locale)}</a></h3>
     <p class="work__summary">{tr(cs.summary, locale)}</p>

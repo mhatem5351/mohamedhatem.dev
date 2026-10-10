@@ -99,7 +99,6 @@ export const en = {
     label: "Theme",
     light: "Light",
     dark: "Dark",
-    system: "System",
   },
 
   motion: {
@@ -191,7 +190,7 @@ export const en = {
   work: {
     eyebrow: "Selected work",
     title: "Systems I've built and run",
-    lead: "Work since 2022, from multi-agent assistants to data pipelines. Client details stay at the level each employer allows.",
+    lead: "Work since 2020, from multi-agent assistants to data pipelines. Client details stay at the level each employer allows.",
     moreTitle: "More work",
     labels: {
       problem: "The problem",

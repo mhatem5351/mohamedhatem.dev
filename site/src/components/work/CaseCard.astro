@@ -3,7 +3,10 @@
  * A case-study card (DESIGN.md 12.10, prototype .work): 3 px accent bar, decorative media (diagram thumbnail, a
  * drawing from the architecture data, or the site screenshot for logic-controls.com), eyebrow
  * (company / role / years), title (a stretched link: the whole card is one link), summary, optional facts, stack chips,
- * an award badge where one belongs to the role, and the "Read the case study" cue.
+ * an award badge where one belongs to the role, and the "Read the case study" cue. The company's logo tile sits
+ * beside the eyebrow.
+ *
+ * A designed diagram moves while the card is on screen (src/scripts/motion.ts), with its pause button in the corner.
  *
  * Variants: "feature" (5/7 split, media on the end side), "wide" (feature layout, media on the start side),
  * "default" (grid card), "compact" (no media; the "More work" list). The eyebrow has one pattern everywhere,
@@ -17,6 +20,8 @@ import lcAr from "~/assets/showcase/lc-desktop-ar-1440.webp";
 import Icon from "~/components/ui/Icon.astro";
 import Ltr from "~/components/ui/Ltr.astro";
 import ArchThumb from "~/components/work/ArchThumb.astro";
+import LogoTile from "~/components/ui/LogoTile.astro";
+import MotionToggle from "~/components/ui/MotionToggle.astro";
 import { CASE_DIAGRAMS, diagramSvg } from "~/lib/diagrams";
 import { formatYears, localePath, messages, type Locale } from "~/lib/i18n";
 import { sharesRolePeriod } from "~/lib/case";
@@ -59,6 +64,9 @@ const noBreakDomains = (t: string) =>
     .replace(/\b([a-z0-9-]+\.(?:com|dev))([:;,.]?)/g, '<span class="nowrap" dir="ltr">$1$2</span>')
     .replace(/(^|[\s(])([A-Za-z0-9]+(?:-[A-Za-z0-9]+)+)(?![^<]*<\/span>)(?=[\s,.:;)]|$)/g, '$1<span class="nowrap">$2</span>');
 const brief = cs.depth === "brief";
+/** The company's tile beside the eyebrow: the employer's (the government assistant shows Wakeb Data, never its client);
+ * freelance work shows its client's, Logic Controls. Decorative: the eyebrow names the company. */
+const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monogram } : { file: "logic-controls", monogram: "LC" };
 ---
 <article
   id={id}
@@ -75,9 +83,12 @@ const brief = cs.depth === "brief";
 >
   {
     variant !== "compact" && (
-      <div class:list={["work__media", !diagramId && cs.slug === "logic-controls-website" && "work__media--shot"]} dir="ltr">
+      <div class:list={["work__media", !diagramId && cs.slug === "logic-controls-website" && "work__media--shot"]} dir="ltr" data-motion={diagramId ? "dg-play" : undefined}>
         {diagramId ? (
-          <Fragment set:html={diagramSvg(diagramId, "thumb", { decorative: true, idSuffix: `card-${cs.slug}` })} />
+          <>
+            <Fragment set:html={diagramSvg(diagramId, "thumb", { decorative: true, idSuffix: `card-${cs.slug}` })} />
+            <MotionToggle locale={locale} variant="corner" />
+          </>
         ) : cs.slug === "logic-controls-website" ? (
           <div class="mini-browser" aria-hidden="true">
             <span class="mini-browser__bar">
@@ -95,6 +106,7 @@ const brief = cs.depth === "brief";
   }
   <div class="work__body">
     <div class="work__meta">
+      <LogoTile file={logo.file} monogram={logo.monogram} size={big ? 28 : 24} class="work__logo" />
       <span class="eyebrow">
         {company ? <span lang="en" class="latin">{company}</span> : <span>{m.work.freelance}</span>}
         {

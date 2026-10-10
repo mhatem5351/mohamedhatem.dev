@@ -2,7 +2,7 @@
 /**
  * Sticky site nav (DESIGN.md 12.1) + the mobile menu sheet (12.2).
  * Behaviour lives in src/scripts/site.ts: hairline after 8 px of scroll, menu open/close (Escape, outside click,
- * link click; focus returns to the button), theme toggle cycle, section scroll-spy on the home page.
+ * link click; focus returns to the button), theme toggle (dark by default ↔ light), section scroll-spy on the home page.
  */
 import Monogram from "~/components/brand/Monogram.astro";
 import Icon from "~/components/ui/Icon.astro";
@@ -66,14 +66,12 @@ const themeLabel = (mode: string) => `${m.theme.label}: ${mode}`;
         class="nav__icon-btn theme-toggle"
         type="button"
         data-theme-toggle
-        data-mode="system"
-        aria-label={themeLabel(m.theme.system)}
-        title={themeLabel(m.theme.system)}
-        data-label-system={themeLabel(m.theme.system)}
+        data-mode="dark"
+        aria-label={themeLabel(m.theme.dark)}
+        title={themeLabel(m.theme.dark)}
         data-label-light={themeLabel(m.theme.light)}
         data-label-dark={themeLabel(m.theme.dark)}
       >
-        <Icon name="monitor" class="i-system" />
         <Icon name="sun" class="i-sun" />
         <Icon name="moon" class="i-moon" />
       </button>
@@ -125,15 +123,11 @@ const themeLabel = (mode: string) => `${m.theme.label}: ${mode}`;
           </span>
         </a>
         <div class="segmented" role="group" aria-label={m.theme.label} data-theme-segmented>
-          <button type="button" data-set-theme="system" aria-pressed="true">
-            <Icon name="monitor" size="sm" />
-            {m.theme.system}
-          </button>
           <button type="button" data-set-theme="light" aria-pressed="false">
             <Icon name="sun" size="sm" />
             {m.theme.light}
           </button>
-          <button type="button" data-set-theme="dark" aria-pressed="false">
+          <button type="button" data-set-theme="dark" aria-pressed="true">
             <Icon name="moon" size="sm" />
             {m.theme.dark}
           </button>

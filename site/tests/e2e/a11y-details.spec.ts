@@ -6,7 +6,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { profile } from "@content/profile.ts";
-import { KEY_PAGES, NOT_FOUND, PAGES } from "./pages";
+import { NOT_FOUND, PAGES } from "./pages";
 import { expect, test, useTheme } from "./fixtures";
 
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
@@ -33,11 +33,11 @@ async function userCss(page: Page, css: string) {
 }
 
 test.describe("axe at 320 px @desktop-only", () => {
-  for (const theme of ["light", "dark"] as const)
-    for (const path of theme === "light" ? [...PAGES, ...NOT_FOUND] : KEY_PAGES)
+  for (const theme of ["dark", "light"] as const)
+    for (const path of [...PAGES, ...NOT_FOUND])
       test(`${path} (${theme})`, async ({ page }) => {
         await page.setViewportSize({ width: 320, height: 700 });
-        await useTheme(page, theme);
+        if (theme === "light") await useTheme(page, "light");
         await page.goto(path, { waitUntil: "networkidle" });
         await revealAll(page);
         const result = await new AxeBuilder({ page }).withTags(TAGS).analyze();

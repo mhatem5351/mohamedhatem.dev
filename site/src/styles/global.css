@@ -14,7 +14,8 @@
 @import "./diagram.css" layer(components);
 @import "./site.css" layer(components);
 
-@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+/* Dark is the default theme: html[data-theme="light"] is the only light state (tokens.tailwind.css). */
+@custom-variant dark (&:where(:root:not([data-theme=light]), :root:not([data-theme=light]) *));
 
 /* Only scan the site's own sources for utilities (content/ and chat-widget/ have none). */
 @source not "../../../worker";

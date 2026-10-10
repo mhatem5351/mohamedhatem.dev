@@ -1,58 +1,56 @@
 /**
  * Site-wide behaviour, one small module on every page (no framework):
- *   theme (the toggle flips light ↔ dark and returns to "system" on the OS's own theme, persisted; segmented control in
- *   the menu), nav hairline after scroll, mobile menu,
+ *   theme (dark by default for every visitor; the toggle flips dark ↔ light and the choice persists; segmented
+ *   control in the menu), nav hairline after scroll, mobile menu,
  *   home scroll-spy, reveal on scroll, copy buttons, live Cairo clock, "open the assistant" triggers and the "/" key.
- * Everything degrades: without JS the page is complete (theme follows the OS, menu links are reachable in the
+ * Everything degrades: without JS the page is complete (in the default dark theme, menu links are reachable in the
  * footer, the assistant offers email/WhatsApp in a <noscript> card).
  */
 
-type Mode = "system" | "light" | "dark";
+type Theme = "light" | "dark";
 type OpenRequest = { question?: string };
 type ChatWindow = Window & { MHChat?: { open(o?: OpenRequest): void }; MHChatQueue?: OpenRequest[] };
 
 const root = document.documentElement;
 const KEY = "mh-theme";
-const darkMq = matchMedia("(prefers-color-scheme: dark)");
 const reduceMq = matchMedia("(prefers-reduced-motion: reduce)");
 
 /* ------------------------------------------------------------------ theme */
-function readMode(): Mode {
+/** Dark unless the visitor chose light (the head's boot script applies the same rule before first paint). */
+function readTheme(): Theme {
   try {
-    const v = localStorage.getItem(KEY);
-    return v === "light" || v === "dark" ? v : "system";
+    return localStorage.getItem(KEY) === "light" ? "light" : "dark";
   } catch {
-    return "system";
+    return "dark";
   }
 }
-let mode: Mode = readMode();
+let theme: Theme = readTheme();
 
 function applyTheme(): void {
-  const resolved = mode === "system" ? (darkMq.matches ? "dark" : "light") : mode;
-  root.dataset.theme = resolved;
-  root.dataset.themeMode = mode;
+  root.dataset.theme = theme;
   for (const b of document.querySelectorAll<HTMLElement>("[data-theme-toggle]")) {
-    b.dataset.mode = mode;
+    b.dataset.mode = theme;
     if (b.hasAttribute("data-cycle-only")) continue;
-    const label = b.dataset[`label${mode[0]!.toUpperCase()}${mode.slice(1)}` as "labelSystem"];
+    const label = b.dataset[theme === "light" ? "labelLight" : "labelDark"];
     if (label) {
       b.setAttribute("aria-label", label);
       b.title = label;
     }
   }
-  for (const b of document.querySelectorAll<HTMLElement>("[data-set-theme]")) b.setAttribute("aria-pressed", String(b.dataset.setTheme === mode));
-  // Keep the browser chrome colour in step when the visitor forces a theme.
-  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
-    if (!meta.dataset.original) meta.dataset.original = meta.content;
-    meta.content = mode === "system" ? meta.dataset.original : resolved === "dark" ? "#0C151D" : "#FBF8F3";
-  }
+  for (const b of document.querySelectorAll<HTMLElement>("[data-set-theme]")) b.setAttribute("aria-pressed", String(b.dataset.setTheme === theme));
+  // The browser chrome and the canvas follow the page (each page's own colours, from Head.astro).
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  const chrome = meta?.dataset[theme];
+  if (meta && chrome) meta.content = chrome;
+  const scheme = document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]');
+  if (scheme) scheme.content = theme;
 }
 
-function setMode(next: Mode): void {
-  mode = next;
+/** An explicit choice, remembered (dark included, so a later change of default never overrides it). */
+function setTheme(next: Theme): void {
+  theme = next;
   try {
-    if (next === "system") localStorage.removeItem(KEY);
-    else localStorage.setItem(KEY, next);
+    localStorage.setItem(KEY, next);
   } catch {
     /* storage blocked: the choice lasts for this page only */
   }
@@ -60,10 +58,9 @@ function setMode(next: Mode): void {
 }
 
 applyTheme();
-darkMq.addEventListener("change", () => mode === "system" && applyTheme());
 addEventListener("storage", (e) => {
-  if (e.key === KEY) {
-    mode = readMode();
+  if (e.key === KEY || e.key === null) {
+    theme = readTheme();
     applyTheme();
   }
 });
@@ -83,15 +80,13 @@ document.addEventListener("click", async (e) => {
 
   const toggle = target.closest<HTMLElement>("[data-theme-toggle]");
   if (toggle) {
-    // Every click flips what you see (light ↔ dark). Landing on the OS's own theme goes back to following the OS
-    // ("system"), so a light-OS visitor gets system → dark → system …; the menu's segmented control can pin either.
-    const next: Mode = root.dataset.theme === "dark" ? "light" : "dark";
-    setMode(next === (darkMq.matches ? "dark" : "light") ? "system" : next);
+    // Every click flips what you see (dark ↔ light) and remembers it.
+    setTheme(theme === "dark" ? "light" : "dark");
     return;
   }
   const seg = target.closest<HTMLElement>("[data-set-theme]");
   if (seg) {
-    setMode((seg.dataset.setTheme as Mode) || "system");
+    setTheme(seg.dataset.setTheme === "light" ? "light" : "dark");
     return;
   }
   const chat = target.closest<HTMLElement>("[data-open-chat]");

@@ -106,7 +106,7 @@ Contact details and the binding decisions (title, "7 years", no Logic Controls f
 - Architecture diagrams contain only components and connections that the sources state or directly imply. Where the
   sources describe only capabilities (the government assistant, AIP), the diagram is a capability view and the case study is marked
   `depth: "brief"`.
-- Named: Globant ("the STA project"), Wakeb Data ("the AIP project"), ArabsStock, Empoweromics, Tabaqat,
+- Named: Globant (the Saudi Tourism Authority (STA) project: Noura and the staff assistant, named with the client's OK), Wakeb Data ("the AIP project"), ArabsStock, Empoweromics, Tabaqat,
   AestheticsPro, MDP, the universities and Logic Controls (never its founder or owner). One client is deliberately
   unnamed: "a Saudi government client" (the bilingual assistant at Wakeb). Its names appear nowhere in this
   repository; `check-content.mjs` enforces that with SHA-256 hashes of the forbidden names
