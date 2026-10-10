@@ -1,0 +1,25 @@
+---
+/** Back button + breadcrumb trail "Work / <short title>" (pages.css §1). The BreadcrumbList JSON-LD is in lib/jsonld.ts. */
+import Icon from "~/components/ui/Icon.astro";
+import { messages, type Locale } from "~/lib/i18n";
+import { homeAnchor } from "~/lib/site";
+
+interface Props {
+  locale: Locale;
+  current: string;
+}
+const { locale, current } = Astro.props;
+const m = messages(locale);
+const back = homeAnchor("work", locale, false);
+---
+<div class="crumbs-row">
+  <a class="back-btn" href={back} aria-label={m.work.page.backToWork} title={m.work.page.backToWork}>
+    <Icon name="arrow-left" />
+  </a>
+  <nav class="crumbs" aria-label={m.a11y.breadcrumb}>
+    <ol>
+      <li><a href={back}>{m.nav.work}</a></li>
+      <li><span aria-current="page">{current}</span></li>
+    </ol>
+  </nav>
+</div>

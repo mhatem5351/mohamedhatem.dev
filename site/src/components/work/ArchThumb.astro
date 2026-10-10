@@ -1,0 +1,173 @@
+---
+/**
+ * A decorative 400 × 250 thumbnail drawn from a case study's architecture data (profile.ts), for systems that have no
+ * designed diagram (the brief, capability-view ones). Same grammar as design/assets/diagrams, simplified: the hub
+ * node in the middle, inputs on the start side, outputs on the end side, quality checks above and below.
+ * Labels stay English and the drawing stays LTR on Arabic pages, like the designed diagrams (HANDOFF.md 4.2).
+ */
+import type { ArchNodeKind, CaseStudy } from "@content/profile.ts";
+
+interface Props {
+  cs: CaseStudy;
+}
+const { cs } = Astro.props;
+const { nodes, edges } = cs.architecture;
+
+const W = 400;
+const H = 250;
+const BW = 112;
+const BH = 34;
+const HUB_W = 156;
+const HUB_H = 44;
+
+const tone = (k: ArchNodeKind): string =>
+  k === "orchestrator" || k === "agent"
+    ? "teal"
+    : k === "retrieval" || k === "data"
+      ? "saffron"
+      : k === "model"
+        ? "coral"
+        : k === "quality"
+          ? "sky"
+          : k === "user"
+            ? "ext"
+            : "slate";
+
+const degree = (id: string) => edges.filter((e) => e.from === id || e.to === id).length;
+const hub = nodes.find((n) => n.kind === "orchestrator") ?? [...nodes].sort((a, b) => degree(b.id) - degree(a.id))[0]!;
+
+type Side = "start" | "end" | "top" | "bottom";
+const sides: Record<Side, string[]> = { start: [], end: [], top: [], bottom: [] };
+let q = 0;
+for (const n of nodes) {
+  if (n.id === hub.id) continue;
+  if (n.kind === "quality") sides[q++ % 2 === 0 ? "top" : "bottom"].push(n.id);
+  else if (edges.some((e) => e.from === n.id && e.to === hub.id)) sides.start.push(n.id);
+  else sides.end.push(n.id);
+}
+
+/** The part of a label before any qualifier: "Users (Arabic / English)" → "Users", "Observability: answer quality" → "Observability". */
+const short = (s: string) => s.split(/\s*[(:]/)[0]!.trim();
+/** Box width that fits the label (mono 11 px ≈ 6.7 px per character, plus the dot well). */
+const widthOf = (label: string) => Math.max(64, Math.min(BW + 24, Math.round(34 + label.length * 6.7)));
+
+const pos = new Map<string, { x: number; y: number; w: number; h: number }>();
+pos.set(hub.id, { x: W / 2, y: H / 2, w: HUB_W, h: HUB_H });
+const labelOf = (id: string) => short(nodes.find((n) => n.id === id)!.label.en);
+const column = (ids: string[], side: "start" | "end") =>
+  ids.forEach((id, i) => {
+    const w = Math.min(widthOf(labelOf(id)), (W - HUB_W) / 2 - 24);
+    pos.set(id, { x: side === "start" ? 12 + w / 2 : W - 12 - w / 2, y: (H / (ids.length + 1)) * (i + 1), w, h: BH });
+  });
+const row = (ids: string[], y: number) =>
+  ids.forEach((id, i) => pos.set(id, { x: W / 2 + (i - (ids.length - 1) / 2) * (BW + 16), y, w: widthOf(labelOf(id)), h: BH }));
+column(sides.start, "start");
+column(sides.end, "end");
+row(sides.top, 16 + BH / 2);
+row(sides.bottom, H - 16 - BH / 2);
+
+/** Point where the segment from a box's centre towards (tx, ty) leaves the box. */
+function exit(b: { x: number; y: number; w: number; h: number }, tx: number, ty: number) {
+  const dx = tx - b.x;
+  const dy = ty - b.y;
+  const sx = dx === 0 ? Infinity : b.w / 2 / Math.abs(dx);
+  const sy = dy === 0 ? Infinity : b.h / 2 / Math.abs(dy);
+  const s = Math.min(sx, sy);
+  return { x: b.x + dx * s, y: b.y + dy * s };
+}
+const r = (v: number) => Math.round(v * 10) / 10;
+const lines = edges
+  .filter((e) => pos.has(e.from) && pos.has(e.to))
+  .map((e) => {
+    const a = pos.get(e.from)!;
+    const b = pos.get(e.to)!;
+    const p0 = exit(a, b.x, b.y);
+    const p1 = exit(b, a.x, a.y);
+    const ang = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+    const len = 6;
+    const head = [ang + 2.5, ang - 2.5].map((t) => `${r(p1.x + Math.cos(t) * len)},${r(p1.y + Math.sin(t) * len)}`);
+    return { d: `M${r(p0.x)} ${r(p0.y)}L${r(p1.x)} ${r(p1.y)}`, head: `M${head[0]}L${r(p1.x)},${r(p1.y)}L${head[1]}` };
+  });
+---
+<svg class="at" viewBox={`0 0 ${W} ${H}`} aria-hidden="true" focusable="false" direction="ltr">
+  {
+    lines.map((l) => (
+      <g class="at-edge">
+        <path d={l.d} />
+        <path d={l.head} />
+      </g>
+    ))
+  }
+  {
+    nodes.map((n) => {
+      const p = pos.get(n.id);
+      if (!p) return null;
+      const isHub = n.id === hub.id;
+      return (
+        <g class={`at-node at-${tone(n.kind)}${isHub ? " at-hub" : ""}`} transform={`translate(${r(p.x - p.w / 2)} ${r(p.y - p.h / 2)})`}>
+          {isHub && <rect class="at-ring" x="-4" y="-4" width={p.w + 8} height={p.h + 8} rx="13" />}
+          <rect class="at-box" width={p.w} height={p.h} rx="9" />
+          <circle class="at-dot" cx="14" cy={p.h / 2} r="4" />
+          <text x="25" y={p.h / 2} dy=".34em">
+            {short(n.label.en)}
+          </text>
+        </g>
+      );
+    })
+  }
+</svg>
+
+<style>
+  .at {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .at-edge path {
+    fill: none;
+    stroke: var(--color-line-input);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .at-box {
+    fill: var(--color-surface);
+    stroke: var(--at-line);
+    stroke-width: 1.5;
+  }
+  .at-dot {
+    fill: var(--at-fill);
+  }
+  .at-ring {
+    fill: none;
+    stroke: var(--at-fill);
+    stroke-width: 1;
+    stroke-dasharray: 3 3;
+    opacity: 0.8;
+  }
+  .at-hub .at-box {
+    stroke: var(--at-fill);
+    stroke-width: 2;
+  }
+  .at-node text {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    fill: var(--color-ink-2);
+  }
+  .at-hub text {
+    font-family: var(--font-face-sans, sans-serif);
+    font-size: 12px;
+    font-weight: 600;
+    fill: var(--color-ink);
+  }
+  .at-teal { --at-fill: var(--color-teal-fill); --at-line: var(--color-teal-tint-line); }
+  .at-saffron { --at-fill: var(--color-saffron-fill); --at-line: var(--color-saffron-tint-line); }
+  .at-coral { --at-fill: var(--color-coral-fill); --at-line: var(--color-coral-tint-line); }
+  .at-sky { --at-fill: var(--color-sky-fill); --at-line: var(--color-sky-tint-line); }
+  .at-slate { --at-fill: var(--color-slate-fill); --at-line: var(--color-slate-tint-line); }
+  .at-ext { --at-fill: var(--color-line-input); --at-line: var(--color-line-strong); }
+  .at-ext .at-box {
+    stroke-dasharray: 4 3;
+  }
+</style>

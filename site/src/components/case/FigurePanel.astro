@@ -1,0 +1,65 @@
+---
+/**
+ * A designed architecture diagram (pages.css §4): framed panel with a mono title bar, the SVG inlined twice (wide and
+ * compact; a container query shows one, the hidden one is display:none and so out of the accessibility tree), then
+ * the caption, the architecture disclaimer, the numbered callouts (numbers match the drawing) and the long text
+ * description. Diagrams stay LTR on Arabic pages; their title/desc, caption and callouts are Arabic there.
+ */
+import Icon from "~/components/ui/Icon.astro";
+import { diagram, diagramSvg, type DiagramId } from "~/lib/diagrams";
+import { format, messages, type Locale } from "~/lib/i18n";
+
+interface Props {
+  locale: Locale;
+  id: DiagramId;
+  n: number;
+  /** id of the <figure> (anchor target) */
+  anchor?: string;
+  class?: string;
+}
+const { locale, id, n, anchor, class: className } = Astro.props;
+const m = messages(locale);
+const d = diagram(id);
+const figLabel = format(m.work.page.figure, { n });
+const capId = `${anchor ?? id}-cap`;
+const wide = diagramSvg(id, "wide", { locale });
+const compact = diagramSvg(id, "compact", { locale });
+---
+<figure class:list={["fig", className]} id={anchor} aria-labelledby={capId}>
+  <div class="fig-panel">
+    <div class="fig-panel__bar" dir="ltr">
+      <span class="fig-panel__id">Fig. {n}</span>
+      <span class="fig-panel__title" lang="en">{id} · architecture</span>
+    </div>
+    <div class="fig-panel__canvas" dir="ltr">
+      <div class="dg-variant dg-variant--wide" set:html={wide} />
+      <div class="dg-variant dg-variant--compact" set:html={compact} />
+    </div>
+  </div>
+  <figcaption class="fig__caption">
+    <p class="fig__caption-text" id={capId}>
+      <b>{figLabel}</b>
+      {" "}{d.caption[locale]}
+      <span class="fig__note">{m.work.architectureNote}</span>
+    </p>
+    <ol class:list={["callouts", d.callouts.length > 4 && "callouts--3"]} aria-label={m.work.page.components}>
+      {
+        d.callouts.map((c) => (
+          <li>
+            <span class="co" aria-hidden="true">
+              {c.n}
+            </span>
+            <span>{c[locale]}</span>
+          </li>
+        ))
+      }
+    </ol>
+    <details class="fig__desc">
+      <summary>
+        {m.work.page.textDescription}
+        <Icon name="chevron-down" size="sm" />
+      </summary>
+      <p>{d.desc.long[locale]}</p>
+    </details>
+  </figcaption>
+</figure>

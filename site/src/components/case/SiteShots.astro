@@ -1,0 +1,38 @@
+---
+/**
+ * Figure 1 for the logic-controls.com case study: the live site in a browser frame (page locale) and a phone
+ * (the other locale), reusing the home showcase frames (.devices / .browser / .phone). The screenshots are
+ * decorative (alt=""); the caption says what they show.
+ */
+import { Picture } from "astro:assets";
+import { format, messages, otherLocale, type Locale } from "~/lib/i18n";
+import desktopEn from "~/assets/showcase/lc-desktop-en-1920.webp";
+import desktopAr from "~/assets/showcase/lc-desktop-ar-1440.webp";
+import phoneEn from "~/assets/showcase/lc-phone-en-780.webp";
+import phoneAr from "~/assets/showcase/lc-phone-ar-780.webp";
+
+interface Props {
+  locale: Locale;
+  n: number;
+  anchor?: string;
+  class?: string;
+}
+const { locale, n, anchor = "site", class: className } = Astro.props;
+const m = messages(locale);
+const desktop = locale === "ar" ? desktopAr : desktopEn;
+const phone = otherLocale(locale) === "ar" ? phoneAr : phoneEn;
+---
+<figure class:list={["fig shots", className]} id={anchor} aria-labelledby={`${anchor}-cap`}>
+  <div class="devices shots__devices" aria-hidden="true">
+    <div class="browser">
+      <div class="browser__bar"><span class="browser__dots"><i></i><i></i><i></i></span><span class="browser__url">logic-controls.com</span><span class="browser__pad"></span></div>
+      <Picture src={desktop} formats={["avif", "webp"]} widths={[960, 1440]} sizes="(min-width: 80rem) 60rem, 92vw" alt="" loading="lazy" decoding="async" />
+    </div>
+    <div class="phone">
+      <Picture src={phone} formats={["avif", "webp"]} widths={[390, 780]} sizes="12rem" alt="" loading="lazy" decoding="async" />
+    </div>
+  </div>
+  <figcaption class="fig__caption">
+    <p class="fig__caption-text" id={`${anchor}-cap`}><b>{format(m.work.page.figure, { n })}</b> {m.showcase.devicesLabel}</p>
+  </figcaption>
+</figure>

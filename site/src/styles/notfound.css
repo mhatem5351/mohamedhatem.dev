@@ -1,0 +1,50 @@
+/* 404 (design/prototypes/404.html): big code, title, requested path, actions, the brand graph with a lost node. */
+/* Layer order first: this file can load before global.css, and the first @layer statement decides the order. */
+@layer theme, base, components, utilities;
+@layer components {
+  .nf { position: relative; isolation: isolate; min-height: calc(100dvh - 4rem - 5rem); display: grid; align-items: center; padding-block: clamp(2.5rem, 2rem + 4vw, 6rem); overflow: clip; }
+  .nf__bg { position: absolute; inset: 0; z-index: -1; pointer-events: none; background-image: radial-gradient(circle at 2px 2px, var(--color-graph-grid) 1.15px, transparent 1.5px); background-size: 22px 22px; -webkit-mask-image: radial-gradient(55% 60% at 70% 50%, #000, transparent 75%); mask-image: radial-gradient(55% 60% at 70% 50%, #000, transparent 75%); }
+  [dir="rtl"] .nf__bg { -webkit-mask-image: radial-gradient(55% 60% at 30% 50%, #000, transparent 75%); mask-image: radial-gradient(55% 60% at 30% 50%, #000, transparent 75%); }
+  .nf__grid { display: grid; gap: clamp(2rem, 1rem + 3vw, 4rem); align-items: center; }
+  @media (min-width: 56rem) { .nf__grid { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); } }
+  .nf__code { display: flex; align-items: baseline; gap: .04em; font-family: var(--font-face-display); font-weight: 600; font-size: var(--text-mega); line-height: var(--text-mega--line-height); letter-spacing: -.045em; color: var(--color-ink); font-variant-numeric: tabular-nums; direction: ltr; }
+  [dir="rtl"] .nf__code { justify-content: flex-end; }
+  .nf__code span { color: var(--color-coral-fill); }
+  .nf__title { font-size: var(--text-2xl); line-height: var(--text-2xl--line-height); letter-spacing: var(--text-2xl--letter-spacing); margin-block-start: 1.25rem; max-width: 18ch; }
+  :lang(ar) .nf__title { max-width: 24ch; }
+  .nf__body { margin-block-start: 1rem; color: var(--color-ink-2); font-size: var(--text-md); line-height: var(--text-md--line-height); max-width: 34rem; }
+  .nf__path { display: inline-flex; align-items: center; gap: .5rem; margin-block-start: 1.25rem; padding: .375rem .75rem; border-radius: var(--radius-sm); border: 1px dashed var(--color-line-strong); background: var(--color-surface); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); max-width: 100%; direction: ltr; unicode-bidi: isolate; }
+  .nf__path[hidden] { display: none; }
+  .nf__path b { color: var(--color-coral); font-weight: 600; overflow-wrap: anywhere; }
+  .nf__actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-block-start: 2rem; }
+  .nf__actions .btn--ghost .icon { color: var(--color-accent); }
+  .nf__art { justify-self: center; width: 100%; max-width: 30rem; margin: 0; }
+  @media (max-width: 55.99rem) { .nf__art { max-width: 22rem; } }
+  .nf__art svg { width: 100%; height: auto; overflow: visible; }
+  .nf-edge { fill: none; stroke: var(--color-graph-edge); stroke-width: 1.75; stroke-linecap: round; }
+  .nf-spoke { fill: none; stroke: var(--color-graph-edge); stroke-width: 1.5; stroke-dasharray: 1 5; stroke-linecap: round; }
+  .nf-broken { fill: none; stroke: var(--color-coral-fill); stroke-width: 1.75; stroke-dasharray: 5 6; stroke-linecap: round; }
+  .nf-node { fill: var(--color-graph-node); stroke-width: 2; }
+  .nf-node--teal { stroke: var(--color-teal-fill); }
+  .nf-node--saffron { stroke: var(--color-saffron-fill); }
+  .nf-node--sage { stroke: var(--color-sage-fill); }
+  .nf-node--sky { stroke: var(--color-sky-fill); }
+  .nf-dot--saffron { fill: var(--color-saffron-fill); }
+  .nf-dot--sage { fill: var(--color-sage-fill); }
+  .nf-dot--sky { fill: var(--color-sky-fill); }
+  .nf-glyph { fill: none; stroke: var(--color-teal); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nf-hub-ring { fill: none; stroke: var(--color-teal-fill); stroke-width: 1.4; stroke-dasharray: 5 4; opacity: .6; }
+  .nf-lost-node { fill: var(--color-graph-node); stroke: var(--color-coral-fill); stroke-width: 2; stroke-dasharray: 4 3; }
+  .nf-lbl { font-family: var(--font-mono); font-size: 12.5px; fill: var(--color-muted); }
+  .nf-lbl:lang(ar), :lang(ar) .nf-lbl { font-family: var(--font-sans); font-size: 14px; }
+  .nf-lbl--lost { fill: var(--color-coral); font-weight: 600; font-family: var(--font-mono); }
+  .nf-lbl--q { font-size: 13px; }
+  .nf-lost { transform-box: fill-box; transform-origin: center; }
+  /* Motion stops on its own within 5 s (WCAG 2.2.2: no pause control needed); none under reduced motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    .nf-lost { animation: nf-drift 2.4s var(--ease-in-out) 2 alternate; }
+    .nf-broken { animation: nf-dash 2.4s linear 2; }
+  }
+  @keyframes nf-drift { to { transform: translate(6px, -5px); } }
+  @keyframes nf-dash { to { stroke-dashoffset: -22; } }
+}

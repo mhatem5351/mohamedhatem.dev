@@ -1,0 +1,86 @@
+---
+/**
+ * Table of contents (pages.css §5): a sticky rail on the end side from 64rem (scroll-spy with aria-current and a
+ * "% read" counter), and below 64rem a sticky collapsible "On this page" bar showing the current section.
+ * Both are plain links, so they work without JS; the script only adds the current-section state and progress.
+ */
+import Icon from "~/components/ui/Icon.astro";
+import { messages, type Locale } from "~/lib/i18n";
+import type { TocEntry } from "~/lib/case";
+
+interface Props {
+  locale: Locale;
+  entries: TocEntry[];
+  variant: "rail" | "mobile";
+  question?: string;
+  backHref?: string;
+}
+const { locale, entries, variant, question, backHref } = Astro.props;
+const m = messages(locale);
+const num = (i: number) => String(i + 1).padStart(2, "0");
+---
+{
+  variant === "mobile" ? (
+    <details class="toc-m" data-toc-mobile>
+      <summary>
+        <span class="toc-m__label">{m.work.page.onThisPage}</span>
+        <span class="toc-m__current" data-toc-current>
+          {entries[0]?.label}
+        </span>
+        <Icon name="chevron-down" size="sm" class="toc-m__chev" />
+      </summary>
+      <div class="toc-m__panel">
+        <nav aria-label={m.work.page.onThisPage}>
+          <ol class="toc__list" data-toc-list>
+            {entries.map((e, i) => (
+              <li>
+                <a href={`#${e.id}`} data-toc-link={e.id}>
+                  <span class="toc__num" dir="ltr">{num(i)}</span>
+                  <span>{e.label}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </div>
+      <i class="toc-m__bar" aria-hidden="true" data-toc-bar />
+    </details>
+  ) : (
+    <aside class="toc-rail" aria-label={m.work.page.onThisPage}>
+      <div class="toc-rail__inner">
+        <nav class="toc" aria-label={m.work.page.onThisPage}>
+          <p class="toc__label">
+            <span class="eyebrow">{m.work.page.onThisPage}</span>
+            <span class="toc__pct" aria-hidden="true" dir="ltr" data-toc-pct>
+              0%
+            </span>
+          </p>
+          <ol class="toc__list" data-toc-list>
+            {entries.map((e, i) => (
+              <li>
+                <a href={`#${e.id}`} data-toc-link={e.id}>
+                  <span class="toc__num" dir="ltr">{num(i)}</span>
+                  <span>{e.label}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+        <div class="toc-rail__aside">
+          {question && (
+            <button class="btn btn--secondary btn--sm" type="button" data-open-chat data-question={question} aria-haspopup="dialog">
+              <Icon name="ask" />
+              {m.work.page.ask}
+            </button>
+          )}
+          {backHref && (
+            <a class="btn btn--ghost btn--sm" href={backHref}>
+              <Icon name="arrow-left" />
+              {m.work.allWork}
+            </a>
+          )}
+        </div>
+      </div>
+    </aside>
+  )
+}

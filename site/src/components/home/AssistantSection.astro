@@ -1,0 +1,80 @@
+---
+/**
+ * 05 AI assistant (DESIGN.md 12.14b): what the assistant is, how it works (question → Worker → Gemini → answer),
+ * and a faithful static preview of the real widget (welcome state only; never a fabricated answer).
+ * The preview is decorative (aria-hidden) and opens the chat on click; keyboard and screen-reader users use the
+ * "Start a conversation" button, which does the same.
+ */
+import "~/styles/home-b.css";
+import { Image } from "astro:assets";
+import avatar from "~/assets/photo/mh-avatar-320.jpg";
+import Icon from "~/components/ui/Icon.astro";
+import SectionHeader from "~/components/ui/SectionHeader.astro";
+import suggestions from "@content/chat/suggestions.json";
+import { messages, type Locale } from "~/lib/i18n";
+import { link } from "~/lib/site";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const chips = suggestions[locale].slice(0, 4);
+const flow = [m.assistant.flow.question, m.assistant.flow.worker, m.assistant.flow.model, m.assistant.flow.answer];
+---
+<section class="section" id="assistant" aria-labelledby="assistant-title">
+  <div class="container assist">
+    <div class="stack stack-lg">
+      <SectionHeader variant="rule" index="05" eyebrow={m.assistant.eyebrow} title={m.assistant.title} titleId="assistant-title" />
+      <h2 class="sec-head__title title-14ch" id="assistant-title">{m.assistant.title}</h2>
+      <p class="lede">{m.assistant.lead}</p>
+      <ol class="assist-flow" aria-label={m.assistant.flowLabel}>
+        {
+          flow.map((step) => (
+            <li>
+              <b>{step.title}</b>
+              <span>{step.detail}</span>
+            </li>
+          ))
+        }
+      </ol>
+      <p class="t-sm muted assist__how">{m.assistant.howItWorks}</p>
+      <div class="cluster gap-loose">
+        <button class="btn btn--accent" type="button" data-open-chat aria-haspopup="dialog">
+          <Icon name="ask" />
+          {m.assistant.open}
+        </button>
+        <a class="btn btn--ghost" href={link("site-source").href}>
+          <Icon name="github" />
+          {m.assistant.howBuilt}
+        </a>
+      </div>
+    </div>
+    <div class="chat-preview-wrap">
+      <div class="chat-preview" data-open-chat aria-hidden="true">
+        <span class="chat-preview__head">
+          <Image src={avatar} alt="" width={36} height={36} densities={[1, 2]} loading="lazy" decoding="async" />
+          <span>
+            <b>{m.chat.title}</b>
+            <small><i class="dot"></i>{m.chat.subtitle}</small>
+          </span>
+        </span>
+        <span class="chat-preview__body">
+          <span class="chat-preview__msg">
+            <span class="icon-tile"><Icon name="ask" /></span>
+            <span>{m.chat.greeting}</span>
+          </span>
+          <span class="chat-preview__try">{m.chat.suggestionsTitle}</span>
+          <span class="chat-preview__chips">
+            {chips.map((c) => <span dir="auto">{c.label}</span>)}
+          </span>
+        </span>
+        <span class="chat-preview__composer">
+          <span>{m.chat.placeholder}</span>
+          <i><Icon name="send" size="sm" /></i>
+        </span>
+        <span class="chat-preview__hint">{m.chat.jdHint}</span>
+      </div>
+    </div>
+  </div>
+</section>

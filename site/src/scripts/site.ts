@@ -1,0 +1,224 @@
+/**
+ * Site-wide behaviour, one small module on every page (no framework):
+ *   theme (system → light → dark, persisted; segmented control in the menu), nav hairline after scroll, mobile menu,
+ *   home scroll-spy, reveal on scroll, copy buttons, live Cairo clock, "open the assistant" triggers and the "/" key.
+ * Everything degrades: without JS the page is complete (theme follows the OS, menu links are reachable in the
+ * footer, the assistant offers email/WhatsApp in a <noscript> card).
+ */
+
+type Mode = "system" | "light" | "dark";
+type OpenRequest = { question?: string };
+type ChatWindow = Window & { MHChat?: { open(o?: OpenRequest): void }; MHChatQueue?: OpenRequest[] };
+
+const root = document.documentElement;
+const KEY = "mh-theme";
+const darkMq = matchMedia("(prefers-color-scheme: dark)");
+const reduceMq = matchMedia("(prefers-reduced-motion: reduce)");
+
+/* ------------------------------------------------------------------ theme */
+function readMode(): Mode {
+  try {
+    const v = localStorage.getItem(KEY);
+    return v === "light" || v === "dark" ? v : "system";
+  } catch {
+    return "system";
+  }
+}
+let mode: Mode = readMode();
+
+function applyTheme(): void {
+  const resolved = mode === "system" ? (darkMq.matches ? "dark" : "light") : mode;
+  root.dataset.theme = resolved;
+  root.dataset.themeMode = mode;
+  for (const b of document.querySelectorAll<HTMLElement>("[data-theme-toggle]")) {
+    b.dataset.mode = mode;
+    if (b.hasAttribute("data-cycle-only")) continue;
+    const label = b.dataset[`label${mode[0]!.toUpperCase()}${mode.slice(1)}` as "labelSystem"];
+    if (label) {
+      b.setAttribute("aria-label", label);
+      b.title = label;
+    }
+  }
+  for (const b of document.querySelectorAll<HTMLElement>("[data-set-theme]")) b.setAttribute("aria-pressed", String(b.dataset.setTheme === mode));
+  // Keep the browser chrome colour in step when the visitor forces a theme.
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+    if (!meta.dataset.original) meta.dataset.original = meta.content;
+    meta.content = mode === "system" ? meta.dataset.original : resolved === "dark" ? "#0C151D" : "#FBF8F3";
+  }
+}
+
+function setMode(next: Mode): void {
+  mode = next;
+  try {
+    if (next === "system") localStorage.removeItem(KEY);
+    else localStorage.setItem(KEY, next);
+  } catch {
+    /* storage blocked: the choice lasts for this page only */
+  }
+  applyTheme();
+}
+
+applyTheme();
+darkMq.addEventListener("change", () => mode === "system" && applyTheme());
+addEventListener("storage", (e) => {
+  if (e.key === KEY) {
+    mode = readMode();
+    applyTheme();
+  }
+});
+
+/* ------------------------------------------------------------------ chat */
+function openChat(req: OpenRequest = {}): void {
+  const w = window as ChatWindow;
+  if (w.MHChat?.open) w.MHChat.open(req);
+  else (w.MHChatQueue ??= []).push(req);
+}
+(window as Window & { mhOpenChat?: typeof openChat }).mhOpenChat = openChat;
+
+/* ------------------------------------------------------------------ clicks */
+document.addEventListener("click", async (e) => {
+  const target = e.target as Element | null;
+  if (!target) return;
+
+  const toggle = target.closest<HTMLElement>("[data-theme-toggle]");
+  if (toggle) {
+    setMode(({ system: "light", light: "dark", dark: "system" } as const)[mode]);
+    return;
+  }
+  const seg = target.closest<HTMLElement>("[data-set-theme]");
+  if (seg) {
+    setMode((seg.dataset.setTheme as Mode) || "system");
+    return;
+  }
+  const chat = target.closest<HTMLElement>("[data-open-chat]");
+  if (chat) {
+    e.preventDefault();
+    openChat(chat.dataset.question ? { question: chat.dataset.question } : {});
+    return;
+  }
+  const copy = target.closest<HTMLElement>("[data-copy]");
+  if (copy) {
+    e.preventDefault();
+    const text = copy.dataset.copy === "url" ? location.href.split("#")[0]! : copy.dataset.copy || "";
+    let ok = true;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      ok = false;
+    }
+    announce(ok ? copy.dataset.copied || "" : copy.dataset.copyFailed || "");
+    if (ok) {
+      copy.dataset.state = "copied";
+      setTimeout(() => delete copy.dataset.state, 1800);
+    }
+  }
+});
+
+/** Polite announcement through the page's live region (#live in Base.astro). */
+export function announce(text: string): void {
+  const live = document.getElementById("live");
+  if (!live || !text) return;
+  live.textContent = "";
+  requestAnimationFrame(() => (live.textContent = text));
+}
+
+/* ------------------------------------------------------------------ "/" opens the assistant */
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+  const t = e.target as Element | null;
+  if (t?.closest("input, textarea, select, [contenteditable=''], [contenteditable='true']")) return;
+  e.preventDefault();
+  openChat({});
+});
+
+/* ------------------------------------------------------------------ nav: hairline + mobile menu */
+const nav = document.querySelector<HTMLElement>("[data-nav]");
+if (nav) {
+  const onScroll = () => (nav.dataset.scrolled = String(scrollY > 8));
+  onScroll();
+  addEventListener("scroll", onScroll, { passive: true });
+}
+
+const menuBtn = document.querySelector<HTMLButtonElement>("[data-menu-button]");
+const sheet = document.querySelector<HTMLElement>("[data-menu-sheet]");
+if (menuBtn && sheet) {
+  const set = (open: boolean, focusButton: boolean = true) => {
+    sheet.hidden = !open;
+    menuBtn.setAttribute("aria-expanded", String(open));
+    menuBtn.setAttribute("aria-label", (open ? menuBtn.dataset.labelClose : menuBtn.dataset.labelOpen) || "");
+    if (open) sheet.querySelector<HTMLElement>("a, button")?.focus({ preventScroll: true });
+    else if (focusButton) menuBtn.focus({ preventScroll: true });
+  };
+  menuBtn.addEventListener("click", () => set(Boolean(sheet.hidden)));
+  sheet.addEventListener("click", (e) => {
+    if ((e.target as Element).closest("a")) set(false, false);
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !sheet.hidden) set(false);
+  });
+  document.addEventListener("click", (e) => {
+    const t = e.target as Node;
+    if (!sheet.hidden && !sheet.contains(t) && !menuBtn.contains(t)) set(false, false);
+  });
+  // Closing the sheet when the layout grows past the breakpoint keeps aria-expanded truthful.
+  matchMedia("(min-width: 64rem)").addEventListener("change", (e) => e.matches && !sheet.hidden && set(false, false));
+}
+
+/* ------------------------------------------------------------------ home: section scroll-spy */
+const spyLinks = [...document.querySelectorAll<HTMLAnchorElement>(".nav__links a[data-section]")].filter((a) => a.getAttribute("href")?.startsWith("#"));
+if (spyLinks.length && "IntersectionObserver" in window) {
+  const byId = new Map(spyLinks.map((a) => [a.dataset.section!, a]));
+  const visible = new Set<string>();
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const en of entries) en.isIntersecting ? visible.add(en.target.id) : visible.delete(en.target.id);
+      const order = [...byId.keys()];
+      const current = order.find((id) => visible.has(id));
+      for (const [id, a] of byId) id === current ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
+    },
+    { rootMargin: "-45% 0px -50% 0px" },
+  );
+  for (const id of byId.keys()) {
+    const el = document.getElementById(id);
+    if (el) io.observe(el);
+  }
+}
+
+/* ------------------------------------------------------------------ reveal on scroll */
+const reveal = document.querySelectorAll<HTMLElement>("[data-reveal]");
+if (reveal.length) {
+  if (reduceMq.matches || !("IntersectionObserver" in window)) for (const el of reveal) el.classList.add("is-in");
+  else {
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const en of entries)
+          if (en.isIntersecting) {
+            en.target.classList.add("is-in");
+            io.unobserve(en.target);
+          }
+      },
+      { rootMargin: "0px 0px -8% 0px" },
+    );
+    for (const el of reveal) io.observe(el);
+  }
+}
+
+/* ------------------------------------------------------------------ live Cairo time */
+const clocks = document.querySelectorAll<HTMLTimeElement>("time[data-cairo-time]");
+if (clocks.length) {
+  const fmt = new Intl.DateTimeFormat(root.lang === "ar" ? "ar-EG-u-nu-latn" : "en-GB", {
+    timeZone: "Africa/Cairo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  const tick = () => {
+    const now = new Date();
+    for (const t of clocks) {
+      t.textContent = fmt.format(now);
+      t.dateTime = now.toISOString();
+    }
+  };
+  tick();
+  setInterval(tick, 30_000);
+}

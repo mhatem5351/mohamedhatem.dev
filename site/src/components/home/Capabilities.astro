@@ -1,0 +1,102 @@
+---
+/**
+ * 01 What I build (DESIGN.md 12.9): a bento of six capability cards. The feature card carries the multi-agent
+ * chatbot diagram (decorative thumbnail on a dot-grid inset); "Front end, too" links to the showcase (#craft).
+ */
+import Icon from "~/components/ui/Icon.astro";
+import SectionHeader from "~/components/ui/SectionHeader.astro";
+import { diagramSvg } from "~/lib/diagrams";
+import { messages, type Locale } from "~/lib/i18n";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const c = m.capabilities;
+
+type Key = "retrieval" | "serving" | "evaluation" | "bilingual";
+const cards: { key: Key; icon: string; tile: string }[] = [
+  { key: "retrieval", icon: "retrieve", tile: "icon-tile--saffron" },
+  { key: "serving", icon: "serving", tile: "icon-tile--slate" },
+  { key: "evaluation", icon: "evaluate", tile: "icon-tile--sky" },
+  { key: "bilingual", icon: "bilingual", tile: "icon-tile--sage" },
+];
+/** "A · B · C" → first item emphasised; Latin-only stack lines stay LTR on Arabic pages. */
+const stack = (line: string) => {
+  const [first, ...rest] = line.split(" · ");
+  return { first: first ?? "", rest: rest.length ? ` · ${rest.join(" · ")}` : "", ltr: !/[؀-ۿ]/.test(line) };
+};
+const featureArt = diagramSvg("wakeb-multi-agent-chatbot", "thumb", { decorative: true, idSuffix: "cap" });
+---
+<section class="section" id="what" aria-labelledby="what-title">
+  <div class="container">
+    <SectionHeader index="01" eyebrow={c.eyebrow} title={c.title} titleId="what-title" lede={c.lead} />
+    <div class="bento">
+      <article class="card card--pad bento__feature" data-reveal>
+        <div class="cap">
+          <span class="icon-tile"><Icon name="agents" /></span>
+          <h3 class="cap__title">{c.agents.title}</h3>
+          <p class="cap__body">{c.agents.body}</p>
+          {
+            (() => {
+              const s = stack(c.agents.stack);
+              return (
+                <p class="cap__stack" dir={locale === "ar" && s.ltr ? "ltr" : undefined}>
+                  <b>{s.first}</b>
+                  {s.rest}
+                </p>
+              );
+            })()
+          }
+        </div>
+        <div class="feature-art" dir="ltr" set:html={featureArt} />
+      </article>
+      {
+        cards.map(({ key, icon, tile }, i) => {
+          const s = stack(c[key].stack);
+          return (
+            <article class="card card--pad cap" data-reveal data-reveal-i={String(i + 1)}>
+              <span class={`icon-tile ${tile}`}>
+                <Icon name={icon} />
+              </span>
+              <h3 class="cap__title">{c[key].title}</h3>
+              <p class="cap__body">{c[key].body}</p>
+              <p class="cap__stack" dir={locale === "ar" && s.ltr ? "ltr" : undefined}>
+                <b>{s.first}</b>
+                {s.rest}
+              </p>
+            </article>
+          );
+        })
+      }
+      <a class="card card--pad card--link cap cap--link" href="#craft" data-reveal data-reveal-i="5">
+        <span class="icon-tile icon-tile--coral"><Icon name="frontend" /></span>
+        <h3 class="cap__title">{c.frontend.title}</h3>
+        <p class="cap__body">{c.frontend.body}</p>
+        {
+          (() => {
+            const s = stack(c.frontend.stack);
+            return (
+              <p class="cap__stack" dir={locale === "ar" && s.ltr ? "ltr" : undefined}>
+                <b>{s.first}</b>
+                {s.rest}
+              </p>
+            );
+          })()
+        }
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Arabic stack lines set LTR still align to the card's start (the right edge). */
+  :global([dir="rtl"]) .cap__stack[dir="ltr"] {
+    text-align: end;
+  }
+  .cap--link:focus-visible {
+    outline-offset: 3px;
+    border-radius: var(--radius-lg);
+  }
+</style>

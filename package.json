@@ -1,0 +1,39 @@
+{
+  "name": "mohamedhatem-dev",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "content:gen": "node worker/scripts/gen-content.mjs",
+    "dev-vars": "node worker/scripts/dev-vars.mjs",
+    "dev:worker": "node worker/scripts/dev.mjs",
+    "typecheck": "tsc -p worker && tsc -p chat-widget && tsc -p chat-widget/tests",
+    "test": "npm run content:gen && vitest run",
+    "test:unit": "vitest run",
+    "chat:smoke": "node worker/scripts/chat-smoke.mjs",
+    "chat:eval": "node worker/scripts/chat-eval.mjs",
+    "check:content": "npx -y tsx content/scripts/check-content.mjs",
+    "deploy:worker": "npm run check:content && node worker/scripts/gen-content.mjs --require-content && wrangler deploy",
+    "widget:build": "node chat-widget/scripts/build.mjs",
+    "widget:size": "node chat-widget/scripts/build.mjs --check",
+    "widget:demo": "node chat-widget/scripts/build.mjs && node chat-widget/scripts/serve.mjs",
+    "test:widget": "node chat-widget/scripts/build.mjs && playwright test -c chat-widget/playwright.config.ts",
+    "test:widget:unit": "vitest run --project widget",
+    "build": "npm --prefix site run build",
+    "deploy": "npm run build && npm run deploy:worker"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@cloudflare/workers-types": "^5.20261009.1",
+    "@playwright/test": "^1.64.0",
+    "@types/node": "^26.6.4",
+    "esbuild": "^0.28.2",
+    "happy-dom": "^20.14.6",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3",
+    "wrangler": "^4.149.0"
+  }
+}

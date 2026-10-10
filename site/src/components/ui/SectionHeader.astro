@@ -1,0 +1,39 @@
+---
+/**
+ * Section header (DESIGN.md 12.8): index + mono label on a hairline, H2 and an optional lede in a 7/5 grid.
+ * Slot "action" renders an optional link at the end; slot "lede" replaces the plain lede text.
+ */
+interface Props {
+  index: string;
+  eyebrow: string;
+  title: string;
+  titleId: string;
+  lede?: string;
+  /** "rule" renders only the hairline label (sections that place their H2 themselves). */
+  variant?: "full" | "rule";
+}
+const { index, eyebrow, title, titleId, lede, variant = "full" } = Astro.props;
+---
+{
+  variant === "rule" ? (
+    <div class="sec-head__rule">
+      <span class="sec-head__index">{index}</span>
+      <span class="eyebrow">{eyebrow}</span>
+    </div>
+  ) : (
+    <header class="sec-head">
+      <div class="sec-head__rule">
+        <span class="sec-head__index">{index}</span>
+        <span class="eyebrow">{eyebrow}</span>
+      </div>
+      <div class="sec-head__row">
+        <h2 class="sec-head__title" id={titleId}>
+          {title}
+        </h2>
+        {lede && <p class="sec-head__lede">{lede}</p>}
+        <slot name="lede" />
+      </div>
+      <slot name="action" />
+    </header>
+  )
+}

@@ -1,0 +1,34 @@
+/*
+ * Track H1 additions: experience-trace geometry without style="" (the CSP is hash-only) or a <style> element in
+ * <body> (invalid HTML). Each span carries its start and width in months as digit classes (hundreds / tens /
+ * ones), e.g. "s-h0 s-t4 s-o4" = month 44, and the trace carries the axis length the same way ("m-h0 m-t8 m-o4").
+ * CSS turns them into the --s / --w percentages the prototype's trace rules use. src/lib/trace.ts emits the classes.
+ */
+/* Layer order first: this file can load before global.css, and the first @layer statement decides the order. */
+@layer theme, base, components, utilities;
+@layer components {
+  .trace {
+    --months: calc(var(--mh, 0) * 100 + var(--mt, 8) * 10 + var(--mo, 4));
+  }
+  .trace .span {
+    --s: calc((var(--sh, 0) * 100 + var(--st, 0) * 10 + var(--so, 0)) / var(--months) * 100%);
+    --w: calc((var(--wh, 0) * 100 + var(--wt, 0) * 10 + var(--wo, 0)) / var(--months) * 100%);
+  }
+  .trace .axis span,
+  .trace .trace__grid .yr,
+  .trace .trace__grid .now {
+    inset-inline-start: calc((var(--ph, 0) * 100 + var(--pt, 0) * 10 + var(--po, 0)) / var(--months) * 100%);
+  }
+  .m-h0{--mh:0} .m-h1{--mh:1} .m-h2{--mh:2} .m-h3{--mh:3} .m-h4{--mh:4} .m-h5{--mh:5} .m-h6{--mh:6} .m-h7{--mh:7} .m-h8{--mh:8} .m-h9{--mh:9}
+  .m-t0{--mt:0} .m-t1{--mt:1} .m-t2{--mt:2} .m-t3{--mt:3} .m-t4{--mt:4} .m-t5{--mt:5} .m-t6{--mt:6} .m-t7{--mt:7} .m-t8{--mt:8} .m-t9{--mt:9}
+  .m-o0{--mo:0} .m-o1{--mo:1} .m-o2{--mo:2} .m-o3{--mo:3} .m-o4{--mo:4} .m-o5{--mo:5} .m-o6{--mo:6} .m-o7{--mo:7} .m-o8{--mo:8} .m-o9{--mo:9}
+  .s-h0{--sh:0} .s-h1{--sh:1} .s-h2{--sh:2} .s-h3{--sh:3} .s-h4{--sh:4} .s-h5{--sh:5} .s-h6{--sh:6} .s-h7{--sh:7} .s-h8{--sh:8} .s-h9{--sh:9}
+  .s-t0{--st:0} .s-t1{--st:1} .s-t2{--st:2} .s-t3{--st:3} .s-t4{--st:4} .s-t5{--st:5} .s-t6{--st:6} .s-t7{--st:7} .s-t8{--st:8} .s-t9{--st:9}
+  .s-o0{--so:0} .s-o1{--so:1} .s-o2{--so:2} .s-o3{--so:3} .s-o4{--so:4} .s-o5{--so:5} .s-o6{--so:6} .s-o7{--so:7} .s-o8{--so:8} .s-o9{--so:9}
+  .w-h0{--wh:0} .w-h1{--wh:1} .w-h2{--wh:2} .w-h3{--wh:3} .w-h4{--wh:4} .w-h5{--wh:5} .w-h6{--wh:6} .w-h7{--wh:7} .w-h8{--wh:8} .w-h9{--wh:9}
+  .w-t0{--wt:0} .w-t1{--wt:1} .w-t2{--wt:2} .w-t3{--wt:3} .w-t4{--wt:4} .w-t5{--wt:5} .w-t6{--wt:6} .w-t7{--wt:7} .w-t8{--wt:8} .w-t9{--wt:9}
+  .w-o0{--wo:0} .w-o1{--wo:1} .w-o2{--wo:2} .w-o3{--wo:3} .w-o4{--wo:4} .w-o5{--wo:5} .w-o6{--wo:6} .w-o7{--wo:7} .w-o8{--wo:8} .w-o9{--wo:9}
+  .p-h0{--ph:0} .p-h1{--ph:1} .p-h2{--ph:2} .p-h3{--ph:3} .p-h4{--ph:4} .p-h5{--ph:5} .p-h6{--ph:6} .p-h7{--ph:7} .p-h8{--ph:8} .p-h9{--ph:9}
+  .p-t0{--pt:0} .p-t1{--pt:1} .p-t2{--pt:2} .p-t3{--pt:3} .p-t4{--pt:4} .p-t5{--pt:5} .p-t6{--pt:6} .p-t7{--pt:7} .p-t8{--pt:8} .p-t9{--pt:9}
+  .p-o0{--po:0} .p-o1{--po:1} .p-o2{--po:2} .p-o3{--po:3} .p-o4{--po:4} .p-o5{--po:5} .p-o6{--po:6} .p-o7{--po:7} .p-o8{--po:8} .p-o9{--po:9}
+}

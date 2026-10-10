@@ -1,0 +1,61 @@
+---
+/**
+ * Thin wrapper around the chat widget (../chat-widget, owned by the assistant track; see its src/index.ts).
+ *
+ * - The widget's loader (~2 KB gzip) mounts the floating "Ask my AI" bubble in a shadow root; the panel and its CSS
+ *   load on the first hover / focus / touch of the bubble, so the widget costs almost nothing up front.
+ * - Any element with [data-open-chat] (optional data-question) opens it; "/" outside a text field too
+ *   (src/scripts/site.ts). Clicks before the loader runs are queued.
+ * - Config comes from data attributes here (no inline script: strict CSP). Contact details come from profile.ts,
+ *   never from the model.
+ * - Without JavaScript, a <details> card offers email and WhatsApp instead.
+ *
+ * Integration status: the coordinator finalises this file once the Worker's /api/chat is live
+ * (e.g. Turnstile key and avatar). Tests mock window.MHChat (tests/e2e/chat.spec.ts).
+ */
+import { getImage } from "astro:assets";
+import avatar from "~/assets/photo/mh-avatar-320.jpg";
+import Icon from "~/components/ui/Icon.astro";
+import { messages, type Locale } from "~/lib/i18n";
+import { TURNSTILE_SITE_KEY, contact, link, mailtoHref, whatsappHref } from "~/lib/site";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const avatarImg = await getImage({ src: avatar, width: 96, height: 96, format: "webp" });
+---
+<div
+  hidden
+  id="mh-chat-config"
+  data-lang={locale}
+  data-turnstile={TURNSTILE_SITE_KEY}
+  data-avatar={avatarImg.src}
+  data-whatsapp={contact("whatsapp").href.replace(/\D/g, "")}
+  data-phone={contact("whatsapp").display}
+  data-email={contact("email").display}
+  data-alt-email={contact("gmail").display}
+  data-linkedin={link("linkedin").href}
+  data-github={link("github").href}
+>
+</div>
+<noscript>
+  <details class="chat-noscript">
+    <summary class="chat-noscript__launcher">
+      <span class="chat-noscript__icon" aria-hidden="true"><Icon name="ask" /></span>
+      <span>{m.chat.launcher}</span>
+    </summary>
+    <div class="chat-noscript__card">
+      <p>{m.chat.noscript}</p>
+      <p class="chat-noscript__links">
+        <a href={mailtoHref(locale)}>{m.chat.contactEmail}</a>
+        <a href={whatsappHref(locale)}>{m.chat.contactWhatsApp}</a>
+      </p>
+    </div>
+  </details>
+</noscript>
+<script>
+  import { mountChatWidget } from "~/scripts/chat";
+  mountChatWidget();
+</script>

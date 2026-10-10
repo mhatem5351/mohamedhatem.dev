@@ -1,0 +1,81 @@
+---
+/**
+ * Every page's shell: <head> (components/Head.astro), skip link, nav, <main>, footer, the live region and the chat
+ * mount.
+ *
+ * `path` is the page's English path ("/", "/cv/", "/work/<slug>/"); the Arabic twin is the same path under /ar/.
+ */
+import "~/styles/global.css";
+import Nav from "~/components/nav/Nav.astro";
+import Footer from "~/components/Footer.astro";
+import ChatMount from "~/components/chat/ChatMount.astro";
+import Head from "~/components/Head.astro";
+import { dirOf, messages, type Locale } from "~/lib/i18n";
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  /** English path of this page (with trailing slash). */
+  path: string;
+  /** Path of the page in the other locale; null when there is no twin (the switch then goes to that locale's home). */
+  alternatePath?: string | null;
+  /** hreflang alternates + canonical (false for the 404 page). */
+  indexable?: boolean;
+  /** OG image key ("home", "cv", "privacy", "work-<slug>"). */
+  ogKey?: string;
+  ogType?: "website" | "article" | "profile";
+  jsonLd?: readonly object[];
+  bodyClass?: string;
+  variant?: "full" | "minimal";
+  /** Extra <link rel="preload"> for this page's LCP image, if any. */
+  preload?: readonly { href: string; as: "image"; type?: string; imagesrcset?: string; imagesizes?: string }[];
+}
+
+const {
+  locale,
+  title,
+  description,
+  path,
+  alternatePath,
+  indexable = true,
+  ogKey = "home",
+  ogType = "website",
+  jsonLd = [],
+  bodyClass,
+  variant = "full",
+  preload = [],
+} = Astro.props;
+
+const m = messages(locale);
+const dir = dirOf(locale);
+---
+<!doctype html>
+<html lang={m.locale.code} dir={dir}>
+  <head>
+    <Head
+      locale={locale}
+      title={title}
+      description={description}
+      path={path}
+      indexable={indexable}
+      ogKey={ogKey}
+      ogType={ogType}
+      jsonLd={jsonLd}
+      preload={preload}
+    />
+  </head>
+  <body class={bodyClass}>
+    <a class="skip-link" href="#main">{m.a11y.skipToContent}</a>
+    <Nav locale={locale} path={path} alternatePath={alternatePath} variant={variant} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer locale={locale} path={path} alternatePath={alternatePath} variant={variant} />
+    <p id="live" class="sr-only" aria-live="polite"></p>
+    <ChatMount locale={locale} />
+    <script>
+      import "~/scripts/site";
+    </script>
+  </body>
+</html>

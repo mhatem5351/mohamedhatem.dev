@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks commits that would publish a secret or the unnamed client's name (the repository is public).
+# Enable once per clone: git config core.hooksPath .githooks
+exec npx -y tsx content/scripts/check-content.mjs

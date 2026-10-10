@@ -1,0 +1,8 @@
+---
+/** The "MH" monogram (design/assets/brand/monogram.svg), themed through tokens: ink tile, paper letters, teal node. */
+interface Props {
+  class?: string;
+}
+const { class: className = "brand__mark" } = Astro.props;
+---
+<svg viewBox="0 0 64 64" class={className} aria-hidden="true" focusable="false"><rect width="64" height="64" rx="14.08" class="mono-tile"></rect><path d="M13.12 47.415L13.12 15.049L17.751 15.049L24.448 27.074L31.145 15.049L35.776 15.049L35.776 47.415L31.461 47.415L31.461 22.798L26.763 31.232L22.133 31.232L17.435 22.798L17.435 47.415ZM33.618 29.209L48.722 29.209L48.722 33.255L33.618 33.255ZM46.565 15.049L50.88 15.049L50.88 47.415L46.565 47.415Z" class="mono-letters"></path><circle cx="24.45" cy="31.23" r="4.38" class="mono-node"></circle></svg>

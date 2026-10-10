@@ -1,0 +1,11 @@
+{
+  // The widget runs in the browser: DOM types, no Node or Workers types. `npx tsc -p chat-widget`
+  // The Playwright suite has its own project (tests/tsconfig.json: DOM + Node).
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": []
+  },
+  "include": ["src/**/*.ts", "test/unit/**/*.ts"],
+  "exclude": []
+}

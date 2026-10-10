@@ -1,0 +1,145 @@
+/**
+ * mohamedhatem.dev chat widget: the loader. This module is all a page pays for up front (≈2 KB gzip): a floating
+ * "Ask my AI" bubble in a shadow root. The panel (panel.ts and the rest) is fetched on the first hover, focus or
+ * touch of the bubble, so it is usually ready before the click lands.
+ *
+ *   import { mountChat } from "…/chat-widget/src/index";
+ *   mountChat({ turnstileSiteKey: "…", avatarSrc: "/images/mh-square-96.webp" });
+ *
+ * Other page elements can open the chat with `window.MHChat.open({ question })`, `openChat({ question })` or
+ * `document.dispatchEvent(new CustomEvent("mh:open-chat", { detail: { question } }))`.
+ */
+import type { ChatWidgetConfig, OpenOptions, PanelApi } from "./types";
+
+export type { ChatWidgetConfig, ContactConfig, OpenOptions, SectionConfig } from "./types";
+
+/**
+ * Short aliases for the design tokens (design/tokens.css), each with the brand fallback. Custom properties
+ * inherit into the shadow root, so light/dark and the Arabic font switch with the page.
+ */
+const VARS =
+  ":host{all:initial;--bg:var(--color-surface,#fffefb);--bg2:var(--color-surface-2,#f6f1e8);--ink:var(--color-ink,#14212b);--ink2:var(--color-ink-2,#33414c);--mut:var(--color-muted,#5a6670);--line:var(--color-line,#e7e0d3);--line2:var(--color-line-strong,#d6ccba);--lin:var(--color-line-input,#8e8676);--acc:var(--color-accent,#0a766c);--accs:var(--color-accent-solid,#0a766c);--acch:var(--color-accent-solid-hover,#086a61);--onacc:var(--color-on-accent,#fff);--tint:var(--color-accent-tint,#e3f1ee);--tintl:var(--color-accent-tint-line,#b9dfd8);--inv:var(--color-surface-inverse,#14212b);--oninv:var(--color-on-inverse,#fbf8f3);--focus:var(--color-focus,#0a766c);--dtint:var(--color-danger-tint,#fae7df);--warnt:var(--color-saffron-tint,#faefdc);--glow:var(--color-glow-1,rgb(22 163 148/.13));--teal:var(--color-teal-fill,#16a394);--saf:var(--color-saffron-fill,#e9a23b);--cor:var(--color-coral-fill,#e4683f);--sh:var(--shadow-xl,0 32px 72px -18px rgb(20 33 43/.24),0 12px 24px -12px rgb(20 33 43/.1));--ease:var(--ease-out,cubic-bezier(.16,1,.3,1));--font:var(--font-sans,Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif);--fontd:var(--font-display,var(--font));--fontar:var(--font-arabic,'IBM Plex Sans Arabic',Tahoma,sans-serif);--mono:var(--font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);--z:var(--z-widget,80)}";
+
+/** The bubble is brand ink in both themes (the glyph's colours are tuned for it), with a hairline ring for dark pages. */
+const CSS = `${VARS}
+.b{position:fixed;z-index:var(--z);inset-block-end:max(1rem,env(safe-area-inset-bottom));inset-inline-end:max(1rem,env(safe-area-inset-right));display:flex;align-items:center;gap:.5rem;height:3.5rem;min-width:3.5rem;padding:0 1.125rem 0 .875rem;border:0;border-radius:999px;background:#14212b;color:#fbf8f3;font:600 .9375rem/1 var(--font);cursor:pointer;box-shadow:0 0 0 1px rgb(255 255 255/.14),0 18px 40px -12px rgb(20 33 43/.4),0 6px 12px -6px rgb(20 33 43/.2);transition:transform .25s var(--ease),padding .3s var(--ease),gap .3s var(--ease);animation:in .5s var(--ease) .4s both;-webkit-tap-highlight-color:transparent}
+:host([dir=rtl]) .b{padding:0 .875rem 0 1.125rem}
+.b:hover{transform:translateY(-2px)}
+.b:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.g,.x{flex:none;width:1.75rem;height:1.75rem}
+.x{display:none;width:1.375rem;margin:0 .1875rem}
+.b[aria-expanded=true] .g,.b[aria-expanded=true] .l{display:none}
+.b[aria-expanded=true] .x{display:block}
+.l{overflow:hidden;white-space:nowrap;max-width:12em;transition:max-width .35s var(--ease),opacity .25s}
+.b.c:not(:hover):not(:focus-visible),.b[aria-expanded=true]{gap:0;padding:0 .875rem}
+.b.c:not(:hover):not(:focus-visible) .l{max-width:0;opacity:0}
+.p{opacity:0;animation:mv 3.6s var(--ease) infinite}
+.p1{--x:-8.5px;--y:-7.5px}.p2{--x:8.5px;--y:7.5px;animation-delay:1.2s}.p3{--x:8.5px;--y:-7.5px;animation-delay:2.4s}
+@keyframes mv{0%{transform:none;opacity:0}12%,72%{opacity:1}100%{transform:translate(var(--x),var(--y));opacity:0}}
+@keyframes in{from{opacity:0;transform:translateY(.5rem) scale(.92)}}
+@media (max-width:639.98px){.l{display:none}.b,:host([dir=rtl]) .b{gap:0;padding:0 .875rem}}
+@media (prefers-reduced-motion:reduce){.b,.l{transition:none;animation:none}.p{display:none}}
+@media print{.b{display:none}}`;
+
+/** The animated agent glyph: an orchestrator with four agents (teal/saffron/coral/sky) and pulses along the edges. */
+const GLYPH =
+  '<svg class="g" viewBox="0 0 28 28" aria-hidden="true" focusable="false"><path d="M14 14 5.5 6.5M14 14l8.5-7.5M14 14l-8.5 7.5M14 14l8.5 7.5" stroke="#fbf8f3" stroke-opacity=".38" stroke-width="1.3" stroke-linecap="round"/><circle class="p p1" cx="14" cy="14" r="1.3" fill="#fbf8f3"/><circle class="p p2" cx="14" cy="14" r="1.3" fill="#fbf8f3"/><circle class="p p3" cx="14" cy="14" r="1.3" fill="#fbf8f3"/><circle cx="5.5" cy="6.5" r="2.6" fill="#16a394"/><circle cx="22.5" cy="6.5" r="2.6" fill="#e9a23b"/><circle cx="5.5" cy="21.5" r="2.6" fill="#e4683f"/><circle cx="22.5" cy="21.5" r="2.6" fill="#4a8fd6"/><circle cx="14" cy="14" r="4.4" fill="#fbf8f3"/><circle cx="14" cy="14" r="1.7" fill="#16a394"/></svg>';
+
+const CLOSE =
+  '<svg class="x" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+let api: { open(o?: OpenOptions): void; close(): void } | undefined;
+
+/**
+ * Adds styles to the shadow root as a constructed stylesheet: CSSOM, so a strict Content-Security-Policy (no
+ * 'unsafe-inline' styles) still applies them. Falls back to a <style> element on browsers without
+ * adoptedStyleSheets.
+ */
+function addStyles(root: ShadowRoot, css: string): void {
+  try {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(css);
+    root.adoptedStyleSheets = [...root.adoptedStyleSheets, sheet];
+  } catch {
+    const el = document.createElement("style");
+    el.textContent = css;
+    root.prepend(el);
+  }
+}
+
+let listening = false;
+
+/** Mounts the bubble once per document (safe to call again, e.g. after an Astro view transition). */
+export function mountChat(config: ChatWidgetConfig = {}): void {
+  if (typeof document === "undefined" || document.querySelector("[data-mh-chat]")) return;
+  const lang = config.lang ?? (/^ar\b/i.test(document.documentElement.lang) ? "ar" : "en");
+  const ar = lang === "ar";
+  const key = config.storageKey ?? "mh-chat";
+  const host = document.createElement("div");
+  host.setAttribute("data-mh-chat", "");
+  host.lang = lang;
+  host.dir = ar ? "rtl" : "ltr";
+  const root = host.attachShadow({ mode: "open" });
+  const label = ar ? "اسأل مساعدي الذكي" : "Ask my AI";
+  root.innerHTML = `<button class="b" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="${ar ? label : "Ask my AI assistant"}">${GLYPH}${CLOSE}<span class="l">${label}</span></button>`;
+  addStyles(root, CSS);
+  const bubble = root.querySelector("button")!;
+
+  // The label is shown for the first visit (this browser session) and collapses to the icon afterwards, or once
+  // the chat has been opened. Hover / keyboard focus still reveal it.
+  const seen = `${key}:seen`;
+  const compact = () => {
+    bubble.classList.add("c");
+    try {
+      sessionStorage.setItem(seen, "0");
+    } catch {
+      /* storage blocked */
+    }
+  };
+  try {
+    if (!localStorage.getItem(seen)) {
+      localStorage.setItem(seen, "1");
+      sessionStorage.setItem(seen, "1");
+    } else if (sessionStorage.getItem(seen) !== "1") bubble.classList.add("c");
+  } catch {
+    /* storage blocked: keep the label */
+  }
+
+  document.body.append(host);
+
+  let panel: Promise<PanelApi> | undefined;
+  const load = () =>
+    (panel ??= import("./panel").then(
+      (m) => m.createPanel({ host, root, bubble, config, lang, key, addStyles: (css) => addStyles(root, css) }),
+      (err: unknown) => {
+        panel = undefined; // offline / chunk error: try again on the next interaction
+        throw err;
+      },
+    ));
+  const warm = () => void load().catch(() => {});
+  bubble.addEventListener("pointerenter", warm, { once: true });
+  bubble.addEventListener("focus", warm, { once: true });
+  bubble.addEventListener("touchstart", warm, { once: true, passive: true });
+  bubble.addEventListener("click", () => {
+    compact();
+    load().then((p) => p.toggle(), () => {});
+  });
+
+  api = {
+    open: (o) => {
+      compact();
+      load().then((p) => p.open(o), () => {});
+    },
+    close: () => void panel?.then((p) => p.close(), () => {}),
+  };
+  (window as Window & { MHChat?: typeof api }).MHChat = api;
+  if (!listening) {
+    listening = true;
+    document.addEventListener("mh:open-chat", (e) => api?.open((e as CustomEvent<OpenOptions | undefined>).detail));
+  }
+}
+
+/** Opens the chat (mounting must have happened); with `question`, asks it right away. */
+export function openChat(options?: OpenOptions): void {
+  api?.open(options);
+}

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" class="mh-orbit" fill="none" aria-hidden="true" focusable="false">
+<!--
+  Orchestrator orbit: overlay for the circular profile photo (static; no motion).
+  Layout (square box of any size S):
+    - photo: circle-cropped <img>, diameter 70% of S (168/240), centred, i.e. inset 15% on every side
+    - teal ring hugging the photo (r 88/240), dashed orbit (r 106/240), four satellite nodes on the orbit
+      in the category colours: saffron (retrieval), coral (generation), sky (evaluation), sage (guard).
+  Example (S = 240 px, use the 480 w file for 2x):
+    <div style="position:relative;width:240px;aspect-ratio:1">
+      <img src="mh-square-480.avif" alt="Mohamed Hatem" width="168" height="168"
+           style="position:absolute;inset:15%;width:70%;height:70%;border-radius:50%;object-fit:cover">
+      [this SVG, inlined, with style "position:absolute;inset:0;width:100%;height:100%"]
+    </div>
+  Colours: inline it so it follows the page's colour tokens (CSS custom properties color-teal-fill,
+  color-saffron-fill, color-coral-fill, color-sky-fill, color-sage-fill, color-graph-node); the dashed orbit
+  uses currentColor, so set color on the svg or its wrapper (recommended: the color-line-strong token).
+  Used as an <img>, it falls back to the token values for the visitor's colour scheme.
+  Recommended display size: 160 px and up (below that use the photo alone, e.g. mh-avatar-*).
+-->
+<style>
+svg.mh-orbit:root{--color-teal-fill:#16A394;--color-saffron-fill:#E9A23B;--color-coral-fill:#E4683F;--color-sky-fill:#4A8FD6;--color-sage-fill:#89A447;--color-graph-node:#FFFEFB;color:#D6CCBA}
+@media (prefers-color-scheme:dark){svg.mh-orbit:root{--color-teal-fill:#2CC2B0;--color-saffron-fill:#EFAE48;--color-coral-fill:#F57A54;--color-sky-fill:#5EA2E6;--color-sage-fill:#9DB95A;--color-graph-node:#0F1A23;color:#2C3E4D}}
+.mh-orbit .o-ring{stroke:var(--color-teal-fill)}
+.mh-orbit .o-orbit{stroke:currentColor}
+.mh-orbit .n-ring{fill:var(--color-graph-node)}
+.mh-orbit .n-saffron .n-ring{stroke:var(--color-saffron-fill)}.mh-orbit .n-saffron .n-dot{fill:var(--color-saffron-fill)}
+.mh-orbit .n-coral .n-ring{stroke:var(--color-coral-fill)}.mh-orbit .n-coral .n-dot{fill:var(--color-coral-fill)}
+.mh-orbit .n-sky .n-ring{stroke:var(--color-sky-fill)}.mh-orbit .n-sky .n-dot{fill:var(--color-sky-fill)}
+.mh-orbit .n-sage .n-ring{stroke:var(--color-sage-fill)}.mh-orbit .n-sage .n-dot{fill:var(--color-sage-fill)}
+</style>
+<path d="M198.71 49A106 106 0 0 1 224.95 134.85M219.64 156.16A106 106 0 0 1 63.74 209.84M46.44 196.32A106 106 0 0 1 15.63 101.49M21.68 80.38A106 106 0 0 1 182.39 34.3" class="o-orbit" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="3.2 4.6"/>
+<circle cx="120" cy="120" r="88" class="o-ring" stroke-width="2"/>
+<g class="n n-saffron"><circle cx="190.93" cy="41.23" r="6.5" class="n-ring" stroke-width="2"/><circle cx="190.93" cy="41.23" r="2.4" class="n-dot"/></g><g class="n n-coral"><circle cx="222.85" cy="145.64" r="6.5" class="n-ring" stroke-width="2"/><circle cx="222.85" cy="145.64" r="2.4" class="n-dot"/></g><g class="n n-sky"><circle cx="54.74" cy="203.53" r="6.5" class="n-ring" stroke-width="2"/><circle cx="54.74" cy="203.53" r="2.4" class="n-dot"/></g><g class="n n-sage"><circle cx="18.11" cy="90.78" r="6.5" class="n-ring" stroke-width="2"/><circle cx="18.11" cy="90.78" r="2.4" class="n-dot"/></g>
+</svg>

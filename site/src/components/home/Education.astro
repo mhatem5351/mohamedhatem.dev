@@ -1,0 +1,137 @@
+---
+/**
+ * 08 Education and certifications (DESIGN.md 12.16): degrees with logo tiles; certifications with the AWS ML
+ * Specialty featured, then the honour. The M.Sc. is in progress (expected 2027) and never described as held; the
+ * AWS certification reads "Earned 2022", never "active" (content/README.md).
+ */
+import "~/styles/home-b.css";
+import Icon from "~/components/ui/Icon.astro";
+import LogoTile from "~/components/ui/LogoTile.astro";
+import Ltr from "~/components/ui/Ltr.astro";
+import SectionHeader from "~/components/ui/SectionHeader.astro";
+import { format, formatMonth, formatYears, joinList, messages, parseIso, type Locale } from "~/lib/i18n";
+import { profile } from "~/lib/site";
+import type { Education } from "@content/profile.ts";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+
+/**
+ * "2015 – 2020", or for a degree in progress "2023 – 2027 (expected)": the numeric range is isolated LTR and the
+ * "(expected)" suffix follows in the page's own direction (it is Arabic on /ar/).
+ */
+function years(e: Education): { range: string; suffix: string } {
+  const s = parseIso(e.period.start).y;
+  const end = e.period.end === null ? "" : String(parseIso(e.period.end).y);
+  const suffix = e.status === "in-progress" ? format(m.education.expected, { year: "\u0000" }).replace("\u0000", "").trim() : "";
+  return { range: `${s} – ${end}`, suffix };
+}
+
+const featured = profile.certifications.filter((c) => c.featured);
+const others = profile.certifications.filter((c) => !c.featured);
+const issuedText = (issued: string | null) => (issued ? format(m.education.earned, { date: formatMonth(issued, locale) }) : null);
+---
+<section class="section section--band" id="education" aria-labelledby="education-title">
+  <div class="container">
+    <SectionHeader index="08" eyebrow={m.education.eyebrow} title={m.education.title} titleId="education-title" />
+    <div class="edu">
+      <div class="card card--pad">
+        <h3 class="eyebrow edu__heading">{m.education.degrees}</h3>
+        <ul class="edu__list" role="list">
+          {
+            profile.education.map((e) => (
+              <li class="edu__item">
+                <LogoTile file={e.logo.file} monogram={e.logo.monogram} size={44} class="edu__logo" />
+                <div>
+                  <div class="edu__title">{e.degree[locale]}</div>
+                  <div class="edu__sub">{e.institution[locale]}</div>
+                  {e.notes && <p class="edu__notes">{e.notes[locale]}</p>}
+                  {e.courses.length > 0 && (
+                    <p class="edu__courses">
+                      <b>{m.education.coursework}:</b> {joinList(e.courses.map((c) => c[locale]), locale)}
+                    </p>
+                  )}
+                </div>
+                <div class="edu__when">
+                  <Ltr>{years(e).range}</Ltr>
+                  {years(e).suffix && <span class="edu__expected"> {years(e).suffix}</span>}
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div class="card card--pad">
+        <h3 class="eyebrow edu__heading">{m.education.certifications}</h3>
+        {
+          featured.map((c) => (
+            <div class="cert-feature">
+              <LogoTile file={c.logo?.file ?? null} monogram={c.logo?.monogram ?? "AWS"} size={44} class="edu__logo" />
+              <div>
+                <div class="edu__title">
+                  <bdi>{c.name[locale]}</bdi>
+                </div>
+                <div class="edu__sub">
+                  {c.issuer[locale]}
+                  {c.issued && (
+                    <>
+                      {" · "}
+                      {issuedText(c.issued)}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        }
+        <ul class="edu__list" role="list">
+          {
+            others.map((c) => (
+              <li class="edu__item">
+                {c.logo?.file ? (
+                  <LogoTile file={c.logo.file} monogram={c.logo.monogram} size={44} class="edu__logo" />
+                ) : (
+                  <span class="icon-tile icon-tile--slate edu__tile">
+                    <Icon name="certificate" />
+                  </span>
+                )}
+                <div>
+                  <div class="edu__title">
+                    <bdi>{c.name[locale]}</bdi>
+                  </div>
+                  <div class="edu__sub">{c.issuer[locale]}</div>
+                </div>
+                <div class="edu__when">{c.issued ? formatMonth(c.issued, locale) : ""}</div>
+              </li>
+            ))
+          }
+        </ul>
+
+        <h3 class="eyebrow edu__subheading">{m.education.honors}</h3>
+        <ul class="edu__list" role="list">
+          {
+            profile.honors.map((h) => (
+              <li class="edu__item">
+                <span class="icon-tile icon-tile--saffron edu__tile">
+                  <Icon name="award" />
+                </span>
+                <div>
+                  <div class="edu__title">{h.title[locale]}</div>
+                  <div class="edu__sub">{h.issuer[locale]}</div>
+                  <p class="edu__notes">{h.description[locale]}</p>
+                </div>
+                <div class="edu__when">
+                  <Ltr>{formatYears(h.period)}</Ltr>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>

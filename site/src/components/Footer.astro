@@ -1,0 +1,76 @@
+---
+/** Site footer (DESIGN.md 12.18): brand + summary + stripe, three link columns, copyright + colophon. */
+import Monogram from "~/components/brand/Monogram.astro";
+import { format, localePath, messages, otherLocale, type Locale } from "~/lib/i18n";
+import { PATHS, homeAnchor, link, mailtoHref, profile, whatsappHref } from "~/lib/site";
+
+interface Props {
+  locale: Locale;
+  path: string;
+  alternatePath?: string | null;
+  variant?: "full" | "minimal";
+}
+const { locale, path, alternatePath, variant = "full" } = Astro.props;
+const m = messages(locale);
+const other = otherLocale(locale);
+const onHome = path === "/";
+const year = new Date().getFullYear();
+const otherHref = alternatePath ?? localePath(path, other);
+---
+<footer class="footer">
+  <div class="container">
+    {
+      variant === "full" && (
+        <div class="footer__grid">
+          <div class="stack stack-md">
+            <a class="brand" href={localePath("/", locale)}>
+              <Monogram />
+              {profile.basics.name[locale]}
+            </a>
+            <p class="muted t-sm footer__summary">{m.footer.summary}</p>
+            <span class="stripe stripe--sm" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+          </div>
+          <nav aria-labelledby="footer-site">
+            <h2 id="footer-site">{m.footer.columns.site}</h2>
+            <ul>
+              <li><a href={homeAnchor("work", locale, onHome)}>{m.work.eyebrow}</a></li>
+              <li><a href={homeAnchor("experience", locale, onHome)}>{m.nav.experience}</a></li>
+              <li><a href={homeAnchor("projects", locale, onHome)}>{m.nav.projects}</a></li>
+              <li><a href={localePath(PATHS.cv, locale)}>{m.nav.cv}</a></li>
+            </ul>
+          </nav>
+          <nav aria-labelledby="footer-elsewhere">
+            <h2 id="footer-elsewhere">{m.footer.columns.elsewhere}</h2>
+            <ul>
+              <li><a href={link("linkedin").href} rel="me">LinkedIn</a></li>
+              <li><a href={link("github").href} rel="me">GitHub</a></li>
+              <li><a href={mailtoHref(locale)}>{m.contact.channels.email.title}</a></li>
+              <li><a href={whatsappHref(locale)}>{m.contact.channels.whatsapp.title}</a></li>
+            </ul>
+          </nav>
+          <div>
+            <h2 id="footer-this-site">{m.footer.columns.thisSite}</h2>
+            <ul aria-labelledby="footer-this-site">
+              <li><a href={link("site-source").href}>{m.footer.sourceCode}</a></li>
+              <li><a href={otherHref} lang={other} hreflang={other}>{m.language.otherVersion}</a></li>
+              <li><a href={localePath(PATHS.privacy, locale)}>{m.footer.privacy}</a></li>
+              <li>
+                <button class="footer__link-btn" type="button" data-theme-toggle data-cycle-only>
+                  {m.footer.changeTheme}
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      )
+    }
+    <div class:list={["footer__base", variant === "minimal" && "footer__base--flush"]}>
+      <span>{format(m.footer.copyright, { year })}</span>
+      <span>{m.footer.builtWith}</span>
+    </div>
+  </div>
+</footer>

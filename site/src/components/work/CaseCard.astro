@@ -1,0 +1,197 @@
+---
+/**
+ * A case-study card (DESIGN.md 12.10, prototype .work): 3 px accent bar, decorative media (diagram thumbnail, a
+ * drawing from the architecture data, or the site screenshot for logic-controls.com), eyebrow
+ * (company / role / years), title (a stretched link: the whole card is one link), summary, optional facts, stack chips,
+ * an award badge where one belongs to the role, and the "Read the case study" cue.
+ *
+ * Variants: "feature" (5/7 split, media on the end side), "wide" (feature layout, media on the start side),
+ * "default" (grid card), "compact" (no media; the "More work" list).
+ */
+import type { CaseStudy } from "@content/profile.ts";
+import { Picture } from "astro:assets";
+import lcEn from "~/assets/showcase/lc-desktop-en-1440.webp";
+import lcAr from "~/assets/showcase/lc-desktop-ar-1440.webp";
+import Icon from "~/components/ui/Icon.astro";
+import Ltr from "~/components/ui/Ltr.astro";
+import ArchThumb from "~/components/work/ArchThumb.astro";
+import { CASE_DIAGRAMS, diagramSvg } from "~/lib/diagrams";
+import { formatYears, localePath, messages, type Locale } from "~/lib/i18n";
+import { PATHS, profile } from "~/lib/site";
+import { CASE_ACCENT } from "~/lib/home-work";
+
+interface Props {
+  cs: CaseStudy;
+  locale: Locale;
+  variant?: "feature" | "wide" | "default" | "compact";
+  /** data-reveal stagger index (0-5). */
+  i?: number;
+  headingLevel?: 3 | 4;
+  class?: string;
+}
+const { cs, locale, variant = "default", i = 0, headingLevel = 3, class: className } = Astro.props;
+const m = messages(locale);
+const role = cs.roleId ? profile.experience.find((r) => r.id === cs.roleId) : undefined;
+const honors = role ? profile.honors.filter((h) => h.roleId === role.id) : [];
+const href = localePath(PATHS.work(cs.slug), locale);
+const diagramId = CASE_DIAGRAMS[cs.slug]?.[0];
+const big = variant === "feature" || variant === "wide";
+const facts = big ? cs.outcome.slice(0, 3) : [];
+const chips = cs.stack.slice(0, big ? 5 : 4);
+const company = role ? role.company[locale] : null;
+const Heading = headingLevel === 3 ? "h3" : "h4";
+const lc = locale === "ar" ? lcAr : lcEn;
+const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/** Domain names ("logic-controls.com") never break at their hyphen. */
+const noBreakDomains = (t: string) => esc(t).replace(/\b([a-z0-9-]+\.(?:com|dev))\b/g, '<span class="nowrap" dir="ltr">$1</span>');
+---
+<article
+  class:list={[
+    "card card--link work",
+    `accent-${CASE_ACCENT[cs.slug]}`,
+    big && "work--feature",
+    variant === "wide" && "work--reverse",
+    variant === "compact" && "work--compact",
+    className,
+  ]}
+  data-reveal
+  data-reveal-i={i ? String(i) : undefined}
+>
+  {
+    variant !== "compact" && (
+      <div class:list={["work__media", !diagramId && cs.slug === "logic-controls-website" && "work__media--shot"]} dir="ltr">
+        {diagramId ? (
+          <Fragment set:html={diagramSvg(diagramId, "thumb", { decorative: true, idSuffix: `card-${cs.slug}` })} />
+        ) : cs.slug === "logic-controls-website" ? (
+          <div class="mini-browser" aria-hidden="true">
+            <span class="mini-browser__bar">
+              <i />
+              <i />
+              <i />
+            </span>
+            <Picture src={lc} formats={["avif", "webp"]} widths={[480, 720, 960]} sizes={big ? "(min-width: 64rem) 40rem, 100vw" : "(min-width: 64rem) 24rem, 100vw"} alt="" loading="lazy" decoding="async" />
+          </div>
+        ) : (
+          <ArchThumb cs={cs} />
+        )}
+      </div>
+    )
+  }
+  <div class="work__body">
+    <div class="work__meta">
+      <span class="eyebrow">
+        {company ? <span lang="en" class="latin">{company}</span> : <span>{m.work.freelance}</span>}
+        {
+          big && (
+            <>
+              <span class="sep" aria-hidden="true">/</span>
+              {role ? <span>{role.title[locale]}</span> : <span lang="en" class="latin">Logic Controls</span>}
+            </>
+          )
+        }
+        <span class="sep" aria-hidden="true">/</span>
+        <Ltr>{formatYears(cs.period)}</Ltr>
+      </span>
+    </div>
+    <Heading class="work__title"><a class="stretched" href={href} set:html={noBreakDomains(cs.title[locale])} /></Heading>
+    <p class="work__summary">{cs.summary[locale]}</p>
+    {
+      facts.length > 0 && (
+        <ul class="work__facts">
+          {facts.map((f) => (
+            <li>{f.text[locale]}</li>
+          ))}
+        </ul>
+      )
+    }
+    <div class="work__foot">
+      {
+        variant !== "compact" && (
+          <ul class="cluster gap-tight chips" role="list" aria-label={m.work.labels.stack}>
+            {chips.map((s) => (
+              <li class="chip" lang="en">
+                {s}
+              </li>
+            ))}
+            {honors.map((h) => (
+              <li class="badge">
+                <Icon name="award" />
+                {h.title[locale]}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      <span class="work__cta" aria-hidden="true">{m.work.readCase}<Icon name="arrow-right" size="sm" /></span>
+    </div>
+  </div>
+</article>
+
+<style>
+  .chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .work__foot {
+    margin-block-start: auto;
+  }
+  .work__body {
+    align-content: start;
+  }
+  /* logic-controls.com: a framed screenshot instead of a diagram. */
+  .work__media--shot {
+    padding: 1.25rem;
+  }
+  .mini-browser {
+    width: 100%;
+    height: auto;
+    max-width: 36rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 0.625rem;
+    background: var(--color-surface);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+  }
+  .mini-browser__bar {
+    display: flex;
+    gap: 0.3rem;
+    padding: 0.45rem 0.6rem;
+    border-block-end: 1px solid var(--color-line);
+    background: var(--color-surface-2);
+  }
+  .mini-browser__bar i {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--color-line-strong);
+  }
+  .mini-browser :global(img) {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: top;
+  }
+  @media (min-width: 64rem) {
+    .work--reverse {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    }
+    .work--reverse .work__media {
+      order: 0;
+      border-inline-start: 0;
+      border-inline-end: 1px solid var(--color-line);
+    }
+    .work--feature .work__media--shot {
+      padding: 2.5rem;
+    }
+  }
+  .work--compact .work__title {
+    font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
+    letter-spacing: var(--text-lg--letter-spacing);
+  }
+  .work--compact .work__summary {
+    font-size: var(--text-sm);
+  }
+</style>

@@ -1,0 +1,107 @@
+---
+/**
+ * 10 Contact (DESIGN.md 12.17): direct channels first (WhatsApp and email are the quickest; Gmail as a quieter
+ * alternative, then LinkedIn and GitHub), the form second. The email row has a copy button (src/scripts/site.ts
+ * copies and announces through the page's live region).
+ */
+import "~/styles/home-b.css";
+import Icon from "~/components/ui/Icon.astro";
+import Ltr from "~/components/ui/Ltr.astro";
+import SectionHeader from "~/components/ui/SectionHeader.astro";
+import ContactForm from "~/components/home/contact/ContactForm.astro";
+import { cairoTime, messages, type Locale } from "~/lib/i18n";
+import { contact, link, mailtoHref, whatsappHref } from "~/lib/site";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const email = contact("email");
+const gmail = contact("gmail");
+const whatsapp = contact("whatsapp");
+const linkedin = link("linkedin");
+const github = link("github");
+const [timeBefore, timeAfter] = m.contact.localTime.split("{time}") as [string, string];
+---
+<section class="section section--band" id="contact" aria-labelledby="contact-title">
+  <div class="container contact">
+    <div class="contact__copy">
+      <SectionHeader variant="rule" index="10" eyebrow={m.contact.eyebrow} title={m.contact.title} titleId="contact-title" />
+      <h2 class="contact__title" id="contact-title">{m.contact.title}</h2>
+      <p class="lede contact__lede">
+        {m.contact.lead}
+        {" "}
+        {m.contact.askFirst.before}{" "}<button class="link" type="button" data-open-chat aria-haspopup="dialog">{m.contact.askFirst.action}</button>{" "}{m.contact.askFirst.after}
+      </p>
+      <p class="contact__time">
+        <i class="dot" aria-hidden="true"></i>
+        <span>{timeBefore}<Ltr><time data-cairo-time>{cairoTime(locale)}</time></Ltr>{timeAfter}</span>
+      </p>
+      <ul class="channels" role="list">
+        <li>
+          <a class="channel" href={whatsappHref(locale)}>
+            <span class="icon-tile icon-tile--sage"><Icon name="whatsapp" /></span>
+            <span>
+              <span class="channel__label">{m.contact.channels.whatsapp.title}</span><br />
+              <span class="channel__value"><Ltr>{whatsapp.display}</Ltr></span>
+            </span>
+            <Icon name="arrow-up-right" size="sm" class="channel__arrow" />
+          </a>
+        </li>
+        <li>
+          <div class="channel">
+            <span class="icon-tile"><Icon name="mail" /></span>
+            <span>
+              <span class="channel__label">{m.contact.channels.email.title}</span><br />
+              <span class="channel__value"><a href={mailtoHref(locale)}><Ltr>{email.display}</Ltr></a></span>
+            </span>
+            <button
+              class="btn btn--ghost btn--sm btn--icon channel__copy"
+              type="button"
+              data-copy={email.display}
+              data-copied={m.contact.emailCopied}
+              data-copy-failed={m.common.copyFailed}
+              aria-label={m.contact.copyEmail}
+              title={m.contact.copyEmail}
+            >
+              <Icon name="copy" class="i-copy" />
+              <Icon name="check" class="i-check" />
+            </button>
+          </div>
+        </li>
+        <li>
+          <a class="channel channel--quiet" href={mailtoHref(locale, "gmail")}>
+            <span class="icon-tile icon-tile--slate"><Icon name="mail" /></span>
+            <span>
+              <span class="channel__label">{gmail.label[locale]}</span><br />
+              <span class="channel__value"><Ltr>{gmail.display}</Ltr></span>
+            </span>
+            <Icon name="arrow-up-right" size="sm" class="channel__arrow" />
+          </a>
+        </li>
+        <li>
+          <a class="channel" href={linkedin.href} rel="me">
+            <span class="icon-tile icon-tile--sky"><Icon name="linkedin" /></span>
+            <span>
+              <span class="channel__label">{m.contact.channels.linkedin.title}</span><br />
+              <span class="channel__value"><Ltr>{linkedin.display.replace(/^linkedin\.com\//, "")}</Ltr></span>
+            </span>
+            <Icon name="arrow-up-right" size="sm" class="channel__arrow" />
+          </a>
+        </li>
+        <li>
+          <a class="channel" href={github.href} rel="me">
+            <span class="icon-tile icon-tile--slate"><Icon name="github" /></span>
+            <span>
+              <span class="channel__label">{m.contact.channels.github.title}</span><br />
+              <span class="channel__value"><Ltr>{github.display.replace(/^github\.com\//, "")}</Ltr></span>
+            </span>
+            <Icon name="arrow-up-right" size="sm" class="channel__arrow" />
+          </a>
+        </li>
+      </ul>
+    </div>
+    <ContactForm locale={locale} />
+  </div>
+</section>

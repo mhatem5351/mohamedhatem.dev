@@ -1,0 +1,42 @@
+---
+/**
+ * Home page (EN at /, AR at /ar/). Section order and bands follow HANDOFF.md 2.2 (P = plain, B = bg-subtle band):
+ * Hero (P) · 01 What I build (P) · 02 Selected work (B) · 03 Experience (P) · 04 Open source (B) · 05 AI assistant (P)
+ * · 06 Front-end craft (B) · 07 Skills (P) · 08 Education (B) · 09 About (P) · 10 Contact (B).
+ * Section ids match the chat widget's open_section targets (about, work, experience, projects, skills, education,
+ * contact) and profile.site.sections.
+ */
+import Base from "~/layouts/Base.astro";
+import Hero from "~/components/home/Hero.astro";
+import Capabilities from "~/components/home/Capabilities.astro";
+import SelectedWork from "~/components/home/SelectedWork.astro";
+import ExperienceTrace from "~/components/home/ExperienceTrace.astro";
+import OpenSource from "~/components/home/OpenSource.astro";
+import AssistantSection from "~/components/home/AssistantSection.astro";
+import Showcase from "~/components/home/Showcase.astro";
+import Skills from "~/components/home/Skills.astro";
+import Education from "~/components/home/Education.astro";
+import About from "~/components/home/About.astro";
+import Contact from "~/components/home/Contact.astro";
+import { messages, type Locale } from "~/lib/i18n";
+import { homeJsonLd } from "~/lib/jsonld";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+---
+<Base locale={locale} title={m.meta.home.title} description={m.meta.home.description} path="/" ogKey="home" ogType="profile" jsonLd={homeJsonLd(locale)}>
+  <Hero locale={locale} />
+  <Capabilities locale={locale} />
+  <SelectedWork locale={locale} />
+  <ExperienceTrace locale={locale} />
+  <OpenSource locale={locale} />
+  <AssistantSection locale={locale} />
+  <Showcase locale={locale} />
+  <Skills locale={locale} />
+  <Education locale={locale} />
+  <About locale={locale} />
+  <Contact locale={locale} />
+</Base>

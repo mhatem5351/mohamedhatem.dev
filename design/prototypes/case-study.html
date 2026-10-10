@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ArabsStock Assistant: a 14-agent LangGraph system · Mohamed Hatem</title>
+<meta name="description" content="Case study: the ArabsStock Assistant, 14 specialised agents orchestrated with LangGraph, semantic and visual search across millions of assets with OpenAI embeddings and Pinecone, and five vision and audio AI services on FastAPI.">
+<meta name="theme-color" content="#FBF8F3">
+<link rel="icon" href="../assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="en" href="case-study.html">
+<link rel="alternate" hreflang="ar" href="case-study-ar.html">
+<!-- Astro: src/pages/work/[slug].astro renders an entry of the "work" content collection with this template. -->
+<link rel="preload" href="../assets/fonts/space-grotesk-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="proto.css">
+<link rel="stylesheet" href="pages.css">
+<link rel="stylesheet" href="chat.css">
+</head>
+<body>
+<!--sprite:start--><svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+
+<symbol id="i-agents" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.3"/><circle cx="5" cy="18" r="2.3"/><circle cx="19" cy="18" r="2.3"/><circle cx="12" cy="12.6" r="1.6" fill="currentColor" stroke="none"/><path d="M12 7.3V11m-1.4 2.6-3.8 2.9m6.6-2.9 3.8 2.9M7.3 18h9.4"/></symbol>
+<symbol id="i-orchestrator" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12 7.2 9.2M12 12l4.8-2.8M12 12v5.6"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="7.2" cy="9.2" r="1.2" fill="currentColor" stroke="none"/><circle cx="16.8" cy="9.2" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="17.6" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-retrieve" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m16 16 4.5 4.5M8 9.5h6m-6 3h3.5"/></symbol>
+<symbol id="i-rerank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6h9m-9 6H10m-6.5 6h4M18 4.5v15M15.5 7 18 4.5 20.5 7m-5 10 2.5 2.5 2.5-2.5"/></symbol>
+<symbol id="i-guard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 7 2.8v5.3c0 4.6-3 8.2-7 9.9-4-1.7-7-5.3-7-9.9V5.8z"/><circle cx="12" cy="11.5" r="1.6" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 7 2.8v5.3c0 4.6-3 8.2-7 9.9-4-1.7-7-5.3-7-9.9V5.8z"/><path d="m8.7 11.9 2.3 2.3 4.4-4.6"/></symbol>
+<symbol id="i-generate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 11h16M4 17h6.5m4-2.75v5.5"/></symbol>
+<symbol id="i-evaluate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 18.6a8.6 8.6 0 1 1 13.2 0"/><path d="m8.6 13.4 2.4 2.4 4.4-4.8"/></symbol>
+<symbol id="i-tools-mcp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v3.5M15 3v3.5m-8.5 0h11V10a5.5 5.5 0 0 1-11 0zm5.5 9V21"/></symbol>
+<symbol id="i-serving" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="17" height="7" x="3.5" y="4" rx="2"/><rect width="17" height="7" x="3.5" y="13" rx="2"/><circle cx="7.2" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="7.2" cy="16.5" r="1.1" fill="currentColor" stroke="none"/><path d="M11 7.5h6m-6 9h6"/></symbol>
+<symbol id="i-gpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12" height="12" x="6" y="6" rx="2"/><rect width="5" height="5" x="9.5" y="9.5" rx="1"/><path d="M9.5 3v3m5-3v3m-5 12v3m5-3v3M3 9.5h3m-3 5h3m12-5h3m-3 5h3"/></symbol>
+<symbol id="i-pipeline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="5.5" height="7" x="2.75" y="8.5" rx="1.75"/><rect width="5.5" height="7" x="15.75" y="8.5" rx="1.75"/><path d="M8.25 12h5.5m-2.5-2.5 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.75" rx="7.5" ry="2.5"/><path d="M4.5 5.75v12.5c0 1.38 3.36 2.5 7.5 2.5s7.5-1.12 7.5-2.5V5.75"/><path d="M4.5 12c0 1.38 3.36 2.5 7.5 2.5s7.5-1.12 7.5-2.5"/></symbol>
+<symbol id="i-cache" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="5.5" rx="6.5" ry="2.25"/><path d="M3.5 5.5V16c0 1.24 2.91 2.25 6.5 2.25M16.5 5.5V10"/><circle cx="17.5" cy="17" r="4"/><path d="M17.5 15.2V17l1.2.9"/></symbol>
+<symbol id="i-embed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4H4.5v16H7M17 4h2.5v16H17"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="16.5" r="1.4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-keyword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5h17M3.5 12H7m10 0h3.5m-17 5.5h11"/><rect width="5.5" height="5" x="9.25" y="9.5" rx="1.25"/></symbol>
+<symbol id="i-merge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5c0 4.2 3.6 7 8 7m-8 7c0-4.2 3.6-7 8-7h9m-3-3 3 3-3 3"/></symbol>
+<symbol id="i-split" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12h4C11 12 12 6 16 6h4.5m-13 6c3.5 0 4.5 6 8.5 6h4.5M18 3.5 20.5 6 18 8.5m0 7 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-route" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 12 3.5-3.5L10 12l-3.5 3.5zm7 0h1c2.6 0 3-5.5 6-5.5h3.5M11 12c2.6 0 3 5.5 6 5.5h3.5M18.5 4 21 6.5 18.5 9m0 6 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 21 8l-9 4.5L3 8z"/><path d="m3 12 9 4.5 9-4.5M3 16l9 4.5 9-4.5"/></symbol>
+<symbol id="i-container" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 7.75 4.4v9.2L12 21l-7.75-4.4V7.4z"/><path d="M4.25 7.4 12 11.8l7.75-4.4M12 11.8V21"/></symbol>
+<symbol id="i-gateway" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v17M3 12h6m6 0h6m-3-3 3 3-3 3"/></symbol>
+<symbol id="i-function" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="3.5"/><path d="M8 6.5h1.1c.8 0 1.4.4 1.7 1.2l3.4 8.6c.3.8.9 1.2 1.7 1.2h.6m-4.4-5.9-3.9 5.9"/></symbol>
+<symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12h4L9 5.5l5 13 2.5-6.5h5"/></symbol>
+<symbol id="i-branch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.25"/><circle cx="18" cy="6" r="2.25"/><path d="M6 3.5v12.25m12-7.5A9.75 9.75 0 0 1 8.25 18"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4.5h17l-6.5 8V19l-4 2v-8.5z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m16 16 4.5 4.5"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="16" x="3" y="4" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.75"/><path d="m21 15-4-4a1.5 1.5 0 0 0-2.1 0L6 20"/></symbol>
+<symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12.5" height="12" x="3" y="6" rx="2.5"/><path d="m15.5 10.25 4.55-2.7a.8.8 0 0 1 1.2.69v7.52a.8.8 0 0 1-1.2.69l-4.55-2.7"/></symbol>
+<symbol id="i-audio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4m4-7.5v11m4-14v17m4-13v9m4-6v3"/></symbol>
+<symbol id="i-bilingual" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m2.75 15.5 3.75-11 3.75 11M4.1 12h4.8m10.7-2.4c-.5-.6-1.3-1-2.2-1C16 8.6 15 9.7 15 11c0 1.5.4 2.6.9 3.4l5.1-.25m-5.1.25c-1.3.6-2.2 1.8-2.2 3.2 0 2.1 1.6 3.4 3.9 3.4 1.5 0 2.7-.45 3.6-1.2"/></symbol>
+<symbol id="i-frontend" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="16" x="2.75" y="4" rx="2.5"/><path d="M2.75 8.5h18.5"/><circle cx="5.75" cy="6.25" r="1" fill="currentColor" stroke="none"/><circle cx="8.25" cy="6.25" r="1" fill="currentColor" stroke="none"/><path d="m9.75 11.75-2.5 2.5 2.5 2.5m4.5-5 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 7.5 3 12l4.5 4.5m9-9L21 12l-4.5 4.5M13.75 5l-3.5 14"/></symbol>
+<symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="16" x="2.75" y="4" rx="2.5"/><path d="m7 9.5 3 2.5-3 2.5m5.5.5H17"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0m0-14.9a3.5 3.5 0 0 1 0 6.8m6 8.1a6.5 6.5 0 0 0-3.5-5.8"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5A2.5 2.5 0 0 1 6 4h12a2.5 2.5 0 0 1 2.5 2.5V15a2.5 2.5 0 0 1-2.5 2.5h-7.5L6 21v-3.5A2.5 2.5 0 0 1 3.5 15z"/></symbol>
+<symbol id="i-ask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5A2.5 2.5 0 0 1 6 4h12a2.5 2.5 0 0 1 2.5 2.5V15a2.5 2.5 0 0 1-2.5 2.5h-7.5L6 21v-3.5A2.5 2.5 0 0 1 3.5 15z"/><circle cx="12" cy="10.75" r="2.75"/><circle cx="12" cy="10.75" r="1.1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5 3.5 6.75v13L9 17.5l6 2.25 5.5-2.25v-13L15 6.75zm0 0v13m6-10.75v13"/></symbol>
+<symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4.5A1.5 1.5 0 0 1 6.5 3h7A1.5 1.5 0 0 1 15 4.5V21m0-12h3.5a1.5 1.5 0 0 1 1.5 1.5V21M3 21h18M8.5 7zm2.99 0zM8.5 10.5zm2.99 0zM8.5 14zm2.99 0z"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v5.6a2 2 0 0 0 .6 1.4l8.4 8.4a2 2 0 0 0 2.8 0l5.6-5.6a2 2 0 0 0 0-2.8L12 4.1a2 2 0 0 0-1.4-.6H5a2 2 0 0 0-2 2"/><circle cx="7.5" cy="8" r="1.4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15m-6-6 6 6-6 6"/></symbol>
+<symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12h-15m6-6-6 6 6 6"/></symbol>
+<symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19.5v-15m-6 6 6-6 6 6"/></symbol>
+<symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15m-6-6 6 6 6-6"/></symbol>
+<symbol id="i-arrow-up-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></symbol>
+<symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12m0-12L6 18"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 3.5 9.75l7.25 3.5 3.5 7.25zM10.75 13.25 21 3"/></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12" height="12" x="6" y="6" rx="2.5"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12.5" height="12.5" x="8.5" y="8.5" rx="2.5"/><path d="M15.5 8.5v-3A2.5 2.5 0 0 0 13 3H5.5A2.5 2.5 0 0 0 3 5.5V13a2.5 2.5 0 0 0 2.5 2.5h3"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5L19.5 7"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12A8.5 8.5 0 1 1 12 3.5c2.4 0 4.6 1 6.3 2.6L20.5 8m0-4.5V8H16"/></symbol>
+<symbol id="i-external-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13.5V18a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 18V8.5A2.5 2.5 0 0 1 6 6h4.5m4-2.5h6v6m-10 4 10-10"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.2 4.2 0 0 0 6 .4l3-3a4.2 4.2 0 0 0-6-6L11.4 7m2.6 3a4.2 4.2 0 0 0-6-.4l-3 3a4.2 4.2 0 0 0 6 6l1.6-1.6"/></symbol>
+<symbol id="i-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3.5h6v6m0-6L14 10M9.5 20.5h-6v-6m0 6L10 14"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5V15m-5-5 5 5 5-5M3.5 15.5V18A2.5 2.5 0 0 0 6 20.5h12a2.5 2.5 0 0 0 2.5-2.5v-2.5"/></symbol>
+<symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3.5h10V9M7 17.5H5.5A2.5 2.5 0 0 1 3 15v-3.5A2.5 2.5 0 0 1 5.5 9h13a2.5 2.5 0 0 1 2.5 2.5V15a2.5 2.5 0 0 1-2.5 2.5H17"/><rect width="10" height="6.5" x="7" y="14" rx="1"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="14" x="2.75" y="5" rx="2.5"/><path d="m3.25 7 7.35 5.3a2.4 2.4 0 0 0 2.8 0L20.75 7"/></symbol>
+<symbol id="i-location" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11"/><circle cx="12" cy="10" r="2.25"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="16" x="3" y="4.75" rx="2.5"/><path d="M3 9.75h18M8 3v3.5M16 3v3.5"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+<symbol id="i-briefcase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="13" x="2.75" y="7" rx="2.5"/><path d="M8.5 7V5.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V7M2.75 12.5h18.5"/></symbol>
+<symbol id="i-graduation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 2.5 9l9.5 4.5L21.5 9zM6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11m4-2v5"/></symbol>
+<symbol id="i-certificate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 19.5H5.5A2.5 2.5 0 0 1 3 17V6a2.5 2.5 0 0 1 2.5-2.5h13A2.5 2.5 0 0 1 21 6v4.5M7 8h10M7 11.5h5"/><circle cx="17.5" cy="15" r="2.75"/><path d="M16 17.5V21l1.5-1 1.5 1v-3.5"/></symbol>
+<symbol id="i-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M8.6 13.9 7.5 21l4.5-2.5 4.5 2.5-1.1-7.1"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2m0 14v2m-9-9h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4m-12.8 0L7 17M17 7l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.25A6.25 6.25 0 0 0 20.75 12 8.75 8.75 0 1 1 12 3.25"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="12.5" x="2.75" y="4" rx="2.5"/><path d="M8.5 20.5h7m-3.5-4v4"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18m-9-9q-3.6 3.75-3.6 9c0 5.25 1.2 6.5 3.6 9q3.6-3.75 3.6-9c0-5.25-1.2-6.5-3.6-9"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.75" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.2 2.9 17.5a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0M12 9.5v4.25"/><circle cx="12" cy="16.9" r="1.15" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="3" height="14" x="6.5" y="5" rx="1"/><rect width="3" height="14" x="14.5" y="5" rx="1"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.8v14.4a1 1 0 0 0 1.5.86l11.6-7.2a1 1 0 0 0 0-1.72L9 3.94a1 1 0 0 0-1.5.86"/></symbol>
+<symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6.5A2.5 2.5 0 0 0 4 5.5v13A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V9zm0 0v4.5A1.5 1.5 0 0 0 15.5 9H20M8 13h8m-8 4h5"/></symbol>
+<symbol id="i-whatsapp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3"/><path d="m9.4 8.1-.6.6c-.6.6-.6 1.7 0 3 .9 1.8 2.3 3.2 4.1 4 1.3.6 2.4.6 3-.1l.5-.6-1.9-1.5-1 .7a4 4 0 0 1-2-2l.7-1-1.5-1.9z"/></symbol>
+<symbol id="i-linkedin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="3.5"/><path d="M8 10.5v6m3.75 0v-6m0 2.75a2.5 2.5 0 0 1 5 0v3.25"/><circle cx="8" cy="7.6" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-github" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.25 20.5v-2.8c0-.8.3-1.5.8-2-2.8-.3-5.3-1.4-5.3-5.4 0-1.1.4-2.1 1.1-2.9-.2-.6-.4-1.8.2-3.2 0 0 1-.3 3.2 1.2a10.5 10.5 0 0 1 5.5 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.4.4 2.6.2 3.2.7.8 1.1 1.8 1.1 2.9 0 4-2.5 5.1-5.3 5.4.5.5.8 1.2.8 2v2.8"/><path d="M9.25 18.3c-2.6.8-3.2-1.1-4.5-1.6"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 12.5h6M9 16h4"/></symbol><symbol id="i-system" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></symbol></svg><!--sprite:end-->
+<a class="skip-link" href="#main">Skip to content</a>
+
+<!-- =========================================================== NAV (same block as index.html) -->
+<header class="nav" data-note="Nav.astro · same as home · 'Work' is aria-current on /work/* pages">
+  <div class="container nav__inner">
+    <a class="brand" href="index.html">
+      <span class="brand__mark" data-slot="monogram"><svg viewBox="0 0 64 64" class="brand__mark" aria-hidden="true"><rect width="64" height="64" rx="14.08" fill="var(--color-surface-inverse)"/><path d="M13.12 47.415L13.12 15.049L17.751 15.049L24.448 27.074L31.145 15.049L35.776 15.049L35.776 47.415L31.461 47.415L31.461 22.798L26.763 31.232L22.133 31.232L17.435 22.798L17.435 47.415ZM33.618 29.209L48.722 29.209L48.722 33.255L33.618 33.255ZM46.565 15.049L50.88 15.049L50.88 47.415L46.565 47.415Z" fill="var(--color-on-inverse)"/><circle cx="24.45" cy="31.23" r="4.38" fill="var(--color-accent-fill)"/></svg></span>
+      <span>Mohamed Hatem</span>
+      <span class="brand__role">AI Team Lead</span>
+    </a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href="index.html#work" aria-current="page">Work</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#open-source">Open source</a>
+      <a href="cv.html">CV</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+    <div class="nav__actions">
+      <a class="lang-switch" href="case-study-ar.html" hreflang="ar" lang="ar" aria-label="العربية: النسخة العربية من دراسة الحالة"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-globe"/></svg><span lang="ar">العربية</span></a>
+      <button class="nav__icon-btn theme-toggle" type="button" data-mode="system" aria-label="Theme: system">
+        <svg class="icon i-system" aria-hidden="true"><use href="#i-monitor"/></svg>
+        <svg class="icon i-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+        <svg class="icon i-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+      </button>
+      <button class="btn btn--accent btn--sm nav__ask" type="button" data-open-chat aria-haspopup="dialog">
+        <svg class="icon" aria-hidden="true"><use href="#i-ask"/></svg><span class="label-long">Ask my AI</span><span class="label-short">Ask AI</span>
+      </button>
+      <button class="nav__icon-btn nav__menu" type="button" aria-label="Open menu" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+</header>
+<div class="read-progress" aria-hidden="true" data-note="ReadingProgress · 2px on the nav edge · CSS scroll() timeline, 6-line script fallback"><i></i></div>
+
+<main id="main">
+<!-- =========================================================== HERO -->
+<section class="cs-hero" id="top" aria-labelledby="cs-title" data-note="CaseHero.astro · frontmatter: company, role, period, where, stack[], title, summary, facts[] (optional), diagram">
+  <div class="cs-hero__bg" aria-hidden="true"></div>
+  <div class="container">
+    <div class="crumbs-row" data-note="Breadcrumbs.astro · BreadcrumbList JSON-LD · back button = history-aware link to /#work">
+      <a class="back-btn" href="index.html#work" aria-label="Back to all work"><svg class="icon icon--flip" aria-hidden="true"><use href="#i-arrow-left"/></svg></a>
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="index.html#work">Work</a></li>
+          <li><span aria-current="page">ArabsStock Assistant</span></li>
+        </ol>
+      </nav>
+    </div>
+
+    <div class="cs-hero__grid">
+      <div class="cs-hero__copy">
+        <p class="eyebrow">ArabsStock<span class="sep">/</span>AI Engineer<span class="sep">/</span>2023–2024</p>
+        <h1 class="cs-hero__title" id="cs-title">A 14-agent assistant for the largest Arab digital media library</h1>
+        <p class="cs-hero__summary">At ArabsStock I architected and built the <strong>Arabsstock Assistant</strong>: 14 specialised agents, orchestrated with LangGraph, that handle semantic search, AI image generation, database operations and content moderation. Underneath it: semantic and visual search across millions of stock assets, five vision and audio AI services, and the evaluation that watches the agents in production.</p>
+        <div class="cs-hero__actions">
+          <button class="btn btn--secondary" type="button" data-open-chat data-question="Walk me through the 14-agent ArabsStock assistant." aria-haspopup="dialog"><svg class="icon" aria-hidden="true" style="color:var(--color-accent)"><use href="#i-ask"/></svg>Ask my AI about this project</button>
+          <a class="btn btn--ghost" href="#architecture">See the architecture<svg class="icon arrow" aria-hidden="true"><use href="#i-arrow-down"/></svg></a>
+        </div>
+      </div>
+
+      <dl class="card cs-meta" data-note="CaseMeta.astro · mono dt voice shared with the experience trace · every value from the CV/LinkedIn">
+        <div class="cs-meta__row"><dt>role</dt><dd>AI Engineer<small>Full-time</small></dd></div>
+        <div class="cs-meta__row"><dt>company</dt><dd><span class="cs-meta__org"><span class="mask" style="--src:url(../assets/logos/mono/arabsstock.svg);--ar:1.996" aria-hidden="true"></span>ArabsStock</span></dd></div>
+        <div class="cs-meta__row"><dt>period</dt><dd>Apr 2023 – Dec 2024<small>1 yr 9 mos</small></dd></div>
+        <div class="cs-meta__row"><dt>where</dt><dd>Remote<small>Dubai, UAE</small></dd></div>
+        <div class="cs-meta__row"><dt>stack</dt><dd><div class="cluster"><span class="chip chip--teal">LangGraph</span><span class="chip chip--coral">OpenAI API</span><span class="chip chip--saffron">Pinecone</span><span class="chip chip--slate">FastAPI</span><span class="chip chip--slate">PostgreSQL</span><span class="chip chip--slate">Docker</span></div></dd></div>
+      </dl>
+    </div>
+
+    <dl class="metrics metrics--4 cs-facts" data-note="KeyFacts.astro · 0-4 facts from frontmatter; the strip is omitted when a project has none (never filled with estimates)">
+      <div class="metric"><dt class="metric__label">specialised agents in one LangGraph assistant</dt><dd class="metric__value">14</dd></div>
+      <div class="metric"><dt class="metric__label">vision and audio AI services, each its own FastAPI container</dt><dd class="metric__value">5</dd></div>
+      <div class="metric"><dt class="metric__label">stock photos, videos and vector graphics behind semantic search</dt><dd class="metric__value metric__value--word">Millions</dd></div>
+      <div class="metric"><dt class="metric__label">full-time and remote, April 2023 to December 2024</dt><dd class="metric__value">21<small>months</small></dd></div>
+    </dl>
+
+    <figure class="fig" id="architecture" style="margin-block-start:clamp(2.5rem,1.75rem + 2.5vw,4rem)" data-note="Diagram.astro · SVG inlined at build (inherits tokens, stays LTR) · compact variant under 640px · numbered callouts = diagrams.json">
+      <div class="fig-panel" data-inline-svg="../assets/diagrams/arabsstock-assistant.svg" data-inline-svg-compact="../assets/diagrams/arabsstock-assistant-compact.svg">
+        <div class="fig-panel__bar">
+          <span class="fig-panel__id">Fig. 1</span>
+          <span class="fig-panel__title">arabsstock-assistant · architecture</span>
+          <span class="fig-panel__tools"><a class="fig-panel__tool" href="../assets/diagrams/arabsstock-assistant.svg" target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-expand"/></svg><span>Full size</span></a></span>
+        </div>
+        <div class="fig-panel__canvas" data-fig-host>
+          <picture>
+            <source media="(max-width: 39.99rem)" srcset="../assets/diagrams/arabsstock-assistant-compact.svg">
+            <img src="../assets/diagrams/arabsstock-assistant.svg" alt="Architecture of the ArabsStock Assistant" width="1120" height="560" decoding="async">
+          </picture>
+        </div>
+      </div>
+      <figcaption class="fig__caption">
+        <p class="fig__caption-text" data-caption><b>Fig. 1</b> The Arabsstock Assistant routes platform requests through a LangGraph orchestrator to 14 specialised agents, backed by semantic search on Pinecone, containerized model-serving endpoints and media pipelines. <span class="fig__note">Diagrams show the components named in public descriptions of the work. They are simplified, not complete system maps.</span></p>
+        <ol class="callouts callouts--3" data-callouts aria-label="Diagram notes">
+          <li><span class="co" aria-hidden="true">1</span><span><b>Orchestrator.</b> Routes each request to the right specialised agent.</span></li>
+          <li><span class="co" aria-hidden="true">2</span><span><b>Specialised agents.</b> 14 of them, covering semantic search, AI image generation, database operations, content moderation and integrated AI services.</span></li>
+          <li><span class="co" aria-hidden="true">3</span><span><b>Evaluation.</b> Workflows that monitor reliability, response accuracy and agent routing in production.</span></li>
+          <li><span class="co" aria-hidden="true">4</span><span><b>Semantic search.</b> Automated batch ingestion processes and indexes millions of photos, videos and vectors with OpenAI embeddings in Pinecone.</span></li>
+          <li><span class="co" aria-hidden="true">5</span><span><b>AI services.</b> Model-serving endpoints for image search, sound generation, instrument classification, BPM detection and audio watermarking, each a containerized FastAPI microservice.</span></li>
+          <li><span class="co" aria-hidden="true">6</span><span><b>Media pipelines.</b> Production pipelines take raw video and audio through quality optimisation and metadata enrichment before distribution on the platform.</span></li>
+        </ol>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- =========================================================== ARTICLE + TOC -->
+<div class="container cs-layout" data-note="CaseLayout · article column + sticky TOC rail (end side; mirrors to the left in RTL) · TOC from the MDX headings">
+
+  <details class="toc-m" data-toc-mobile data-note="TocMobile · sticky 'On this page' bar · shows the current section · closes on navigation">
+    <summary><span class="toc-m__label">On this page</span><span class="toc-m__current" data-toc-current>Context</span><svg class="icon icon--sm toc-m__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+    <div class="toc-m__panel">
+      <ol class="toc__list" data-toc-list>
+          <li><a href="#context"><span class="toc__num">01</span><span>Context</span></a></li>
+          <li><a href="#built"><span class="toc__num">02</span><span>What I built</span></a></li>
+          <li><a href="#retrieval"><span class="toc__num">03</span><span>Retrieval at scale</span></a></li>
+          <li><a href="#audio"><span class="toc__num">04</span><span>Beyond text: audio</span></a></li>
+          <li><a href="#evaluation"><span class="toc__num">05</span><span>Keeping agents honest</span></a></li>
+          <li><a href="#pipelines"><span class="toc__num">06</span><span>Media pipelines</span></a></li>
+          <li><a href="#stack"><span class="toc__num">07</span><span>Stack</span></a></li>
+          <li><a href="#role"><span class="toc__num">08</span><span>My role</span></a></li>
+      </ol>
+    </div>
+    <i class="toc-m__bar" aria-hidden="true"></i>
+  </details>
+
+  <article class="cs-article" aria-labelledby="cs-title">
+
+    <section class="cs-sec" id="context" aria-labelledby="h-context" data-shot="context">
+      <div class="cs-sec__rule"><span class="sec-head__index">01</span><span class="eyebrow">Context</span></div>
+      <h2 class="cs-sec__title" id="h-context">The largest Arab digital media library</h2>
+      <div class="cs-prose">
+        <p class="lead">ArabsStock is the largest Arab digital media library: royalty-free stock photos, videos and vector graphics. I joined in April 2023 as an AI Engineer, full-time and remote, and stayed until December 2024.</p>
+        <p>My work there ran on two tracks that met in the middle. One was the library itself: making millions of assets findable by meaning and by look, and getting raw footage and audio ready for distribution. The other was the assistant on top of it, one entry point from which a request can reach search, image generation, the database or moderation.</p>
+      </div>
+    </section>
+
+    <section class="cs-sec" id="built" aria-labelledby="h-built" data-shot="built">
+      <div class="cs-sec__rule"><span class="sec-head__index">02</span><span class="eyebrow">What I built</span></div>
+      <h2 class="cs-sec__title" id="h-built">One assistant, fourteen specialised agents</h2>
+      <div class="cs-prose">
+        <p>The Arabsstock Assistant is a production multi-agent system: <strong>14 specialised agents orchestrated with <span class="term">LangGraph</span></strong>. Between them they handle semantic search, AI image generation, database operations and content moderation, and they reach the other AI services built across the platform.</p>
+        <p>Read the architecture in <a href="#architecture">figure 1</a> from the top. Every request enters through the orchestrator <a class="co co-ref" href="#architecture" aria-label="note 1">1</a>, which routes it to one of the specialised agents <a class="co co-ref" href="#architecture" aria-label="note 2">2</a>. Agent evaluation <a class="co co-ref" href="#architecture" aria-label="note 3">3</a> watches reliability, accuracy and routing in production. Search agents query the semantic-search index <a class="co co-ref" href="#architecture" aria-label="note 4">4</a>; other work goes to the platform's model-serving endpoints <a class="co co-ref" href="#architecture" aria-label="note 5">5</a>, and media pipelines <a class="co co-ref" href="#architecture" aria-label="note 6">6</a> prepare raw footage and audio for the library.</p>
+
+        <aside class="decision wide" aria-label="Engineering decision: one orchestrator, fourteen agents" data-note="Decision.astro · statement must be traceable to the CV/LinkedIn (shown in the source line) · 'why' slot optional, omitted when the sources don't say">
+          <p class="decision__label"><svg class="icon" aria-hidden="true"><use href="#i-branch"/></svg>Decision</p>
+          <p class="decision__text">Fourteen specialised agents behind one LangGraph orchestrator.</p>
+          <p class="decision__why">Semantic search, AI image generation, database operations and content moderation each have agents of their own; the orchestrator routes every request to the one that should handle it.</p>
+          <p class="decision__src"><span>Source: CV and LinkedIn, ArabsStock role</span></p>
+        </aside>
+
+      </div>
+    </section>
+
+    <section class="cs-sec" id="retrieval" aria-labelledby="h-retrieval" data-shot="retrieval">
+      <div class="cs-sec__rule"><span class="sec-head__index">03</span><span class="eyebrow">Retrieval at scale</span></div>
+      <h2 class="cs-sec__title" id="h-retrieval">Search by meaning, and by look</h2>
+      <div class="cs-prose">
+        <p>I designed and implemented the ML pipeline behind the platform's semantic search. Assets are embedded with <span class="term">OpenAI embeddings</span> and indexed in a <span class="term">Pinecone</span> vector database, and automated batch ingestion processes and indexes <strong>millions of digital assets</strong>.</p>
+
+        <figure class="flow-fig wide" data-note="Flow.astro · ordered list, mirrors in RTL · node colours follow the category map (retrieval saffron, model coral, infra slate, external dashed)">
+          <ol class="flow" aria-label="Semantic search pipeline">
+            <li class="flow__step flow__step--ext"><span class="flow__well"><svg class="icon" aria-hidden="true"><use href="#i-image"/></svg></span><span><span class="flow__t">Library assets</span><span class="flow__s">photos · video · vectors</span></span></li>
+            <li class="flow__step flow__step--slate"><span class="flow__well"><svg class="icon" aria-hidden="true"><use href="#i-pipeline"/></svg></span><span><span class="flow__t">Batch ingestion</span><span class="flow__s">automated</span></span></li>
+            <li class="flow__step flow__step--coral"><span class="flow__well"><svg class="icon" aria-hidden="true"><use href="#i-embed"/></svg></span><span><span class="flow__t">Embeddings</span><span class="flow__s">OpenAI</span></span></li>
+            <li class="flow__step flow__step--saffron"><span class="flow__well"><svg class="icon" aria-hidden="true"><use href="#i-database"/></svg></span><span><span class="flow__t">Vector index</span><span class="flow__s">Pinecone</span></span></li>
+            <li class="flow__step flow__step--saffron"><span class="flow__well"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></span><span><span class="flow__t">Semantic search</span><span class="flow__s">by meaning</span></span></li>
+          </ol>
+          <figcaption class="flow-fig__cap"><b>Fig. 2</b>From library asset to search result: batch ingestion, OpenAI embeddings, a Pinecone index.</figcaption>
+        </figure>
+
+        <p>Searching by meaning made content easier to discover across the library's royalty-free photos, videos and vector graphics: a query can match an asset that shares its meaning, not only its keywords.</p>
+        <p>Next to it, I implemented <strong>AI-driven image search</strong>: visual-similarity search that finds content by how it looks, across the entire media library.</p>
+      </div>
+    </section>
+
+    <section class="cs-sec" id="audio" aria-labelledby="h-audio" data-shot="audio">
+      <div class="cs-sec__rule"><span class="sec-head__index">04</span><span class="eyebrow">Beyond text: audio</span></div>
+      <h2 class="cs-sec__title" id="h-audio">Taking the platform into audio</h2>
+      <div class="cs-prose">
+        <p>For a beta sound library, I built <strong>sound generation and sound search</strong>, expanding the platform into audio content. Around them came three more audio features: instrument classification, BPM detection and audio watermarking.</p>
+
+        <figure class="flow-fig wide" data-note="ServiceRack.astro · one unit per deployed service · footer states the deployment fact once">
+          <div class="rack">
+            <ol class="rack__units" aria-label="Model-serving endpoints">
+              <li class="rack__unit"><span class="rack__top"><span class="icon-tile icon-tile--saffron"><svg class="icon" aria-hidden="true"><use href="#i-image"/></svg></span><span class="rack__no">svc 01</span></span><span class="rack__name">Image search</span><span class="rack__desc">Visual-similarity search across the media library.</span></li>
+              <li class="rack__unit"><span class="rack__top"><span class="icon-tile icon-tile--coral"><svg class="icon" aria-hidden="true"><use href="#i-generate"/></svg></span><span class="rack__no">svc 02</span></span><span class="rack__name">Sound generation</span><span class="rack__desc">Generates sound for the beta sound library, alongside sound search.</span></li>
+              <li class="rack__unit"><span class="rack__top"><span class="icon-tile icon-tile--coral"><svg class="icon" aria-hidden="true"><use href="#i-audio"/></svg></span><span class="rack__no">svc 03</span></span><span class="rack__name">Instrument classification</span><span class="rack__desc">Classifies the instruments in an audio track.</span></li>
+              <li class="rack__unit"><span class="rack__top"><span class="icon-tile icon-tile--coral"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg></span><span class="rack__no">svc 04</span></span><span class="rack__name">BPM detection</span><span class="rack__desc">Detects a track's tempo in beats per minute.</span></li>
+              <li class="rack__unit"><span class="rack__top"><span class="icon-tile icon-tile--sage"><svg class="icon" aria-hidden="true"><use href="#i-shield-check"/></svg></span><span class="rack__no">svc 05</span></span><span class="rack__name">Audio watermarking</span><span class="rack__desc">Embeds a watermark in audio files.</span></li>
+            </ol>
+            <p class="rack__foot"><svg class="icon" aria-hidden="true"><use href="#i-container"/></svg>Each endpoint is its own containerized FastAPI microservice</p>
+          </div>
+          <figcaption class="flow-fig__cap"><b>Fig. 3</b>The five model-serving endpoints I built for vision and audio.</figcaption>
+        </figure>
+
+        <aside class="decision wide" aria-label="Engineering decision: one service per capability">
+          <p class="decision__label"><svg class="icon" aria-hidden="true"><use href="#i-branch"/></svg>Decision</p>
+          <p class="decision__text">Each AI capability ships as its own containerized FastAPI service.</p>
+          <p class="decision__why">Five endpoints, five containers: image search, sound generation, instrument classification, BPM detection and audio watermarking each deploy on their own.</p>
+          <p class="decision__src"><span>Source: CV, ArabsStock role</span></p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="cs-sec" id="evaluation" aria-labelledby="h-evaluation" data-shot="evaluation">
+      <div class="cs-sec__rule"><span class="sec-head__index">05</span><span class="eyebrow">Keeping agents honest</span></div>
+      <h2 class="cs-sec__title" id="h-evaluation">Measuring the agents in production</h2>
+      <div class="cs-prose">
+        <p>A multi-agent system can fail in places a single model can't: a request can reach the wrong agent, and the right agent can still answer badly. I implemented <strong>LLM agent evaluation workflows</strong> that monitor the multi-agent system in production on three things.</p>
+        <ul class="checks wide" aria-label="What the evaluation monitors">
+          <li class="card check"><span class="icon-tile icon-tile--sky"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg></span><span class="check__title">Reliability</span><span class="check__q">Does the multi-agent system keep working, request after request?</span></li>
+          <li class="card check"><span class="icon-tile icon-tile--sky"><svg class="icon" aria-hidden="true"><use href="#i-evaluate"/></svg></span><span class="check__title">Response accuracy</span><span class="check__q">Are the answers the agents give correct?</span></li>
+          <li class="card check"><span class="icon-tile icon-tile--sky"><svg class="icon" aria-hidden="true"><use href="#i-route"/></svg></span><span class="check__title">Agent routing</span><span class="check__q">Did each request reach the agent that should handle it?</span></li>
+        </ul>
+        <p>Routing is the failure that is easiest to miss, which is why it is worth measuring on its own: a fluent answer from the wrong agent still looks like an answer.</p>
+      </div>
+    </section>
+
+    <section class="cs-sec" id="pipelines" aria-labelledby="h-pipelines" data-shot="pipelines">
+      <div class="cs-sec__rule"><span class="sec-head__index">06</span><span class="eyebrow">Media pipelines</span></div>
+      <h2 class="cs-sec__title" id="h-pipelines">Raw footage in, platform-ready media out</h2>
+      <div class="cs-prose">
+        <p>Not all of the work was models. I engineered production data-processing pipelines for <strong>raw video and audio</strong>, including quality optimisation and metadata enrichment for distribution on the platform, and processed and enhanced raw video footage from ArabsStock's own studios.</p>
+        <figure class="flow-fig wide">
+          <ol class="flow" aria-label="Media processing pipeline">
+            <li class="flow__step flow__step--ext"><span class="flow__well"><svg class="icon" aria-hidden="true"><use href="#i-video"/></svg></span><span><span class="flow__t">Raw video and audio</span><span class="flow__s">incl. studio footage</span></span></li>
+            <li class="flow__step flow__step--slate"><span class="flow__well"><svg class="icon" aria-hidden="true"><use href="#i-filter"/></svg></span><span><span class="flow__t">Quality optimisation</span><span class="flow__s">video and audio</span></span></li>
+            <li class="flow__step flow__step--saffron"><span class="flow__well"><svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg></span><span><span class="flow__t">Metadata enrichment</span><span class="flow__s">for distribution</span></span></li>
+            <li class="flow__step flow__step--teal"><span class="flow__well"><svg class="icon" aria-hidden="true"><use href="#i-layers"/></svg></span><span><span class="flow__t">Platform distribution</span><span class="flow__s">ArabsStock library</span></span></li>
+          </ol>
+          <figcaption class="flow-fig__cap"><b>Fig. 4</b>The media pipeline, from raw footage to the library.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="cs-sec" id="stack" aria-labelledby="h-stack" data-shot="stack">
+      <div class="cs-sec__rule"><span class="sec-head__index">07</span><span class="eyebrow">Stack</span></div>
+      <h2 class="cs-sec__title" id="h-stack">What it ran on</h2>
+      <div class="cs-prose">
+        <dl class="stack-list wide" data-note="StackList.astro · grouped by the category colour map">
+          <div class="stack-list__row" style="--dot:var(--color-teal-fill)"><dt><i aria-hidden="true"></i>Orchestration</dt><dd><span class="chip chip--teal">LangGraph</span></dd></div>
+          <div class="stack-list__row" style="--dot:var(--color-coral-fill)"><dt><i aria-hidden="true"></i>Models</dt><dd><span class="chip chip--coral">OpenAI API</span><span class="chip">vLLM</span><span class="chip">A100 GPUs</span></dd></div>
+          <div class="stack-list__row" style="--dot:var(--color-saffron-fill)"><dt><i aria-hidden="true"></i>Retrieval</dt><dd><span class="chip chip--saffron">OpenAI embeddings</span><span class="chip chip--saffron">Pinecone</span></dd></div>
+          <div class="stack-list__row" style="--dot:var(--color-slate-fill)"><dt><i aria-hidden="true"></i>Services</dt><dd><span class="chip chip--slate">Python</span><span class="chip chip--slate">FastAPI</span><span class="chip chip--slate">Docker</span></dd></div>
+          <div class="stack-list__row" style="--dot:var(--color-sky-fill)"><dt><i aria-hidden="true"></i>Data</dt><dd><span class="chip chip--sky">PostgreSQL</span></dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="cs-sec" id="role" aria-labelledby="h-role" data-shot="role">
+      <div class="cs-sec__rule"><span class="sec-head__index">08</span><span class="eyebrow">My role</span></div>
+      <h2 class="cs-sec__title" id="h-role">What I owned</h2>
+      <div class="cs-prose">
+        <p>AI Engineer at ArabsStock, full-time and remote, April 2023 to December 2024. On this work I:</p>
+        <ol class="owned">
+          <li><span><strong>Architected and built the assistant:</strong> 14 specialised agents orchestrated with LangGraph.</span></li>
+          <li><span><strong>Designed and implemented the semantic-search pipeline:</strong> OpenAI embeddings, Pinecone and automated batch ingestion over millions of assets.</span></li>
+          <li><span><strong>Built the model-serving endpoints</strong> for image search, sound generation, instrument classification, BPM detection and audio watermarking.</span></li>
+          <li><span><strong>Implemented agent evaluation</strong> for reliability, response accuracy and routing in production.</span></li>
+          <li><span><strong>Engineered the media pipelines</strong> for raw video and audio, from quality optimisation to metadata enrichment.</span></li>
+        </ol>
+        <p class="sources" data-note="SourcesNote · every case study ends with where its facts come from"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><span>Facts on this page come from my CV and LinkedIn profile. Where a case study would usually quote a number I can't back up publicly, there is no number.</span></p>
+      </div>
+    </section>
+  </article>
+
+  <aside class="toc-rail" aria-label="On this page">
+    <div class="toc-rail__inner">
+      <nav class="toc" aria-label="Table of contents" data-note="Toc.astro · active section via IntersectionObserver (aria-current) · % read">
+        <p class="toc__label"><span class="eyebrow">On this page</span><span class="toc__pct" data-toc-pct aria-hidden="true">0%</span></p>
+        <ol class="toc__list" data-toc-list>
+          <li><a href="#context"><span class="toc__num">01</span><span>Context</span></a></li>
+          <li><a href="#built"><span class="toc__num">02</span><span>What I built</span></a></li>
+          <li><a href="#retrieval"><span class="toc__num">03</span><span>Retrieval at scale</span></a></li>
+          <li><a href="#audio"><span class="toc__num">04</span><span>Beyond text: audio</span></a></li>
+          <li><a href="#evaluation"><span class="toc__num">05</span><span>Keeping agents honest</span></a></li>
+          <li><a href="#pipelines"><span class="toc__num">06</span><span>Media pipelines</span></a></li>
+          <li><a href="#stack"><span class="toc__num">07</span><span>Stack</span></a></li>
+          <li><a href="#role"><span class="toc__num">08</span><span>My role</span></a></li>
+        </ol>
+      </nav>
+      <div class="toc-rail__aside">
+        <button class="btn btn--secondary btn--sm" type="button" data-open-chat data-question="Walk me through the 14-agent ArabsStock assistant." aria-haspopup="dialog"><svg class="icon" aria-hidden="true" style="color:var(--color-accent)"><use href="#i-ask"/></svg>Ask my AI about this</button>
+        <a class="btn btn--ghost btn--sm" href="index.html#work"><svg class="icon icon--flip" aria-hidden="true"><use href="#i-arrow-left"/></svg>All work</a>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- =========================================================== NEXT + CTA -->
+<section class="section section--band" id="next" aria-labelledby="next-title" style="padding-block: clamp(3rem, 2rem + 3vw, 5rem)">
+  <div class="container">
+    <h2 class="sr-only" id="next-title">Keep reading</h2>
+    <div class="cs-end">
+      <article class="card card--link work next-case" style="--work-accent: var(--color-saffron-fill)" data-note="NextCase.astro · next entry in the collection order · whole card is one link">
+        <div class="work__media"><img src="../assets/diagrams/wakeb-multi-agent-chatbot-thumb.svg" alt="" loading="lazy"></div>
+        <div class="work__body">
+          <div class="next-case__label"><span class="eyebrow">Next case study</span><span class="next-case__arrow" aria-hidden="true"><svg class="icon icon--sm icon--flip"><use href="#i-arrow-right"/></svg></span></div>
+          <span class="eyebrow" style="color:var(--color-ink-2)">Wakeb Data<span class="sep">/</span>2024–2026</span>
+          <h3 class="work__title"><a class="stretched" href="case-study.html">An async, bilingual multi-agent chatbot on self-hosted Qwen</a></h3>
+          <p class="work__summary">Six specialised agents with command-based edgeless routing in LangGraph, hybrid retrieval with LLM reranking, and web search over MCP.</p>
+          <div class="cluster" style="--cluster-gap:.375rem"><span class="chip">LangGraph</span><span class="chip">Qwen</span><span class="chip">vLLM</span><span class="chip">BM25 + dense</span><span class="chip">MCP</span></div>
+        </div>
+      </article>
+
+      <div class="cta-band" data-note="CaseCTA.astro · opens ChatWidget with a project-specific question · Contact goes to /#contact">
+        <p class="eyebrow">Questions about this build?</p>
+        <h3 class="cta-band__title">Ask my AI about the ArabsStock Assistant.</h3>
+        <p class="cta-band__text">It answers from my CV and public profile, in English or Arabic.</p>
+        <button class="ask-bar" type="button" data-open-chat data-question="What did the 14 agents in the ArabsStock assistant do?" aria-haspopup="dialog">
+          <svg class="icon icon--md ask-bar__icon" aria-hidden="true"><use href="#i-ask"/></svg>
+          <span class="ask-bar__text">What did the 14 agents in the ArabsStock assistant do?</span>
+          <span class="ask-bar__go" aria-hidden="true"><svg class="icon icon--flip"><use href="#i-arrow-right"/></svg></span>
+        </button>
+        <div class="cta-band__row">
+          <a class="btn btn--sm btn--onInverse" href="index.html#contact"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg>Contact me</a>
+          <span class="cta-band__mail">or write to <a href="mailto:hatem@mohamedhatem.dev">hatem@mohamedhatem.dev</a></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- =========================================================== FOOTER (same block as index.html) -->
+<footer class="footer" data-note="Footer.astro">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="stack" style="--stack-gap:1rem">
+        <a class="brand" href="index.html"><svg viewBox="0 0 64 64" class="brand__mark" aria-hidden="true"><rect width="64" height="64" rx="14.08" fill="var(--color-surface-inverse)"/><path d="M13.12 47.415L13.12 15.049L17.751 15.049L24.448 27.074L31.145 15.049L35.776 15.049L35.776 47.415L31.461 47.415L31.461 22.798L26.763 31.232L22.133 31.232L17.435 22.798L17.435 47.415ZM33.618 29.209L48.722 29.209L48.722 33.255L33.618 33.255ZM46.565 15.049L50.88 15.049L50.88 47.415L46.565 47.415Z" fill="var(--color-on-inverse)"/><circle cx="24.45" cy="31.23" r="4.38" fill="var(--color-accent-fill)"/></svg>Mohamed Hatem</a>
+        <p class="muted t-sm" style="max-width:30ch">AI Team Lead at Globant. Multi-agent LLM systems, RAG and LLM serving. Cairo, working remotely.</p>
+        <span class="stripe stripe--sm" aria-hidden="true"><i></i><i></i><i></i></span>
+      </div>
+      <nav aria-label="Site"><h2>Site</h2><ul><li><a href="index.html#work">Selected work</a></li><li><a href="index.html#experience">Experience</a></li><li><a href="index.html#open-source">Open source</a></li><li><a href="cv.html">CV</a></li></ul></nav>
+      <nav aria-label="Elsewhere"><h2>Elsewhere</h2><ul><li><a href="https://www.linkedin.com/in/mohamed-hatem-6a5790173">LinkedIn</a></li><li><a href="https://github.com/mhatem5351">GitHub</a></li><li><a href="mailto:hatem@mohamedhatem.dev">Email</a></li><li><a href="https://wa.me/201142070946">WhatsApp</a></li></ul></nav>
+      <div><h2>This site</h2><ul><li><a href="https://github.com/mhatem5351/mohamedhatem.dev">Source code</a></li><li><a href="case-study-ar.html" lang="ar" hreflang="ar">النسخة العربية</a></li><li><button class="theme-toggle link" type="button" data-mode="system" style="font-size:var(--text-sm);color:var(--color-ink-2);text-decoration:none">Change theme</button></li></ul></div>
+    </div>
+    <div class="footer__base"><span>© 2026 Mohamed Hatem</span><span>Built with Astro and Tailwind CSS, served by Cloudflare Workers. The assistant runs on Google Gemini.</span></div>
+  </div>
+</footer>
+
+<!-- Chat launcher (closed state). ChatWidget JS + CSS load on first interaction only. -->
+<button class="chat-launcher" type="button" data-open-chat aria-haspopup="dialog" title="Open Hatem's AI assistant" data-note="ChatLauncher · 56px · bottom-end, safe-area aware · lazy-loads the widget on pointerenter/focus/click">
+  <span class="chat-launcher__icon" aria-hidden="true"><svg class="icon"><use href="#i-ask"/></svg></span><span class="chat-launcher__label">Ask AI</span>
+</button>
+
+<noscript><style>.chat-launcher{display:none}</style><details class="chat-noscript"><summary class="chat-launcher"><span class="chat-launcher__icon" aria-hidden="true"><svg class="icon"><use href="#i-ask"/></svg></span><span class="chat-launcher__label">Ask AI</span></summary><div class="chat-noscript__card"><p>The assistant needs JavaScript. You can still reach Hatem by email or WhatsApp.</p><p class="chat-noscript__links"><a href="mailto:hatem@mohamedhatem.dev">Email him</a><a href="https://wa.me/201142070946">WhatsApp</a></p></div></details></noscript>
+<p id="live" class="sr-only" aria-live="polite"></p>
+<div class="proto-bar" aria-label="Prototype controls"><button type="button" class="theme-toggle" data-mode="system">Theme</button><button type="button" data-toggle-notes>Notes</button><a href="case-study-ar.html">AR</a></div>
+<script src="proto.js"></script>
+<script>
+/* Case-study template behaviour (prototype). In Astro these become three tiny inline scripts:
+   Diagram.astro (no script at all: the SVG is inlined at build), Toc.astro and ReadingProgress.astro. */
+(() => {
+  /* 1. Diagram: fetch + inline the SVG (wide, or compact under 640px) so it inherits page tokens and theme. */
+  const mq = matchMedia("(max-width: 39.99rem)");
+  const panels = [...document.querySelectorAll("[data-inline-svg]")];
+  const inline = async panel => {
+    const src = (mq.matches && panel.dataset.inlineSvgCompact) || panel.dataset.inlineSvg;
+    if (panel.dataset.src === src) return;
+    const host = panel.querySelector("[data-fig-host]");
+    try {
+      const res = await fetch(src);
+      if (!res.ok) throw new Error(String(res.status));
+      const text = await res.text();
+      const at = text.indexOf("<svg");
+      if (at < 0) throw new Error("not an svg");
+      host.innerHTML = text.slice(at);
+      panel.dataset.src = src; panel.dataset.state = "ready";
+    } catch {
+      panel.dataset.state = "missing";
+      host.innerHTML = '<div class="fig-panel__placeholder">' + src.split("/").pop() + '</div>';
+    }
+  };
+  panels.forEach(inline);
+  mq.addEventListener("change", () => panels.forEach(inline));
+
+  /* 2. TOC: active section (IntersectionObserver), current label in the mobile bar, % read. */
+  const links = [...document.querySelectorAll("[data-toc-list] a")];
+  const secs = [...new Set(links.map(a => a.hash.slice(1)))].map(id => document.getElementById(id)).filter(Boolean);
+  const label = document.querySelector("[data-toc-current]");
+  const setActive = id => {
+    links.forEach(a => (a.hash === "#" + id ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current")));
+    const a = links.find(a => a.hash === "#" + id);
+    if (label && a) label.textContent = a.lastElementChild.textContent;
+  };
+  if ("IntersectionObserver" in window && secs.length) {
+    const seen = new Set();
+    const io = new IntersectionObserver(es => {
+      es.forEach(e => (e.isIntersecting ? seen.add(e.target.id) : seen.delete(e.target.id)));
+      const first = secs.find(s => seen.has(s.id));
+      if (first) setActive(first.id);
+    }, { rootMargin: "-120px 0px -55% 0px" });
+    secs.forEach(s => io.observe(s));
+  }
+  document.querySelectorAll("[data-toc-mobile] a").forEach(a => a.addEventListener("click", () => { a.closest("details").open = false; }));
+
+  /* 3. Reading progress (article only): the nav hairline, the mobile TOC bar and the % next to the TOC label. */
+  const article = document.querySelector(".cs-article");
+  const bars = document.querySelectorAll(".read-progress i, .toc-m__bar");
+  const pct = document.querySelector("[data-toc-pct]");
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const r = article.getBoundingClientRect();
+    const total = r.height - innerHeight * 0.5;
+    const p = Math.min(1, Math.max(0, (innerHeight * 0.25 - r.top) / Math.max(1, total)));
+    bars.forEach(b => b.style.setProperty("--p", p.toFixed(4)));
+    if (pct) pct.textContent = Math.round(p * 100) + "%";
+  };
+  if (article) { update(); addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true }); addEventListener("resize", update); }
+})();
+</script>
+<script src="chat.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+---
+/**
+ * 07 Skills (DESIGN.md 12.15): "skills with receipts", a real table where every filled dot is a role, freelance
+ * project or public repository that used the skill (data and evidence in src/lib/skills-matrix.ts), then the full
+ * toolbox from profile.skills with LinkedIn endorsement counts and the passed assessment.
+ */
+import "~/styles/home-b.css";
+import Icon from "~/components/ui/Icon.astro";
+import SectionHeader from "~/components/ui/SectionHeader.astro";
+import { messages, pluralize, type Locale } from "~/lib/i18n";
+import { profile } from "~/lib/site";
+import { GROUP_ACCENT, MATRIX_COLUMNS, matrixGroups } from "~/lib/skills-matrix";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const mx = m.skills.matrix;
+const groups = matrixGroups();
+const colCount = MATRIX_COLUMNS.length + 1;
+
+/** Toolbox group colours, in the same category language as the matrix. */
+const GROUP_COLOR: Record<string, string> = {
+  "llm-agents": "teal",
+  retrieval: "saffron",
+  "serving-mlops": "slate",
+  quality: "sky",
+  backend: "slate",
+  ml: "coral",
+  cloud: "sky",
+  frontend: "coral",
+  "ways-of-working": "sage",
+};
+---
+<section class="section" id="skills" aria-labelledby="skills-title">
+  <div class="container">
+    <SectionHeader index="07" eyebrow={m.skills.eyebrow} title={m.skills.title} titleId="skills-title" lede={m.skills.lead} />
+
+    <div class="card card--pad matrix-card">
+      <div class="matrix-card__head">
+        <h3 class="matrix-card__title" id="matrix-title">{mx.title}</h3>
+        <p class="matrix-card__lead">{mx.lead}</p>
+      </div>
+      <div class="matrix-wrap" tabindex="0" role="region" aria-label={m.a11y.skillsTable}>
+        <table class="matrix" aria-describedby="matrix-title">
+          <caption class="sr-only">{mx.caption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{mx.skill}</th>
+              {
+                MATRIX_COLUMNS.map((c) => (
+                  <th scope="col">
+                    <span dir="auto">{mx.columns[c]}</span>
+                  </th>
+                ))
+              }
+            </tr>
+          </thead>
+          {
+            groups.map(({ group, rows }) => (
+              <tbody>
+                <tr class:list={["grp", `accent-${GROUP_ACCENT[group]}`]}>
+                  <th colspan={colCount} scope="rowgroup">
+                    {mx.groups[group]}
+                  </th>
+                </tr>
+                {rows.map((row) => (
+                  <tr class={`accent-${GROUP_ACCENT[group]}`}>
+                    <th scope="row">
+                      <span dir="auto">{mx.rows[row.key]}</span>
+                    </th>
+                    {MATRIX_COLUMNS.map((c) =>
+                      row.cells[c] ? (
+                        <td>
+                          <i class="y" />
+                          <span class="sr-only">{mx.yes}</span>
+                        </td>
+                      ) : (
+                        <td>
+                          <i class="n" />
+                        </td>
+                      ),
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            ))
+          }
+        </table>
+      </div>
+      <p class="matrix-legend"><span>{mx.earlierNote}</span></p>
+    </div>
+
+    <div class="toolbox">
+      <h3 class="toolbox__title" id="toolbox-title">{mx.allTitle}</h3>
+      <ul class="toolbox__grid" role="list" aria-labelledby="toolbox-title">
+        {
+          profile.skills.map((g) => (
+            <li class={`toolbox__group accent-${GROUP_COLOR[g.id] ?? "teal"}`}>
+              <h4>{g.title[locale]}</h4>
+              <p class="toolbox__summary">{g.summary[locale]}</p>
+              <ul class="toolbox__list" role="list">
+                {g.skills.map((s) => (
+                  <li class="tool">
+                    <span dir="auto">{s.name[locale]}</span>
+                    {s.endorsements !== undefined && (
+                      <>
+                        <span class="tool__count" aria-hidden="true">
+                          {s.endorsements}
+                        </span>
+                        <span class="sr-only">({pluralize(m.skills.endorsements, s.endorsements, locale)})</span>
+                      </>
+                    )}
+                    {s.assessmentPassed && <Icon name="check" class="tool__check" label={m.skills.assessmentPassed} />}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))
+        }
+      </ul>
+      <p class="toolbox__note" aria-hidden="true">
+        <span><Icon name="check" class="tool__check" />{m.skills.assessmentPassed}</span>
+      </p>
+    </div>
+  </div>
+</section>

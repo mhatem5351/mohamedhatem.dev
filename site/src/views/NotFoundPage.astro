@@ -1,0 +1,77 @@
+---
+/**
+ * 404 for each locale (design/prototypes/404.html). The Worker's static assets serve the nearest 404.html with a 404
+ * status (wrangler.jsonc not_found_handling "404-page"): dist/404.html for English, dist/ar/404.html for anything
+ * under /ar/ (scripts/postbuild/relocate-404.mjs puts it there). noindex; no canonical or hreflang.
+ * The requested path is shown only with JavaScript (textContent, so it can't inject markup).
+ */
+import Base from "~/layouts/Base.astro";
+import Icon from "~/components/ui/Icon.astro";
+import LostGraph from "~/components/notfound/LostGraph.astro";
+import "~/styles/notfound.css";
+import { localePath, messages, otherLocale, type Locale } from "~/lib/i18n";
+import { homeAnchor } from "~/lib/site";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const other = otherLocale(locale);
+const n = m.notFound;
+---
+<Base
+  locale={locale}
+  title={m.meta.notFound.title}
+  description={m.meta.notFound.description}
+  path="/"
+  alternatePath={localePath("/", other)}
+  indexable={false}
+  variant="minimal"
+  bodyClass="nf-page"
+>
+  <section class="nf" aria-labelledby="nf-title">
+    <div class="nf__bg" aria-hidden="true"></div>
+    <div class="container nf__grid">
+      <div>
+        <p class="nf__code" aria-hidden="true">4<span>0</span>4</p>
+        <h1 class="nf__title" id="nf-title">{n.title}</h1>
+        <p class="nf__body">{n.body}</p>
+        <p class="nf__path" hidden data-nf-path>
+          <Icon name="route" size="sm" flip={false} />
+          <span class="sr-only">{n.pathLabel}:</span>
+          <span aria-hidden="true">404</span>
+          <b data-nf-path-value></b>
+        </p>
+        <div class="nf__actions">
+          <a class="btn btn--primary" href={localePath("/", locale)}>
+            <Icon name="arrow-left" />
+            {n.home}
+          </a>
+          <a class="btn btn--secondary" href={homeAnchor("work", locale, false)}>{m.work.eyebrow}</a>
+          <button class="btn btn--ghost" type="button" data-open-chat aria-haspopup="dialog">
+            <Icon name="ask" />
+            {n.ask}
+          </button>
+          <a class="btn btn--ghost" href={localePath("/", other)} hreflang={other} lang={other}>{m.language.switchTo}</a>
+        </div>
+      </div>
+      <LostGraph locale={locale} />
+    </div>
+    <script>
+      const box = document.querySelector<HTMLElement>("[data-nf-path]");
+      const value = box?.querySelector<HTMLElement>("[data-nf-path-value]");
+      const path = location.pathname;
+      if (box && value && path !== "/" && !/\/404(\.html|\/)?$/.test(path)) {
+        let shown = path;
+        try {
+          shown = decodeURIComponent(path);
+        } catch {
+          /* malformed escape: show it raw */
+        }
+        value.textContent = shown.slice(0, 160);
+        box.hidden = false;
+      }
+    </script>
+  </section>
+</Base>

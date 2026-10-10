@@ -1,0 +1,86 @@
+---
+/**
+ * 09 About: the orchestrator portrait (photo in a teal ring with a dashed orbit of category nodes, DESIGN.md 9),
+ * the facts a recruiter scans for (based in, time zone with the live Cairo time, open to, work arrangements,
+ * languages) and the three bio paragraphs from profile.basics.bio.
+ * Added to the design's section list so the bio is on the page and the assistant's "about" jump has a target.
+ */
+import "~/styles/home-b.css";
+import { Image } from "astro:assets";
+import photo from "~/assets/photo/mh-square-480.jpg";
+import orbitRaw from "~/assets/photo/orbit-ring.svg?raw";
+import SectionHeader from "~/components/ui/SectionHeader.astro";
+import Ltr from "~/components/ui/Ltr.astro";
+import { cairoTime, joinList, messages, type Locale } from "~/lib/i18n";
+import { profile } from "~/lib/site";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const b = profile.basics;
+// The overlay's own <style> and comment are dropped (hash-only style-src; colours come from home-b.css tokens).
+const orbit = orbitRaw.replace(/<!--[\s\S]*?-->/g, "").replace(/<style>[\s\S]*?<\/style>/g, "").trim();
+const [timeBefore, timeAfter] = m.hero.localTime.split("{time}") as [string, string];
+const roles = joinList(
+  b.openTo.roles.map((r) => r[locale]),
+  locale,
+);
+---
+<section class="section" id="about" aria-labelledby="about-title">
+  <div class="container">
+    <SectionHeader index="09" eyebrow={m.about.eyebrow} title={m.about.title} titleId="about-title" />
+    <div class="about">
+      <div class="about__aside">
+        <div class="about__portrait">
+          <Image src={photo} alt={b.photo.alt[locale]} width={168} height={168} densities={[1, 2]} loading="lazy" decoding="async" />
+          <Fragment set:html={orbit} />
+        </div>
+        <dl class="facts">
+          <div>
+            <dt>{m.about.basedIn}</dt>
+            <dd>{b.location.city[locale]}{locale === "ar" ? "، " : ", "}{b.location.country[locale]}</dd>
+          </div>
+          <div>
+            <dt>{m.about.timeZone}</dt>
+            <dd>
+              <span>{b.location.utcOffset[locale]}</span>
+              <small>
+                {timeBefore}<Ltr><time data-cairo-time>{cairoTime(locale)}</time></Ltr>{timeAfter}
+              </small>
+            </dd>
+          </div>
+          <div class="wide">
+            <dt>{m.about.languages}</dt>
+            <dd>{b.languages.map((l) => `${l.name[locale]} (${l.level[locale]})`).join(" · ")}</dd>
+          </div>
+        </dl>
+      </div>
+      <div class="about__bio">
+        {b.bio.map((f) => <p>{f.text[locale]}</p>)}
+        <dl class="facts about__open">
+          <div class="wide">
+            <dt>{m.about.openTo}</dt>
+            <dd>{roles}</dd>
+          </div>
+          <div class="wide">
+            <dt>{m.about.workArrangements}</dt>
+            <dd>
+              <ul role="list" class="about__arrangements">
+                {
+                  b.openTo.arrangements.map((a) => (
+                    <li>
+                      {a.label[locale]}
+                      {a.detail && <small>{a.detail[locale]}</small>}
+                    </li>
+                  ))
+                }
+              </ul>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>

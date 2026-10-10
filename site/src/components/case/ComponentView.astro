@@ -1,0 +1,87 @@
+---
+/**
+ * The architecture of a case study without a designed diagram, drawn in HTML from profile.ts (nodes grouped by kind
+ * in the diagram grammar's category colours, then the stated connections). Unlike the SVG diagrams it mirrors in
+ * RTL. It is already text, so it doubles as its own text alternative.
+ */
+import Icon from "~/components/ui/Icon.astro";
+import type { CaseStudy } from "@content/profile.ts";
+import { format, messages, tr, type Locale } from "~/lib/i18n";
+import { KIND_ACCENT, KIND_ICON, edgesOf, nodesByKind } from "~/lib/case";
+
+interface Props {
+  locale: Locale;
+  cs: CaseStudy;
+  n: number;
+  anchor?: string;
+  class?: string;
+}
+const { locale, cs, n, anchor, class: className } = Astro.props;
+const m = messages(locale);
+const groups = nodesByKind(cs);
+const edges = edgesOf(cs, locale);
+const capId = `${anchor ?? "cv"}-cap`;
+const viewLabel = cs.depth === "brief" ? m.work.page.capabilityView : m.work.page.componentView;
+const accentClass = (a: string) => (a === "neutral" ? undefined : `accent-${a}`);
+---
+<figure class:list={["fig", className]} id={anchor} aria-labelledby={capId}>
+  <div class="fig-panel">
+    <div class="fig-panel__bar">
+      <span class="fig-panel__id" dir="ltr">Fig. {n}</span>
+      <span class="fig-panel__title">{tr(cs.shortTitle, locale)}</span>
+      <span class="fig-panel__kind">{viewLabel}</span>
+    </div>
+    <div class="fig-panel__canvas fig-panel__canvas--html">
+      <ul class="cv-groups" role="list" aria-label={m.work.page.components}>
+        {
+          groups.map((g) => (
+            <li class:list={["cv-group", accentClass(KIND_ACCENT[g.kind])]}>
+              <p class="cv-group__label">
+                <i aria-hidden="true" />
+                {m.work.legend[g.kind]}
+              </p>
+              <ul class="cv-nodes" role="list">
+                {g.nodes.map((node) => (
+                  <li class:list={["cv-node", KIND_ACCENT[g.kind] === "neutral" && "cv-node--neutral"]}>
+                    <span class="cv-node__well" aria-hidden="true">
+                      <Icon name={KIND_ICON[g.kind]} />
+                    </span>
+                    <span>
+                      <span class="cv-node__t" dir="auto">{tr(node.label, locale)}</span>
+                      {node.note && <span class="cv-node__s" dir="auto">{tr(node.note, locale)}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))
+        }
+      </ul>
+      {
+        edges.length > 0 && (
+          <div class="cv-edges">
+            <p class="cv-edges__title">{m.work.page.connections}</p>
+            <ul class="cv-edges__list" role="list">
+              {edges.map((e) => (
+                <li>
+                  <span class="sr-only">{format(m.work.page.connection, { from: e.from, to: e.to })}</span>
+                  <span aria-hidden="true" dir="auto">{e.from}</span>
+                  <Icon name="arrow-right" />
+                  <span aria-hidden="true" dir="auto">{e.to}</span>
+                  {e.label && <small>({e.label})</small>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </div>
+  </div>
+  <figcaption class="fig__caption">
+    <p class="fig__caption-text" id={capId}>
+      <b>{format(m.work.page.figure, { n })}</b>
+      {" "}{tr(cs.architecture.caption, locale)}
+      <span class="fig__note">{m.work.architectureNote}</span>
+    </p>
+  </figcaption>
+</figure>

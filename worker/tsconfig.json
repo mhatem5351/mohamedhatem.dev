@@ -1,0 +1,9 @@
+{
+  // Type-checks the Worker and its unit tests against the Workers runtime types: `npx tsc -p worker`.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": []
+}

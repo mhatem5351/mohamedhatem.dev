@@ -1,0 +1,10 @@
+{
+  // Playwright tests + config: `npx tsc -p chat-widget/tests`
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": ["node"]
+  },
+  "include": ["e2e/**/*.ts", "../playwright.config.ts"],
+  "exclude": []
+}

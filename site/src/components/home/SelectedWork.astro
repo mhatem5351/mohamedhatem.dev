@@ -1,0 +1,75 @@
+---
+/**
+ * 02 Selected work (DESIGN.md 12.10): featured case studies (feature card first, then the grid; an orphan last card
+ * becomes a wide card), then the compact "More work" list for the rest. Every card links to its case-study page.
+ */
+import CaseCard from "~/components/work/CaseCard.astro";
+import SectionHeader from "~/components/ui/SectionHeader.astro";
+import { workLayout } from "~/lib/home-work";
+import { messages, type Locale } from "~/lib/i18n";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const { feature, grid, wide, more } = workLayout();
+---
+<section class="section section--band" id="work" aria-labelledby="work-title">
+  <div class="container">
+    <SectionHeader index="02" eyebrow={m.work.eyebrow} title={m.work.title} titleId="work-title" lede={m.work.lead} />
+    <div class="work-list">
+      {feature && <CaseCard cs={feature} locale={locale} variant="feature" />}
+      {
+        grid.map((cs, i) => (
+          <CaseCard cs={cs} locale={locale} i={(i % 3) + 1} class={grid.length % 2 === 1 && i === grid.length - 1 ? "work--span-md" : undefined} />
+        ))
+      }
+      {wide && <CaseCard cs={wide} locale={locale} variant="wide" />}
+    </div>
+    {
+      more.length > 0 && (
+        <div class="more-work">
+          <h3 class="eyebrow more-work__title">{m.work.moreTitle}</h3>
+          <div class="more-work__list">
+            {more.map((cs, i) => (
+              <CaseCard cs={cs} locale={locale} variant="compact" i={i + 1} headingLevel={4} />
+            ))}
+          </div>
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  /* Two-column tablets: an odd last grid card takes the full row instead of leaving a hole. */
+  @media (min-width: 48rem) and (max-width: 63.99rem) {
+    .work-list :global(.work--span-md) {
+      grid-column: 1 / -1;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .work-list :global(.work--span-md .work__media) {
+      aspect-ratio: auto;
+      border-block-end: 0;
+      border-inline-end: 1px solid var(--color-line);
+    }
+  }
+  .more-work {
+    margin-block-start: var(--space-stack);
+    display: grid;
+    gap: 1rem;
+  }
+  .more-work__title {
+    margin: 0;
+  }
+  .more-work__list {
+    display: grid;
+    gap: var(--grid-gap);
+  }
+  @media (min-width: 48rem) {
+    .more-work__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

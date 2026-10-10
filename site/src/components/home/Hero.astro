@@ -1,0 +1,76 @@
+---
+/**
+ * Home hero (DESIGN.md 12.5, prototype .hero): person chip, H1 (the LCP element), lede, the working "Ask my AI"
+ * input, actions, availability + live Cairo time, and the live agent graph; the metric strip and the logo row close
+ * the section so they peek above the fold at 1440 × 900.
+ */
+import { Picture } from "astro:assets";
+import square from "~/assets/photo/mh-square-480.jpg";
+import Icon from "~/components/ui/Icon.astro";
+import MetricStrip from "~/components/home/MetricStrip.astro";
+import LogoRow from "~/components/home/LogoRow.astro";
+import AskBar from "~/components/home/hero/AskBar.astro";
+import HeroGraph from "~/components/home/hero/HeroGraph.astro";
+import { cairoTime, messages, type Locale } from "~/lib/i18n";
+import { CV_PDF, profile } from "~/lib/site";
+import { introHtml, taglineHtml } from "./hero/text";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const b = profile.basics;
+const [before, after] = m.hero.localTime.split("{time}");
+---
+<section class="hero" id="top" aria-labelledby="hero-title" data-hero>
+  <div class="hero__bg" aria-hidden="true"></div>
+  <div class="container hero__grid">
+    <div class="hero__copy">
+      <p class="person-chip">
+        <Picture src={square} formats={["avif", "webp"]} widths={[64, 96]} sizes="32px" width={32} height={32} alt="" loading="eager" decoding="async" />
+        <b>{b.name[locale]}</b><i class="div" aria-hidden="true"></i><span>{b.headline[locale]}</span>
+      </p>
+      <h1 class="hero__title" id="hero-title" set:html={taglineHtml(b.tagline[locale], locale)} />
+      <p class="hero__lede" set:html={introHtml(b.intro[locale], locale, b.yearsOfExperience)} />
+      <AskBar locale={locale} />
+      <div class="hero__actions">
+        <a class="btn btn--secondary" href="#work">
+          {m.hero.ctaWork}
+          <Icon name="arrow-down" class="arrow arrow--down" />
+        </a>
+        <a class="btn btn--ghost" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf">
+          <Icon name="file-text" />
+          {m.hero.ctaCv}
+        </a>
+        <p class="hero__meta">
+          <span><i class="dot" aria-hidden="true"></i>{m.hero.availability}</span>
+          <span>
+            <Icon name="clock" size="sm" />
+            {before}<time data-cairo-time>{cairoTime(locale)}</time>{after}
+          </span>
+        </p>
+      </div>
+    </div>
+    <HeroGraph locale={locale} />
+  </div>
+  <div class="container metrics-wrap">
+    <MetricStrip locale={locale} />
+    <LogoRow locale={locale} />
+  </div>
+</section>
+
+<style>
+  /* The down arrow nudges down, not sideways (the shared .btn:hover .arrow rule assumes a forward arrow). */
+  @media (prefers-reduced-motion: no-preference) {
+    .btn:hover :global(.arrow--down),
+    :global([dir="rtl"]) .btn:hover :global(.arrow--down) {
+      transform: translateY(2px);
+    }
+  }
+  /* The graph's pause button also stops the hero's other loop: the live dot (and the typed examples, see AskBar). */
+  :global([data-hero][data-paused]) :global(.dot--live)::after {
+    animation: none;
+    opacity: 0;
+  }
+</style>

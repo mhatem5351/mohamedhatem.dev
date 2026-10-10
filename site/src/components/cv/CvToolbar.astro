@@ -1,0 +1,52 @@
+---
+/**
+ * Sticky CV toolbar (design/prototypes/cv.html .cv-bar): back to the site, the same CV in the other language, copy
+ * link, print, download the PDF. Hidden in print. Below 48rem the secondary buttons become icon buttons (their
+ * accessible names stay the full labels); below 30rem Print goes (the PDF is the better path on phones).
+ */
+import Icon from "~/components/ui/Icon.astro";
+import { localePath, messages, otherLocale, type Locale } from "~/lib/i18n";
+import { CV_PDF, PATHS, profile } from "~/lib/site";
+
+interface Props {
+  locale: Locale;
+  /** "PDF, 120 KB" when the generated file exists. */
+  fileInfo?: string | undefined;
+}
+const { locale, fileInfo } = Astro.props;
+const m = messages(locale);
+const other = otherLocale(locale);
+const title = `mohamedhatem.dev${localePath(PATHS.cv, locale).replace(/\/$/, "")}`;
+---
+<header class="cv-bar">
+  <div class="container cv-bar__inner">
+    <a class="btn btn--ghost btn--sm btn--collapse" href={localePath("/", locale)}>
+      <Icon name="arrow-left" />
+      <span class="cv-bar__label">{m.cv.backToSite}</span>
+    </a>
+    <span class="cv-bar__title" aria-hidden="true">{title}</span>
+    <span class="cv-bar__spacer"></span>
+    <a class="lang-switch" href={localePath(PATHS.cv, other)} hreflang={other} lang={other} title={m.language.switchToLabel}>
+      <Icon name="globe" size="sm" />
+      <span>{m.language.switchTo}</span>
+      <span class="sr-only" lang={locale}>, {m.language.switchToLabel}</span>
+    </a>
+    <button class="btn btn--ghost btn--sm btn--collapse" type="button" data-copy="url" data-copied={m.cv.linkCopied} data-copy-failed={m.common.copyFailed}>
+      <Icon name="link" />
+      <span class="cv-bar__label">{m.cv.copyLink}</span>
+    </button>
+    <button class="btn btn--ghost btn--sm btn--collapse cv-bar__print" type="button" data-print>
+      <Icon name="print" />
+      <span class="cv-bar__label">{m.cv.print}</span>
+    </button>
+    <a class="btn btn--primary btn--sm" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf">
+      <Icon name="download" />
+      <span class="cv-bar__label-long">{m.cv.downloadPdf}</span>
+      <span class="cv-bar__label-short" aria-hidden="true">{m.cv.pdfShort}</span>
+      {fileInfo && <span class="sr-only">({fileInfo})</span>}
+    </a>
+  </div>
+</header>
+<script>
+  document.querySelector("[data-print]")?.addEventListener("click", () => window.print());
+</script>

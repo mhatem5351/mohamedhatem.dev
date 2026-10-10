@@ -1,0 +1,57 @@
+---
+/**
+ * Shell for document pages that replace the site chrome with their own toolbar (the CV: design/prototypes/cv.html).
+ * The <head> is the same component as layouts/Base.astro's (components/Head.astro), with the CV's band colour as the
+ * browser-chrome colour and the body face preloaded (the sheet is mostly body text).
+ * Body: skip link, the page's own <slot name="bar"/> toolbar, <main id="main">, the live region, the chat mount and
+ * the site script (theme, copy buttons, "open the assistant" triggers).
+ */
+import "~/styles/global.css";
+import ChatMount from "~/components/chat/ChatMount.astro";
+import Head from "~/components/Head.astro";
+import { dirOf, messages, type Locale } from "~/lib/i18n";
+
+interface Props {
+  locale: Locale;
+  title: string;
+  description: string;
+  /** English path of this page (with trailing slash). */
+  path: string;
+  ogKey?: string;
+  ogType?: "website" | "article" | "profile";
+  jsonLd?: readonly object[];
+  bodyClass?: string;
+}
+
+const { locale, title, description, path, ogKey = "home", ogType = "website", jsonLd = [], bodyClass } = Astro.props;
+
+const m = messages(locale);
+---
+<!doctype html>
+<html lang={m.locale.code} dir={dirOf(locale)}>
+  <head>
+    <Head
+      locale={locale}
+      title={title}
+      description={description}
+      path={path}
+      ogKey={ogKey}
+      ogType={ogType}
+      jsonLd={jsonLd}
+      themeColor={{ light: "#F4EFE6", dark: "#0F1A23" }}
+      preloadFonts={{ sans: true }}
+    />
+  </head>
+  <body class={bodyClass}>
+    <a class="skip-link" href="#main">{m.a11y.skipToContent}</a>
+    <slot name="bar" />
+    <main id="main">
+      <slot />
+    </main>
+    <p id="live" class="sr-only" aria-live="polite"></p>
+    <ChatMount locale={locale} />
+    <script>
+      import "~/scripts/site";
+    </script>
+  </body>
+</html>

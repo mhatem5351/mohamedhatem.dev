@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>Chat widget demo · mohamedhatem.dev</title>
+  <meta name="description" content="Standalone test page for the mohamedhatem.dev chat widget.">
+  <!--
+    Demo for the chat widget. Serve with `npm run widget:demo` (builds, then http://localhost:5173/).
+    Query parameters:
+      ?lang=ar              Arabic page (RTL)               ?theme=dark|light   force a theme
+      ?api=http://127.0.0.1:8790   talk to the local Worker (`npm run dev:worker`)
+      ?turnstile=<sitekey>  Turnstile site key (default: the always-pass invisible test key 1x00000000000000000000BB)
+      ?turnstile=off        no Turnstile (the Playwright suite mocks /api/chat)
+  -->
+  <script>
+    // Apply language and theme before first paint.
+    (() => {
+      const q = new URLSearchParams(location.search);
+      const ar = q.get("lang") === "ar";
+      document.documentElement.lang = ar ? "ar" : "en";
+      document.documentElement.dir = ar ? "rtl" : "ltr";
+      const theme = q.get("theme");
+      if (theme === "dark" || theme === "light") document.documentElement.dataset.theme = theme;
+    })();
+  </script>
+  <link rel="stylesheet" href="../design/tokens.css">
+  <style>
+    @font-face { font-family: "Inter Variable"; src: url("../design/assets/fonts/inter-latin-wght.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+    @font-face { font-family: "Space Grotesk Variable"; src: url("../design/assets/fonts/space-grotesk-latin-wght.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+    @font-face { font-family: "JetBrains Mono Variable"; src: url("../design/assets/fonts/jetbrains-mono-ascii-wght.woff2") format("woff2"); font-weight: 100 800; font-display: swap; }
+    @font-face { font-family: "IBM Plex Sans Arabic"; src: url("../design/assets/fonts/ibm-plex-sans-arabic-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+    @font-face { font-family: "IBM Plex Sans Arabic"; src: url("../design/assets/fonts/ibm-plex-sans-arabic-600.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-padding-top: 5rem; }
+    body { margin: 0; background: var(--color-bg); color: var(--color-ink); font: 400 var(--text-base)/var(--lh-body) var(--font-sans); -webkit-font-smoothing: antialiased; }
+    header { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.5rem; padding: .875rem var(--space-gutter); background: color-mix(in srgb, var(--color-bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--color-line); }
+    header strong { font-family: var(--font-display); font-size: 1.0625rem; margin-inline-end: auto; }
+    nav { display: flex; flex-wrap: wrap; gap: .25rem 1rem; font-size: var(--text-sm); }
+    a { color: var(--color-accent); }
+    nav a { color: var(--color-ink-2); text-decoration: none; }
+    nav a:hover { color: var(--color-accent); }
+    .tools { display: flex; gap: .5rem; }
+    .tools button, .cta { min-height: 2.5rem; padding: 0 .875rem; border: 1px solid var(--color-line-strong); border-radius: var(--radius-full); background: var(--color-surface); color: var(--color-ink); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+    .cta { background: var(--color-accent-solid); color: var(--color-on-accent); border-color: transparent; font-weight: 600; }
+    :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+    main { max-width: var(--container-narrow); margin: 0 auto; padding: 0 var(--space-gutter) 8rem; }
+    .hero { padding-block: 4rem 2rem; }
+    h1 { font-family: var(--font-display); font-size: var(--text-3xl); line-height: var(--lh-tight); letter-spacing: var(--text-3xl--letter-spacing); margin: 0 0 1rem; }
+    h2 { font-family: var(--font-display); font-size: var(--text-xl); line-height: var(--lh-snug); margin: 0 0 .75rem; }
+    section { padding-block: 3rem; border-top: 1px solid var(--color-line); min-height: 60vh; }
+    p { max-width: 62ch; color: var(--color-ink-2); }
+    .note { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <strong data-i18n="name">Mohamed Hatem</strong>
+    <nav aria-label="Sections" data-i18n-label="sections">
+      <a href="#about" data-i18n="about">About</a>
+      <a href="#work" data-i18n="work">Selected work</a>
+      <a href="#experience" data-i18n="experience">Experience</a>
+      <a href="#projects" data-i18n="projects">Projects</a>
+      <a href="#skills" data-i18n="skills">Skills</a>
+      <a href="#education" data-i18n="education">Education</a>
+      <a href="#contact" data-i18n="contact">Contact</a>
+    </nav>
+    <div class="tools">
+      <button type="button" id="lang-toggle" lang="ar">العربية</button>
+      <button type="button" id="theme-toggle" data-i18n="theme">Toggle theme</button>
+    </div>
+  </header>
+  <main>
+    <div class="hero">
+      <h1 data-i18n="title">AI Team Lead building production LLM systems.</h1>
+      <p data-i18n="lede">This is a test page for the floating chat widget. The assistant answers questions about Hatem's experience, projects and skills.</p>
+      <p><button type="button" class="cta" data-open-chat data-question="" data-i18n="cta">Ask my AI</button></p>
+      <p class="note" id="mode"></p>
+    </div>
+    <section id="about"><h2 data-i18n="about">About</h2><p data-i18n="filler">Placeholder content for the demo page.</p></section>
+    <section id="work"><h2 data-i18n="work">Selected work</h2><p data-i18n="filler">Placeholder content for the demo page.</p></section>
+    <section id="experience"><h2 data-i18n="experience">Experience</h2><p data-i18n="filler">Placeholder content for the demo page.</p></section>
+    <section id="projects"><h2 data-i18n="projects">Projects</h2><p data-i18n="filler">Placeholder content for the demo page.</p></section>
+    <section id="skills"><h2 data-i18n="skills">Skills</h2><p data-i18n="filler">Placeholder content for the demo page.</p></section>
+    <section id="education"><h2 data-i18n="education">Education</h2><p data-i18n="filler">Placeholder content for the demo page.</p></section>
+    <section id="contact"><h2 data-i18n="contact">Contact</h2><p data-i18n="filler">Placeholder content for the demo page.</p></section>
+  </main>
+  <script type="module">
+    import { mountChat } from "./dist/index.js";
+
+    const q = new URLSearchParams(location.search);
+    const ar = document.documentElement.lang === "ar";
+    const AR = {
+      name: "محمد حاتم", about: "نبذة", work: "أعمال مختارة", experience: "الخبرة", projects: "المشاريع", skills: "المهارات",
+      education: "التعليم", contact: "تواصل", theme: "تبديل المظهر", title: "قائد فريق ذكاء اصطناعي يبني أنظمة LLM للإنتاج.",
+      lede: "هذه صفحة اختبار لأداة المحادثة العائمة. يجيب المساعد عن أسئلة حول خبرة حاتم ومشاريعه ومهاراته.",
+      cta: "اسأل مساعدي الذكي", filler: "محتوى تجريبي لصفحة العرض.", sections: "الأقسام",
+    };
+    if (ar) {
+      for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = AR[el.dataset.i18n] ?? el.textContent;
+      for (const el of document.querySelectorAll("[data-i18n-label]")) el.setAttribute("aria-label", AR[el.dataset.i18nLabel]);
+      const t = document.getElementById("lang-toggle");
+      t.textContent = "English";
+      t.lang = "en";
+    }
+    document.getElementById("lang-toggle").addEventListener("click", () => {
+      const next = new URLSearchParams(location.search);
+      if (ar) next.delete("lang"); else next.set("lang", "ar");
+      location.search = next.toString();
+    });
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      const root = document.documentElement;
+      const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+      root.dataset.theme = dark ? "light" : "dark";
+    });
+    // The site's own CTA buttons open the chat through the widget's public hook.
+    document.addEventListener("click", (e) => {
+      const t = e.target.closest("[data-open-chat]");
+      if (!t) return;
+      e.preventDefault();
+      window.MHChat?.open({ question: t.dataset.question || undefined });
+    });
+
+    const turnstile = q.get("turnstile") ?? "1x00000000000000000000BB";
+    const apiBase = q.get("api") ?? "";
+    document.getElementById("mode").textContent = `API: ${apiBase || "same origin (mock)"} · Turnstile: ${turnstile === "off" ? "off" : turnstile}`;
+    mountChat({
+      apiBase,
+      turnstileSiteKey: turnstile === "off" ? null : turnstile,
+      avatarSrc: "../design/assets/photo/mh-square-96.webp",
+    });
+  </script>
+</body>
+</html>

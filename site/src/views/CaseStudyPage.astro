@@ -1,0 +1,369 @@
+---
+/**
+ * Case-study detail page (/work/<slug>/ and /ar/work/<slug>/), HANDOFF.md 2.5 and design/prototypes/case-study.html.
+ *
+ * Full case studies: hero (breadcrumbs, eyebrow, H1, summary, actions, meta card, key facts) with figure 1 (the
+ * designed diagram, or the component view drawn from profile.ts), then an article with a sticky TOC: problem,
+ * approach (+ an engineering decision where the sources state one), architecture (component list, extra figures),
+ * outcome, stack, links, and where the facts come from. Brief case studies (implementation details not public): the
+ * same hero and one prose section with a capability view and m.work.briefNote. Both end with the next case study and
+ * a CTA band. All copy: content/profile.ts, content/i18n (m.work.*), design/assets/diagrams/diagrams.json.
+ */
+import Base from "~/layouts/Base.astro";
+import "~/styles/case.css";
+import ReadingProgress from "~/components/case/ReadingProgress.astro";
+import CaseHero from "~/components/case/CaseHero.astro";
+import FigurePanel from "~/components/case/FigurePanel.astro";
+import ComponentView from "~/components/case/ComponentView.astro";
+import SiteShots from "~/components/case/SiteShots.astro";
+import Toc from "~/components/case/Toc.astro";
+import Decision from "~/components/case/Decision.astro";
+import NextCase from "~/components/case/NextCase.astro";
+import CaseCTA from "~/components/case/CaseCTA.astro";
+import Icon from "~/components/ui/Icon.astro";
+import type { CaseStudy } from "@content/profile.ts";
+import { format, messages, tr, type Locale } from "~/lib/i18n";
+import { PATHS, homeAnchor, nextCaseStudy } from "~/lib/site";
+import { caseStudyJsonLd } from "~/lib/jsonld";
+import { KIND_ACCENT, askQuestion, decisionOf, diagramsOf, edgesOf, nodesByKind, sourcesText, stackGroups, techAccent, tocOf } from "~/lib/case";
+
+interface Props {
+  locale: Locale;
+  cs: CaseStudy;
+}
+const { locale, cs } = Astro.props;
+const m = messages(locale);
+const next = nextCaseStudy(cs.slug);
+const brief = cs.depth === "brief";
+const diagrams = diagramsOf(cs);
+const [mainDiagram, ...moreDiagrams] = diagrams;
+const decision = decisionOf(cs);
+const steps = cs.approach.filter((_, i) => i !== decision?.index);
+const toc = tocOf(cs, locale);
+const groups = nodesByKind(cs);
+const edges = edgesOf(cs, locale);
+const question = askQuestion(cs, locale);
+/** logic-controls.com: the live site is figure 1 and the component view moves into the architecture section. */
+const siteShots = !mainDiagram && cs.slug === "logic-controls-website";
+const accent = (a: string) => (a === "neutral" ? undefined : `accent-${a}`);
+const num = (id: string) => String(toc.findIndex((t) => t.id === id) + 1).padStart(2, "0");
+const sources = format(m.work.page.sourcesBody, { sources: sourcesText(cs.source, locale) });
+---
+<Base
+  locale={locale}
+  title={format(m.meta.caseStudy.title, { title: tr(cs.shortTitle, locale) })}
+  description={tr(cs.summary, locale)}
+  path={PATHS.work(cs.slug)}
+  ogKey={`work-${cs.slug}`}
+  ogType="article"
+  jsonLd={caseStudyJsonLd(cs.slug, locale)}
+>
+  <ReadingProgress />
+
+  <CaseHero locale={locale} cs={cs} figureId="architecture">
+    {
+      !brief &&
+        (mainDiagram ? (
+          <FigurePanel locale={locale} id={mainDiagram} n={1} anchor="architecture" class="fig--hero" />
+        ) : siteShots ? (
+          <SiteShots locale={locale} n={1} class="fig--hero" />
+        ) : (
+          <ComponentView locale={locale} cs={cs} n={1} anchor="architecture" class="fig--hero" />
+        ))
+    }
+  </CaseHero>
+
+  {
+    brief ? (
+      <div class="container cs-layout cs-layout--brief">
+        <article class="cs-article" aria-labelledby="cs-title">
+          <section class="cs-sec" id="problem" aria-labelledby="h-problem">
+            <div class="cs-sec__rule">
+              <span class="sec-head__index" dir="ltr">01</span>
+            </div>
+            <h2 class="cs-sec__title" id="h-problem">
+              {m.work.labels.problem}
+            </h2>
+            <div class="cs-prose">
+              <p class="lead">{tr(cs.problem, locale)}</p>
+              <h3 class="cs-sub">{m.work.labels.approach}</h3>
+              <ul>
+                {cs.approach.map((f) => (
+                  <li>{tr(f.text, locale)}</li>
+                ))}
+              </ul>
+              <h3 class="cs-sub">{m.work.labels.outcome}</h3>
+              <ul class="ticks" role="list">
+                {cs.outcome.map((f) => (
+                  <li>
+                    <span class="tick" aria-hidden="true">
+                      <Icon name="check" />
+                    </span>
+                    <span>{tr(f.text, locale)}</span>
+                  </li>
+                ))}
+              </ul>
+              <ComponentView locale={locale} cs={cs} n={1} anchor="architecture" class="wide" />
+              <h3 class="cs-sub">{m.work.labels.stack}</h3>
+              <ul class="cluster gap-tight" role="list">
+                {cs.stack.map((t) => {
+                  const a = techAccent(t);
+                  return <li class:list={["chip", a !== "neutral" && `chip--${a}`]}>{t}</li>;
+                })}
+              </ul>
+              <p class="sources">
+                <Icon name="info" />
+                <span>{m.work.briefNote}</span>
+              </p>
+            </div>
+          </section>
+        </article>
+      </div>
+    ) : (
+      <div class="container cs-layout">
+        <Toc locale={locale} entries={toc} variant="mobile" />
+
+        <article class="cs-article" aria-labelledby="cs-title">
+          <section class="cs-sec" id="problem" aria-labelledby="h-problem">
+            <div class="cs-sec__rule">
+              <span class="sec-head__index" dir="ltr">{num("problem")}</span>
+            </div>
+            <h2 class="cs-sec__title" id="h-problem">
+              {m.work.labels.problem}
+            </h2>
+            <div class="cs-prose">
+              <p class="lead">{tr(cs.problem, locale)}</p>
+            </div>
+          </section>
+
+          <section class="cs-sec" id="approach" aria-labelledby="h-approach">
+            <div class="cs-sec__rule">
+              <span class="sec-head__index" dir="ltr">{num("approach")}</span>
+            </div>
+            <h2 class="cs-sec__title" id="h-approach">
+              {m.work.labels.approach}
+            </h2>
+            <div class="cs-prose">
+              {decision && <Decision locale={locale} fact={decision.fact} />}
+              <ol class="steps">
+                {steps.map((f) => (
+                  <li>
+                    <span>{tr(f.text, locale)}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+
+          <section class="cs-sec" id="components" aria-labelledby="h-components">
+            <div class="cs-sec__rule">
+              <span class="sec-head__index" dir="ltr">{num("components")}</span>
+            </div>
+            <h2 class="cs-sec__title" id="h-components">
+              {m.work.labels.architecture}
+            </h2>
+            <div class="cs-prose">
+              {siteShots ? (
+                <ComponentView locale={locale} cs={cs} n={2} anchor="architecture" class="wide" />
+              ) : (
+                <p>
+                  {tr(cs.architecture.caption, locale)}{" "}
+                  <a href="#architecture">{format(m.work.page.figure, { n: 1 })}</a>
+                </p>
+              )}
+              {mainDiagram && (
+                <dl class="arch-list wide">
+                  {groups.map((g) => (
+                    <div class:list={["arch-list__row", accent(KIND_ACCENT[g.kind])]}>
+                      <dt>
+                        <i aria-hidden="true" />
+                        {m.work.legend[g.kind]}
+                      </dt>
+                      <dd>
+                        <ul class="arch-list__items" role="list">
+                          {g.nodes.map((n) => (
+                            <li>
+                              <span dir="auto">{tr(n.label, locale)}</span>
+                              {n.note && (
+                                <small>
+                                  {" "}
+                                  · <span dir="auto">{tr(n.note, locale)}</span>
+                                </small>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </dd>
+                    </div>
+                  ))}
+                  {edges.length > 0 && (
+                    <div class="arch-list__row">
+                      <dt>
+                        <i aria-hidden="true" />
+                        {m.work.page.connections}
+                      </dt>
+                      <dd>
+                        <ul class="arch-list__items" role="list">
+                          {edges.map((e) => (
+                            <li>
+                              {format(m.work.page.connection, { from: e.from, to: e.to })}
+                              {e.label && <small> ({e.label})</small>}
+                            </li>
+                          ))}
+                        </ul>
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              )}
+              {moreDiagrams.map((id, i) => (
+                <FigurePanel locale={locale} id={id} n={i + 2} anchor={`fig-${id}`} />
+              ))}
+            </div>
+          </section>
+
+          <section class="cs-sec" id="outcome" aria-labelledby="h-outcome">
+            <div class="cs-sec__rule">
+              <span class="sec-head__index" dir="ltr">{num("outcome")}</span>
+            </div>
+            <h2 class="cs-sec__title" id="h-outcome">
+              {m.work.labels.outcome}
+            </h2>
+            <div class="cs-prose">
+              <ul class="ticks" role="list">
+                {cs.outcome.map((f) => (
+                  <li>
+                    <span class="tick" aria-hidden="true">
+                      <Icon name="check" />
+                    </span>
+                    <span>{tr(f.text, locale)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+
+          <section class="cs-sec" id="stack" aria-labelledby="h-stack">
+            <div class="cs-sec__rule">
+              <span class="sec-head__index" dir="ltr">{num("stack")}</span>
+            </div>
+            <h2 class="cs-sec__title" id="h-stack">
+              {m.work.labels.stack}
+            </h2>
+            <div class="cs-prose">
+              <dl class="stack-list wide">
+                {stackGroups(cs).map((g) => (
+                  <div class:list={["stack-list__row", accent(KIND_ACCENT[g.kind])]}>
+                    <dt>
+                      <i aria-hidden="true" />
+                      {m.work.legend[g.kind]}
+                    </dt>
+                    <dd>
+                      {g.items.map((t) => {
+                        const a = techAccent(t);
+                        return <span class:list={["chip", a !== "neutral" && `chip--${a}`]}>{t}</span>;
+                      })}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              {cs.links.length === 0 && (
+                <p class="sources">
+                  <Icon name="info" />
+                  <span>
+                    <strong>{m.work.page.sourcesTitle}.</strong> {sources}
+                  </span>
+                </p>
+              )}
+            </div>
+          </section>
+
+          {cs.links.length > 0 && (
+            <section class="cs-sec" id="links" aria-labelledby="h-links">
+              <div class="cs-sec__rule">
+                <span class="sec-head__index" dir="ltr">{num("links")}</span>
+              </div>
+              <h2 class="cs-sec__title" id="h-links">
+                {m.work.page.links}
+              </h2>
+              <div class="cs-prose">
+                <div class="cs-links">
+                  {cs.links.map((l, i) => (
+                    <a class:list={["btn", i === 0 ? "btn--primary" : "btn--secondary"]} href={l.href} rel="noopener">
+                      <Icon name={l.href.includes("github.com") ? "github" : "arrow-up-right"} />
+                      {tr(l.label, locale)}
+                      <span class="sr-only" dir="ltr">
+                        ({l.href.replace(/^https:\/\//, "")})
+                      </span>
+                    </a>
+                  ))}
+                </div>
+                <p class="sources">
+                  <Icon name="info" />
+                  <span>
+                    <strong>{m.work.page.sourcesTitle}.</strong> {sources}
+                  </span>
+                </p>
+              </div>
+            </section>
+          )}
+        </article>
+
+        <Toc locale={locale} entries={toc} variant="rail" question={question} backHref={homeAnchor("work", locale, false)} />
+      </div>
+    )
+  }
+
+  <section class="section section--band cs-next" aria-labelledby="next-title">
+    <div class="container">
+      <h2 class="sr-only" id="next-title">{m.work.page.keepReading}</h2>
+      <div class="cs-end">
+        <NextCase locale={locale} cs={next} />
+        <CaseCTA locale={locale} cs={cs} />
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // TOC: current section (aria-current) for the rail and the mobile bar, % read, and closing the mobile panel on
+  // navigation. Plain links work without this.
+  const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")];
+  if (links.length) {
+    const ids = [...new Set(links.map((a) => a.dataset.tocLink!))];
+    const sections = ids.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
+    const current = document.querySelector<HTMLElement>("[data-toc-current]");
+    const pct = document.querySelector<HTMLElement>("[data-toc-pct]");
+    const bar = document.querySelector<HTMLElement>("[data-toc-bar]");
+    const mobile = document.querySelector<HTMLDetailsElement>("[data-toc-mobile]");
+    const article = document.querySelector<HTMLElement>(".cs-article");
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const line = innerHeight * 0.3;
+      let active = sections[0];
+      for (const s of sections) if (s.getBoundingClientRect().top <= line) active = s;
+      for (const a of links) a.dataset.tocLink === active?.id ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
+      if (current && active) current.textContent = links.find((a) => a.dataset.tocLink === active.id)?.textContent?.replace(/^\s*\d+\s*/, "").trim() ?? "";
+      if (article) {
+        const r = article.getBoundingClientRect();
+        const total = r.height - innerHeight * 0.6;
+        const p = Math.min(1, Math.max(0, (innerHeight * 0.4 - r.top) / Math.max(1, total)));
+        if (pct) pct.textContent = `${Math.round(p * 100)}%`;
+        bar?.style.setProperty("--p", String(p));
+      }
+    };
+    addEventListener("scroll", () => (raf ||= requestAnimationFrame(update)), { passive: true });
+    addEventListener("resize", update);
+    update();
+    mobile?.addEventListener("click", (e) => {
+      if ((e.target as Element).closest("a")) mobile.open = false;
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && mobile?.open) {
+        mobile.open = false;
+        mobile.querySelector("summary")?.focus();
+      }
+    });
+  }
+</script>

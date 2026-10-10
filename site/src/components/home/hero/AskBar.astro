@@ -1,0 +1,239 @@
+---
+/**
+ * The hero's "Ask my AI" input (DESIGN.md 12.5 ask bar, made a real input): type a question, press Enter or the
+ * go button, and the assistant opens and asks it (window.mhOpenChat from src/scripts/site.ts, queued until the
+ * widget is ready). Empty submit just opens the assistant.
+ *
+ * While the field is empty and unfocused, an aria-hidden overlay types example questions (the chat's first
+ * suggestions, plus one in the other language). It stops under reduced motion, in a hidden tab, offscreen, and while
+ * the hero graph is paused (its pause button is the hero's motion control, WCAG 2.2.2). Without JS the placeholder
+ * shows and the form leads to the contact section.
+ */
+import suggestions from "@content/chat/suggestions.json";
+import Icon from "~/components/ui/Icon.astro";
+import { messages, otherLocale, type Locale } from "~/lib/i18n";
+import { CHAT_LIMITS } from "../../../../../worker/src/chat/protocol";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const other = otherLocale(locale);
+const examples = [
+  ...suggestions[locale].slice(0, 3).map((s) => ({ text: s.label, lang: locale })),
+  { text: `${m.hero.ask.otherLanguage}: ${suggestions[other][0]!.label}`, lang: other },
+];
+---
+<form class="ask-bar" action="#contact" data-hero-ask data-examples={JSON.stringify(examples)}>
+  <Icon name="ask" size="md" class="ask-bar__icon" />
+  <label class="sr-only" for="hero-ask">{m.hero.ask.label}</label>
+  <span class="ask-bar__field">
+    <input
+      class="ask-bar__input"
+      id="hero-ask"
+      type="text"
+      autocomplete="off"
+      enterkeyhint="send"
+      spellcheck="false"
+      maxlength={CHAT_LIMITS.maxUserChars}
+      placeholder={m.hero.ask.placeholder}
+      dir="auto"
+    />
+    <span class="ask-bar__typed" aria-hidden="true"><span class="ask-bar__typed-text" data-typed dir="auto"></span><i class="ask-bar__caret"></i></span>
+  </span>
+  <span class="kbd ask-bar__kbd" aria-hidden="true">/</span>
+  <button class="ask-bar__go" type="submit">
+    <Icon name="arrow-right" />
+    <span class="sr-only">{m.hero.ask.submit}</span>
+  </button>
+</form>
+
+<style>
+  /* The prototype's .ask-bar was a <button>; here it is a form with a real input. Focus shows on the whole bar. */
+  .ask-bar {
+    cursor: text;
+  }
+  .ask-bar:focus-within {
+    border-color: var(--color-focus);
+    box-shadow: var(--shadow-md), 0 0 0 3px var(--color-focus-halo);
+  }
+  .ask-bar__field {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+  }
+  .ask-bar__input {
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    min-height: 2.5rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-ink);
+    font-size: var(--text-base);
+    text-overflow: ellipsis;
+  }
+  .ask-bar__input:focus-visible {
+    outline: none;
+  }
+  .ask-bar__input::placeholder {
+    color: var(--color-muted);
+    opacity: 1;
+  }
+  .ask-bar__typed {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    min-width: 0;
+    pointer-events: none;
+    color: var(--color-ink-2);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .ask-bar__typed-text {
+    overflow: hidden;
+    text-overflow: clip;
+    white-space: nowrap;
+    max-width: calc(100% - 4px);
+  }
+  .ask-bar__typed-text:empty {
+    display: none;
+  }
+  /* Typing state: the overlay replaces the placeholder. */
+  .ask-bar.is-typing .ask-bar__typed {
+    display: flex;
+  }
+  .ask-bar.is-typing .ask-bar__input::placeholder {
+    color: transparent;
+  }
+  .ask-bar__go {
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-standard);
+  }
+  .ask-bar__go:hover {
+    background: var(--color-accent-solid-hover);
+  }
+  .ask-bar__go:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+    border-radius: 0.625rem;
+  }
+  @media (max-width: 29.99rem) {
+    .ask-bar__input,
+    .ask-bar__typed {
+      font-size: var(--text-sm);
+    }
+  }
+</style>
+
+<script>
+  type Example = { text: string; lang: string };
+  type OpenChat = (o?: { question?: string }) => void;
+
+  const form = document.querySelector<HTMLFormElement>("[data-hero-ask]");
+  const input = form?.querySelector<HTMLInputElement>("input");
+  const out = form?.querySelector<HTMLElement>("[data-typed]");
+  const hero = form?.closest<HTMLElement>("[data-hero]");
+
+  if (form && input && out) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const question = input.value.trim();
+      const open = (window as Window & { mhOpenChat?: OpenChat }).mhOpenChat;
+      if (!open) return;
+      open(question ? { question } : {});
+      if (question) {
+        input.value = "";
+        input.blur();
+      }
+      sync();
+    });
+    // Clicking anywhere on the bar (icon, padding) focuses the field.
+    form.addEventListener("pointerdown", (e) => {
+      if (!(e.target as Element).closest("button, input")) {
+        e.preventDefault();
+        input.focus();
+      }
+    });
+
+    const examples: Example[] = JSON.parse(form.dataset.examples || "[]");
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+    let inView = true;
+    let paused = false;
+    try {
+      paused = localStorage.getItem("hero-graph:paused") === "1";
+    } catch {
+      /* storage blocked */
+    }
+    let timer: number | undefined;
+    let qi = 0;
+    let ci = 0;
+    let step = 1;
+    let wait = 0;
+
+    const active = () => !reduce.matches && !paused && inView && !document.hidden && examples.length > 0 && !input.value && document.activeElement !== input;
+
+    function tick(): void {
+      if (wait > 0) {
+        wait--;
+        return;
+      }
+      const ex = examples[qi]!;
+      ci += step;
+      out!.textContent = ex.text.slice(0, ci);
+      out!.lang = ex.lang;
+      if (ci >= ex.text.length) {
+        step = -1;
+        wait = 38;
+      }
+      if (ci <= 0) {
+        step = 1;
+        qi = (qi + 1) % examples.length;
+        wait = 6;
+      }
+    }
+
+    function sync(): void {
+      const on = active();
+      form!.classList.toggle("is-typing", on);
+      if (on && timer === undefined) timer = window.setInterval(tick, 45);
+      if (!on && timer !== undefined) {
+        clearInterval(timer);
+        timer = undefined;
+      }
+      if (hero) hero.toggleAttribute("data-paused", paused);
+    }
+
+    input.addEventListener("focus", sync);
+    input.addEventListener("blur", sync);
+    input.addEventListener("input", sync);
+    document.addEventListener("visibilitychange", sync);
+    reduce.addEventListener("change", sync);
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver((entries) => {
+        inView = entries[entries.length - 1]!.isIntersecting;
+        sync();
+      }).observe(form);
+    }
+    // The hero graph's pause button (added by its runtime) is the hero's motion control.
+    const art = hero?.querySelector(".hero__art");
+    if (art) {
+      new MutationObserver(() => {
+        const btn = art.querySelector<HTMLButtonElement>(".hg-btn");
+        if (!btn || btn.hidden) return;
+        const next = btn.getAttribute("aria-pressed") === "true";
+        if (next !== paused) {
+          paused = next;
+          sync();
+        }
+      }).observe(art, { subtree: true, attributes: true, attributeFilter: ["aria-pressed", "hidden"], childList: true });
+    }
+    sync();
+  }
+</script>

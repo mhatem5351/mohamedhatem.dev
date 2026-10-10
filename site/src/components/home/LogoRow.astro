@@ -1,0 +1,37 @@
+---
+/**
+ * "Shipped at" row (DESIGN.md 12.7): single-colour marks (CSS masks of design/assets/logos/mono) tinted muted, each
+ * with its name as real text (Tabaqat's mark is its wordmark, so its name is visually hidden). Static, not links.
+ */
+import logos from "~/assets/logos/logos.json";
+import { messages, type Locale } from "~/lib/i18n";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+type LogoEntry = { name: string; fullName?: string };
+const data = logos.logos as unknown as Record<string, LogoEntry>;
+const ROW = ["globant", "wakeb", "arabsstock", "empoweromics", "tabaqat", "mdp"] as const;
+const WORDMARK = new Set(["tabaqat"]);
+---
+<div class="logos">
+  <p class="eyebrow logos__label">{m.metrics.logosLabel}</p>
+  <ul class="logos__list" role="list">
+    {
+      ROW.map((key) => {
+        // Wakeb's mark needs its full name; MDP is known by its initials.
+        const name = (key === "wakeb" ? data[key]?.fullName : data[key]?.name) ?? key;
+        return (
+          <li class="logo-mark">
+            <span class={`mask mask--${key}`} aria-hidden="true" />
+            <span class={WORDMARK.has(key) ? "sr-only" : "logo-mark__name"} lang="en">
+              {name}
+            </span>
+          </li>
+        );
+      })
+    }
+  </ul>
+</div>

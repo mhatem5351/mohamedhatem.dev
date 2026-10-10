@@ -1,0 +1,108 @@
+---
+/**
+ * /privacy/ and /ar/privacy/: what the assistant, the contact form, Turnstile, analytics and browser storage process.
+ * Copy: content/i18n privacy.* (facts mirror worker/README.md "Security model", worker/src/session.ts and
+ * chat-widget/src/store.ts). PRIVACY_UPDATED is the month this page's facts were last checked against that code.
+ */
+import Base from "~/layouts/Base.astro";
+import Icon from "~/components/ui/Icon.astro";
+import Ltr from "~/components/ui/Ltr.astro";
+import "~/styles/privacy.css";
+import { format, formatMonth, localePath, messages, type Locale } from "~/lib/i18n";
+import { PATHS, contact, mailtoHref } from "~/lib/site";
+import { privacyJsonLd } from "~/lib/jsonld";
+
+const PRIVACY_UPDATED = "2026-10";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const p = m.privacy;
+const sections = Object.entries(p.sections) as [string, { title: string; body: readonly string[] }][];
+const email = contact("email").display;
+/** Splits a paragraph around {email} so the address becomes a link. */
+const parts = (text: string) => text.split("{email}");
+---
+<Base
+  locale={locale}
+  title={m.meta.privacy.title}
+  description={m.meta.privacy.description}
+  path={PATHS.privacy}
+  ogKey="privacy"
+  jsonLd={privacyJsonLd(locale)}
+>
+  <article class="container doc" aria-labelledby="privacy-title">
+    <header class="doc__head">
+      <h1 class="doc__title" id="privacy-title">{p.title}</h1>
+      <p class="doc__lead">{p.lead}</p>
+      <p class="doc__meta">
+        <Icon name="calendar" size="sm" />
+        <time datetime={PRIVACY_UPDATED}>{format(p.updated, { date: formatMonth(PRIVACY_UPDATED, locale, "long") })}</time>
+      </p>
+    </header>
+    <div class="doc__layout">
+      <nav class="doc__toc" aria-labelledby="privacy-toc">
+        <p class="eyebrow" id="privacy-toc">{m.work.page.onThisPage}</p>
+        <ol>
+          {
+            sections.map(([id, s]) => (
+              <li>
+                <a href={`#${id}`}>{s.title}</a>
+              </li>
+            ))
+          }
+        </ol>
+      </nav>
+      <div class="doc__body">
+      {
+        sections.map(([id, s]) => (
+          <section class="doc__sec" id={id} aria-labelledby={`privacy-${id}`}>
+            <h2 id={`privacy-${id}`}>{s.title}</h2>
+            {s.body.map((para) => {
+              const [before, after] = parts(para);
+              return after === undefined ? (
+                <p>{para}</p>
+              ) : (
+                <p>
+                  {before}
+                  <a href={mailtoHref(locale)}>
+                    <Ltr>{email}</Ltr>
+                  </a>
+                  {after}
+                </p>
+              );
+            })}
+          </section>
+        ))
+      }
+      </div>
+    </div>
+    <script>
+      // Table of contents: mark the section being read (aria-current), like the case-study pages.
+      const links = [...document.querySelectorAll<HTMLAnchorElement>(".doc__toc a")];
+      if (links.length && "IntersectionObserver" in window) {
+        const visible = new Set<string>();
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const en of entries) en.isIntersecting ? visible.add(en.target.id) : visible.delete(en.target.id);
+            const current = links.find((a) => visible.has(a.hash.slice(1)));
+            for (const a of links) a === current ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
+          },
+          { rootMargin: "-20% 0px -60% 0px" },
+        );
+        for (const a of links) {
+          const el = document.getElementById(a.hash.slice(1));
+          if (el) io.observe(el);
+        }
+      }
+    </script>
+    <p class="doc__back">
+      <a class="btn btn--secondary" href={localePath("/", locale)}>
+        <Icon name="arrow-left" />
+        {m.notFound.home}
+      </a>
+    </p>
+  </article>
+</Base>

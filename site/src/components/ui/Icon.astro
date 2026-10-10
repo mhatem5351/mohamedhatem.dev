@@ -1,0 +1,26 @@
+---
+/**
+ * Inline SVG icon from the design's set. Decorative by default (aria-hidden); pass `label` only when the icon is the
+ * sole content of something that needs a name (prefer labelling the control instead).
+ * Directional icons get .icon--flip so they mirror in RTL, unless `flip={false}`.
+ */
+import { DIRECTIONAL, icon } from "~/lib/icons";
+
+interface Props {
+  name: string;
+  class?: string;
+  size?: "sm" | "md" | "lg";
+  flip?: boolean;
+  label?: string;
+}
+const { name, class: className, size, flip, label } = Astro.props;
+const def = icon(name);
+const classes = ["icon", size && `icon--${size}`, (flip ?? DIRECTIONAL.has(name)) && "icon--flip", className].filter(Boolean).join(" ");
+---
+{
+  label ? (
+    <svg class={classes} viewBox={def.viewBox} role="img" aria-label={label} focusable="false" set:html={def.body} />
+  ) : (
+    <svg class={classes} viewBox={def.viewBox} aria-hidden="true" focusable="false" set:html={def.body} />
+  )
+}

@@ -1,0 +1,133 @@
+---
+/**
+ * Case-study hero (pages.css §2–3): breadcrumbs, eyebrow (organisation / role / years), H1, summary, actions,
+ * the CaseMeta card (role, organisation, period + duration, where, stack) and the key-facts strip
+ * (case.figures: 0–4, omitted when there are none, never estimated). The figure slot renders below the facts.
+ */
+import Breadcrumbs from "./Breadcrumbs.astro";
+import Icon from "~/components/ui/Icon.astro";
+import Ltr from "~/components/ui/Ltr.astro";
+import type { CaseStudy } from "@content/profile.ts";
+import { messages, tr, type Locale } from "~/lib/i18n";
+import { askQuestion, contextDetail, eyebrowParts, monoLogoOf, periodInfo, roleOf, techAccent } from "~/lib/case";
+
+interface Props {
+  locale: Locale;
+  cs: CaseStudy;
+  /** id of the architecture figure for "See the architecture" (absent: link to the components section). */
+  figureId: string;
+}
+const { locale, cs, figureId } = Astro.props;
+const m = messages(locale);
+const role = roleOf(cs);
+const eb = eyebrowParts(cs, locale);
+const period = periodInfo(cs, locale);
+const mono = monoLogoOf(cs);
+const detail = contextDetail(cs, locale);
+const isLatin = (s: string) => !/[؀-ۿ]/.test(s);
+const employment = role ? m.experience.employmentType[role.employmentType] : m.work.freelance;
+const mode = role?.workMode ? m.experience.workMode[role.workMode] : undefined;
+const figures = cs.figures.slice(0, 4);
+const question = askQuestion(cs, locale);
+---
+<section class="cs-hero" aria-labelledby="cs-title">
+  <div class="cs-hero__bg" aria-hidden="true"></div>
+  <div class="container">
+    <Breadcrumbs locale={locale} current={tr(cs.shortTitle, locale)} />
+
+    <div class="cs-hero__grid">
+      <div class="cs-hero__copy">
+        <p class="eyebrow">
+          {isLatin(eb.company) ? <span lang="en">{eb.company}</span> : <span>{eb.company}</span>}
+          <span class="sep" aria-hidden="true">/</span>
+          <span>{eb.role}</span>
+          <span class="sep" aria-hidden="true">/</span>
+          <Ltr>{eb.years}</Ltr>
+        </p>
+        <h1 class="cs-hero__title" id="cs-title">{tr(cs.title, locale)}</h1>
+        <p class="cs-hero__summary">{tr(cs.summary, locale)}</p>
+        <div class="cs-hero__actions">
+          <button class="btn btn--secondary" type="button" data-open-chat data-question={question} aria-haspopup="dialog">
+            <Icon name="ask" />
+            {m.work.page.ask}
+          </button>
+          <a class="btn btn--ghost" href={`#${figureId}`}>
+            {m.work.page.seeArchitecture}
+            <Icon name="arrow-down" class="arrow" />
+          </a>
+          {
+            cs.links.map((l) => (
+              <a class="btn btn--ghost" href={l.href} rel="noopener">
+                <Icon name={l.href.includes("github.com") ? "github" : "arrow-up-right"} />
+                {tr(l.label, locale)}
+              </a>
+            ))
+          }
+        </div>
+      </div>
+
+      <dl class="card cs-meta">
+        <div class="cs-meta__row">
+          <dt>{m.work.page.role}</dt>
+          <dd>
+            {tr(cs.contribution, locale)}
+            <small>{[employment, mode].filter(Boolean).join(locale === "ar" ? "، " : ", ")}</small>
+          </dd>
+        </div>
+        <div class="cs-meta__row">
+          <dt>{m.work.page.company}</dt>
+          <dd>
+            <span class="cs-meta__org">
+              {mono && <span class:list={["mask", `mask--${mono}`]} aria-hidden="true" />}
+              {isLatin(eb.company) ? <span lang="en">{eb.company}</span> : eb.company}
+            </span>
+            {detail && <small>{detail}</small>}
+          </dd>
+        </div>
+        <div class="cs-meta__row">
+          <dt>{m.work.labels.period}</dt>
+          <dd>
+            {period.isRolePeriod ? period.main : <Ltr>{period.main}</Ltr>}
+            {period.small && <small>{period.isRolePeriod ? <Ltr>{period.small}</Ltr> : period.small}</small>}
+          </dd>
+        </div>
+        {
+          role && (
+            <div class="cs-meta__row">
+              <dt>{m.work.page.location}</dt>
+              <dd>{tr(role.location, locale)}</dd>
+            </div>
+          )
+        }
+        <div class="cs-meta__row">
+          <dt>{m.work.labels.stack}</dt>
+          <dd>
+            <ul class="cluster" role="list">
+              {cs.stack.slice(0, 7).map((t) => {
+                const a = techAccent(t);
+                return <li class:list={["chip", a !== "neutral" && `chip--${a}`]}>{t}</li>;
+              })}
+            </ul>
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    {
+      figures.length > 0 && (
+        <dl class:list={["metrics", `metrics--${figures.length}`, "cs-facts"]}>
+          {figures.map((f) => (
+            <div class="metric">
+              <dt class="metric__label">{tr(f.label, locale)}</dt>
+              <dd class:list={["metric__value", !/\d/.test(tr(f.value, locale)) && "metric__value--word"]}>
+                {isLatin(tr(f.value, locale)) ? <Ltr>{tr(f.value, locale)}</Ltr> : tr(f.value, locale)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )
+    }
+
+    <slot />
+  </div>
+</section>

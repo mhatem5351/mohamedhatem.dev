@@ -1,0 +1,246 @@
+---
+/**
+ * 03 Experience as a trace view (DESIGN.md 12.12, HANDOFF.md 6.2): every role (newest first) and the two study
+ * lanes as spans on one timeline from 2020 to the build year, with a dashed "now" line. Rows are <details>, so they
+ * work without JS; the script adds a single-open accordion and ArrowUp/ArrowDown/Home/End between rows.
+ * Bar positions come from src/lib/trace.ts as month "digit classes" that src/styles/home-a.css turns into
+ * percentages (no style="": the CSP is hash-only).
+ */
+import type { Role } from "@content/profile.ts";
+import Icon from "~/components/ui/Icon.astro";
+import LogoTile from "~/components/ui/LogoTile.astro";
+import DateRun from "~/components/work/DateRun.astro";
+import SectionHeader from "~/components/ui/SectionHeader.astro";
+import { formatPeriod, localePath, messages, type Locale } from "~/lib/i18n";
+import { PATHS, caseStudyBySlug, profile } from "~/lib/site";
+import { axis, axisClasses, digitClasses, nowIndex, traceRows, yearIndex, type TraceRow } from "~/lib/trace";
+import "~/styles/home-a.css";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const t = m.experience.trace;
+const now = new Date();
+const ax = axis(now);
+const rows = traceRows(now);
+
+const typeLine = (r: Role) => [m.experience.employmentType[r.employmentType], r.workMode ? m.experience.workMode[r.workMode] : null].filter(Boolean).join(locale === "ar" ? "، " : ", ");
+const firstPart = (s: string) => s.split(locale === "ar" ? "،" : ",")[0]!.trim();
+const isLatin = (s: string) => !/[؀-ۿ]/.test(s);
+
+type Attr = { k: string; v: string; ltr?: boolean };
+function view(row: TraceRow): { title: string; org: string; dates: string; logo: { file: string | null; monogram: string }; srType: string | null; honors: typeof profile.honors[number][]; attrs: Attr[]; cases: NonNullable<ReturnType<typeof caseStudyBySlug>>[]; bullets: string[] } {
+  if (row.role) {
+    const r = row.role;
+    const honors = profile.honors.filter((h) => r.honors.includes(h.id));
+    return {
+      title: r.title[locale],
+      org: r.company[locale],
+      dates: formatPeriod(r.period, locale),
+      logo: { file: r.logo.file ?? r.id, monogram: r.logo.monogram },
+      srType: r.employmentType === "full-time" ? null : m.experience.employmentType[r.employmentType],
+      honors,
+      attrs: [
+        { k: t.type, v: typeLine(r) },
+        { k: t.location, v: r.location[locale] },
+        { k: m.experience.tech, v: r.tech.join(", "), ltr: true },
+        ...honors.map((h) => ({ k: m.experience.award, v: h.title[locale] })),
+      ],
+      cases: r.caseStudies.map((s) => caseStudyBySlug(s)).filter((c): c is NonNullable<typeof c> => c !== undefined),
+      bullets: r.bullets.map((b) => b.text[locale]),
+    };
+  }
+  const e = row.education!;
+  return {
+    title: e.degree[locale],
+    org: firstPart(e.institution[locale]),
+    dates: formatPeriod(e.period, locale, { expected: e.status === "in-progress" }),
+    logo: { file: e.logo.file, monogram: e.logo.monogram },
+    srType: t.study,
+    honors: [],
+    attrs: [
+      { k: t.location, v: e.institution[locale] },
+      ...(e.notes ? [{ k: t.notes, v: e.notes[locale] }] : []),
+      ...(e.courses.length ? [{ k: t.courses, v: e.courses.map((c) => c[locale]).join(locale === "ar" ? "، " : ", ") }] : []),
+    ],
+    cases: [],
+    bullets: [],
+  };
+}
+---
+<section class="section" id="experience" aria-labelledby="exp-title">
+  <div class="container">
+    <SectionHeader index="03" eyebrow={m.experience.eyebrow} title={m.experience.title} titleId="exp-title" lede={m.experience.lead} />
+    <div class={`card trace ${axisClasses(now)}`} data-trace>
+      <div class="trace__head">
+        <span class="eyebrow">{t.roleColumn}</span>
+        <div class="axis" aria-hidden="true">
+          {ax.years.map((y) => <span class={digitClasses("p", yearIndex(y, ax))}>{y}</span>)}
+        </div>
+      </div>
+      <div class="trace__rows">
+        <div class="trace__grid" aria-hidden="true">
+          <div></div>
+          <div>
+            {ax.years.map((y) => <i class={`yr ${digitClasses("p", yearIndex(y, ax))}`}></i>)}
+            <i class={`now ${digitClasses("p", nowIndex(now))}`} data-label={t.now}></i>
+          </div>
+        </div>
+        {
+          rows.map((row) => {
+            const v = view(row);
+            const g = row.geometry;
+            return (
+              <details class={`span span--${row.id} accent-${row.accent} ${row.classes}`} open={row.role?.period.end === null ? true : undefined}>
+                <summary>
+                  <span class="span__who">
+                    <LogoTile file={v.logo.file} monogram={v.logo.monogram} size={36} class="span__logo" />
+                    <span class="span__text">
+                      <span class="span__role">
+                        {v.title}
+                        {v.honors.map((h) => (
+                          <Icon name="award" class="span__award" label={`${m.experience.award}: ${h.title[locale]}`} />
+                        ))}
+                      </span>
+                      <span class="span__org">
+                        {isLatin(v.org) ? <span lang="en">{v.org}</span> : v.org}
+                        <span class="span__when">
+                          {" · "}
+                          <DateRun text={v.dates} />
+                        </span>
+                        {v.srType && <span class="sr-only">, {v.srType}</span>}
+                      </span>
+                    </span>
+                    <Icon name="chevron-down" size="sm" class="span__chev" />
+                  </span>
+                  <span class="span__lane" aria-hidden="true">
+                    <i
+                      class:list={[
+                        "span__bar",
+                        row.bar === "pt" && "span__bar--pt",
+                        row.bar === "study" && "span__bar--study",
+                        g.live && "span__bar--live",
+                      ]}
+                    />
+                    <span class:list={["span__dates", g.before && "span__dates--before"]}>
+                      <DateRun text={v.dates} />
+                    </span>
+                  </span>
+                </summary>
+                <div class="span__detail">
+                  <dl class="span__attrs">
+                    {v.attrs.map((a) => (
+                      <div>
+                        <dt>{a.k}</dt>
+                        <dd>{a.ltr ? <bdi dir="ltr" lang="en">{a.v}</bdi> : a.v}</dd>
+                      </div>
+                    ))}
+                    {v.cases.length > 0 && (
+                      <div>
+                        <dt>{m.experience.caseStudy}</dt>
+                        <dd class="span__cases">
+                          {v.cases.map((c) => (
+                            <a class="link" href={localePath(PATHS.work(c.slug), locale)}>
+                              {c.shortTitle[locale]}
+                            </a>
+                          ))}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                  {v.bullets.length > 0 && (
+                    <ul class="span__bullets">
+                      {v.bullets.map((b) => (
+                        <li>{b}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </details>
+            );
+          })
+        }
+      </div>
+      <div class="trace__foot">
+        <div class="trace__legend" aria-hidden="true">
+          <span><i class="ft"></i>{t.fullTime}</span>
+          <span><i class="pt"></i>{t.partTime}</span>
+          <span><i class="st"></i>{t.study}</span>
+        </div>
+        <span class="t-xs muted trace__hint">{t.keyboardHint}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .trace__legend i.ft {
+    background: var(--color-teal-fill);
+  }
+  .trace :global(.span__award) {
+    display: inline;
+    vertical-align: -0.2em;
+    margin-inline-start: 0.25rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--color-saffron);
+  }
+  .span__cases {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+  }
+  /* An in-progress degree: outlined (study) and fading into "now". */
+  .span__bar--study.span__bar--live {
+    background: transparent;
+    -webkit-mask-image: linear-gradient(90deg, #000 72%, transparent);
+    mask-image: linear-gradient(90deg, #000 72%, transparent);
+  }
+  :global([dir="rtl"]) .span__bar--study.span__bar--live {
+    -webkit-mask-image: linear-gradient(-90deg, #000 72%, transparent);
+    mask-image: linear-gradient(-90deg, #000 72%, transparent);
+  }
+  /* The keyboard hint only helps where there is a keyboard. */
+  @media (hover: none) and (pointer: coarse) {
+    .trace__hint {
+      display: none;
+    }
+  }
+  @media (max-width: 47.99rem) {
+    .span__lane {
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0 calc(100% / var(--trace-years, 7) - 1px),
+        var(--color-line) calc(100% / var(--trace-years, 7) - 1px) calc(100% / var(--trace-years, 7))
+      );
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .trace :global(.span__chev) {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  for (const trace of document.querySelectorAll<HTMLElement>("[data-trace]")) {
+    const rows = [...trace.querySelectorAll<HTMLDetailsElement>("details.span")];
+    const sums = rows.map((r) => r.querySelector("summary")!);
+    // Single-open accordion: opening a span closes the others.
+    for (const r of rows)
+      r.addEventListener("toggle", () => {
+        if (r.open) for (const o of rows) if (o !== r) o.open = false;
+      });
+    // Arrow keys move between rows (one row = one stop in the list), Home/End jump to the ends.
+    trace.addEventListener("keydown", (e) => {
+      const i = sums.indexOf(document.activeElement as HTMLElement);
+      if (i < 0) return;
+      const to = ({ ArrowDown: i + 1, ArrowUp: i - 1, Home: 0, End: sums.length - 1 } as Record<string, number>)[e.key];
+      if (to === undefined) return;
+      e.preventDefault();
+      sums[Math.max(0, Math.min(sums.length - 1, to))]!.focus();
+    });
+  }
+</script>

@@ -1,0 +1,25 @@
+{
+  // Base TypeScript settings shared by the Worker (worker/tsconfig.json) and the chat widget
+  // (chat-widget/tsconfig.json). Each of those has its own runtime types (workerd vs DOM), so type-check them
+  // separately: `npm run typecheck`. This root project only covers the root config files.
+  // Phase 2 (Astro): this file can extend "astro/tsconfigs/strict" as long as it keeps excluding worker/ and
+  // chat-widget/ (they are checked by their own projects).
+  "compilerOptions": {
+    "target": "es2023",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2023"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["vitest.config.ts"],
+  "exclude": ["node_modules", "dist", "worker", "chat-widget"]
+}

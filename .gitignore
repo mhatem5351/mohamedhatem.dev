@@ -1,0 +1,18 @@
+.env
+.env.*
+.dev.vars
+node_modules/
+dist/
+.wrangler/
+.astro/
+.DS_Store
+_inputs/
+!.env.example
+# local QA output (large; regenerate with the scripts)
+site/screenshots/
+site/lighthouse/
+design/screens/
+test-results/
+playwright-report/
+**/test-results/
+**/playwright-report/

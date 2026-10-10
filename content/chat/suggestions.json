@@ -1,0 +1,88 @@
+{
+  "version": 1,
+  "description": "Suggested questions for the chat widget. `label` is the short chip text; `prompt` is what gets sent. Show the first 4 on small screens.",
+  "en": [
+    {
+      "id": "langgraph",
+      "label": "What has he built with LangGraph?",
+      "prompt": "What has he built with LangGraph?"
+    },
+    {
+      "id": "fit-llm",
+      "label": "Is he a fit for a Senior LLM Engineer role?",
+      "prompt": "Is he a fit for a Senior LLM Engineer role? Give me his strengths and any gaps."
+    },
+    {
+      "id": "serving",
+      "label": "How does he run LLMs in production?",
+      "prompt": "How has he deployed and served LLMs in production?"
+    },
+    {
+      "id": "contact",
+      "label": "How can I contact him?",
+      "prompt": "How can I contact him?"
+    },
+    {
+      "id": "arabsstock",
+      "label": "Tell me about the 14-agent assistant",
+      "prompt": "Tell me about the 14-agent Arabsstock Assistant."
+    },
+    {
+      "id": "bilingual",
+      "label": "What bilingual AI has he shipped?",
+      "prompt": "What Arabic and English AI products has he shipped?"
+    },
+    {
+      "id": "evaluation",
+      "label": "How does he evaluate LLM outputs?",
+      "prompt": "How does he evaluate and monitor LLM outputs?"
+    },
+    {
+      "id": "background",
+      "label": "Education and certifications?",
+      "prompt": "What is his education, and which certifications has he earned?"
+    }
+  ],
+  "ar": [
+    {
+      "id": "langgraph",
+      "label": "ماذا بنى باستخدام LangGraph؟",
+      "prompt": "ماذا بنى حاتم باستخدام LangGraph؟"
+    },
+    {
+      "id": "fit-llm",
+      "label": "هل يناسب دور مهندس LLM أول؟",
+      "prompt": "هل يناسب حاتم دور مهندس LLM أول؟ اذكر نقاط قوته وما قد ينقصه لهذا الدور."
+    },
+    {
+      "id": "serving",
+      "label": "كيف يشغّل النماذج في بيئة الإنتاج؟",
+      "prompt": "كيف نشر حاتم النماذج اللغوية وتولّى خدمتها في بيئة الإنتاج؟"
+    },
+    {
+      "id": "contact",
+      "label": "كيف أتواصل معه؟",
+      "prompt": "كيف أتواصل مع حاتم؟"
+    },
+    {
+      "id": "arabsstock",
+      "label": "حدّثني عن المساعد المكوّن من 14 وكيلًا",
+      "prompt": "حدّثني عن مساعد ArabsStock المكوّن من 14 وكيلًا."
+    },
+    {
+      "id": "bilingual",
+      "label": "ما الذي أطلقه بالعربية والإنجليزية؟",
+      "prompt": "ما منتجات الذكاء الاصطناعي ثنائية اللغة (العربية والإنجليزية) التي أطلقها حاتم؟"
+    },
+    {
+      "id": "evaluation",
+      "label": "كيف يقيّم مخرجات النماذج؟",
+      "prompt": "كيف يقيّم حاتم مخرجات النماذج اللغوية ويراقب جودتها؟"
+    },
+    {
+      "id": "background",
+      "label": "ما مؤهلاته وشهاداته؟",
+      "prompt": "ما مؤهلات حاتم الدراسية، وما الشهادات التي حصل عليها؟"
+    }
+  ]
+}

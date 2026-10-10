@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>حالات واجهة المساعد · نموذج mohamedhatem.dev</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#FBF8F3">
+<link rel="icon" href="../assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="en" href="chat-widget.html">
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="proto.css">
+<link rel="stylesheet" href="chat.css">
+<style>
+  /* ---- gallery-only layout (not shipped) ---- */
+  .g { padding-block: clamp(2rem, 1rem + 3vw, 3.5rem) 9rem; }
+  .g-head { display: grid; gap: 1rem; justify-items: start; }
+  .g-head h1 { font-size: var(--text-2xl); line-height: var(--text-2xl--line-height); letter-spacing: var(--text-2xl--letter-spacing); max-width: 22ch; }
+  .g-head .lede { max-width: 46rem; }
+  .g-head code { font-family: var(--font-mono); font-size: .85em; padding: .1em .35em; border-radius: 5px; background: var(--color-surface-2); border: 1px solid var(--color-line); }
+  .g-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(14.5rem, 1fr)); gap: 1px; width: 100%; margin-block-start: .75rem; background: var(--color-line); border: 1px solid var(--color-line); border-radius: var(--radius-lg); overflow: hidden; }
+  .g-note { display: grid; gap: .375rem; align-content: start; padding: 1rem 1.125rem; background: var(--color-surface); font-size: var(--text-sm); line-height: 1.55; color: var(--color-ink-2); }
+  .g-note b { font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); }
+  :lang(ar) .g-note b { font-family: var(--font-arabic); font-size: var(--text-xs); font-weight: 600; letter-spacing: 0; text-transform: none; }
+  :lang(ar) .g-note { line-height: 1.8; }
+  .g-sec { margin-block-start: clamp(3rem, 2rem + 3vw, 4.5rem); }
+  .g-sec__head { display: flex; align-items: center; gap: .875rem; margin-block-end: 1.75rem; }
+  .g-sec__head::after { content: ""; flex: 1; height: 1px; background: var(--color-line); }
+  .g-grid { display: grid; grid-template-columns: repeat(auto-fill, min(100%, 25rem)); gap: 3.25rem 1.5rem; justify-content: start; }
+  .g-grid--phones { grid-template-columns: repeat(auto-fill, min(100%, 24.375rem)); }
+  .g-item { margin: 0; display: grid; gap: .875rem; align-content: start; min-width: 0; }
+  .g-cap { display: grid; gap: .3rem; min-height: 4.6rem; align-content: start; }
+  .g-cap__key { display: flex; align-items: baseline; gap: .625rem; font-family: var(--font-display); font-size: var(--text-md); font-weight: 600; color: var(--color-ink); letter-spacing: -.01em; }
+  :lang(ar) .g-cap__key { font-weight: 700; letter-spacing: 0; }
+  .g-cap__key i { font-style: normal; font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--color-accent); letter-spacing: .04em; }
+  .g-cap__id { margin-inline-start: auto; font-family: var(--font-mono); font-size: 11px; font-weight: 500; color: var(--color-muted); letter-spacing: 0; direction: ltr; }
+  .g-cap__desc { font-size: var(--text-sm); line-height: 1.5; color: var(--color-muted); }
+  :lang(ar) .g-cap__desc { line-height: 1.75; }
+  .g-stage { position: relative; width: min(25rem, 100%) !important; max-width: 100%; height: 40rem; }
+  /* launcher row */
+  .g-strip { position: relative; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 2.25rem 3rem; padding: 2.5rem 2rem 1.75rem; border: 1px solid var(--color-line); border-radius: var(--radius-xl); background: var(--color-bg-subtle); overflow: hidden; }
+  .g-strip::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(circle at 2px 2px, var(--color-graph-grid) 1.15px, transparent 1.5px); background-size: 22px 22px; -webkit-mask-image: linear-gradient(to bottom, #000, transparent); mask-image: linear-gradient(to bottom, #000, transparent); pointer-events: none; }
+  .g-launch { position: relative; display: grid; gap: .875rem; justify-items: center; }
+  .g-launch small { font-family: var(--font-mono); font-size: 11px; color: var(--color-muted); direction: ltr; }
+  :lang(ar) .g-launch small { font-family: var(--font-arabic); font-size: var(--text-xs); }
+  .g-launch .chat-launcher, .g-launch .chat-noscript { position: relative; inset: auto; }
+  .g-launch .chat-launcher.is-hover { background: color-mix(in srgb, var(--color-surface-inverse) 86%, var(--color-accent-fill)); box-shadow: var(--shadow-xl); }
+  .g-launch .chat-launcher.is-focus { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+  .g-noscript { align-items: center; }
+  .g-noscript .chat-noscript__card { width: 17rem; }
+  /* phone frame: real size, simulated safe areas (47 / 34) */
+  .g-phone { --chat-safe-top: 47px; --chat-safe-bottom: 34px; position: relative; width: 390px; height: 844px; max-width: none; border-radius: 52px; overflow: hidden; contain: layout paint; isolation: isolate;
+    background: var(--color-bg); box-shadow: 0 0 0 1px var(--color-line-strong), 0 0 0 8px var(--color-surface-2), 0 0 0 9px var(--color-line-strong), var(--shadow-xl); margin: 9px; }
+  .g-phone__page { position: absolute; inset: 0; padding: 47px 20px 0; display: grid; gap: 18px; align-content: start; }
+  .g-fake-nav { display: flex; align-items: center; gap: 10px; height: 52px; font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--color-ink); }
+  .g-fake-nav svg { width: 30px; height: 30px; }
+  .g-fake-chip { justify-self: start; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--color-line); background: var(--color-surface); font-size: 13px; color: var(--color-muted); }
+  .g-fake-h1 { font-family: var(--font-display); font-weight: 600; font-size: 40px; line-height: 1.05; letter-spacing: -.035em; color: var(--color-ink); }
+  :lang(ar) .g-fake-h1 { font-weight: 700; font-size: 34px; line-height: 1.35; letter-spacing: 0; }
+  .g-fake-h1 em { font-style: normal; color: var(--color-accent); }
+  .g-fake-lede { font-size: 17px; line-height: 1.6; color: var(--color-ink-2); }
+  .g-phone__screen { position: absolute; inset: 0; }
+  .g-phone--kb .g-phone__screen { --chat-vvh: 508px; }
+  .g-phone__status { position: absolute; inset: 0 0 auto; z-index: 6; height: 47px; display: flex; align-items: center; justify-content: space-between; padding: 6px 30px 0 34px; font-family: var(--font-sans); font-size: 16px; color: var(--color-ink); direction: ltr; pointer-events: none; }
+  .g-phone__island { position: absolute; inset-block-start: 11px; inset-inline-start: 50%; width: 122px; height: 35px; margin-inline-start: -61px; border-radius: 20px; background: #05080B; }
+  .g-phone__sys { display: flex; gap: 5px; align-items: center; }
+  .g-phone__sys i { width: 17px; height: 11px; border-radius: 3px; background: var(--color-ink); opacity: .85; }
+  .g-phone__sys i:first-child { width: 16px; border-radius: 2px; clip-path: polygon(0 100%, 100% 0, 100% 100%); }
+  .g-phone__sys i:last-child { width: 25px; border-radius: 4px; }
+  .g-phone__home { position: absolute; z-index: 6; inset-block-end: 8px; inset-inline: 0; width: 134px; height: 5px; margin-inline: auto; border-radius: 3px; background: var(--color-ink); pointer-events: none; }
+  .g-kb { position: absolute; z-index: 5; inset: auto 0 0; height: 336px; padding: 0 3px; background: color-mix(in srgb, var(--color-line-strong) 55%, var(--color-surface-2)); font-family: var(--font-sans); color: var(--color-ink); direction: ltr; }
+  .g-kb__bar { display: grid; grid-template-columns: repeat(3, 1fr); height: 44px; align-items: center; text-align: center; font-size: 16px; color: var(--color-ink-2); }
+  .g-kb__bar span + span { border-inline-start: 1px solid var(--color-line-strong); }
+  .g-kb__row { display: flex; gap: 6px; justify-content: center; padding-inline: 3px; margin-block-start: 11px; }
+  .g-kb__row i { flex: 1; max-width: 34px; height: 42px; display: grid; place-items: center; border-radius: 5px; background: var(--color-surface); box-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink) 28%, transparent); font-style: normal; font-size: 22px; line-height: 1; }
+  .g-kb__row--1 { padding-inline: 20px; }
+  :lang(ar) .g-kb__row i { font-family: var(--font-arabic); font-size: 19px; max-width: 30px; }
+  :lang(ar) .g-kb__row--1, :lang(ar) .g-kb__row--0 { padding-inline: 3px; gap: 4px; }
+  .g-kb__row i.g-kb__fn { flex: 0 0 auto; max-width: none; min-width: 42px; padding-inline: 8px; font-size: 15px; background: color-mix(in srgb, var(--color-line-strong) 80%, var(--color-surface)); }
+  .g-kb__row--3 i.g-kb__fn { min-width: 88px; font-family: var(--font-sans); }
+  .g-kb__row i.g-kb__space { max-width: none; flex: 1; font-size: 15px; color: var(--color-ink-2); }
+  .g-kb__row i.g-kb__send { flex: 0 0 88px; max-width: none; font-size: 15px; background: var(--color-accent-solid); color: var(--color-on-accent); }
+  @media (max-width: 27rem) { .g-phone { zoom: .9; } .g-stage { height: 38rem; } }
+  .g-live { display: grid; gap: 1.25rem; justify-items: start; max-width: 46rem; }
+</style>
+</head>
+<body>
+<!--sprite:start--><svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+
+<symbol id="i-agents" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.3"/><circle cx="5" cy="18" r="2.3"/><circle cx="19" cy="18" r="2.3"/><circle cx="12" cy="12.6" r="1.6" fill="currentColor" stroke="none"/><path d="M12 7.3V11m-1.4 2.6-3.8 2.9m6.6-2.9 3.8 2.9M7.3 18h9.4"/></symbol>
+<symbol id="i-orchestrator" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12 7.2 9.2M12 12l4.8-2.8M12 12v5.6"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="7.2" cy="9.2" r="1.2" fill="currentColor" stroke="none"/><circle cx="16.8" cy="9.2" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="17.6" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-retrieve" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m16 16 4.5 4.5M8 9.5h6m-6 3h3.5"/></symbol>
+<symbol id="i-rerank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6h9m-9 6H10m-6.5 6h4M18 4.5v15M15.5 7 18 4.5 20.5 7m-5 10 2.5 2.5 2.5-2.5"/></symbol>
+<symbol id="i-guard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 7 2.8v5.3c0 4.6-3 8.2-7 9.9-4-1.7-7-5.3-7-9.9V5.8z"/><circle cx="12" cy="11.5" r="1.6" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 7 2.8v5.3c0 4.6-3 8.2-7 9.9-4-1.7-7-5.3-7-9.9V5.8z"/><path d="m8.7 11.9 2.3 2.3 4.4-4.6"/></symbol>
+<symbol id="i-generate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 11h16M4 17h6.5m4-2.75v5.5"/></symbol>
+<symbol id="i-evaluate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 18.6a8.6 8.6 0 1 1 13.2 0"/><path d="m8.6 13.4 2.4 2.4 4.4-4.8"/></symbol>
+<symbol id="i-tools-mcp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v3.5M15 3v3.5m-8.5 0h11V10a5.5 5.5 0 0 1-11 0zm5.5 9V21"/></symbol>
+<symbol id="i-serving" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="17" height="7" x="3.5" y="4" rx="2"/><rect width="17" height="7" x="3.5" y="13" rx="2"/><circle cx="7.2" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="7.2" cy="16.5" r="1.1" fill="currentColor" stroke="none"/><path d="M11 7.5h6m-6 9h6"/></symbol>
+<symbol id="i-gpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12" height="12" x="6" y="6" rx="2"/><rect width="5" height="5" x="9.5" y="9.5" rx="1"/><path d="M9.5 3v3m5-3v3m-5 12v3m5-3v3M3 9.5h3m-3 5h3m12-5h3m-3 5h3"/></symbol>
+<symbol id="i-pipeline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="5.5" height="7" x="2.75" y="8.5" rx="1.75"/><rect width="5.5" height="7" x="15.75" y="8.5" rx="1.75"/><path d="M8.25 12h5.5m-2.5-2.5 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.75" rx="7.5" ry="2.5"/><path d="M4.5 5.75v12.5c0 1.38 3.36 2.5 7.5 2.5s7.5-1.12 7.5-2.5V5.75"/><path d="M4.5 12c0 1.38 3.36 2.5 7.5 2.5s7.5-1.12 7.5-2.5"/></symbol>
+<symbol id="i-cache" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="5.5" rx="6.5" ry="2.25"/><path d="M3.5 5.5V16c0 1.24 2.91 2.25 6.5 2.25M16.5 5.5V10"/><circle cx="17.5" cy="17" r="4"/><path d="M17.5 15.2V17l1.2.9"/></symbol>
+<symbol id="i-embed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4H4.5v16H7M17 4h2.5v16H17"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="16.5" r="1.4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-keyword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5h17M3.5 12H7m10 0h3.5m-17 5.5h11"/><rect width="5.5" height="5" x="9.25" y="9.5" rx="1.25"/></symbol>
+<symbol id="i-merge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5c0 4.2 3.6 7 8 7m-8 7c0-4.2 3.6-7 8-7h9m-3-3 3 3-3 3"/></symbol>
+<symbol id="i-split" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12h4C11 12 12 6 16 6h4.5m-13 6c3.5 0 4.5 6 8.5 6h4.5M18 3.5 20.5 6 18 8.5m0 7 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-route" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 12 3.5-3.5L10 12l-3.5 3.5zm7 0h1c2.6 0 3-5.5 6-5.5h3.5M11 12c2.6 0 3 5.5 6 5.5h3.5M18.5 4 21 6.5 18.5 9m0 6 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 21 8l-9 4.5L3 8z"/><path d="m3 12 9 4.5 9-4.5M3 16l9 4.5 9-4.5"/></symbol>
+<symbol id="i-container" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 7.75 4.4v9.2L12 21l-7.75-4.4V7.4z"/><path d="M4.25 7.4 12 11.8l7.75-4.4M12 11.8V21"/></symbol>
+<symbol id="i-gateway" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v17M3 12h6m6 0h6m-3-3 3 3-3 3"/></symbol>
+<symbol id="i-function" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="3.5"/><path d="M8 6.5h1.1c.8 0 1.4.4 1.7 1.2l3.4 8.6c.3.8.9 1.2 1.7 1.2h.6m-4.4-5.9-3.9 5.9"/></symbol>
+<symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12h4L9 5.5l5 13 2.5-6.5h5"/></symbol>
+<symbol id="i-branch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.25"/><circle cx="18" cy="6" r="2.25"/><path d="M6 3.5v12.25m12-7.5A9.75 9.75 0 0 1 8.25 18"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4.5h17l-6.5 8V19l-4 2v-8.5z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m16 16 4.5 4.5"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="16" x="3" y="4" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.75"/><path d="m21 15-4-4a1.5 1.5 0 0 0-2.1 0L6 20"/></symbol>
+<symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12.5" height="12" x="3" y="6" rx="2.5"/><path d="m15.5 10.25 4.55-2.7a.8.8 0 0 1 1.2.69v7.52a.8.8 0 0 1-1.2.69l-4.55-2.7"/></symbol>
+<symbol id="i-audio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4m4-7.5v11m4-14v17m4-13v9m4-6v3"/></symbol>
+<symbol id="i-bilingual" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m2.75 15.5 3.75-11 3.75 11M4.1 12h4.8m10.7-2.4c-.5-.6-1.3-1-2.2-1C16 8.6 15 9.7 15 11c0 1.5.4 2.6.9 3.4l5.1-.25m-5.1.25c-1.3.6-2.2 1.8-2.2 3.2 0 2.1 1.6 3.4 3.9 3.4 1.5 0 2.7-.45 3.6-1.2"/></symbol>
+<symbol id="i-frontend" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="16" x="2.75" y="4" rx="2.5"/><path d="M2.75 8.5h18.5"/><circle cx="5.75" cy="6.25" r="1" fill="currentColor" stroke="none"/><circle cx="8.25" cy="6.25" r="1" fill="currentColor" stroke="none"/><path d="m9.75 11.75-2.5 2.5 2.5 2.5m4.5-5 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 7.5 3 12l4.5 4.5m9-9L21 12l-4.5 4.5M13.75 5l-3.5 14"/></symbol>
+<symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="16" x="2.75" y="4" rx="2.5"/><path d="m7 9.5 3 2.5-3 2.5m5.5.5H17"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0m0-14.9a3.5 3.5 0 0 1 0 6.8m6 8.1a6.5 6.5 0 0 0-3.5-5.8"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5A2.5 2.5 0 0 1 6 4h12a2.5 2.5 0 0 1 2.5 2.5V15a2.5 2.5 0 0 1-2.5 2.5h-7.5L6 21v-3.5A2.5 2.5 0 0 1 3.5 15z"/></symbol>
+<symbol id="i-ask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5A2.5 2.5 0 0 1 6 4h12a2.5 2.5 0 0 1 2.5 2.5V15a2.5 2.5 0 0 1-2.5 2.5h-7.5L6 21v-3.5A2.5 2.5 0 0 1 3.5 15z"/><circle cx="12" cy="10.75" r="2.75"/><circle cx="12" cy="10.75" r="1.1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5 3.5 6.75v13L9 17.5l6 2.25 5.5-2.25v-13L15 6.75zm0 0v13m6-10.75v13"/></symbol>
+<symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4.5A1.5 1.5 0 0 1 6.5 3h7A1.5 1.5 0 0 1 15 4.5V21m0-12h3.5a1.5 1.5 0 0 1 1.5 1.5V21M3 21h18M8.5 7zm2.99 0zM8.5 10.5zm2.99 0zM8.5 14zm2.99 0z"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v5.6a2 2 0 0 0 .6 1.4l8.4 8.4a2 2 0 0 0 2.8 0l5.6-5.6a2 2 0 0 0 0-2.8L12 4.1a2 2 0 0 0-1.4-.6H5a2 2 0 0 0-2 2"/><circle cx="7.5" cy="8" r="1.4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15m-6-6 6 6-6 6"/></symbol>
+<symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12h-15m6-6-6 6 6 6"/></symbol>
+<symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19.5v-15m-6 6 6-6 6 6"/></symbol>
+<symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15m-6-6 6 6 6-6"/></symbol>
+<symbol id="i-arrow-up-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></symbol>
+<symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12m0-12L6 18"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 3.5 9.75l7.25 3.5 3.5 7.25zM10.75 13.25 21 3"/></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12" height="12" x="6" y="6" rx="2.5"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12.5" height="12.5" x="8.5" y="8.5" rx="2.5"/><path d="M15.5 8.5v-3A2.5 2.5 0 0 0 13 3H5.5A2.5 2.5 0 0 0 3 5.5V13a2.5 2.5 0 0 0 2.5 2.5h3"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5L19.5 7"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12A8.5 8.5 0 1 1 12 3.5c2.4 0 4.6 1 6.3 2.6L20.5 8m0-4.5V8H16"/></symbol>
+<symbol id="i-external-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13.5V18a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 18V8.5A2.5 2.5 0 0 1 6 6h4.5m4-2.5h6v6m-10 4 10-10"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.2 4.2 0 0 0 6 .4l3-3a4.2 4.2 0 0 0-6-6L11.4 7m2.6 3a4.2 4.2 0 0 0-6-.4l-3 3a4.2 4.2 0 0 0 6 6l1.6-1.6"/></symbol>
+<symbol id="i-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3.5h6v6m0-6L14 10M9.5 20.5h-6v-6m0 6L10 14"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5V15m-5-5 5 5 5-5M3.5 15.5V18A2.5 2.5 0 0 0 6 20.5h12a2.5 2.5 0 0 0 2.5-2.5v-2.5"/></symbol>
+<symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3.5h10V9M7 17.5H5.5A2.5 2.5 0 0 1 3 15v-3.5A2.5 2.5 0 0 1 5.5 9h13a2.5 2.5 0 0 1 2.5 2.5V15a2.5 2.5 0 0 1-2.5 2.5H17"/><rect width="10" height="6.5" x="7" y="14" rx="1"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="14" x="2.75" y="5" rx="2.5"/><path d="m3.25 7 7.35 5.3a2.4 2.4 0 0 0 2.8 0L20.75 7"/></symbol>
+<symbol id="i-location" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11"/><circle cx="12" cy="10" r="2.25"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="16" x="3" y="4.75" rx="2.5"/><path d="M3 9.75h18M8 3v3.5M16 3v3.5"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+<symbol id="i-briefcase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="13" x="2.75" y="7" rx="2.5"/><path d="M8.5 7V5.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V7M2.75 12.5h18.5"/></symbol>
+<symbol id="i-graduation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 2.5 9l9.5 4.5L21.5 9zM6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11m4-2v5"/></symbol>
+<symbol id="i-certificate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 19.5H5.5A2.5 2.5 0 0 1 3 17V6a2.5 2.5 0 0 1 2.5-2.5h13A2.5 2.5 0 0 1 21 6v4.5M7 8h10M7 11.5h5"/><circle cx="17.5" cy="15" r="2.75"/><path d="M16 17.5V21l1.5-1 1.5 1v-3.5"/></symbol>
+<symbol id="i-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M8.6 13.9 7.5 21l4.5-2.5 4.5 2.5-1.1-7.1"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2m0 14v2m-9-9h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4m-12.8 0L7 17M17 7l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.25A6.25 6.25 0 0 0 20.75 12 8.75 8.75 0 1 1 12 3.25"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="12.5" x="2.75" y="4" rx="2.5"/><path d="M8.5 20.5h7m-3.5-4v4"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18m-9-9q-3.6 3.75-3.6 9c0 5.25 1.2 6.5 3.6 9q3.6-3.75 3.6-9c0-5.25-1.2-6.5-3.6-9"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.75" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.2 2.9 17.5a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0M12 9.5v4.25"/><circle cx="12" cy="16.9" r="1.15" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="3" height="14" x="6.5" y="5" rx="1"/><rect width="3" height="14" x="14.5" y="5" rx="1"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.8v14.4a1 1 0 0 0 1.5.86l11.6-7.2a1 1 0 0 0 0-1.72L9 3.94a1 1 0 0 0-1.5.86"/></symbol>
+<symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6.5A2.5 2.5 0 0 0 4 5.5v13A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V9zm0 0v4.5A1.5 1.5 0 0 0 15.5 9H20M8 13h8m-8 4h5"/></symbol>
+<symbol id="i-whatsapp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3"/><path d="m9.4 8.1-.6.6c-.6.6-.6 1.7 0 3 .9 1.8 2.3 3.2 4.1 4 1.3.6 2.4.6 3-.1l.5-.6-1.9-1.5-1 .7a4 4 0 0 1-2-2l.7-1-1.5-1.9z"/></symbol>
+<symbol id="i-linkedin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="3.5"/><path d="M8 10.5v6m3.75 0v-6m0 2.75a2.5 2.5 0 0 1 5 0v3.25"/><circle cx="8" cy="7.6" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-github" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.25 20.5v-2.8c0-.8.3-1.5.8-2-2.8-.3-5.3-1.4-5.3-5.4 0-1.1.4-2.1 1.1-2.9-.2-.6-.4-1.8.2-3.2 0 0 1-.3 3.2 1.2a10.5 10.5 0 0 1 5.5 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.4.4 2.6.2 3.2.7.8 1.1 1.8 1.1 2.9 0 4-2.5 5.1-5.3 5.4.5.5.8 1.2.8 2v2.8"/><path d="M9.25 18.3c-2.6.8-3.2-1.1-4.5-1.6"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 12.5h6M9 16h4"/></symbol><symbol id="i-system" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></symbol></svg><!--sprite:end-->
+<a class="skip-link" href="#main">انتقل إلى المحتوى</a>
+<main id="main" class="g">
+  <header class="container g-head">
+    <p class="eyebrow"><span class="stripe stripe--sm" aria-hidden="true"><i></i><i></i><i></i></span>واجهة المساعد · معرض الحالات</p>
+    <h1>اسأل المساعد، كل حالة بحجمها الحقيقي</h1>
+    <p class="lede">المساعد العائم الذي يجيب من سيرة حاتم الذاتية وملفيه على LinkedIn وGitHub. كل إطار أدناه يرسمه <code>chat.js</code> نفسه (ثابتًا وغير تفاعلي)، فالمعرض هو المكوّن ذاته. والمساعد الحقيقي يعمل في هذه الصفحة: استخدم الزر في الزاوية السفلية، أو اضغط <span class="kbd">/</span>، أو الأزرار التالية.</p>
+    <div class="cluster" style="--cluster-gap:.625rem">
+      <button class="btn btn--accent" type="button" data-open-chat aria-haspopup="dialog"><svg class="icon" aria-hidden="true"><use href="#i-ask"/></svg><span>افتح المساعد</span></button>
+      <button class="btn btn--secondary" type="button" data-open-chat aria-haspopup="dialog" data-question="هل يناسب حاتم دور مهندس LLM أول؟ اذكر نقاط قوته وأي فجوات.">اسأل: هل يناسب الدور؟</button>
+      <a class="btn btn--ghost" href="chat-widget.html" hreflang="en" lang="en">English</a>
+    </div>
+    <div class="g-notes"><p class="g-note"><b>اللوحة</b>‏400 × 640، بانحناء 24 وظل xl، وعلى بعد 16 بكسل فوق زر الفتح. الارتفاع min(640px, ارتفاع الشاشة − 160px). على الهواتف (أقل من 640 بكسل): لوحة سفلية بكامل الارتفاع وانحناء علوي 20.</p><p class="g-note"><b>زر الفتح</b>‏56 بكسل في الزاوية السفلية عند نهاية السطر (يسارًا في العربية) مع هوامش المنطقة الآمنة. يظهر بنصه حتى تتجاوز الواجهة الرئيسية، ثم يصبح دائرة. تترك الصفحات 96 بكسل فارغة في نهايتها.</p><p class="g-note"><b>الحركة</b>تنفتح اللوحة من زاوية الزر: تكبير من 0.96 إلى 1 وارتفاع 8 بكسل خلال 380 ملّي ثانية. مع تقليل الحركة: تلاشٍ خلال 120 ملّي ثانية فقط.</p><p class="g-note"><b>سهولة الوصول</b>حوار غير مشروط على الحاسوب، ومشروط على الهاتف (الصفحة خاملة والتمرير مقفل). ينتقل التركيز إلى حقل الكتابة، ويعيده Escape إلى الزر الذي فتح المساعد. إعلان واحد لكل إجابة.</p><p class="g-note"><b>الحدود</b>‏4,000 حرف، ويظهر العدّاد من 3,600. يتمدد حقل الكتابة حتى 8 أسطر. تُطوى الأوصاف الوظيفية الطويلة إلى 6 أسطر مع «عرض المزيد».</p></div>
+  </header>
+
+  <section class="container g-sec" aria-labelledby="g-l">
+    <div class="g-sec__head"><span class="sec-head__index">01</span><h2 class="eyebrow" id="g-l">زر الفتح</h2></div>
+    <div class="g-strip" inert>
+        <div class="g-launch"><button class="chat-launcher" type="button" data-chat-static data-seen tabindex="-1"><span class="chat-launcher__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ask"/></svg><svg class="chat-i chat-launcher__x" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12m0-12L6 18"/></svg></span><span class="chat-launcher__label">اسأل المساعد</span></button><small>الافتراضي</small></div>
+        <div class="g-launch"><button class="chat-launcher is-hover" type="button" data-chat-static data-seen tabindex="-1"><span class="chat-launcher__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ask"/></svg><svg class="chat-i chat-launcher__x" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12m0-12L6 18"/></svg></span><span class="chat-launcher__label">اسأل المساعد</span></button><small>:hover</small></div>
+        <div class="g-launch"><button class="chat-launcher is-focus" type="button" data-chat-static data-seen tabindex="-1"><span class="chat-launcher__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ask"/></svg><svg class="chat-i chat-launcher__x" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12m0-12L6 18"/></svg></span><span class="chat-launcher__label">اسأل المساعد</span></button><small>:focus-visible</small></div>
+        <div class="g-launch"><button class="chat-launcher" type="button" data-chat-static data-seen tabindex="-1" data-compact><span class="chat-launcher__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ask"/></svg><svg class="chat-i chat-launcher__x" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12m0-12L6 18"/></svg></span><span class="chat-launcher__label">اسأل المساعد</span></button><small>بعد الواجهة · الهواتف</small></div>
+        <div class="g-launch"><button class="chat-launcher" type="button" data-chat-static data-seen tabindex="-1" aria-expanded="true"><span class="chat-launcher__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ask"/></svg><svg class="chat-i chat-launcher__x" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12m0-12L6 18"/></svg></span><span class="chat-launcher__label">اسأل المساعد</span></button><small>يتحوّل إلى إغلاق</small></div>
+        <div class="g-launch"><details class="chat-noscript g-noscript" open><summary class="chat-launcher" data-chat-static tabindex="-1"><span class="chat-launcher__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ask"/></svg></span><span class="chat-launcher__label">اسأل المساعد</span></summary><div class="chat-noscript__card"><p>يحتاج المساعد إلى JavaScript. ويمكنك التواصل مع حاتم عبر البريد الإلكتروني أو WhatsApp.</p><p class="chat-noscript__links"><a href="mailto:hatem@mohamedhatem.dev" tabindex="-1">راسله بالبريد</a><a href="https://wa.me/201142070946" tabindex="-1">WhatsApp</a></p></div></details><small>بدون JavaScript</small></div>
+    </div>
+  </section>
+
+  <section class="container g-sec" aria-labelledby="g-p">
+    <div class="g-sec__head"><span class="sec-head__index">02</span><h2 class="eyebrow" id="g-p">حالات اللوحة · الحاسوب واللوحي</h2></div>
+    <div class="g-grid">
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>02</i>الترحيب<span class="g-cap__id">welcome</span></span><span class="g-cap__desc">تحية، و8 أسئلة مقترحة (أول 4 على الهواتف)، وزر تبديل اللغة، ونصيحة الوصف الوظيفي، وملاحظة الخصوصية.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="welcome"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>03</i>التفكير<span class="g-cap__id">thinking</span></span><span class="g-cap__desc">نبضة تنتقل بين المنسّق والاسترجاع والتوليد (دورة 1.2 ثانية). يُعلَن مرة واحدة: «يفكّر…».</span></figcaption>
+        <div class="g-stage" data-chat-specimen="thinking"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>04</i>تدفق الإجابة<span class="g-cap__id">streaming</span></span><span class="g-cap__desc">مؤشر كتلي في نهاية النص المتنامي. يتحول زر الإرسال إلى إيقاف، والمحادثة في حالة aria-busy.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="streaming"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>05</i>الإجابة<span class="g-cap__id">answer</span></span><span class="g-cap__desc">فقرات وقائمة ونص عريض وشيفرة وروابط. يبقى النسخ والتقييم ظاهرين على آخر إجابة.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="answer"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>06</i>بطاقة التواصل<span class="g-cap__id">contact</span></span><span class="g-cap__desc">تُرفق عندما تتضمن الإجابة بريد حاتم أو WhatsApp: البريد وWhatsApp وLinkedIn والسيرة الذاتية.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="contact"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>07</i>وصف وظيفي<span class="g-cap__id">jd</span></span><span class="g-cap__desc">يُطوى النص الطويل إلى 6 أسطر مع «عرض المزيد». إجابة الملاءمة مع بطاقة التواصل، وقد أُرسل التقييم.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="jd"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>08</i>خطأ · الشبكة<span class="g-cap__id">network</span></span><span class="g-cap__desc">فشل الطلب دون اتصال. يظهر تحت السؤال مع «أعد المحاولة».</span></figcaption>
+        <div class="g-stage" data-chat-specimen="network"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>09</i>خطأ · انتهاء المهلة<span class="g-cap__id">timeout</span></span><span class="g-cap__desc">لم يصل أول جزء من الإجابة خلال 30 ثانية.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="timeout"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>10</i>خطأ · الخادم<span class="g-cap__id">server</span></span><span class="g-cap__desc">أي استجابة فاشلة أخرى. أعد المحاولة أو تواصل مع حاتم مباشرة.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="server"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>11</i>تجاوز الحد<span class="g-cap__id">ratelimit</span></span><span class="g-cap__desc">HTTP 429. يُقفل حقل الكتابة ويعدّ زر الإرسال تنازليًا من Retry-After.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="ratelimit"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>12</i>غير متاح<span class="g-cap__id">unavailable</span></span><span class="g-cap__desc">HTTP 503 أو إيقاف الخدمة. حقل الكتابة مقفل وتظهر وسائل التواصل بدلًا منه.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="unavailable"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>13</i>دون اتصال<span class="g-cap__id">offline</span></span><span class="g-cap__desc">navigator.onLine قيمته false. شريط تحت الترويسة؛ الكتابة مسموحة والإرسال ممنوع.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="offline"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>14</i>تحقق · حقل فارغ<span class="g-cap__id">empty</span></span><span class="g-cap__desc">الإرسال بحقل فارغ يشرح السبب بدلًا من تجاهل الضغطة.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="empty"></div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>15</i>تحقق · نص طويل<span class="g-cap__id">toolong</span></span><span class="g-cap__desc">أكثر من 4,000 حرف: يتلوّن العدّاد والحقل بالمرجاني، ويُمنع الإرسال، ويُمرَّر الحقل.</span></figcaption>
+        <div class="g-stage" data-chat-specimen="toolong"></div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="container g-sec" aria-labelledby="g-m">
+    <div class="g-sec__head"><span class="sec-head__index">03</span><h2 class="eyebrow" id="g-m">الهواتف · 390 × 844</h2></div>
+    <div class="g-grid g-grid--phones">
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>16</i>الهاتف · الترحيب<span class="g-cap__id">welcome</span></span><span class="g-cap__desc">لوحة مشروطة من الأسفل مع مقبض سحب، وأزرار ترويسة بحجم 44 بكسل، وأول 4 أسئلة، وهوامش المنطقة الآمنة.</span></figcaption>
+        <div class="g-phone">
+          <div class="g-phone__page" aria-hidden="true">
+            <div class="g-fake-nav"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--color-surface-inverse)"/><path d="M8.5 22V10l4.5 6 4.5-6v12M17.5 16h6M23.5 10v12" fill="none" stroke="var(--color-on-inverse)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23.5" cy="10" r="2.1" fill="var(--color-accent-fill)"/></svg><b>محمد حاتم</b></div>
+            <p class="g-fake-chip">قائد فريق الذكاء الاصطناعي في Globant</p>
+            <p class="g-fake-h1">أبني أنظمة LLM متعددة الوكلاء تصمد في <em>بيئة الإنتاج</em>، بالعربية والإنجليزية.</p>
+            <p class="g-fake-lede">قائد فريق الذكاء الاصطناعي في Globant، بخبرة 7 سنوات في البيانات والذكاء الاصطناعي.</p>
+          </div>
+          <div class="g-phone__screen" data-chat-specimen="welcome" data-chat-device></div>
+          
+          <div class="g-phone__status" aria-hidden="true"><b>9:41</b><span class="g-phone__island"></span><span class="g-phone__sys"><i></i><i></i><i></i></span></div>
+          <div class="g-phone__home" aria-hidden="true"></div>
+        </div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>17</i>الهاتف · إجابة<span class="g-cap__id">sheet</span></span><span class="g-cap__desc">تُمرَّر المحادثة تحت ترويسة ثابتة، ويبقى حقل الكتابة مثبتًا فوق مؤشر الشاشة الرئيسية.</span></figcaption>
+        <div class="g-phone">
+          <div class="g-phone__page" aria-hidden="true">
+            <div class="g-fake-nav"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--color-surface-inverse)"/><path d="M8.5 22V10l4.5 6 4.5-6v12M17.5 16h6M23.5 10v12" fill="none" stroke="var(--color-on-inverse)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23.5" cy="10" r="2.1" fill="var(--color-accent-fill)"/></svg><b>محمد حاتم</b></div>
+            <p class="g-fake-chip">قائد فريق الذكاء الاصطناعي في Globant</p>
+            <p class="g-fake-h1">أبني أنظمة LLM متعددة الوكلاء تصمد في <em>بيئة الإنتاج</em>، بالعربية والإنجليزية.</p>
+            <p class="g-fake-lede">قائد فريق الذكاء الاصطناعي في Globant، بخبرة 7 سنوات في البيانات والذكاء الاصطناعي.</p>
+          </div>
+          <div class="g-phone__screen" data-chat-specimen="sheet" data-chat-device></div>
+          
+          <div class="g-phone__status" aria-hidden="true"><b>9:41</b><span class="g-phone__island"></span><span class="g-phone__sys"><i></i><i></i><i></i></span></div>
+          <div class="g-phone__home" aria-hidden="true"></div>
+        </div>
+      </figure>
+      <figure class="g-item">
+        <figcaption class="g-cap"><span class="g-cap__key"><i>18</i>الهاتف · لوحة المفاتيح مفتوحة<span class="g-cap__id">keyboard</span></span><span class="g-cap__desc">visualViewport.height = 508: تنكمش اللوحة لتستقر فوق لوحة المفاتيح، وتُحذف هوامش المنطقة الآمنة.</span></figcaption>
+        <div class="g-phone g-phone--kb">
+          <div class="g-phone__page" aria-hidden="true">
+            <div class="g-fake-nav"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--color-surface-inverse)"/><path d="M8.5 22V10l4.5 6 4.5-6v12M17.5 16h6M23.5 10v12" fill="none" stroke="var(--color-on-inverse)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23.5" cy="10" r="2.1" fill="var(--color-accent-fill)"/></svg><b>محمد حاتم</b></div>
+            <p class="g-fake-chip">قائد فريق الذكاء الاصطناعي في Globant</p>
+            <p class="g-fake-h1">أبني أنظمة LLM متعددة الوكلاء تصمد في <em>بيئة الإنتاج</em>، بالعربية والإنجليزية.</p>
+            <p class="g-fake-lede">قائد فريق الذكاء الاصطناعي في Globant، بخبرة 7 سنوات في البيانات والذكاء الاصطناعي.</p>
+          </div>
+          <div class="g-phone__screen" data-chat-specimen="keyboard" data-chat-device data-chat-kb></div>
+          <div class="g-kb" aria-hidden="true"><div class="g-kb__bar"><span>حاتم</span><span>هل</span><span>لديه</span></div><div class="g-kb__row g-kb__row--0"><i>ض</i><i>ص</i><i>ث</i><i>ق</i><i>ف</i><i>غ</i><i>ع</i><i>ه</i><i>خ</i><i>ح</i><i>ج</i></div><div class="g-kb__row g-kb__row--1"><i>ش</i><i>س</i><i>ي</i><i>ب</i><i>ل</i><i>ا</i><i>ت</i><i>ن</i><i>م</i><i>ك</i><i>ط</i></div><div class="g-kb__row g-kb__row--2"><i class="g-kb__fn">⇧</i><i>ئ</i><i>ء</i><i>ؤ</i><i>ر</i><i>ى</i><i>ة</i><i>و</i><i>ز</i><i>ظ</i><i class="g-kb__fn">⌫</i></div><div class="g-kb__row g-kb__row--3"><i class="g-kb__fn">123</i><i class="g-kb__space">مسافة</i><i class="g-kb__send">إرسال</i></div></div>
+          <div class="g-phone__status" aria-hidden="true"><b>9:41</b><span class="g-phone__island"></span><span class="g-phone__sys"><i></i><i></i><i></i></span></div>
+          <div class="g-phone__home" aria-hidden="true"></div>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="container g-sec" aria-labelledby="g-v">
+    <div class="g-sec__head"><span class="sec-head__index">04</span><h2 class="eyebrow" id="g-v">تجربة حية</h2></div>
+    <div class="g-live">
+      <p class="lede">تعمل في هذه الصفحة الواجهة الحقيقية مع خادم تجريبي. اكتب «error» أو «timeout» أو «server» أو «limit» أو «unavailable» في رسالة لترى كل حالة فشل مرة واحدة، أو اضغط «إيقاف» أثناء تدفق الإجابة.</p>
+      <div class="cluster" style="--cluster-gap:.625rem">
+        <button class="btn btn--primary" type="button" data-open-chat aria-haspopup="dialog">افتح المساعد</button>
+        <button class="btn btn--secondary" type="button" data-open-chat aria-haspopup="dialog" data-question="limit">limit</button>
+        <button class="btn btn--secondary" type="button" data-open-chat aria-haspopup="dialog" data-question="error">error</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- the live launcher (ChatLauncher.astro markup) -->
+<button class="chat-launcher" type="button" data-open-chat aria-haspopup="dialog" title="افتح المساعد الذكي لحاتم">
+  <span class="chat-launcher__icon" aria-hidden="true"><svg class="icon" aria-hidden="true"><use href="#i-ask"/></svg></span><span class="chat-launcher__label">اسأل المساعد</span>
+</button>
+<div class="proto-bar" aria-label="أدوات النموذج"><button type="button" class="theme-toggle" data-mode="system">Theme</button><a href="chat-widget.html">EN</a><a href="index-ar.html">Home</a></div>
+<script src="proto.js"></script>
+<script src="chat.js" defer></script>
+</body>
+</html>

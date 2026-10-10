@@ -1,0 +1,121 @@
+---
+/**
+ * Every page's <head> (used by layouts/Base.astro and layouts/Document.astro): meta, theme boot script, canonical +
+ * hreflang (en, ar, x-default), self-hosted fonts with the right preloads, icons + manifest, Open Graph / Twitter,
+ * JSON-LD and the Cloudflare Web Analytics beacon (production builds only; token from the repo's .env).
+ *
+ * The CSP <meta> is added by Astro (astro.config.mjs → security.csp) and completed with this page's inline-script
+ * and inline-style hashes by integrations/csp-hashes.mjs; nothing here may use style="" attributes.
+ */
+import { Font } from "astro:assets";
+import { localePath, messages, otherLocale, type Locale } from "~/lib/i18n";
+import { absolute, ogImage as ogPath } from "~/lib/site";
+import { analyticsToken } from "~/lib/env";
+
+export interface HeadProps {
+  locale: Locale;
+  title: string;
+  description: string;
+  /** English path of this page (with trailing slash). */
+  path: string;
+  /** Canonical + hreflang alternates (false: noindex, e.g. the 404 pages). */
+  indexable?: boolean;
+  /** OG image key ("home", "cv", "privacy", "work-<slug>"). */
+  ogKey?: string;
+  ogType?: "website" | "article" | "profile";
+  jsonLd?: readonly object[];
+  /** Browser-chrome colours (default: the page background in each theme). */
+  themeColor?: { light: string; dark: string };
+  /**
+   * Fonts to preload beyond the defaults: the display face on EN pages; on AR pages all three Plex Arabic weights
+   * (≈53 KB after scripts/subset-fonts.mjs). Preloading only 700, as first planned, let 400/600 swap in late and
+   * shift the page (CLS ≈ 0.03 on phones, where the lede is the LCP element).
+   */
+  preloadFonts?: { sans?: boolean; arabicWeights?: readonly (400 | 600 | 700)[] };
+  /** Extra <link rel="preload"> for this page's LCP image, if any. */
+  preload?: readonly { href: string; as: "image"; type?: string; imagesrcset?: string; imagesizes?: string }[];
+}
+
+const {
+  locale,
+  title,
+  description,
+  path,
+  indexable = true,
+  ogKey = "home",
+  ogType = "website",
+  jsonLd = [],
+  themeColor = { light: "#FBF8F3", dark: "#0C151D" },
+  preloadFonts = {},
+  preload = [],
+} = Astro.props as HeadProps;
+
+const m = messages(locale);
+const other = otherLocale(locale);
+const canonical = absolute(localePath(path, locale));
+const og = absolute(ogPath(ogKey, locale));
+const token = import.meta.env.PROD ? analyticsToken() : undefined;
+const arabicPreload = (preloadFonts.arabicWeights ?? [400, 600, 700]).map((weight) => ({ weight }));
+/**
+ * Arabic case-study pages put Latin names in the H1 and summary ("ArabsStock", "LangGraph") above the meta card;
+ * when Space Grotesk / Inter swapped in late the re-wrapped lines pushed the card down (CLS ≈ 0.04 on phones), so
+ * those pages preload the two Latin faces as well (measured: CLS 0, Lighthouse mobile 99).
+ */
+const latinOnArabicCase = locale === "ar" && path.startsWith("/work/");
+const alternates = indexable
+  ? [
+      { hreflang: "en", href: absolute(localePath(path, "en")) },
+      { hreflang: "ar", href: absolute(localePath(path, "ar")) },
+      { hreflang: "x-default", href: absolute(localePath(path, "en")) },
+    ]
+  : [];
+---
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<script is:inline>
+  (() => {
+    const d = document.documentElement;
+    d.classList.add("js");
+    let m;
+    try { m = localStorage.getItem("mh-theme"); } catch {}
+    const dark = m === "dark" || (m !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+    d.dataset.theme = dark ? "dark" : "light";
+  })();
+</script>
+<meta name="theme-color" content={themeColor.light} media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content={themeColor.dark} media="(prefers-color-scheme: dark)" />
+<meta name="color-scheme" content="light dark" />
+{indexable ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
+{alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
+<Font cssVariable="--font-face-display" preload={locale === "en" || latinOnArabicCase} />
+<Font cssVariable="--font-face-sans" preload={(locale === "en" && !!preloadFonts.sans) || latinOnArabicCase} />
+<Font cssVariable="--font-face-mono" />
+{locale === "ar" && <Font cssVariable="--font-face-arabic" preload={arabicPreload} />}
+{preload.map((p) => <link rel="preload" {...p} fetchpriority="high" />)}
+<link rel="icon" href="/favicon.ico" sizes="32x32" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+<meta property="og:type" content={ogType} />
+<meta property="og:site_name" content={m.meta.siteName} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:locale" content={m.locale.ogLocale} />
+<meta property="og:locale:alternate" content={messages(other).locale.ogLocale} />
+<meta property="og:image" content={og} />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={m.meta.ogImageAlt} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={og} />
+<meta name="twitter:image:alt" content={m.meta.ogImageAlt} />
+<meta name="author" content={m.meta.siteName} />
+<meta name="format-detection" content="telephone=no" />
+{jsonLd.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data).replace(/</g, "\\u003c")} />)}
+{token && <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token })} />}

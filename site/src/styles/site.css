@@ -1,0 +1,117 @@
+/*
+ * Build-only additions to the ported prototype CSS.
+ * The prototypes set per-element custom properties with style="" (accent colours, logo masks, stagger index).
+ * The site runs a hash-only style-src CSP, which blocks style attributes, so each of those becomes a class here.
+ * Per-element geometry that can't be a class (trace bar positions) is written into one hashed <style> per page.
+ */
+
+/* ---------- category accent classes (cards, bars, dots) ---------- */
+.accent-teal { --accent-fill: var(--color-teal-fill); --accent-text: var(--color-teal); }
+.accent-saffron { --accent-fill: var(--color-saffron-fill); --accent-text: var(--color-saffron); }
+.accent-coral { --accent-fill: var(--color-coral-fill); --accent-text: var(--color-coral); }
+.accent-sky { --accent-fill: var(--color-sky-fill); --accent-text: var(--color-sky); }
+.accent-sage { --accent-fill: var(--color-sage-fill); --accent-text: var(--color-sage); }
+.accent-slate { --accent-fill: var(--color-slate-fill); --accent-text: var(--color-slate); }
+.accent-study { --accent-fill: var(--color-line-input); --accent-text: var(--color-muted); }
+.work[class*="accent-"] { --work-accent: var(--accent-fill); }
+.repo[class*="accent-"] { --repo-accent: var(--accent-fill); }
+.span[class*="accent-"] { --bar: var(--accent-fill); }
+.matrix tr[class*="accent-"] { --grp: var(--accent-text); --grp-fill: var(--accent-fill); }
+
+/* ---------- reveal stagger (was style="--i:n") ---------- */
+[data-reveal-i="1"] { --i: 1; }
+[data-reveal-i="2"] { --i: 2; }
+[data-reveal-i="3"] { --i: 3; }
+[data-reveal-i="4"] { --i: 4; }
+[data-reveal-i="5"] { --i: 5; }
+
+/* ---------- logo row: single-colour marks (sizes from design/assets/logos/logos.json, 28 px row) ---------- */
+.mask--globant { --src: url("/logos/mono/globant.svg"); width: 2.094rem; height: 1.375rem; }
+.mask--wakeb { --src: url("/logos/mono/wakeb.svg"); width: 4.375rem; height: 1rem; }
+.mask--arabsstock { --src: url("/logos/mono/arabsstock.svg"); width: 2.375rem; height: 1.188rem; }
+.mask--empoweromics { --src: url("/logos/mono/empoweromics.svg"); width: 1.344rem; height: 1.406rem; }
+.mask--mdp { --src: url("/logos/mono/mdp.svg"); width: 1.406rem; height: 1.656rem; }
+.mask--aws { --src: url("/logos/mono/aws.svg"); width: 2.281rem; height: 1.375rem; }
+.mask--iti { --src: url("/logos/mono/iti.svg"); width: 1.062rem; height: 1.75rem; }
+.mask--aestheticspro { --src: url("/logos/mono/aestheticspro.svg"); width: 1.656rem; height: 1.438rem; }
+.mask--buid { --src: url("/logos/mono/buid.svg"); width: 1.562rem; height: 1.75rem; }
+.mask--cairo-university { --src: url("/logos/mono/cairo-university.svg"); width: 1.812rem; height: 1.125rem; }
+.mask--tanta-university { --src: url("/logos/mono/tanta-university.svg"); width: 1.844rem; height: 1.156rem; }
+.mask--mtc { --src: url("/logos/mono/mtc.svg"); width: 2.594rem; height: 0.9688rem; }
+.mask--tabaqat { --src: url("/logos/mono/tabaqat.svg"); width: 3.844rem; height: 0.9375rem; }
+.mask--uqu { --src: url("/logos/mono/uqu.svg"); width: 2.375rem; height: 1.125rem; }
+
+/* ---------- small layout helpers that the prototypes wrote inline ---------- */
+.gap-tight { --cluster-gap: .375rem; }
+.gap-loose { --cluster-gap: .75rem; }
+.stack-lg { --stack-gap: 1.5rem; }
+.stack-md { --stack-gap: 1rem; }
+.metrics-wrap { margin-block-start: clamp(2.5rem, 1.5rem + 3vw, 4.5rem); }
+.portrait__ring { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* Inlined diagram SVGs fill their media box (the prototypes set this inline on the <img>). */
+.work__media > svg, .feature-art > svg { width: 100%; height: 100%; }
+.feature-art > svg { padding: 1rem; }
+
+/* Visually hidden until focused (e.g. "skip to graph description"). */
+.sr-only-focusable:not(:focus):not(:focus-within) { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Live region for "Copied" and similar announcements. */
+#live { position: absolute; }
+
+/* Reserve the chat launcher's footprint at the end of every page (WCAG 2.4.11: focus not obscured). */
+:root { --chat-clearance: 5rem; }
+
+/* Bidi isolation for numbers, dates, emails and URLs in Arabic text. */
+bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
+
+/* Monogram (fills via classes: SVG presentation attributes can't use var(), style="" is blocked by the CSP). */
+.mono-tile { fill: var(--color-surface-inverse); }
+.mono-letters { fill: var(--color-on-inverse); }
+.mono-node { fill: var(--color-accent-fill); }
+
+/* Nav: menu button swaps its icon; the sheet's language link sits flush with the links. */
+.nav__menu .i-close, .nav__menu[aria-expanded="true"] .i-menu { display: none; }
+.nav__menu[aria-expanded="true"] .i-close { display: block; }
+.lang-switch--flush { padding-inline: 0; }
+.lang-switch > span:not(.sr-only):lang(ar) { font-family: var(--font-arabic); font-weight: 600; font-size: 1.0625rem; line-height: 1; }
+
+/* Footer */
+.footer__summary { max-width: 30ch; }
+.footer__link-btn { font-size: var(--text-sm); color: var(--color-ink-2); text-align: start; }
+.footer__link-btn:hover { color: var(--color-accent); }
+.footer__base--flush { margin-block-start: 0; border-block-start: 0; padding-block-start: 0; }
+.footer a[lang="ar"] { font-family: var(--font-arabic); }
+
+/* Monogram tile for organisations without a logo file (same footprint as an image tile). */
+.logo-mono { display: grid; place-items: center; font-family: var(--font-display); font-weight: 700; font-size: .75rem; letter-spacing: -.02em; color: var(--color-ink-2); background: var(--color-surface-2); }
+
+/* The trace's "now" label sits on an <i> (decorative line): never italic, and set in the Arabic face on /ar/. */
+.trace__grid .now::before { font-style: normal; }
+:lang(ar) .trace__grid .now::before { font-family: var(--font-sans); font-weight: 600; }
+/* Mono annotation lines that carry Arabic words use the Arabic face (mono has no Arabic glyphs). */
+:lang(ar) .cap__stack:not([dir="ltr"]) { font-family: var(--font-sans); font-size: var(--text-xs); }
+/* A chip whose text is a phrase in the page language (e.g. "MIT licence" / "رخصة MIT"), not a Latin tech name. */
+.chip.chip--text { font-family: var(--font-sans); }
+:lang(ar) .chip.chip--text { direction: rtl; }
+/* Tablet: five metric columns are ~140 px wide; keep "Millions" inside its column. */
+@media (min-width: 48rem) and (max-width: 63.99rem) {
+  .metrics .metric__value { font-size: clamp(1.5rem, 0.75rem + 2.4vw, 2rem); }
+  .metrics .metric { padding-inline: 0.875rem; }
+  .metrics .metric:first-child { padding-inline-start: 0; }
+}
+
+/*
+ * No-JS fallback for the assistant (components/chat/ChatMount.astro <noscript>): a launcher-looking <summary> that
+ * opens a card with email / WhatsApp. Ported from design/prototypes/chat.css part A (zero JS).
+ */
+.chat-noscript { position: fixed; z-index: var(--z-widget); inset-inline-end: max(1rem, env(safe-area-inset-right, 0px)); inset-block-end: max(1rem, env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 12px; font-family: var(--font-sans); }
+.chat-noscript > summary { list-style: none; }
+.chat-noscript > summary::-webkit-details-marker { display: none; }
+.chat-noscript__launcher { display: inline-flex; align-items: center; gap: .625rem; height: 3.5rem; padding: .5rem 1.375rem .5rem .5rem; border-radius: var(--radius-full); background: var(--color-surface-inverse); color: var(--color-on-inverse); font-weight: 600; font-size: .9375rem; cursor: pointer; box-shadow: var(--shadow-lg); }
+.chat-noscript__icon { display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 50%; background: var(--color-accent-solid); color: var(--color-on-accent); }
+.chat-noscript__launcher:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; border-radius: var(--radius-full); }
+.chat-noscript__card { width: min(300px, calc(100vw - 2rem)); padding: 14px 16px; border-radius: var(--radius-lg); background: var(--color-surface); color: var(--color-ink-2); border: 1px solid var(--color-line); box-shadow: var(--shadow-lg); font-size: var(--text-sm); line-height: 1.5; }
+.chat-noscript__links { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-block-start: 10px; font-weight: 600; }
+.chat-noscript__links a { color: var(--color-accent); text-decoration: underline; text-underline-offset: .2em; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+@media print { .chat-noscript { display: none !important; } }

@@ -1,0 +1,2 @@
+# Generated from content/chat/* by worker/scripts/gen-content.mjs (runs on `wrangler dev` / `wrangler deploy`).
+src/generated/

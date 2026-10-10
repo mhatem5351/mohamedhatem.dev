@@ -1,0 +1,25 @@
+---
+/**
+ * The live agent graph (DESIGN.md 10.1; design/assets/hero-graph). Server-rendered SVG (visible without JS, zero CLS:
+ * fixed 600 × 520 aspect ratio, no inline styles), enhanced by the runtime module on idle: request pulses, pause
+ * button (persisted), hover/focus highlight, one tab stop with arrow keys, toggletips. Static frame under
+ * prefers-reduced-motion. The graph renders its own accessible description and flow caption; the visible caption
+ * below invites interaction.
+ */
+import "~/components/hero-graph/hero-graph.css";
+import { renderHeroGraph } from "~/components/hero-graph/render";
+import { dirOf, messages, type Locale } from "~/lib/i18n";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+---
+<div class="hero__art">
+  <Fragment set:html={renderHeroGraph({ lang: locale, dir: dirOf(locale) })} />
+  <p class="hero__caption"><span class="dot dot--live" aria-hidden="true"></span>{m.hero.graphCaption}</p>
+</div>
+<script>
+  import "~/components/hero-graph/hero-graph.ts";
+</script>

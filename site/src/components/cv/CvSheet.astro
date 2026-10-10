@@ -1,0 +1,245 @@
+---
+/**
+ * The CV sheet (design/prototypes/cv.html .sheet), generated from content/profile.ts only:
+ * header (monogram, name, title · employer · focus, contact row, stripe), summary (profile.cv.summary),
+ * Experience (the main roles with their cvBullets; non-primary roles that ended before every main role are condensed
+ * under "Earlier roles"), Selected projects (profile.cv.projects), and a sidebar with Skills (profile.cv.skills),
+ * Education (status-aware: an in-progress degree shows "(expected)" and is never described as held),
+ * Certifications (AWS featured), Awards, Languages and Open to. Two A4 pages in print, both languages.
+ */
+import Monogram from "~/components/brand/Monogram.astro";
+import Icon from "~/components/ui/Icon.astro";
+import Ltr from "~/components/ui/Ltr.astro";
+import { format, formatMonth, formatPeriod, messages, parseIso, type Locale } from "~/lib/i18n";
+import { contact, link, mailtoHref, profile, whatsappHref } from "~/lib/site";
+import type { Role } from "@content/profile.ts";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const b = profile.basics;
+const t = (x: { en: string; ar: string }) => x[locale];
+const sep = locale === "ar" ? "، " : ", ";
+
+/* Roles: a non-primary role is "earlier" when it ended before every main role (so a part-time role that overlaps the
+   main ones, like Tabaqat, stays a full entry in date order). */
+const lastPrimaryEndFloor = profile.experience
+  .filter((r) => r.primary)
+  .map((r) => r.period.end ?? "9999-12")
+  .sort()[0]!;
+const isEarlier = (r: Role) => !r.primary && (r.period.end ?? "9999-12") < lastPrimaryEndFloor;
+const jobs = profile.experience.filter((r) => !isEarlier(r));
+const earlier = profile.experience.filter(isEarlier);
+const honorsOf = (r: Role) => profile.honors.filter((h) => r.honors.includes(h.id));
+const where = (r: Role) => `${m.experience.employmentType[r.employmentType]} · ${t(r.location)}`;
+
+const contacts = [
+  { icon: "globe", href: link("website").href, text: link("website").display },
+  { icon: "mail", href: mailtoHref(locale), text: contact("email").display },
+  { icon: "whatsapp", href: whatsappHref(locale), text: contact("whatsapp").display },
+  { icon: "linkedin", href: link("linkedin").href, text: link("linkedin").display.replace(/^linkedin\.com\//, "") },
+  { icon: "github", href: link("github").href, text: link("github").display },
+];
+const place = `${t(b.location.city)}${sep}${t(b.location.country)} · ${m.experience.workMode.remote}`;
+
+const projects = profile.cv.projects.map((id) => profile.projects.find((p) => p.id === id)!);
+const expectedSuffix = m.education.expected.replace("{year}", "").trim();
+const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, locale, "long") });
+---
+<article class="sheet" aria-labelledby="cv-name" lang={locale}>
+  <header class="cv-head">
+    <Monogram class="cv-head__mark" />
+    <h1 class="cv-name" id="cv-name">{t(b.name)}</h1>
+    <p class="cv-title">
+      {t(b.title)}<span class="sep" aria-hidden="true">·</span><b lang="en">{b.employer}</b><span class="sep" aria-hidden="true"
+        >·</span
+      >{m.cv.focus}
+    </p>
+    <ul class="cv-contact" aria-label={m.cv.sections.contact}>
+      {
+        contacts.map((c) => (
+          <li>
+            <Icon name={c.icon} flip={false} />
+            <a href={c.href} dir="ltr">
+              {c.text}
+            </a>
+          </li>
+        ))
+      }
+      <li>
+        <Icon name="location" />
+        <span>{place}</span>
+      </li>
+    </ul>
+    <span class="cv-stripe" aria-hidden="true"><i></i><i></i><i></i></span>
+  </header>
+
+  <h2 class="sr-only">{m.cv.sections.summary}</h2>
+  <p class="cv-summary">{t(profile.cv.summary)}</p>
+
+  <div class="cv-grid">
+    <div class="cv-main">
+      <section class="cv-sec" aria-labelledby="cv-exp">
+        <h2 class="cv-h" id="cv-exp">{m.cv.sections.experience}</h2>
+        {
+          jobs.map((r) => (
+            <div class="job">
+              <div class="job__head">
+                <span>
+                  <span class="job__role">{t(r.title)}</span> <span class="job__org">{t(r.company)}</span>
+                  {honorsOf(r).map((h) => (
+                    <span class="job__award">
+                      <Icon name="award" />
+                      {t(h.title)}
+                    </span>
+                  ))}
+                </span>
+                <span class="job__when">{formatPeriod(r.period, locale)}</span>
+                <span class="job__where">{where(r)}</span>
+              </div>
+              <ul>
+                {r.cvBullets.map((f) => (
+                  <li>{t(f.text)}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+        <div class="job job--brief">
+          <div class="job__head"><span class="job__role">{m.cv.earlierRoles}</span></div>
+          <div class="earlier">
+            {
+              earlier.map((r) => (
+                <div class="earlier__row">
+                  <span>
+                    <b>{t(r.title)}</b> · <span class="earlier__org">{t(r.company)}</span>
+                  </span>
+                  <em>{formatPeriod(r.period, locale)}</em>
+                  <p>{r.cvBullets.map((f) => t(f.text)).join(" ")}</p>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="cv-sec" aria-labelledby="cv-projects">
+        <h2 class="cv-h" id="cv-projects">{m.cv.sections.projects}</h2>
+        <ul class="cv-projects">
+          {
+            projects.map((p) => (
+              <li>
+                <b>
+                  <a href={p.live ?? p.repo} dir="ltr">
+                    {p.name}
+                  </a>
+                </b>{" "}
+                · {t(p.description)}
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </div>
+
+    <aside class="cv-side" aria-label={`${m.cv.sections.skills}, ${m.cv.sections.education}, ${m.cv.sections.certifications}`}>
+      <section class="cv-sec" aria-labelledby="cv-skills">
+        <h2 class="cv-h" id="cv-skills">{m.cv.sections.skills}</h2>
+        {
+          profile.cv.skills.map((g) => (
+            <div class="skill-g">
+              <b>{t(g.label)}</b>
+              <p>{g.items.map(t).join(sep)}</p>
+            </div>
+          ))
+        }
+      </section>
+
+      <section class="cv-sec" aria-labelledby="cv-edu">
+        <h2 class="cv-h" id="cv-edu">{m.cv.sections.education}</h2>
+        <ul class="side-list">
+          {
+            profile.education.map((e) => {
+              const s = parseIso(e.period.start).y;
+              const end = e.period.end ? parseIso(e.period.end).y : null;
+              return (
+                <li>
+                  <b>{t(e.degree)}</b>
+                  <span>{t(e.institution)}</span>
+                  <em>
+                    <Ltr>
+                      {s} – {end}
+                    </Ltr>
+                    {e.status === "in-progress" && ` ${expectedSuffix}`}
+                  </em>
+                </li>
+              );
+            })
+          }
+        </ul>
+      </section>
+
+      <section class="cv-sec" aria-labelledby="cv-cert">
+        <h2 class="cv-h" id="cv-cert">{m.cv.sections.certifications}</h2>
+        <ul class="side-list">
+          {
+            [...profile.certifications]
+              .sort((a, c) => Number(c.featured) - Number(a.featured))
+              .map((c) => (
+                <li class:list={[c.featured && "cert-hero"]}>
+                  <b lang="en">{t(c.name)}</b>
+                  <em>
+                    <bdi>{t(c.issuer)}</bdi>
+                    {c.issued && ` · ${parseIso(c.issued).y}`}
+                  </em>
+                </li>
+              ))
+          }
+        </ul>
+      </section>
+
+      <section class="cv-sec" aria-labelledby="cv-awards">
+        <h2 class="cv-h" id="cv-awards">{m.cv.sections.awards}</h2>
+        <ul class="side-list">
+          {
+            profile.honors.map((h) => (
+              <li>
+                <b>{t(h.title)}</b>
+                <span><bdi>{t(h.issuer)}</bdi></span>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section class="cv-sec" aria-labelledby="cv-lang">
+        <h2 class="cv-h" id="cv-lang">{m.cv.sections.languages}</h2>
+        <ul class="side-list">
+          {
+            b.languages.map((l) => (
+              <li>
+                <b>{t(l.name)}</b>
+                <span>{t(l.level)}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <section class="cv-sec" aria-labelledby="cv-open">
+        <h2 class="cv-h" id="cv-open">{m.cv.sections.openTo}</h2>
+        <ul class="side-list">
+          <li><span>{b.openTo.roles.map(t).join(sep)}</span></li>
+          <li><span>{b.openTo.arrangements.map((a) => t(a.label)).join(" · ")}</span></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+
+  <footer class="cv-foot">
+    <span>{t(b.name)} · {m.cv.title} · {updated}</span>
+    <span>{m.cv.footer}</span>
+  </footer>
+</article>

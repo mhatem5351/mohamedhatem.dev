@@ -1,0 +1,103 @@
+---
+/**
+ * 04 Open source (DESIGN.md 12.13): featured repositories as cards (three LLM tools, then three smaller ones),
+ * each one link to GitHub; the coursework repositories listed underneath as a record of where it started.
+ * Data: profile.projects. Copy: content/i18n projects.*.
+ */
+import "~/styles/home-b.css";
+import Icon from "~/components/ui/Icon.astro";
+import SectionHeader from "~/components/ui/SectionHeader.astro";
+import { format, messages, type Locale } from "~/lib/i18n";
+import { link, profile } from "~/lib/site";
+import type { ProjectId } from "@content/profile.ts";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+
+/** Card look per repository (icon tile + accent bar), as in the design. Presentation only. */
+const LOOK: Partial<Record<ProjectId, { icon: string; accent: "sky" | "saffron" | "slate" | "sage" | "coral" | "teal" }>> = {
+  "staged-llm-evaluator": { icon: "evaluate", accent: "sky" },
+  "prompt-reliability-harness": { icon: "agents", accent: "saffron" },
+  "rag-answering-service": { icon: "retrieve", accent: "slate" },
+  "arabic-sentiment-analysis": { icon: "bilingual", accent: "sage" },
+  "text-summarization": { icon: "file-text", accent: "coral" },
+  "logic-controls-website": { icon: "frontend", accent: "teal" },
+};
+
+const featured = profile.projects.filter((p) => p.featured);
+const primary = featured.filter((p) => p.kind === "llm");
+const small = featured.filter((p) => p.kind !== "llm");
+const coursework = profile.projects.filter((p) => p.kind === "coursework");
+const owner = "mhatem5351";
+const repoPath = (url: string) => url.replace(/^https:\/\/github\.com\//, "");
+---
+<section class="section section--band" id="projects" aria-labelledby="projects-title">
+  <div class="container">
+    <SectionHeader index="04" eyebrow={m.projects.eyebrow} title={m.projects.title} titleId="projects-title" lede={m.projects.lead} />
+    <ul class="repos" role="list">
+      {
+        [...primary, ...small].map((p, i) => {
+          const look = LOOK[p.id] ?? { icon: "code", accent: "teal" as const };
+          const isSmall = p.kind !== "llm";
+          const tileClass = look.accent === "teal" ? "icon-tile" : `icon-tile icon-tile--${look.accent}`;
+          return (
+            <li
+              class:list={["card card--pad card--link repo", `accent-${look.accent}`, isSmall && "repo--small"]}
+              data-reveal
+              data-reveal-i={String(i % 3)}
+            >
+              <div class="repo__head">
+                <span class={tileClass}>
+                  <Icon name={look.icon} />
+                </span>
+                <div>
+                  <div class="repo__owner">
+                    <bdi dir="ltr">{owner} /</bdi>
+                  </div>
+                  <h3 class="repo__name">
+                    <a class="stretched" href={p.repo}>
+                      <bdi dir="ltr">{repoPath(p.repo).split("/")[1]}</bdi>
+                    </a>
+                  </h3>
+                </div>
+                <Icon name="arrow-up-right" size="sm" class="repo__ext" />
+              </div>
+              <p class="repo__desc">{p.description[locale]}</p>
+              {p.credit && <p class="repo__credit">{p.credit[locale]}</p>}
+              {!isSmall && (
+                <div class="cluster gap-tight repo__meta">
+                  {p.stack.slice(0, 4).map((s) => (
+                    <span class="chip">{s}</span>
+                  ))}
+                  {p.license && <span class="chip chip--teal chip--text">{format(m.projects.license, { license: p.license })}</span>}
+                </div>
+              )}
+            </li>
+          );
+        })
+      }
+    </ul>
+    <div class="repos__more">
+      <div class="repos__archive">
+        <p class="repos__archive-title">{m.projects.archiveTitle}</p>
+        <p>{m.projects.archiveLead}</p>
+        <ul class="repos__archive-list" role="list">
+          {
+            coursework.map((p) => (
+              <li>
+                <a href={p.repo}><bdi dir="ltr">{p.name}</bdi></a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <a class="btn btn--secondary btn--sm" href={link("github").href}>
+        <Icon name="github" />
+        {m.projects.allRepos}
+      </a>
+    </div>
+  </div>
+</section>

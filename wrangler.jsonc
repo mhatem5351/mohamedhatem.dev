@@ -1,0 +1,58 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // mohamedhatem.dev: the static Astro build (./dist) plus one Worker for /api/* (Workers Free plan).
+  // API contract, security model, free-tier limits and key rotation: worker/README.md.
+  "name": "mohamedhatem-dev",
+  "main": "worker/src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["enable_request_signal"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "mohamedhatem.dev", "custom_domain": true }],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // Only /api/* invokes the Worker (100,000 requests/day on Free); every page and file is served free from assets.
+    "run_worker_first": ["/api/*"],
+    "not_found_handling": "404-page",
+  },
+  // Bundles content/chat/* (or the test fixtures until they exist) into worker/src/generated/content.ts.
+  "build": {
+    "command": "node worker/scripts/gen-content.mjs --quiet",
+    "watch_dir": ["content", "worker/test/fixtures"],
+  },
+  // POST /api/contact → one email to the owner's verified Email Routing destination (free on every plan).
+  "send_email": [{ "name": "MAIL", "destination_address": "mhatem5351@gmail.com" }],
+  // Workers rate limiting binding (all plans; counters are per Cloudflare location, period must be 10 or 60 s).
+  // namespace_id: any positive integer, unique within the account.
+  "ratelimits": [
+    // Per visitor IP (IPv6 by /64): 8 chat messages a minute…
+    { "name": "RL_CHAT", "namespace_id": "2601", "simple": { "limit": 8, "period": 60 } },
+    // …and at most 3 in any 10 seconds (burst).
+    { "name": "RL_CHAT_BURST", "namespace_id": "2602", "simple": { "limit": 3, "period": 10 } },
+    // Whole site: at most 60 Gemini calls a minute per location (cost / quota circuit breaker).
+    { "name": "RL_CHAT_GLOBAL", "namespace_id": "2603", "simple": { "limit": 60, "period": 60 } },
+    // Contact form per IP: 3 a minute.
+    { "name": "RL_CONTACT", "namespace_id": "2604", "simple": { "limit": 3, "period": 60 } },
+  ],
+  // Anonymous counts and latency only (no IP, no message text). Workers Free: 100,000 data points written a day.
+  "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "mh_events" }],
+  "vars": {
+    "ALLOWED_ORIGINS": "https://mohamedhatem.dev,https://www.mohamedhatem.dev",
+    "MAIL_FROM": "website@mohamedhatem.dev",
+    "MAIL_TO": "mhatem5351@gmail.com",
+    "GEMINI_MODEL": "gemini-3.8-flash",
+    // Free tier (AI Studio, project gen-lang-client-0776950335): every Flash model 5 RPM / 20 RPD, Flash-Lite 3.5 and
+    // 3.1 15 RPM / 500 RPD, 2.5 Flash-Lite 10 RPM / 20 RPD, Gemma 4 30 RPM / 16k input tokens per minute (it gets a
+    // compact prompt). In order: ~120 premium answers a day, then ~1,000 Flash-Lite, then the rest. A 429 or 503 moves
+    // to the next model at once and cools the model down for every isolate in the location (worker/README.md →
+    // "Model selection"). Paid key instead: point GEMINI_API_KEY at it and set this to "".
+    "GEMINI_FALLBACK_MODELS": "gemini-3.7-flash,gemini-3.6-flash,gemini-3.5-flash,gemini-3-flash-preview,gemini-2.5-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-2.5-flash-lite,gemma-4-31b-it",
+    "GEMINI_HEDGE_MS": "8000",
+  },
+  // Secrets (wrangler secret put …; locally .dev.vars from `npm run dev-vars`):
+  //   GEMINI_API_KEY · TURNSTILE_SECRET · SESSION_SECRET
+  "observability": { "enabled": true },
+  // `npm run dev:worker` → http://127.0.0.1:8790 (8787 is often taken by other local Workers).
+  "dev": { "ip": "127.0.0.1", "port": 8790 },
+}

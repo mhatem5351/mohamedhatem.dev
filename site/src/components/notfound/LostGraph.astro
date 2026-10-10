@@ -1,0 +1,51 @@
+---
+/**
+ * The brand graph with one node off the route: a dashed coral edge leads to a "?" node (design/prototypes/404.html).
+ * Decorative (the page's text says it all). Mirrored for Arabic: the lost node drifts off at the inline end.
+ * Colours come from classes (no style attributes: hash-only CSP); labels are the hero graph's node names.
+ */
+import { messages, type Locale } from "~/lib/i18n";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const g = messages(locale).hero.graph;
+const W = 420;
+const rtl = locale === "ar";
+/** Mirrors an x coordinate for RTL. */
+const x = (v: number) => (rtl ? W - v : v);
+const path = (d: string) => (rtl ? d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, a: string, b: string) => `${W - Number(a)} ${b}`) : d);
+---
+<figure class="nf__art" aria-hidden="true">
+  <svg viewBox="0 0 420 360" focusable="false">
+    <path class="nf-spoke" d={path("M210 170 L110 90 M210 170 L310 90 M210 170 L110 250 M210 170 L310 250")}></path>
+    <path class="nf-edge" d={path("M134 82 Q210 52 286 82")}></path>
+    <path class="nf-edge" d={path("M323 112 Q350 170 323 228")}></path>
+    <path class="nf-edge" d={path("M97 112 Q70 170 97 228")}></path>
+    <path class="nf-broken" d={path("M327 266 Q340 300 364 314")}></path>
+    <circle class="nf-hub-ring" cx="210" cy="170" r="44"></circle>
+    <circle class="nf-node nf-node--teal" cx="210" cy="170" r="34"></circle>
+    <g class="nf-glyph" transform="translate(198 158)">
+      <circle cx="12" cy="5" r="2.3"></circle><circle cx="5" cy="18" r="2.3"></circle><circle cx="19" cy="18" r="2.3"></circle>
+      <path d="M12 7.3V11M10.6 13.6l-3.8 2.9M13.4 13.6l3.8 2.9"></path>
+    </g>
+    <circle class="nf-node nf-node--saffron" cx={x(110)} cy="90" r="22"></circle>
+    <circle class="nf-node nf-node--saffron" cx={x(310)} cy="90" r="22"></circle>
+    <circle class="nf-node nf-node--sage" cx={x(110)} cy="250" r="22"></circle>
+    <circle class="nf-node nf-node--sky" cx={x(310)} cy="250" r="22"></circle>
+    <circle class="nf-dot--saffron" cx={x(110)} cy="90" r="4"></circle>
+    <circle class="nf-dot--saffron" cx={x(310)} cy="90" r="4"></circle>
+    <circle class="nf-dot--sage" cx={x(110)} cy="250" r="4"></circle>
+    <circle class="nf-dot--sky" cx={x(310)} cy="250" r="4"></circle>
+    <text class="nf-lbl" x={x(110)} y="52" text-anchor="middle">{g.retrieve}</text>
+    <text class="nf-lbl" x={x(310)} y="52" text-anchor="middle">{g.rerank}</text>
+    <text class="nf-lbl" x={x(110)} y="296" text-anchor="middle">{g.guard}</text>
+    <text class="nf-lbl" x={x(310)} y="296" text-anchor="middle">{g.evaluate}</text>
+    <g class="nf-lost">
+      <circle class="nf-lost-node" cx={x(380)} cy="322" r="15"></circle>
+      <text class="nf-lbl nf-lbl--lost nf-lbl--q" x={x(380)} y="326" text-anchor="middle">?</text>
+    </g>
+    <text class="nf-lbl nf-lbl--lost" x={x(380)} y="356" text-anchor="middle">404</text>
+  </svg>
+</figure>

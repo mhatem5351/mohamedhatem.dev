@@ -1,0 +1,9 @@
+node_modules/
+.astro/
+test-results/
+playwright-report/
+screenshots/
+lighthouse/
+# Generated at build time (scripts/og.mjs, scripts/build-pdf.mjs)
+public/og/
+public/cv/

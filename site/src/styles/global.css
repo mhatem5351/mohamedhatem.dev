@@ -1,0 +1,69 @@
+/*
+ * mohamedhatem.dev global stylesheet.
+ *   tokens.tailwind.css  generated design tokens (design/scripts/build-tokens.mjs): @theme + dark + :lang(ar)
+ *   base.css             element defaults, focus ring, skip link, icons (design/prototypes/proto.css §1)
+ *   components.css       every shared component (proto.css §2–20b), class names as in the prototypes
+ *   diagram.css          architecture-diagram grammar (inlined SVGs use it instead of their own <style>)
+ *   site.css             build-only additions: classes that replace the prototypes' inline style="" (strict CSP)
+ * Component-specific styles for the case-study, CV, privacy and 404 pages live next to those pages.
+ */
+@import "tailwindcss";
+@import "./tokens.tailwind.css";
+@import "./base.css" layer(base);
+@import "./components.css" layer(components);
+@import "./diagram.css" layer(components);
+@import "./site.css" layer(components);
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* Only scan the site's own sources for utilities (content/ and chat-widget/ have none). */
+@source not "../../../worker";
+@source not "../../../chat-widget";
+
+/*
+ * Fonts: Astro's Fonts API defines --font-face-* (self-hosted, subset files + metric-matched fallbacks).
+ * The token stacks are re-pointed at them. Arabic: Plex Arabic covers Arabic code points only, so Latin runs inside
+ * Arabic text fall through to Inter / Space Grotesk (DESIGN.md 4.1).
+ */
+/*
+ * Unlayered on purpose: tokens.tailwind.css sets the Arabic stacks in an unlayered :lang(ar) block with literal family
+ * names, and Astro's Fonts API hashes family names ("IBM Plex Sans Arabic-<hash>"), so these must come after it at the
+ * same level to win.
+ */
+:root {
+  --font-display: var(--font-face-display);
+  --font-sans: var(--font-face-sans);
+  --font-mono: var(--font-face-mono);
+  --font-arabic: var(--font-face-arabic, "MH Arabic Label"), var(--font-face-sans);
+}
+:root:lang(ar),
+[lang="ar"] {
+  --font-sans: var(--font-face-arabic, "MH Arabic Label"), var(--font-face-sans);
+  --font-display: var(--font-face-arabic, "MH Arabic Label"), var(--font-face-display);
+}
+[lang="en"] {
+  --font-sans: var(--font-face-sans);
+  --font-display: var(--font-face-display);
+}
+
+/* The design's container (78rem + gutters), replacing Tailwind's breakpoint-stepped `container` utility. */
+@utility container {
+  width: 100%;
+  max-width: calc(var(--container-max) + 2 * var(--space-gutter));
+  margin-inline: auto;
+  padding-inline: var(--space-gutter);
+}
+
+/*
+ * English pages show a few Arabic words (language switch, footer link, one example question). They come from a
+ * ~8 KB subset of Plex Arabic 600 (scripts/subset-fonts.mjs) instead of the 36 KB weight. Arabic pages load the
+ * full family first, so this face is never fetched there.
+ */
+@font-face {
+  font-family: "MH Arabic Label";
+  src: url("../assets/fonts/ibm-plex-sans-arabic-600-label.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0600-06FF, U+FB50-FDFF, U+FE70-FEFF;
+}

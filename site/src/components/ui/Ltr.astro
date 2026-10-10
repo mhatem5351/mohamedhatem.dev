@@ -1,0 +1,11 @@
+---
+/**
+ * Isolates a left-to-right run (dates, year ranges, phone numbers, emails, URLs, code) so the Arabic bidi algorithm
+ * can't reorder it ("2023–2024" would otherwise render as "2024–2023"; HANDOFF.md 6.3). Harmless on English pages.
+ */
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+<bdi dir="ltr" class={className}><slot /></bdi>

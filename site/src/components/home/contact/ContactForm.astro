@@ -1,0 +1,161 @@
+---
+/**
+ * The contact form (DESIGN.md 12.17 / 12.21): POST /api/contact (contract: worker/README.md).
+ * - Validates on submit and, after the first submit, on blur (src/lib/contact-form.ts mirrors the Worker's rules);
+ *   an error summary is focused on failure, each field links its error with aria-describedby.
+ * - Cloudflare Turnstile (managed, action "contact") renders into a 65 px slot reserved up front (no layout shift);
+ *   its script loads only when the form nears the viewport or gets focus.
+ * - Success replaces the form with a confirmation and moves focus to its heading.
+ * - Without JavaScript the form still posts natively (the Worker accepts form posts); Turnstile then can't run,
+ *   so the channels above remain the reliable path.
+ */
+import Icon from "~/components/ui/Icon.astro";
+import { format, messages, type Locale } from "~/lib/i18n";
+import { LIMITS, TOPICS, topicToSubject } from "~/lib/contact-form";
+import { TURNSTILE_SITE_KEY, contact } from "~/lib/site";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+const f = m.contact.form;
+const email = contact("email").display;
+const [leadBefore, leadAfter] = f.lead.split("{email}") as [string, string];
+
+/** Strings the client script needs (data, not code: a JSON block is exempt from script-src). */
+const i18n = {
+  errors: {
+    nameRequired: m.contact.errors.nameRequired,
+    nameTooLong: m.contact.errors.nameTooLong,
+    emailRequired: m.contact.errors.emailRequired,
+    emailInvalid: m.contact.errors.emailInvalid,
+    companyTooLong: m.contact.errors.companyTooLong,
+    topicRequired: m.contact.errors.topicRequired,
+    messageRequired: m.contact.errors.messageRequired,
+    messageTooShort: m.contact.errors.messageTooShort,
+    messageTooLong: m.contact.errors.messageTooLong,
+  },
+  summary: m.contact.errors.summary,
+  turnstile: m.contact.errors.turnstile,
+  rateLimited: m.contact.errors.rateLimited,
+  server: format(m.contact.errors.server, { email }),
+  network: m.contact.errors.network,
+  sending: f.sending,
+  submit: f.submit,
+  successBody: m.contact.success.body,
+  successRef: m.contact.success.reference,
+};
+const json = JSON.stringify(i18n).replace(/</g, "\\u003c");
+---
+<div class="card card--pad contact-card">
+  <form
+    class="form"
+    method="post"
+    action="/api/contact"
+    novalidate
+    aria-labelledby="cf-title"
+    data-contact-form
+    data-lang={locale}
+    data-sitekey={TURNSTILE_SITE_KEY}
+  >
+    <div class="form__head">
+      <h3 class="t-lg" id="cf-title">{f.title}</h3>
+      <p class="muted t-sm">{leadBefore}<bdi dir="ltr">{email}</bdi>{leadAfter}</p>
+    </div>
+
+    <div class="form__summary" tabindex="-1" hidden data-summary aria-labelledby="cf-summary-title">
+      <p id="cf-summary-title" data-summary-title></p>
+      <ul role="list" data-summary-list></ul>
+    </div>
+
+    <div class="form__row">
+      <div class="field">
+        <label for="cf-name">{f.name.label}</label>
+        <input class="input" id="cf-name" name="name" type="text" autocomplete="name" required maxlength={LIMITS.name.max} aria-describedby="cf-name-err" />
+        <p class="field__error" id="cf-name-err" hidden><Icon name="alert" size="sm" /><span data-error-text></span></p>
+      </div>
+      <div class="field">
+        <label for="cf-email">{f.email.label}</label>
+        <input
+          class="input"
+          id="cf-email"
+          name="email"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
+          dir="ltr"
+          required
+          maxlength={LIMITS.email.max}
+          placeholder={f.email.placeholder || undefined}
+          aria-describedby="cf-email-hint cf-email-err"
+        />
+        <p class="field__hint" id="cf-email-hint">{f.email.hint}</p>
+        <p class="field__error" id="cf-email-err" hidden><Icon name="alert" size="sm" /><span data-error-text></span></p>
+      </div>
+    </div>
+
+    <div class="form__row">
+      <div class="field">
+        <label for="cf-company">{f.company.label} <span class="opt">({f.optional})</span></label>
+        <input class="input" id="cf-company" name="company" type="text" autocomplete="organization" maxlength={LIMITS.company.max} aria-describedby="cf-company-err" />
+        <p class="field__error" id="cf-company-err" hidden><Icon name="alert" size="sm" /><span data-error-text></span></p>
+      </div>
+      <div class="field">
+        <label for="cf-subject">{f.topic.label}</label>
+        <select class="input" id="cf-subject" name="subject" required aria-describedby="cf-subject-err">
+          <option value="">{f.topic.placeholder}</option>
+          {TOPICS.map((t) => <option value={topicToSubject(t)} data-topic={t}>{f.topic.options[t]}</option>)}
+        </select>
+        <p class="field__error" id="cf-subject-err" hidden><Icon name="alert" size="sm" /><span data-error-text></span></p>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="cf-message">{f.message.label}</label>
+      <textarea
+        class="input"
+        id="cf-message"
+        name="message"
+        required
+        rows="5"
+        maxlength={LIMITS.message.max}
+        placeholder={f.message.placeholder || undefined}
+        aria-describedby="cf-message-hint cf-message-err"
+        dir="auto"></textarea>
+      <p class="field__hint" id="cf-message-hint">{format(f.message.hint, { min: LIMITS.message.min, max: LIMITS.message.max.toLocaleString("en-US") })}</p>
+      <p class="field__error" id="cf-message-err" hidden><Icon name="alert" size="sm" /><span data-error-text></span></p>
+    </div>
+
+    <div class="hp" aria-hidden="true">
+      <label for="cf-hp">{f.honeypot}</label>
+      <input id="cf-hp" name="mh_hp" type="text" tabindex="-1" autocomplete="off" />
+    </div>
+    <input type="hidden" name="lang" value={locale} />
+
+    <div class="turnstile-slot" data-turnstile-slot></div>
+
+    <p class="form__status" role="alert" data-status><Icon name="alert" size="sm" /><span data-status-text></span></p>
+
+    <div class="form__foot">
+      <p class="field__hint">{f.turnstile}</p>
+      <button class="btn btn--primary" type="submit" data-submit>
+        <span data-submit-label>{f.submit}</span>
+        <Icon name="arrow-right" class="arrow" />
+      </button>
+    </div>
+  </form>
+
+  <div class="form-success" hidden data-success>
+    <span class="icon-tile icon-tile--sage"><Icon name="check" /></span>
+    <h3 tabindex="-1" data-success-title>{m.contact.success.title}</h3>
+    <p data-success-body></p>
+    <p class="form-success__ref" hidden data-success-ref dir="auto"></p>
+    <button class="btn btn--secondary" type="button" data-again>{m.contact.success.again}</button>
+  </div>
+</div>
+<script type="application/json" data-contact-i18n set:html={json} />
+<script>
+  import { initContactForm } from "./form";
+  initContactForm();
+</script>

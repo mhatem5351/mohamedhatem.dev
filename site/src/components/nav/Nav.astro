@@ -1,0 +1,144 @@
+---
+/**
+ * Sticky site nav (DESIGN.md 12.1) + the mobile menu sheet (12.2).
+ * Behaviour lives in src/scripts/site.ts: hairline after 8 px of scroll, menu open/close (Escape, outside click,
+ * link click; focus returns to the button), theme toggle cycle, section scroll-spy on the home page.
+ */
+import Monogram from "~/components/brand/Monogram.astro";
+import Icon from "~/components/ui/Icon.astro";
+import { localePath, messages, otherLocale, type Locale } from "~/lib/i18n";
+import { PATHS, homeAnchor, profile } from "~/lib/site";
+
+interface Props {
+  locale: Locale;
+  /** English base path of the current page ("/", "/cv/", "/work/x/"). */
+  path: string;
+  /** Path of this page in the other locale (null: the other locale's home). */
+  alternatePath?: string | null;
+  /** "minimal" (404): brand, theme and Ask only. */
+  variant?: "full" | "minimal";
+}
+const { locale, path, alternatePath, variant = "full" } = Astro.props;
+const m = messages(locale);
+const other = otherLocale(locale);
+const onHome = path === "/";
+const otherHref = alternatePath ?? localePath(path, other);
+const links = [
+  { href: homeAnchor("work", locale, onHome), label: m.nav.work, section: "work" },
+  { href: homeAnchor("experience", locale, onHome), label: m.nav.experience, section: "experience" },
+  { href: homeAnchor("projects", locale, onHome), label: m.nav.projects, section: "projects" },
+  { href: localePath(PATHS.cv, locale), label: m.nav.cv, current: path === PATHS.cv },
+  { href: homeAnchor("contact", locale, onHome), label: m.nav.contact, section: "contact" },
+];
+const themeLabel = (mode: string) => `${m.theme.label}: ${mode}`;
+---
+<header class="nav" data-nav>
+  <div class="container nav__inner">
+    <a class="brand" href={localePath("/", locale)}>
+      <Monogram />
+      <span>{profile.basics.name[locale]}</span>
+      {variant === "full" && <span class="brand__role">{profile.basics.title[locale]}</span>}
+    </a>
+    {
+      variant === "full" && (
+        <nav class="nav__links" aria-label={m.a11y.mainNav}>
+          {links.map((l) => (
+            <a href={l.href} data-section={l.section} aria-current={l.current ? "page" : undefined}>
+              {l.label}
+            </a>
+          ))}
+        </nav>
+      )
+    }
+    <div class="nav__actions">
+      {
+        variant === "full" && (
+          <a class="lang-switch" href={otherHref} hreflang={other} lang={other} title={m.language.switchToLabel}>
+            <Icon name="globe" size="sm" />
+            <span lang={other}>{m.language.switchTo}</span>
+            <span class="sr-only" lang={locale}>
+              , {m.language.switchToLabel}
+            </span>
+          </a>
+        )
+      }
+      <button
+        class="nav__icon-btn theme-toggle"
+        type="button"
+        data-theme-toggle
+        data-mode="system"
+        aria-label={themeLabel(m.theme.system)}
+        title={themeLabel(m.theme.system)}
+        data-label-system={themeLabel(m.theme.system)}
+        data-label-light={themeLabel(m.theme.light)}
+        data-label-dark={themeLabel(m.theme.dark)}
+      >
+        <Icon name="monitor" class="i-system" />
+        <Icon name="sun" class="i-sun" />
+        <Icon name="moon" class="i-moon" />
+      </button>
+      <button class="btn btn--accent btn--sm nav__ask" type="button" data-open-chat aria-haspopup="dialog">
+        <Icon name="ask" />
+        <span class="label-long">{m.hero.ctaAsk}</span><span class="label-short">{m.nav.assistant}</span>
+      </button>
+      {
+        variant === "full" && (
+          <button
+            class="nav__icon-btn nav__menu"
+            type="button"
+            aria-controls="menu-sheet"
+            aria-expanded="false"
+            aria-label={m.a11y.openMenu}
+            data-label-open={m.a11y.openMenu}
+            data-label-close={m.a11y.closeMenu}
+            data-menu-button
+          >
+            <Icon name="menu" class="i-menu" />
+            <Icon name="close" class="i-close" />
+          </button>
+        )
+      }
+    </div>
+  </div>
+</header>
+{
+  variant === "full" && (
+    <div class="menu-sheet" id="menu-sheet" hidden data-menu-sheet>
+      <nav aria-label={m.a11y.mainNav}>
+        <ul class="menu-sheet__links" role="list">
+          {links.map((l) => (
+            <li>
+              <a href={l.href} aria-current={l.current ? "page" : undefined}>
+                {l.label}
+                <Icon name="arrow-right" size="sm" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div class="menu-sheet__row">
+        <a class="lang-switch lang-switch--flush" href={otherHref} hreflang={other} lang={other}>
+          <Icon name="globe" size="sm" />
+          <span>{m.language.switchTo}</span>
+          <span class="sr-only" lang={locale}>
+            , {m.language.switchToLabel}
+          </span>
+        </a>
+        <div class="segmented" role="group" aria-label={m.theme.label} data-theme-segmented>
+          <button type="button" data-set-theme="system" aria-pressed="true">
+            <Icon name="monitor" size="sm" />
+            {m.theme.system}
+          </button>
+          <button type="button" data-set-theme="light" aria-pressed="false">
+            <Icon name="sun" size="sm" />
+            {m.theme.light}
+          </button>
+          <button type="button" data-set-theme="dark" aria-pressed="false">
+            <Icon name="moon" size="sm" />
+            {m.theme.dark}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

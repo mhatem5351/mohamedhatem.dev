@@ -1,0 +1,18 @@
+{
+  // Type-checks the site (astro check). Content (../content) and the chat widget (../chat-widget) are type-checked by
+  // their own projects too; here they are imported and must also compile under these settings.
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "src/**/*", "scripts/**/*", "tests/**/*", "integrations/**/*", "*.ts", "*.mjs"],
+  "exclude": ["node_modules", "../dist", "test-results", "playwright-report"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "~/*": ["./src/*"],
+      "@content/*": ["../content/*"],
+      "@chat/*": ["../chat-widget/src/*"]
+    }
+  }
+}

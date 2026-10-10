@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>محمد حاتم · قائد فريق الذكاء الاصطناعي · أنظمة الوكلاء المتعددة وRAG وتشغيل النماذج</title>
+<meta name="description" content="محمد حاتم، قائد فريق الذكاء الاصطناعي في Globant. أصمّم أنظمة النماذج اللغوية الكبيرة وأُطلقها وأُشغّلها في الإنتاج: تنسيق الوكلاء، والاسترجاع، واستضافة النماذج، والتقييم. 7 سنوات في البيانات والذكاء الاصطناعي، بالعربية والإنجليزية.">
+<meta name="theme-color" content="#FBF8F3">
+<link rel="icon" href="../assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="alternate" hreflang="en" href="index.html">
+<link rel="alternate" hreflang="ar" href="index-ar.html">
+<link rel="alternate" hreflang="x-default" href="index.html">
+<!-- Astro (AR pages): preload the Arabic display weight (LCP = the Arabic H1) instead of Space Grotesk. -->
+<link rel="preload" href="../assets/fonts/ibm-plex-sans-arabic-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../tokens.css">
+<link rel="stylesheet" href="proto.css">
+<link rel="stylesheet" href="chat.css">
+<link rel="stylesheet" href="../assets/hero-graph/bundle/hero-graph.css">
+</head>
+<body>
+<!--sprite:start--><svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+
+<symbol id="i-agents" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2.3"/><circle cx="5" cy="18" r="2.3"/><circle cx="19" cy="18" r="2.3"/><circle cx="12" cy="12.6" r="1.6" fill="currentColor" stroke="none"/><path d="M12 7.3V11m-1.4 2.6-3.8 2.9m6.6-2.9 3.8 2.9M7.3 18h9.4"/></symbol>
+<symbol id="i-orchestrator" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 12 7.2 9.2M12 12l4.8-2.8M12 12v5.6"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="7.2" cy="9.2" r="1.2" fill="currentColor" stroke="none"/><circle cx="16.8" cy="9.2" r="1.2" fill="currentColor" stroke="none"/><circle cx="12" cy="17.6" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-retrieve" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m16 16 4.5 4.5M8 9.5h6m-6 3h3.5"/></symbol>
+<symbol id="i-rerank" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6h9m-9 6H10m-6.5 6h4M18 4.5v15M15.5 7 18 4.5 20.5 7m-5 10 2.5 2.5 2.5-2.5"/></symbol>
+<symbol id="i-guard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 7 2.8v5.3c0 4.6-3 8.2-7 9.9-4-1.7-7-5.3-7-9.9V5.8z"/><circle cx="12" cy="11.5" r="1.6" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-shield-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 7 2.8v5.3c0 4.6-3 8.2-7 9.9-4-1.7-7-5.3-7-9.9V5.8z"/><path d="m8.7 11.9 2.3 2.3 4.4-4.6"/></symbol>
+<symbol id="i-generate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 11h16M4 17h6.5m4-2.75v5.5"/></symbol>
+<symbol id="i-evaluate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5.4 18.6a8.6 8.6 0 1 1 13.2 0"/><path d="m8.6 13.4 2.4 2.4 4.4-4.8"/></symbol>
+<symbol id="i-tools-mcp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v3.5M15 3v3.5m-8.5 0h11V10a5.5 5.5 0 0 1-11 0zm5.5 9V21"/></symbol>
+<symbol id="i-serving" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="17" height="7" x="3.5" y="4" rx="2"/><rect width="17" height="7" x="3.5" y="13" rx="2"/><circle cx="7.2" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="7.2" cy="16.5" r="1.1" fill="currentColor" stroke="none"/><path d="M11 7.5h6m-6 9h6"/></symbol>
+<symbol id="i-gpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12" height="12" x="6" y="6" rx="2"/><rect width="5" height="5" x="9.5" y="9.5" rx="1"/><path d="M9.5 3v3m5-3v3m-5 12v3m5-3v3M3 9.5h3m-3 5h3m12-5h3m-3 5h3"/></symbol>
+<symbol id="i-pipeline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="5.5" height="7" x="2.75" y="8.5" rx="1.75"/><rect width="5.5" height="7" x="15.75" y="8.5" rx="1.75"/><path d="M8.25 12h5.5m-2.5-2.5 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-database" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.75" rx="7.5" ry="2.5"/><path d="M4.5 5.75v12.5c0 1.38 3.36 2.5 7.5 2.5s7.5-1.12 7.5-2.5V5.75"/><path d="M4.5 12c0 1.38 3.36 2.5 7.5 2.5s7.5-1.12 7.5-2.5"/></symbol>
+<symbol id="i-cache" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="5.5" rx="6.5" ry="2.25"/><path d="M3.5 5.5V16c0 1.24 2.91 2.25 6.5 2.25M16.5 5.5V10"/><circle cx="17.5" cy="17" r="4"/><path d="M17.5 15.2V17l1.2.9"/></symbol>
+<symbol id="i-embed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4H4.5v16H7M17 4h2.5v16H17"/><circle cx="12" cy="7.5" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="16.5" r="1.4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-keyword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5h17M3.5 12H7m10 0h3.5m-17 5.5h11"/><rect width="5.5" height="5" x="9.25" y="9.5" rx="1.25"/></symbol>
+<symbol id="i-merge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5c0 4.2 3.6 7 8 7m-8 7c0-4.2 3.6-7 8-7h9m-3-3 3 3-3 3"/></symbol>
+<symbol id="i-split" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12h4C11 12 12 6 16 6h4.5m-13 6c3.5 0 4.5 6 8.5 6h4.5M18 3.5 20.5 6 18 8.5m0 7 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-route" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 12 3.5-3.5L10 12l-3.5 3.5zm7 0h1c2.6 0 3-5.5 6-5.5h3.5M11 12c2.6 0 3 5.5 6 5.5h3.5M18.5 4 21 6.5 18.5 9m0 6 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 21 8l-9 4.5L3 8z"/><path d="m3 12 9 4.5 9-4.5M3 16l9 4.5 9-4.5"/></symbol>
+<symbol id="i-container" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 7.75 4.4v9.2L12 21l-7.75-4.4V7.4z"/><path d="M4.25 7.4 12 11.8l7.75-4.4M12 11.8V21"/></symbol>
+<symbol id="i-gateway" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5v17M3 12h6m6 0h6m-3-3 3 3-3 3"/></symbol>
+<symbol id="i-function" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="3.5"/><path d="M8 6.5h1.1c.8 0 1.4.4 1.7 1.2l3.4 8.6c.3.8.9 1.2 1.7 1.2h.6m-4.4-5.9-3.9 5.9"/></symbol>
+<symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12h4L9 5.5l5 13 2.5-6.5h5"/></symbol>
+<symbol id="i-branch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2.25"/><circle cx="18" cy="6" r="2.25"/><path d="M6 3.5v12.25m12-7.5A9.75 9.75 0 0 1 8.25 18"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4.5h17l-6.5 8V19l-4 2v-8.5z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m16 16 4.5 4.5"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="16" x="3" y="4" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.75"/><path d="m21 15-4-4a1.5 1.5 0 0 0-2.1 0L6 20"/></symbol>
+<symbol id="i-video" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12.5" height="12" x="3" y="6" rx="2.5"/><path d="m15.5 10.25 4.55-2.7a.8.8 0 0 1 1.2.69v7.52a.8.8 0 0 1-1.2.69l-4.55-2.7"/></symbol>
+<symbol id="i-audio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4m4-7.5v11m4-14v17m4-13v9m4-6v3"/></symbol>
+<symbol id="i-bilingual" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m2.75 15.5 3.75-11 3.75 11M4.1 12h4.8m10.7-2.4c-.5-.6-1.3-1-2.2-1C16 8.6 15 9.7 15 11c0 1.5.4 2.6.9 3.4l5.1-.25m-5.1.25c-1.3.6-2.2 1.8-2.2 3.2 0 2.1 1.6 3.4 3.9 3.4 1.5 0 2.7-.45 3.6-1.2"/></symbol>
+<symbol id="i-frontend" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="16" x="2.75" y="4" rx="2.5"/><path d="M2.75 8.5h18.5"/><circle cx="5.75" cy="6.25" r="1" fill="currentColor" stroke="none"/><circle cx="8.25" cy="6.25" r="1" fill="currentColor" stroke="none"/><path d="m9.75 11.75-2.5 2.5 2.5 2.5m4.5-5 2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 7.5 3 12l4.5 4.5m9-9L21 12l-4.5 4.5M13.75 5l-3.5 14"/></symbol>
+<symbol id="i-terminal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="16" x="2.75" y="4" rx="2.5"/><path d="m7 9.5 3 2.5-3 2.5m5.5.5H17"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0m0-14.9a3.5 3.5 0 0 1 0 6.8m6 8.1a6.5 6.5 0 0 0-3.5-5.8"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5A2.5 2.5 0 0 1 6 4h12a2.5 2.5 0 0 1 2.5 2.5V15a2.5 2.5 0 0 1-2.5 2.5h-7.5L6 21v-3.5A2.5 2.5 0 0 1 3.5 15z"/></symbol>
+<symbol id="i-ask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5A2.5 2.5 0 0 1 6 4h12a2.5 2.5 0 0 1 2.5 2.5V15a2.5 2.5 0 0 1-2.5 2.5h-7.5L6 21v-3.5A2.5 2.5 0 0 1 3.5 15z"/><circle cx="12" cy="10.75" r="2.75"/><circle cx="12" cy="10.75" r="1.1" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5 3.5 6.75v13L9 17.5l6 2.25 5.5-2.25v-13L15 6.75zm0 0v13m6-10.75v13"/></symbol>
+<symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4.5A1.5 1.5 0 0 1 6.5 3h7A1.5 1.5 0 0 1 15 4.5V21m0-12h3.5a1.5 1.5 0 0 1 1.5 1.5V21M3 21h18M8.5 7zm2.99 0zM8.5 10.5zm2.99 0zM8.5 14zm2.99 0z"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5v5.6a2 2 0 0 0 .6 1.4l8.4 8.4a2 2 0 0 0 2.8 0l5.6-5.6a2 2 0 0 0 0-2.8L12 4.1a2 2 0 0 0-1.4-.6H5a2 2 0 0 0-2 2"/><circle cx="7.5" cy="8" r="1.4" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15m-6-6 6 6-6 6"/></symbol>
+<symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12h-15m6-6-6 6 6 6"/></symbol>
+<symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19.5v-15m-6 6 6-6 6 6"/></symbol>
+<symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15m-6-6 6 6 6-6"/></symbol>
+<symbol id="i-arrow-up-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8.5 7H17v8.5"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></symbol>
+<symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12m0-12L6 18"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+<symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3 3.5 9.75l7.25 3.5 3.5 7.25zM10.75 13.25 21 3"/></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12" height="12" x="6" y="6" rx="2.5"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="12.5" height="12.5" x="8.5" y="8.5" rx="2.5"/><path d="M15.5 8.5v-3A2.5 2.5 0 0 0 13 3H5.5A2.5 2.5 0 0 0 3 5.5V13a2.5 2.5 0 0 0 2.5 2.5h3"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5L19.5 7"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12A8.5 8.5 0 1 1 12 3.5c2.4 0 4.6 1 6.3 2.6L20.5 8m0-4.5V8H16"/></symbol>
+<symbol id="i-external-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13.5V18a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 18V8.5A2.5 2.5 0 0 1 6 6h4.5m4-2.5h6v6m-10 4 10-10"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4.2 4.2 0 0 0 6 .4l3-3a4.2 4.2 0 0 0-6-6L11.4 7m2.6 3a4.2 4.2 0 0 0-6-.4l-3 3a4.2 4.2 0 0 0 6 6l1.6-1.6"/></symbol>
+<symbol id="i-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3.5h6v6m0-6L14 10M9.5 20.5h-6v-6m0 6L10 14"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5V15m-5-5 5 5 5-5M3.5 15.5V18A2.5 2.5 0 0 0 6 20.5h12a2.5 2.5 0 0 0 2.5-2.5v-2.5"/></symbol>
+<symbol id="i-print" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3.5h10V9M7 17.5H5.5A2.5 2.5 0 0 1 3 15v-3.5A2.5 2.5 0 0 1 5.5 9h13a2.5 2.5 0 0 1 2.5 2.5V15a2.5 2.5 0 0 1-2.5 2.5H17"/><rect width="10" height="6.5" x="7" y="14" rx="1"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="14" x="2.75" y="5" rx="2.5"/><path d="m3.25 7 7.35 5.3a2.4 2.4 0 0 0 2.8 0L20.75 7"/></symbol>
+<symbol id="i-location" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11"/><circle cx="12" cy="10" r="2.25"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="16" x="3" y="4.75" rx="2.5"/><path d="M3 9.75h18M8 3v3.5M16 3v3.5"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></symbol>
+<symbol id="i-briefcase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="13" x="2.75" y="7" rx="2.5"/><path d="M8.5 7V5.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V7M2.75 12.5h18.5"/></symbol>
+<symbol id="i-graduation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 2.5 9l9.5 4.5L21.5 9zM6.5 11v4.5c0 1.5 2.5 3 5.5 3s5.5-1.5 5.5-3V11m4-2v5"/></symbol>
+<symbol id="i-certificate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 19.5H5.5A2.5 2.5 0 0 1 3 17V6a2.5 2.5 0 0 1 2.5-2.5h13A2.5 2.5 0 0 1 21 6v4.5M7 8h10M7 11.5h5"/><circle cx="17.5" cy="15" r="2.75"/><path d="M16 17.5V21l1.5-1 1.5 1v-3.5"/></symbol>
+<symbol id="i-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M8.6 13.9 7.5 21l4.5-2.5 4.5 2.5-1.1-7.1"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v2m0 14v2m-9-9h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4m-12.8 0L7 17M17 7l1.4-1.4"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.25A6.25 6.25 0 0 0 20.75 12 8.75 8.75 0 1 1 12 3.25"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18.5" height="12.5" x="2.75" y="4" rx="2.5"/><path d="M8.5 20.5h7m-3.5-4v4"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18m-9-9q-3.6 3.75-3.6 9c0 5.25 1.2 6.5 3.6 9q3.6-3.75 3.6-9c0-5.25-1.2-6.5-3.6-9"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.75" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.2 2.9 17.5a2 2 0 0 0 1.7 3h14.8a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0M12 9.5v4.25"/><circle cx="12" cy="16.9" r="1.15" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="3" height="14" x="6.5" y="5" rx="1"/><rect width="3" height="14" x="14.5" y="5" rx="1"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.8v14.4a1 1 0 0 0 1.5.86l11.6-7.2a1 1 0 0 0 0-1.72L9 3.94a1 1 0 0 0-1.5.86"/></symbol>
+<symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6.5A2.5 2.5 0 0 0 4 5.5v13A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V9zm0 0v4.5A1.5 1.5 0 0 0 15.5 9H20M8 13h8m-8 4h5"/></symbol>
+<symbol id="i-whatsapp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3"/><path d="m9.4 8.1-.6.6c-.6.6-.6 1.7 0 3 .9 1.8 2.3 3.2 4.1 4 1.3.6 2.4.6 3-.1l.5-.6-1.9-1.5-1 .7a4 4 0 0 1-2-2l.7-1-1.5-1.9z"/></symbol>
+<symbol id="i-linkedin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="3.5"/><path d="M8 10.5v6m3.75 0v-6m0 2.75a2.5 2.5 0 0 1 5 0v3.25"/><circle cx="8" cy="7.6" r="1.2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-github" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.25 20.5v-2.8c0-.8.3-1.5.8-2-2.8-.3-5.3-1.4-5.3-5.4 0-1.1.4-2.1 1.1-2.9-.2-.6-.4-1.8.2-3.2 0 0 1-.3 3.2 1.2a10.5 10.5 0 0 1 5.5 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.4.4 2.6.2 3.2.7.8 1.1 1.8 1.1 2.9 0 4-2.5 5.1-5.3 5.4.5.5.8 1.2.8 2v2.8"/><path d="M9.25 18.3c-2.6.8-3.2-1.1-4.5-1.6"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z"/><path d="M14 3.5V8h4.5M9 12.5h6M9 16h4"/></symbol><symbol id="i-system" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/></symbol></svg><!--sprite:end-->
+<a class="skip-link" href="#main">انتقل إلى المحتوى</a>
+
+<!-- =========================================================== NAV (mirrored automatically by logical properties) -->
+<header class="nav" data-note="Nav.astro (ar) · same component, dir=rtl · language switch shows 'English' in Latin, lang=en">
+  <div class="container nav__inner">
+    <a class="brand" href="#top">
+      <span class="brand__mark" data-slot="monogram"><svg viewBox="0 0 64 64" class="brand__mark" aria-hidden="true"><rect width="64" height="64" rx="14.08" fill="var(--color-surface-inverse)"/><path d="M13.12 47.415L13.12 15.049L17.751 15.049L24.448 27.074L31.145 15.049L35.776 15.049L35.776 47.415L31.461 47.415L31.461 22.798L26.763 31.232L22.133 31.232L17.435 22.798L17.435 47.415ZM33.618 29.209L48.722 29.209L48.722 33.255L33.618 33.255ZM46.565 15.049L50.88 15.049L50.88 47.415L46.565 47.415Z" fill="var(--color-on-inverse)"/><circle cx="24.45" cy="31.23" r="4.38" fill="var(--color-accent-fill)"/></svg></span>
+      <span>محمد حاتم</span>
+      <span class="brand__role">قائد فريق الذكاء الاصطناعي</span>
+    </a>
+    <nav class="nav__links" aria-label="القائمة الرئيسية">
+      <a href="#work">الأعمال</a>
+      <a href="#experience">الخبرات</a>
+      <a href="#open-source">المصادر المفتوحة</a>
+      <a href="cv.html">السيرة الذاتية</a>
+      <a href="#contact">تواصل</a>
+    </nav>
+    <div class="nav__actions">
+      <a class="lang-switch" href="index.html" hreflang="en" lang="en" aria-label="English: the English version of this site"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-globe"/></svg><span lang="en">English</span></a>
+      <button class="nav__icon-btn theme-toggle" type="button" data-mode="system" aria-label="المظهر: حسب النظام">
+        <svg class="icon i-system" aria-hidden="true"><use href="#i-monitor"/></svg>
+        <svg class="icon i-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+        <svg class="icon i-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+      </button>
+      <button class="btn btn--accent btn--sm nav__ask" type="button" data-open-chat aria-haspopup="dialog">
+        <svg class="icon" aria-hidden="true"><use href="#i-ask"/></svg><span class="label-long">اسأل مساعدي الذكي</span><span class="label-short">اسأل</span>
+      </button>
+      <button class="nav__icon-btn nav__menu" type="button" aria-controls="menu-sheet" aria-label="فتح القائمة" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+</header>
+<div class="menu-sheet" id="menu-sheet" hidden data-note="MobileMenu · fixed sheet under the nav · Esc / outside click / link click closes · focus returns to the menu button">
+  <ul class="menu-sheet__links" role="list">
+    <li><a href="#work">الأعمال المختارة<svg class="icon icon--sm icon--flip" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
+    <li><a href="#experience">الخبرات<svg class="icon icon--sm icon--flip" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
+    <li><a href="#open-source">المصادر المفتوحة<svg class="icon icon--sm icon--flip" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
+    <li><a href="cv.html">السيرة الذاتية<svg class="icon icon--sm icon--flip" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
+    <li><a href="#contact">تواصل<svg class="icon icon--sm icon--flip" aria-hidden="true"><use href="#i-arrow-right"/></svg></a></li>
+  </ul>
+  <div class="menu-sheet__row">
+    <a class="lang-switch" href="index.html" hreflang="en" lang="en" style="padding-inline:0"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-globe"/></svg><span lang="en">English</span></a>
+    <div class="segmented" role="group" aria-label="المظهر" data-theme-segmented>
+      <button type="button" data-set-theme="system" aria-pressed="true"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-monitor"/></svg>تلقائي</button>
+      <button type="button" data-set-theme="light" aria-pressed="false"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-sun"/></svg>فاتح</button>
+      <button type="button" data-set-theme="dark" aria-pressed="false"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-moon"/></svg>داكن</button>
+    </div>
+  </div>
+</div>
+
+<main id="main">
+<!-- =========================================================== HERO -->
+<section class="hero" id="top" aria-labelledby="hero-title" data-note="Hero (ar) · graph mirrored: query enters from the right · Arabic H1 in IBM Plex Sans Arabic 700, line-height 1.3, no tracking">
+  <div class="hero__bg" aria-hidden="true"></div>
+  <div class="container hero__grid">
+    <div class="hero__copy">
+        <p class="person-chip">
+        <img src="../assets/photo/mh-square-96.webp" width="32" height="32" alt="" decoding="async">
+        <b>محمد حاتم</b><i class="div" aria-hidden="true"></i><span>قائد فريق الذكاء الاصطناعي في <span lang="en">Globant</span></span>
+      </p>
+      <h1 class="hero__title" id="hero-title">أبني أنظمة LLM متعددة الوكلاء تصمد في <em>بيئة الإنتاج</em>، بالعربية والإنجليزية.</h1>
+      <p class="hero__lede">قائد فريق الذكاء الاصطناعي في <span lang="en">Globant</span>، بخبرة <strong>7&nbsp;سنوات</strong> في البيانات والذكاء الاصطناعي. بنيت مساعدًا من 14 وكيلًا لمنصة وسائط رقمية، وروبوت محادثة ثنائي اللغة من 6 وكلاء على نماذج ذاتية الاستضافة، وأتولّى تشغيل ما أبنيه في بيئة الإنتاج.</p>
+
+      <button class="ask-bar" type="button" data-ask-bar data-open-chat aria-haspopup="dialog"
+        data-examples='["ماذا بنيت في ArabsStock؟","كيف تشغّل النماذج على وحدات A100؟","هل يناسب دور مهندس LLM أول؟","Ask in English: what did you build with LangGraph?"]'>
+        <svg class="icon icon--md ask-bar__icon" aria-hidden="true"><use href="#i-ask"/></svg>
+        <span class="ask-bar__text"><span dir="auto">اسأل مساعدي الذكي عن أعمالي</span><i class="ask-bar__caret" aria-hidden="true"></i></span>
+        <span class="kbd ask-bar__kbd" aria-hidden="true">/</span>
+        <span class="ask-bar__go" aria-hidden="true"><svg class="icon icon--flip"><use href="#i-arrow-right"/></svg></span>
+      </button>
+      <div class="hero__actions">
+        <a class="btn btn--secondary" href="#work"><span class="label-long">تصفّح أعمالي</span><span class="label-short">أعمالي</span><svg class="icon arrow" aria-hidden="true"><use href="#i-arrow-down"/></svg></a>
+        <a class="btn btn--ghost" href="cv.html"><svg class="icon" aria-hidden="true"><use href="#i-file-text"/></svg><span class="label-long">السيرة الذاتية (صفحة قابلة للطباعة)</span><span class="label-short">السيرة الذاتية</span></a>
+        <p class="hero__meta"><span><i class="dot" aria-hidden="true"></i>منفتح على فرص جديدة</span><span><svg class="icon icon--sm" aria-hidden="true"><use href="#i-clock"/></svg><time data-cairo-time>14:32</time>&nbsp;في القاهرة</span></p>
+      </div>
+    </div>
+
+    <figure class="hero__art">
+      <div class="hero__art-frame hg" data-graph-src="../assets/hero-graph/bundle/hero-graph.ar.svg" data-graph-module="../assets/hero-graph/bundle/hero-graph.js"></div>
+      <figcaption class="hero__caption"><span class="dot dot--live" aria-hidden="true"></span>طلبٌ يمرّ عبر الوكلاء الذين أبنيهم. اختر أي عقدة.</figcaption>
+    </figure>
+  </div>
+
+  <div class="container" style="margin-block-start: clamp(2.5rem, 1.5rem + 3vw, 4.5rem)">
+    <dl class="metrics">
+      <div class="metric"><dt class="metric__label">سنوات في البيانات والذكاء الاصطناعي، وأقود اليوم فريقًا</dt><dd class="metric__value" style="order:-1;margin:0">7</dd></div>
+      <div class="metric"><dt class="metric__label">وكيلًا في مساعد واحد على LangGraph</dt><dd class="metric__value" style="order:-1;margin:0">14</dd></div>
+      <div class="metric"><dt class="metric__label">وكلاء في روبوت محادثة ثنائي اللغة في الإنتاج</dt><dd class="metric__value" style="order:-1;margin:0">6</dd></div>
+      <div class="metric"><dt class="metric__label">من الأصول الرقمية صارت قابلة للبحث</dt><dd class="metric__value" style="order:-1;margin:0">ملايين</dd></div>
+      <div class="metric"><dt class="metric__label">وحدات GPU تخدم Qwen عبر vLLM</dt><dd class="metric__value" style="order:-1;margin:0" dir="ltr">A100</dd></div>
+    </dl>
+    <div class="logos">
+      <p class="eyebrow logos__label">عملت في</p>
+      <ul class="logos__list" role="list">
+        <li class="logo-mark"><span class="mask" style="--src:url(../assets/logos/mono/globant.svg);width:33.5px;height:22px" aria-hidden="true"></span><span class="logo-mark__name" lang="en">Globant</span></li>
+        <li class="logo-mark"><span class="mask" style="--src:url(../assets/logos/mono/wakeb.svg);width:70px;height:16px" aria-hidden="true"></span><span class="logo-mark__name" lang="en">Wakeb Data</span></li>
+        <li class="logo-mark"><span class="mask" style="--src:url(../assets/logos/mono/arabsstock.svg);width:38px;height:19px" aria-hidden="true"></span><span class="logo-mark__name" lang="en">ArabsStock</span></li>
+        <li class="logo-mark"><span class="mask" style="--src:url(../assets/logos/mono/empoweromics.svg);width:21.5px;height:22.5px" aria-hidden="true"></span><span class="logo-mark__name" lang="en">Empoweromics</span></li>
+        <li class="logo-mark"><span class="mask" style="--src:url(../assets/logos/mono/tabaqat.svg);width:61.5px;height:15px" aria-hidden="true"></span><span class="sr-only">طبقات</span></li>
+        <li class="logo-mark"><span class="mask" style="--src:url(../assets/logos/mono/mdp.svg);width:22.5px;height:26.5px" aria-hidden="true"></span><span class="logo-mark__name" lang="en">MDP</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 01 -->
+<section class="section" id="what" aria-labelledby="what-title">
+  <div class="container">
+    <header class="sec-head">
+      <div class="sec-head__rule"><span class="sec-head__index">01</span><span class="eyebrow">ماذا أبني</span></div>
+      <div class="sec-head__row">
+        <h2 class="sec-head__title" id="what-title">ذكاء اصطناعي في الإنتاج، من مخطط الوكلاء حتى وحدة المعالجة.</h2>
+        <p class="sec-head__lede">أتولّى المسار كاملًا: كيف تتوزّع المهام بين الوكلاء، وماذا تسترجع، وأين يعمل النموذج، وكيف نتأكد أن الإجابات صحيحة.</p>
+      </div>
+    </header>
+    <div class="bento">
+      <article class="card card--pad bento__feature" data-reveal>
+        <div class="cap">
+          <span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-agents"/></svg></span>
+          <h3 class="cap__title">أنظمة الوكلاء المتعددة</h3>
+          <p class="cap__body">تنسيق عبر LangGraph بتوجيه قائم على الأوامر ومخططات فرعية قابلة للتركيب: من روبوت محادثة ثنائي اللغة بستة وكلاء، إلى مساعد من 14 وكيلًا لمنصة وسائط رقمية.</p>
+          <p class="cap__stack" dir="ltr" style="text-align:end"><b>LangGraph</b> · LangChain · MCP · OpenAI API · Qwen · async Python</p>
+        </div>
+        <div class="feature-art" dir="ltr"><img src="../assets/diagrams/wakeb-multi-agent-chatbot-thumb.svg" alt="" loading="lazy" data-inline style="width:100%;height:100%;object-fit:contain;padding:1rem"></div>
+      </article>
+      <article class="card card--pad cap" data-reveal style="--i:1">
+        <span class="icon-tile icon-tile--saffron"><svg class="icon" aria-hidden="true"><use href="#i-retrieve"/></svg></span>
+        <h3 class="cap__title">الاسترجاع والبحث</h3>
+        <p class="cap__body">استرجاع هجين يجمع المتجهات وBM25 مع إعادة ترتيب بنموذج لغوي، وبحث دلالي وبصري عبر ملايين الأصول الرقمية.</p>
+        <p class="cap__stack" dir="ltr" style="text-align:end"><b>Pinecone</b> · Qdrant · pgvector · OpenAI embeddings</p>
+      </article>
+      <article class="card card--pad cap" data-reveal style="--i:2">
+        <span class="icon-tile icon-tile--slate"><svg class="icon" aria-hidden="true"><use href="#i-serving"/></svg></span>
+        <h3 class="cap__title">تشغيل النماذج وMLOps</h3>
+        <p class="cap__body">Qwen على وحدات A100 عبر vLLM: إصدارات النماذج، وتوزيع موارد GPU، وفحوص السلامة، وإعادة التشغيل التلقائية. خدمات FastAPI وgRPC في حاويات، مع CI/CD.</p>
+        <p class="cap__stack" dir="ltr" style="text-align:end"><b>vLLM</b> · Docker · Kubernetes (EKS) · Nginx · gRPC</p>
+      </article>
+      <article class="card card--pad cap" data-reveal style="--i:3">
+        <span class="icon-tile icon-tile--sky"><svg class="icon" aria-hidden="true"><use href="#i-evaluate"/></svg></span>
+        <h3 class="cap__title">التقييم والمراقبة</h3>
+        <p class="cap__body">تقييم النماذج اللغوية وتتبّعها ومراقبتها، لنعرف أن النموذج محقّ قبل أن يكتشف المستخدم العكس.</p>
+        <p class="cap__stack" dir="ltr" style="text-align:end"><b>Langfuse</b> · staged evaluators · reliability harnesses</p>
+      </article>
+      <article class="card card--pad cap" data-reveal style="--i:4">
+        <span class="icon-tile icon-tile--sage"><svg class="icon" aria-hidden="true"><use href="#i-bilingual"/></svg></span>
+        <h3 class="cap__title">العربية والإنجليزية</h3>
+        <p class="cap__body">معظم ما أطلقته ثنائي اللغة: العربية والإنجليزية في المنتج نفسه، من الاسترجاع والتعليمات حتى الواجهة.</p>
+        <p class="cap__stack"><b>معالجة العربية</b> · واجهات من اليمين لليسار · تقييم بلغتين</p>
+      </article>
+      <a class="card card--pad card--link cap" href="#craft" data-reveal style="--i:5">
+        <span class="icon-tile icon-tile--coral"><svg class="icon" aria-hidden="true"><use href="#i-frontend"/></svg></span>
+        <h3 class="cap__title">والواجهات أيضًا</h3>
+        <p class="cap__body">مواقع سريعة ومتاحة للجميع ومتعددة اللغات بـAstro وTypeScript وTailwind CSS، مع دعم كامل للعربية. انظر النموذج أدناه.</p>
+        <p class="cap__stack" dir="ltr" style="text-align:end"><b>Astro</b> · TypeScript · Tailwind CSS · Cloudflare Workers</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 02 -->
+<section class="section section--band" id="work" aria-labelledby="work-title">
+  <div class="container">
+    <header class="sec-head">
+      <div class="sec-head__rule"><span class="sec-head__index">02</span><span class="eyebrow">أعمال مختارة</span></div>
+      <div class="sec-head__row">
+        <h2 class="sec-head__title" id="work-title">أنظمة تعمل في الإنتاج، وما كنت مسؤولًا عنه في كل منها.</h2>
+        <p class="sec-head__lede">البنية والقرارات والنتائج، لمنصة وسائط رقمية، وشركة حلول ذكاء اصطناعي، وشركة تقنية عقارية.</p>
+      </div>
+    </header>
+    <div class="work-list">
+      <article class="card card--link work work--feature" style="--work-accent: var(--color-coral-fill)" data-reveal>
+        <div class="work__media" dir="ltr"><img src="../assets/diagrams/arabsstock-assistant-thumb.svg" alt="" loading="lazy" data-inline></div>
+        <div class="work__body">
+          <div class="work__meta"><span class="eyebrow">ArabsStock<span class="sep">/</span>مهندس ذكاء اصطناعي<span class="sep">/</span><bdi dir="ltr">2023–2024</bdi></span></div>
+          <h3 class="work__title"><a class="stretched" href="case-study-ar.html">مساعد من 14 وكيلًا لأكبر مكتبة وسائط رقمية عربية</a></h3>
+          <p class="work__summary">بنيت مساعد ArabsStock على LangGraph: وكلاء متخصصون للبحث الدلالي، وتوليد الصور بالذكاء الاصطناعي، وعمليات قواعد البيانات، والإشراف على المحتوى، فوق منصة بحث تغطي ملايين الصور ومقاطع الفيديو والرسوم المتجهة.</p>
+          <ul class="work__facts">
+            <li>14 وكيلًا متخصصًا ينسّقها LangGraph في الإنتاج</li>
+            <li>بحث دلالي بتضمينات OpenAI وPinecone، إضافة إلى البحث بالتشابه البصري</li>
+            <li>خدمات صوتية: توليد الأصوات، وتصنيف الآلات الموسيقية، وكشف الإيقاع، والعلامات المائية</li>
+          </ul>
+          <div class="work__foot">
+            <div class="cluster" style="--cluster-gap:.375rem"><span class="chip">LangGraph</span><span class="chip">OpenAI API</span><span class="chip">Pinecone</span><span class="chip">FastAPI</span><span class="chip">PostgreSQL</span></div>
+            <span class="work__cta" aria-hidden="true">اقرأ دراسة الحالة<svg class="icon icon--sm icon--flip"><use href="#i-arrow-right"/></svg></span>
+          </div>
+        </div>
+      </article>
+      <article class="card card--link work" style="--work-accent: var(--color-saffron-fill); --i:1" data-reveal>
+        <div class="work__media" dir="ltr"><img src="../assets/diagrams/wakeb-multi-agent-chatbot-thumb.svg" alt="" loading="lazy" data-inline></div>
+        <div class="work__body">
+          <span class="eyebrow">Wakeb Data<span class="sep">/</span><bdi dir="ltr">2024–2026</bdi></span>
+          <h3 class="work__title"><a class="stretched" href="case-study-ar.html">روبوت محادثة غير متزامن ثنائي اللغة، متعدد الوكلاء، على Qwen مستضاف ذاتيًا</a></h3>
+          <p class="work__summary">ستة وكلاء متخصصين بتوجيه قائم على الأوامر في LangGraph، واسترجاع هجين مع إعادة ترتيب بنموذج لغوي، وبحث على الويب عبر MCP.</p>
+          <div class="cluster" style="--cluster-gap:.375rem"><span class="chip">LangGraph</span><span class="chip">Qwen</span><span class="chip">BM25 + dense</span><span class="chip">MCP</span></div>
+        </div>
+      </article>
+      <article class="card card--link work" style="--work-accent: var(--color-slate-fill)" data-reveal>
+        <div class="work__media" dir="ltr"><img src="../assets/diagrams/llm-serving-a100-thumb.svg" alt="" loading="lazy" data-inline></div>
+        <div class="work__body">
+          <span class="eyebrow">Wakeb Data<span class="sep">/</span>MLOps</span>
+          <h3 class="work__title"><a class="stretched" href="case-study-ar.html">تشغيل النماذج على وحدات A100 الخاصة بنا</a></h3>
+          <p class="work__summary">إعداد vLLM، وتوزيع موارد GPU، وإصدارات النماذج، ومراقبة السلامة، وإعادة التشغيل التلقائية على خوادم الإنتاج.</p>
+          <div class="cluster" style="--cluster-gap:.375rem"><span class="chip">vLLM</span><span class="chip">A100</span><span class="chip">Docker</span><span class="chip">gRPC</span></div>
+        </div>
+      </article>
+      <article class="card card--link work" style="--work-accent: var(--color-sky-fill)" data-reveal>
+        <div class="work__media" dir="ltr"><img src="../assets/diagrams/empoweromics-message-routing-thumb.svg" alt="" loading="lazy" data-inline></div>
+        <div class="work__body">
+          <span class="eyebrow">Empoweromics<span class="sep">/</span><bdi dir="ltr">2022–2023</bdi></span>
+          <h3 class="work__title"><a class="stretched" href="case-study-ar.html">توجيه رسائل واتساب بمعالجة اللغة والرؤية الحاسوبية</a></h3>
+          <p class="work__summary">تصنيف الرسائل نصوصًا وصورًا وتوجيهها إلى القسم المناسب، مع نماذج لمراحل العملاء، وبحث تقريبي يجد الأسماء رغم الأخطاء الإملائية.</p>
+          <div class="cluster" style="--cluster-gap:.375rem"><span class="badge above"><svg class="icon" aria-hidden="true"><use href="#i-award"/></svg>أفضل مهندس في العام</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 03 trace (axis mirrors: 2020 on the right) -->
+<section class="section" id="experience" aria-labelledby="exp-title">
+  <div class="container">
+    <header class="sec-head">
+      <div class="sec-head__rule"><span class="sec-head__index">03</span><span class="eyebrow">الخبرات</span></div>
+      <div class="sec-head__row">
+        <h2 class="sec-head__title" id="exp-title">سبع سنوات، معروضة كمسار تتبّع.</h2>
+        <p class="sec-head__lede">كل دور فترةٌ على خط زمني واحد، كما أقرأ مسارات التتبّع في الإنتاج. افتح أي فترة لترى ما أنجزته فيها.</p>
+      </div>
+    </header>
+    <div class="card trace" data-trace data-note="ExperienceTrace (ar) · time runs right-to-left via inset-inline-start">
+      <div class="trace__head">
+        <span class="eyebrow">الدور</span>
+        <div class="axis" aria-hidden="true"><span style="inset-inline-start:0%">2020</span><span style="inset-inline-start:14.29%">2021</span><span style="inset-inline-start:28.57%">2022</span><span style="inset-inline-start:42.86%">2023</span><span style="inset-inline-start:57.14%">2024</span><span style="inset-inline-start:71.43%">2025</span><span style="inset-inline-start:85.71%">2026</span></div>
+      </div>
+      <div class="trace__rows">
+        <div class="trace__grid" aria-hidden="true"><div></div><div><i class="yr" style="inset-inline-start:0%"></i><i class="yr" style="inset-inline-start:14.29%"></i><i class="yr" style="inset-inline-start:28.57%"></i><i class="yr" style="inset-inline-start:42.86%"></i><i class="yr" style="inset-inline-start:57.14%"></i><i class="yr" style="inset-inline-start:71.43%"></i><i class="yr" style="inset-inline-start:85.71%"></i><i class="now" style="inset-inline-start:96.43%" data-label="الآن"></i></div></div>
+
+        <details class="span" open style="--bar: var(--color-teal-fill)">
+          <summary>
+            <span class="span__who"><img class="span__logo" src="../assets/logos/tiles/globant-96.webp" alt="" width="36" height="36"><span class="span__text"><span class="span__role">قائد فريق الذكاء الاصطناعي</span><span class="span__org">Globant<span class="span__when"> · أبريل 2026 – الآن</span></span></span><svg class="icon icon--sm span__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+            <span class="span__lane" aria-hidden="true"><i class="span__bar span__bar--live" style="--s:89.29%;--w:8.33%"></i><span class="span__dates span__dates--before" style="--s:89.29%;--w:8.33%">أبريل 2026 – الآن</span></span>
+          </summary>
+          <div class="span__detail">
+            <dl class="span__attrs"><div><dt>النوع</dt><dd>دوام كامل، عن بُعد</dd></div><div><dt>التركيز</dt><dd>تنسيق الوكلاء، تشغيل النماذج، RAG</dd></div></dl>
+            <ul class="span__bullets"><li>أقود هندسة الذكاء الاصطناعي في <strong>مشروع STA</strong>: تنسيق متعدد الوكلاء للنماذج اللغوية، وتشغيل النماذج، وخطوط RAG قابلة للتوسع في الإنتاج.</li></ul>
+          </div>
+        </details>
+
+        <details class="span" style="--bar: var(--color-saffron-fill)">
+          <summary>
+            <span class="span__who"><img class="span__logo" src="../assets/logos/tiles/wakeb-96.webp" alt="" width="36" height="36"><span class="span__text"><span class="span__role">مهندس أول للذكاء الاصطناعي وMLOps</span><span class="span__org">Wakeb Data<span class="span__when"> · سبتمبر 2024 – أبريل 2026</span></span></span><svg class="icon icon--sm span__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+            <span class="span__lane" aria-hidden="true"><i class="span__bar" style="--s:66.67%;--w:22.62%"></i><span class="span__dates span__dates--before" style="--s:66.67%;--w:22.62%">سبتمبر 2024 – أبريل 2026</span></span>
+          </summary>
+          <div class="span__detail">
+            <dl class="span__attrs"><div><dt>النوع</dt><dd>دوام كامل، الجيزة، مصر</dd></div><div><dt>التقنيات</dt><dd dir="ltr" style="text-align:end">LangGraph, Qwen, vLLM, FastAPI, gRPC, Docker, Nginx</dd></div></dl>
+            <ul class="span__bullets">
+              <li>صمّمت <strong>روبوت محادثة متعدد الوكلاء</strong> غير متزامن بالكامل للإنتاج (LangGraph، وQwen عبر vLLM على وحدات A100): ستة وكلاء متخصصين، ومخططات فرعية قابلة للتركيب، بالعربية والإنجليزية.</li>
+              <li>تولّيت <strong>تشغيل النماذج من البداية إلى النهاية</strong>: إعداد vLLM، وتوزيع موارد GPU، وإصدارات النماذج، وفحوص السلامة، وإعادة التشغيل التلقائية على خوادم الإنتاج.</li>
+              <li>بنيت <strong>استرجاعًا هجينًا</strong> (متجهات وBM25 مع إعادة ترتيب بنموذج لغوي)، وتخزينًا مؤقتًا على مستوى العُقد، وبحثًا على الويب عبر MCP، في خدمات FastAPI ضمن حاويات Docker خلف Nginx.</li>
+              <li>أطلقت الجيل الثاني من <strong>بحث AIP الدلالي</strong>، و<strong>مساعدًا حكوميًا</strong> ثنائي اللغة لجهة حكومية سعودية مع تقييم النماذج ومراقبتها، ووكيلًا للأوراق البحثية بذاكرة محادثة.</li>
+              <li>نقلت واجهات داخلية أساسية من REST إلى <strong>gRPC</strong> لتقليل زمن الاستجابة بين الخدمات.</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="span" style="--bar: var(--color-coral-fill)">
+          <summary>
+            <span class="span__who"><img class="span__logo" src="../assets/logos/tiles/arabsstock-96.webp" alt="" width="36" height="36"><span class="span__text"><span class="span__role">مهندس ذكاء اصطناعي</span><span class="span__org">ArabsStock<span class="span__when"> · أبريل 2023 – ديسمبر 2024</span></span></span><svg class="icon icon--sm span__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+            <span class="span__lane" aria-hidden="true"><i class="span__bar" style="--s:46.43%;--w:25%"></i><span class="span__dates" style="--s:46.43%;--w:25%">أبريل 2023 – ديسمبر 2024</span></span>
+          </summary>
+          <div class="span__detail">
+            <dl class="span__attrs"><div><dt>النوع</dt><dd>دوام كامل، عن بُعد (دبي)</dd></div><div><dt>التقنيات</dt><dd dir="ltr" style="text-align:end">LangGraph, OpenAI API, Pinecone, FastAPI, PostgreSQL, Docker</dd></div></dl>
+            <ul class="span__bullets">
+              <li>بنيت <strong>مساعد Arabsstock</strong>: 14 وكيلًا على LangGraph للبحث الدلالي، وتوليد الصور بالذكاء الاصطناعي، وعمليات قواعد البيانات، والإشراف على المحتوى.</li>
+              <li>طوّرت <strong>البحث الدلالي</strong> للمنصة (تضمينات OpenAI مع Pinecone) والبحث بالتشابه البصري عبر ملايين الصور ومقاطع الفيديو والرسوم المتجهة.</li>
+              <li>وسّعت المنصة إلى <strong>الصوت</strong>: توليد الأصوات والبحث فيها لمكتبة صوتية تجريبية، وتصنيف الآلات الموسيقية، وكشف الإيقاع (BPM)، والعلامات المائية الصوتية.</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="span" style="--bar: var(--color-slate-fill)">
+          <summary>
+            <span class="span__who"><img class="span__logo" src="../assets/logos/tiles/tabaqat-96.webp" alt="" width="36" height="36"><span class="span__text"><span class="span__role">مهندس برمجيات</span><span class="span__org">Tabaqat<span class="span__when"> · فبراير 2023 – مايو 2024</span><span class="sr-only">، دوام جزئي</span></span></span><svg class="icon icon--sm span__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+            <span class="span__lane" aria-hidden="true"><i class="span__bar span__bar--pt" style="--s:44.05%;--w:19.05%"></i><span class="span__dates" style="--s:44.05%;--w:19.05%">فبراير 2023 – مايو 2024</span></span>
+          </summary>
+          <div class="span__detail">
+            <dl class="span__attrs"><div><dt>النوع</dt><dd>دوام جزئي، عن بُعد (السعودية)</dd></div><div><dt>التقنيات</dt><dd dir="ltr" style="text-align:end">Prefect, AWS Athena, DuckDB, MapLibre</dd></div></dl>
+            <ul class="span__bullets">
+              <li>صمّمت وأدرت <strong>خطوط البيانات في Prefect</strong> لبيانات جغرافية من جهات حكومية سعودية.</li>
+              <li>استعلمت البيانات الجغرافية من Overture Maps عبر <strong>AWS Athena وDuckDB</strong> للتحليلات المكانية.</li>
+              <li>نشرت حلول الخرائط باستخدام MapProxy وKepler.gl وMapLibre وMBTileServer.</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="span" style="--bar: var(--color-sky-fill)">
+          <summary>
+            <span class="span__who"><img class="span__logo" src="../assets/logos/tiles/empoweromics-96.webp" alt="" width="36" height="36"><span class="span__text"><span class="span__role">عالم بيانات <svg class="icon icon--sm span__award" aria-label="أفضل مهندس في العام" role="img" style="display:inline;vertical-align:-.2em"><use href="#i-award"/></svg></span><span class="span__org">Empoweromics<span class="span__when"> · يناير 2022 – مارس 2023</span></span></span><svg class="icon icon--sm span__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+            <span class="span__lane" aria-hidden="true"><i class="span__bar" style="--s:28.57%;--w:17.86%"></i><span class="span__dates" style="--s:28.57%;--w:17.86%">يناير 2022 – مارس 2023</span></span>
+          </summary>
+          <div class="span__detail">
+            <dl class="span__attrs"><div><dt>النوع</dt><dd>دوام كامل، القاهرة</dd></div><div><dt>التكريم</dt><dd>أفضل مهندس في العام</dd></div></dl>
+            <ul class="span__bullets">
+              <li>وحّدت بيانات <strong>أكثر من 3,008 مطوّرًا عقاريًا</strong>، لكلٍّ منهم مخطط بيانات مختلف، لتوسيع الخريطة الإلكترونية الفورية للشركة.</li>
+              <li>بنيت نماذج لمراحل العملاء لترتيب أولويات الوسطاء، و<strong>تصنيفًا تلقائيًا لرسائل واتساب</strong> (نصوصًا وصورًا) يوجّهها إلى القسم المناسب، و"بحثًا ذكيًا" تقريبيًا يجد العملاء رغم الأخطاء الإملائية.</li>
+              <li>صمّمت عمليات ETL من Cosmos DB إلى SQL Server بمشغّلات Azure مجدولة.</li>
+            </ul>
+          </div>
+        </details>
+
+        <details class="span" style="--bar: var(--color-sage-fill)">
+          <summary>
+            <span class="span__who"><img class="span__logo" src="../assets/logos/tiles/buid-96.webp" alt="" width="36" height="36"><span class="span__text"><span class="span__role">مساعد باحث في الذكاء الاصطناعي</span><span class="span__org">الجامعة البريطانية في دبي وجامعة أم القرى<span class="span__when"> · مارس – نوفمبر 2022</span><span class="sr-only">، دوام جزئي</span></span></span><svg class="icon icon--sm span__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+            <span class="span__lane" aria-hidden="true"><i class="span__bar span__bar--pt" style="--s:30.95%;--w:10.71%"></i><span class="span__dates" style="--s:30.95%;--w:10.71%">مارس – نوفمبر 2022</span></span>
+          </summary>
+          <div class="span__detail">
+            <dl class="span__attrs"><div><dt>النوع</dt><dd>دوام جزئي، عن بُعد</dd></div></dl>
+            <ul class="span__bullets"><li>أشرفت على طلاب ماجستير في المعلوماتية الطبية الحيوية في الجامعة البريطانية في دبي وفي جامعة أم القرى في مشاريع بحثية: تلخيص النصوص، وأنظمة التوصية، والتصنيف. وقدّمت محاضرات في تعلّم الآلة والتعلّم العميق وفهم اللغة الطبيعية.</li></ul>
+          </div>
+        </details>
+
+        <details class="span" style="--bar: var(--color-sage-fill)">
+          <summary>
+            <span class="span__who"><img class="span__logo" src="../assets/logos/tiles/mtc-96.webp" alt="" width="36" height="36"><span class="span__text"><span class="span__role">مدرّب ذكاء اصطناعي</span><span class="span__org">الكلية الفنية العسكرية، القاهرة<span class="span__when"> · أغسطس 2022</span><span class="sr-only">، دوام جزئي</span></span></span><svg class="icon icon--sm span__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+            <span class="span__lane" aria-hidden="true"><i class="span__bar span__bar--pt" style="--s:36.9%;--w:1.19%"></i><span class="span__dates" style="--s:36.9%;--w:1.19%">أغسطس 2022</span></span>
+          </summary>
+          <div class="span__detail">
+            <dl class="span__attrs"><div><dt>النوع</dt><dd>دوام جزئي، القاهرة</dd></div></dl>
+            <ul class="span__bullets"><li>درّست مقررات في الذكاء الاصطناعي للمهندسين: أساسيات تعلّم الآلة، والتعلّم العميق، والتطبيق العملي.</li></ul>
+          </div>
+        </details>
+
+        <details class="span" style="--bar: var(--color-slate-fill)">
+          <summary>
+            <span class="span__who"><img class="span__logo" src="../assets/logos/tiles/aestheticspro-96.webp" alt="" width="36" height="36"><span class="span__text"><span class="span__role">عالم بيانات</span><span class="span__org">AestheticsPro، الولايات المتحدة<span class="span__when"> · فبراير – أبريل 2022</span><span class="sr-only">، عمل مستقل</span></span></span><svg class="icon icon--sm span__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+            <span class="span__lane" aria-hidden="true"><i class="span__bar span__bar--pt" style="--s:29.76%;--w:3.57%"></i><span class="span__dates" style="--s:29.76%;--w:3.57%">فبراير – أبريل 2022</span></span>
+          </summary>
+          <div class="span__detail">
+            <dl class="span__attrs"><div><dt>النوع</dt><dd>عمل مستقل، عن بُعد</dd></div></dl>
+            <ul class="span__bullets"><li>تحليلات صحية لشركة برمجيات أمريكية: جمع البيانات وتنظيفها في SQL Server، وتحليل استكشافي، ولوحات بيانات لأصحاب القرار.</li></ul>
+          </div>
+        </details>
+
+        <details class="span" style="--bar: var(--color-slate-fill)">
+          <summary>
+            <span class="span__who"><img class="span__logo" src="../assets/logos/tiles/mdp-96.webp" alt="" width="36" height="36"><span class="span__text"><span class="span__role">مطوّر SQL</span><span class="span__org">Misria Digital Payments (MDP)<span class="span__when"> · يناير 2020 – يناير 2021</span></span></span><svg class="icon icon--sm span__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+            <span class="span__lane" aria-hidden="true"><i class="span__bar" style="--s:0%;--w:15.48%"></i><span class="span__dates" style="--s:0%;--w:15.48%">يناير 2020 – يناير 2021</span></span>
+          </summary>
+          <div class="span__detail">
+            <dl class="span__attrs"><div><dt>النوع</dt><dd>دوام كامل، القاهرة</dd></div></dl>
+            <ul class="span__bullets"><li>إجراءات SQL مخزّنة وتحسين أداء الاستعلامات لأنظمة مدفوعات في الإنتاج.</li></ul>
+          </div>
+        </details>
+
+        <details class="span" style="--bar: var(--color-line-input)">
+          <summary>
+            <span class="span__who"><img class="span__logo" src="../assets/logos/tiles/cairo-university-96.webp" alt="" width="36" height="36"><span class="span__text"><span class="span__role">ماجستير علوم البيانات</span><span class="span__org">جامعة القاهرة<span class="span__when"> · سبتمبر 2023 – سبتمبر 2026</span></span></span><svg class="icon icon--sm span__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+            <span class="span__lane" aria-hidden="true"><i class="span__bar span__bar--study" style="--s:52.38%;--w:44.05%"></i><span class="span__dates span__dates--before" style="--s:52.38%;--w:44.05%">سبتمبر 2023 – سبتمبر 2026</span></span>
+          </summary>
+          <div class="span__detail">
+            <dl class="span__attrs"><div><dt>الكلية</dt><dd>الدراسات العليا للبحوث الإحصائية</dd></div></dl>
+            <ul class="span__bullets"><li>تعلّم الآلة المتقدم، والاستدلال البايزي، والتعرّف على الأنماط، والشبكات العصبية العميقة، والتنبؤ بالسلاسل الزمنية، وأنظمة دعم القرار، ومشروع في أنظمة التوصية. درستها بالتوازي مع عمل كامل في الإنتاج.</li></ul>
+          </div>
+        </details>
+
+        <details class="span" style="--bar: var(--color-line-input)">
+          <summary>
+            <span class="span__who"><img class="span__logo" src="../assets/logos/tiles/iti-96.webp" alt="" width="36" height="36"><span class="span__text"><span class="span__role">دبلوم الذكاء الاصطناعي، 9 أشهر</span><span class="span__org">ITI بالشراكة مع EPITA باريس<span class="span__when"> · أبريل 2021 – فبراير 2022</span></span></span><svg class="icon icon--sm span__chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></span>
+            <span class="span__lane" aria-hidden="true"><i class="span__bar span__bar--study" style="--s:17.86%;--w:13.1%"></i><span class="span__dates" style="--s:17.86%;--w:13.1%">أبريل 2021 – فبراير 2022</span></span>
+          </summary>
+          <div class="span__detail">
+            <dl class="span__attrs"><div><dt>الفترة</dt><dd>أبريل 2021 – فبراير 2022</dd></div></dl>
+            <ul class="span__bullets"><li>برنامج الدراسات العليا في الذكاء الاصطناعي في معهد تكنولوجيا المعلومات بالشراكة مع EPITA في باريس. مستودعاتي التعليمية العامة تعود إلى هذه الفترة.</li></ul>
+          </div>
+        </details>
+      </div>
+      <div class="trace__foot"><div class="trace__legend" aria-hidden="true"><span><i style="background:var(--color-teal-fill)"></i>دوام كامل</span><span><i class="pt"></i>دوام جزئي أو عمل مستقل</span><span><i class="st"></i>دراسة</span></div><span class="t-xs muted">استخدم ↑ ↓ للتنقّل بين الأدوار، وEnter للفتح.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 04 -->
+<section class="section section--band" id="open-source" aria-labelledby="oss-title">
+  <div class="container">
+    <header class="sec-head">
+      <div class="sec-head__rule"><span class="sec-head__index">04</span><span class="eyebrow">المصادر المفتوحة</span></div>
+      <div class="sec-head__row">
+        <h2 class="sec-head__title" id="oss-title">أدوات صغيرة تختبر النماذج اللغوية كما أختبرها في العمل.</h2>
+        <p class="sec-head__lede">التقييم والموثوقية والاسترجاع؛ كل أداة قابلة لإعادة التشغيل، وتُقرأ في جلسة واحدة.</p>
+      </div>
+    </header>
+    <div class="repos">
+      <article class="card card--pad card--link repo" style="--repo-accent: var(--color-sky-fill)" data-reveal>
+        <div class="repo__head"><span class="icon-tile icon-tile--sky"><svg class="icon" aria-hidden="true"><use href="#i-evaluate"/></svg></span><div dir="ltr" style="text-align:end"><div class="repo__owner">mhatem5351 /</div><h3 class="repo__name"><a class="stretched" href="https://github.com/mhatem5351/staged-llm-evaluator">staged-llm-evaluator</a></h3></div><svg class="icon icon--sm repo__ext icon--flip" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></div>
+        <p class="repo__desc">مسار LangGraph قابل لإعادة التشغيل يقيّم مخرجات النماذج اللغوية على مراحل منفصلة للجودة والأمان وإعادة المحاولة، ويُحسب الحكم النهائي في الكود لا في النموذج.</p>
+        <div class="cluster" style="--cluster-gap:.375rem"><span class="chip">Python</span><span class="chip">LangGraph</span><span class="chip">LLM-as-judge</span></div>
+      </article>
+      <article class="card card--pad card--link repo" style="--repo-accent: var(--color-saffron-fill); --i:1" data-reveal>
+        <div class="repo__head"><span class="icon-tile icon-tile--saffron"><svg class="icon" aria-hidden="true"><use href="#i-agents"/></svg></span><div dir="ltr" style="text-align:end"><div class="repo__owner">mhatem5351 /</div><h3 class="repo__name"><a class="stretched" href="https://github.com/mhatem5351/prompt-reliability-harness">prompt-reliability-harness</a></h3></div><svg class="icon icon--sm repo__ext icon--flip" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></div>
+        <p class="repo__desc">يقيس مدى ثبات إجابات النموذج حين يُعاد صياغة السؤال نفسه، أو تدخله أخطاء إملائية، أو يُعاد ترتيبه، أو تُحشى فيه معلومات مشتِّتة.</p>
+        <div class="cluster" style="--cluster-gap:.375rem"><span class="chip">Python</span><span class="chip">OpenAI</span><span class="chip">Robustness testing</span></div>
+      </article>
+      <article class="card card--pad card--link repo" style="--repo-accent: var(--color-slate-fill); --i:2" data-reveal>
+        <div class="repo__head"><span class="icon-tile icon-tile--slate"><svg class="icon" aria-hidden="true"><use href="#i-retrieve"/></svg></span><div dir="ltr" style="text-align:end"><div class="repo__owner">mhatem5351 /</div><h3 class="repo__name"><a class="stretched" href="https://github.com/mhatem5351/rag-answering-service">rag-answering-service</a></h3></div><svg class="icon icon--sm repo__ext icon--flip" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></div>
+        <p class="repo__desc">خدمة استرجاع صغيرة بـFastAPI مع فهارس جيب التمام والضرب النقطي، وحماية من حقن الأوامر، ومقاييس لزمن الاستجابة ونسبة الإصابة.</p>
+        <div class="cluster" style="--cluster-gap:.375rem"><span class="chip">Python</span><span class="chip">FastAPI</span><span class="chip">Embeddings</span><span class="chip">RAG</span></div>
+      </article>
+      <article class="card card--pad card--link repo repo--small" style="--repo-accent: var(--color-sage-fill)" data-reveal>
+        <div class="repo__head"><span class="icon-tile icon-tile--sage"><svg class="icon" aria-hidden="true"><use href="#i-bilingual"/></svg></span><div><div class="repo__owner" dir="ltr" style="text-align:end">mhatem5351 /</div><h3 class="repo__name"><a class="stretched" href="https://github.com/mhatem5351/Arabic-Sentiment-Analysis-With-Multiple-Models">تحليل المشاعر في النصوص العربية</a></h3></div><svg class="icon icon--sm repo__ext icon--flip" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></div>
+        <p class="repo__desc">نماذج BiGRU وCNN وأخرى تقليدية على نحو 455 ألف نص عربي بتضمينات AraVec.</p>
+      </article>
+      <article class="card card--pad card--link repo repo--small" style="--repo-accent: var(--color-coral-fill); --i:1" data-reveal>
+        <div class="repo__head"><span class="icon-tile icon-tile--coral"><svg class="icon" aria-hidden="true"><use href="#i-file-text"/></svg></span><div><div class="repo__owner" dir="ltr" style="text-align:end">mhatem5351 /</div><h3 class="repo__name"><a class="stretched" href="https://github.com/mhatem5351/Text-Summarization-NLP">تلخيص النصوص</a></h3></div><svg class="icon icon--sm repo__ext icon--flip" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></div>
+        <p class="repo__desc">تطبيق Dash يقارن ملخصات DistilBART وT5 وTextRank. مشروع جماعي ضمن دبلوم الذكاء الاصطناعي.</p>
+      </article>
+      <article class="card card--pad card--link repo repo--small" style="--repo-accent: var(--color-teal-fill); --i:2" data-reveal>
+        <div class="repo__head"><span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-frontend"/></svg></span><div dir="ltr" style="text-align:end"><div class="repo__owner">mhatem5351 /</div><h3 class="repo__name"><a class="stretched" href="https://github.com/mhatem5351/logic-controls-website">logic-controls-website</a></h3></div><svg class="icon icon--sm repo__ext icon--flip" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></div>
+        <p class="repo__desc">موقع Astro متعدد اللغات على Cloudflare Workers المعروض أدناه، مع حزمة اختباراته الكاملة.</p>
+      </article>
+    </div>
+    <div class="repos__more"><p>بقية مستودعاتي العامة تمارين من دبلوم الذكاء الاصطناعي (2021–2022)، أحتفظ بها سجلًّا لبداياتي.</p><a class="btn btn--secondary btn--sm" href="https://github.com/mhatem5351"><svg class="icon" aria-hidden="true"><use href="#i-github"/></svg>كل المستودعات</a></div>
+  </div>
+</section>
+
+<!-- =========================================================== 05 -->
+<section class="section" id="assistant" aria-labelledby="assist-title">
+  <div class="container assist">
+    <div class="stack" style="--stack-gap:1.5rem">
+      <div class="sec-head__rule"><span class="sec-head__index">05</span><span class="eyebrow">المساعد الذكي</span></div>
+      <h2 class="sec-head__title" id="assist-title" style="max-width:14ch">اسأل عن عملي.</h2>
+      <p class="lede">قرأ مساعدي سيرتي الذاتية وملفيّ على LinkedIn وGitHub. اسأله عن خبرتي، أو الصق وصفًا وظيفيًا لتعرف مدى ملاءمتي له. يجيب بالعربية أو الإنجليزية.</p>
+      <ol class="assist-flow" aria-label="كيف يعمل المساعد">
+        <li><b>سؤالك</b><span>نافذة المحادثة، بالعربية أو الإنجليزية</span></li>
+        <li><b>Worker</b><span>Cloudflare، ومسار /api/chat بحدود استخدام</span></li>
+        <li><b>Gemini</b><span>الملف الشخصي كاملًا في السياق</span></li>
+        <li><b>الإجابة</b><span>تصلك تدريجيًا أثناء التوليد</span></li>
+      </ol>
+      <p class="t-sm muted" style="max-width:38rem">كيف يعمل: ملف معرفة واحد، وCloudflare Worker، وGoogle Gemini. لا حاجة إلى قاعدة بيانات متجهية؛ فالملف الشخصي كله يتسع في سياق النموذج.</p>
+      <div class="cluster" style="--cluster-gap:.75rem"><button class="btn btn--accent" type="button" data-open-chat aria-haspopup="dialog"><svg class="icon" aria-hidden="true"><use href="#i-ask"/></svg>ابدأ المحادثة</button><a class="btn btn--ghost" href="https://github.com/mhatem5351/mohamedhatem.dev"><svg class="icon" aria-hidden="true"><use href="#i-github"/></svg>كيف بُني</a></div>
+    </div>
+    <div class="chat-preview-wrap">
+      <div class="chat-preview" data-open-chat aria-hidden="true" data-note="ChatPreview · decorative mirror of the widget; mouse click opens the chat, keyboard and AT use the Start a conversation button">
+        <span class="chat-preview__head"><img src="../assets/photo/mh-avatar-96.webp" alt="" width="36" height="36"><span><b>مساعد حاتم الذكي</b><small><i class="dot" aria-hidden="true"></i>إجابات من سيرته الذاتية وملفيه على LinkedIn وGitHub</small></span></span>
+        <span class="chat-preview__body">
+          <span class="chat-preview__msg"><span class="icon-tile" aria-hidden="true"><svg class="icon"><use href="#i-ask"/></svg></span><span>مرحبًا! أنا المساعد الذكي لحاتم. اسألني عن أعماله وأدواته، أو عن مدى ملاءمته لوظيفة ما. ويمكنك أيضًا لصق وصف وظيفي.</span></span>
+          <span class="chat-preview__try">جرّب أن تسأل</span>
+          <span class="chat-preview__chips"><span>ماذا بنى باستخدام LangGraph؟</span><span>هل يناسب دور مهندس LLM أول؟</span><span>كيف يشغّل النماذج في الإنتاج؟</span><span>كيف أتواصل معه؟</span></span>
+        </span>
+        <span class="chat-preview__composer"><span>اسأل عن خبرة حاتم…</span><i aria-hidden="true"><svg class="icon icon--sm"><use href="#i-send"/></svg></i></span>
+        <span class="chat-preview__hint">نصيحة: الصق وصفًا وظيفيًا واسأل «هل يناسب هذا الدور؟»</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 06 -->
+<section class="section section--band" id="craft" aria-labelledby="craft-title">
+  <div class="container">
+    <header class="sec-head"><div class="sec-head__rule"><span class="sec-head__index">06</span><span class="eyebrow">حِرفة الواجهات</span></div></header>
+    <div class="show">
+      <div class="stack" style="--stack-gap:1.5rem">
+        <h2 class="sec-head__title" id="craft-title" style="max-width:16ch">وأبني الواجهات أيضًا، وبالمعيار نفسه.</h2>
+        <p class="lede">عمل مستقل: <a class="link" href="https://logic-controls.com" dir="ltr">logic-controls.com</a>، موقع شركة أتمتة صناعية في مصر بأربع لغات: الإنجليزية، والعربية من اليمين لليسار، والصينية، والتركية، مع عرض تفاعلي لواجهة تشغيل صناعية (HMI).</p>
+        <div class="show__stats">
+          <div class="show__stat"><b>4</b><span>لغات، منها العربية من اليمين لليسار</span></div>
+          <div class="show__stat"><b dir="ltr" style="text-align:end">98–100</b><span>في Lighthouse على الجوال، و100 على سطح المكتب</span></div>
+          <div class="show__stat"><b dir="ltr" style="text-align:end">~950 + ~900</b><span>اختبار وحدة واختبار شامل في CI على Chrome وAndroid وSafari على iPhone</span></div>
+          <div class="show__stat"><b>AA</b><span>WCAG 2.2 بلا مخالفات في axe، مع احترام تقليل الحركة</span></div>
+        </div>
+        <p class="cap__stack" dir="ltr" style="text-align:end"><b>Astro</b> · TypeScript · Tailwind CSS · Cloudflare Workers · Turnstile</p>
+        <div class="cluster" style="--cluster-gap:.75rem">
+          <a class="btn btn--primary" href="https://logic-controls.com">زيارة الموقع<svg class="icon icon--flip" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></a>
+          <a class="btn btn--ghost" href="https://github.com/mhatem5351/logic-controls-website"><svg class="icon" aria-hidden="true"><use href="#i-github"/></svg>الكود المصدري</a>
+        </div>
+      </div>
+      <div class="devices" aria-hidden="true">
+        <div class="browser">
+          <div class="browser__bar"><span class="browser__dots"><i></i><i></i><i></i></span><span class="browser__url">logic-controls.com/ar/</span><span style="width:2.5rem"></span></div>
+          <picture><source type="image/avif" srcset="../assets/showcase/lc-desktop-ar-960.avif 960w, ../assets/showcase/lc-desktop-ar-1440.avif 1440w" sizes="(min-width:64rem) 44rem, 100vw"><img src="../assets/showcase/lc-desktop-ar-960.webp" srcset="../assets/showcase/lc-desktop-ar-960.webp 960w, ../assets/showcase/lc-desktop-ar-1440.webp 1440w" sizes="(min-width:64rem) 44rem, 100vw" alt="" loading="lazy" width="960" height="600"></picture>
+        </div>
+        <div class="phone"><picture><source type="image/avif" srcset="../assets/showcase/lc-phone-ar-390.avif 390w, ../assets/showcase/lc-phone-ar-780.avif 780w" sizes="12rem"><img src="../assets/showcase/lc-phone-ar-390.webp" srcset="../assets/showcase/lc-phone-ar-390.webp 390w, ../assets/showcase/lc-phone-ar-780.webp 780w" sizes="12rem" alt="" loading="lazy" width="390" height="844"></picture></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 06 -->
+<section class="section" id="skills" aria-labelledby="skills-title">
+  <div class="container">
+    <header class="sec-head">
+      <div class="sec-head__rule"><span class="sec-head__index">07</span><span class="eyebrow">المهارات</span></div>
+      <div class="sec-head__row">
+        <h2 class="sec-head__title" id="skills-title">مهارات، مع الدليل.</h2>
+        <p class="sec-head__lede">كل نقطة تشير إلى مكان استخدمتُ فيه المهارة فعليًا: في وظيفة، أو عمل مستقل، أو مستودع عام.</p>
+      </div>
+    </header>
+    <div class="card card--pad">
+      <div class="matrix-wrap" tabindex="0" role="region" aria-label="جدول المهارات، يمكن تمريره أفقيًا">
+        <table class="matrix">
+          <caption class="sr-only">المهارات حسب أماكن استخدامها. النقطة الممتلئة تعني أن المهارة استُخدمت في هذا الدور أو المشروع.</caption>
+          <thead><tr><th scope="col" style="text-align:start">المهارة</th><th scope="col">Globant</th><th scope="col">Wakeb</th><th scope="col">ArabsStock</th><th scope="col">Tabaqat</th><th scope="col">Empoweromics</th><th scope="col">مستقل وسابق</th><th scope="col">مفتوح المصدر</th></tr></thead>
+          <tbody>
+            <tr class="grp" style="--grp: var(--color-teal); --grp-fill: var(--color-teal-fill)"><th colspan="8" scope="colgroup">الوكلاء والنماذج اللغوية</th></tr>
+            <tr style="--grp-fill: var(--color-teal-fill)"><th scope="row">تنسيق الوكلاء المتعددين</th><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td></tr>
+            <tr style="--grp-fill: var(--color-teal-fill)"><th scope="row">LangGraph</th><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td></tr>
+            <tr style="--grp-fill: var(--color-teal-fill)"><th scope="row">تكامل الأدوات عبر MCP</th><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td></tr>
+            <tr style="--grp-fill: var(--color-teal-fill)"><th scope="row">OpenAI API</th><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td></tr>
+            <tr class="grp" style="--grp: var(--color-saffron); --grp-fill: var(--color-saffron-fill)"><th colspan="8" scope="colgroup">الاسترجاع</th></tr>
+            <tr style="--grp-fill: var(--color-saffron-fill)"><th scope="row">خطوط RAG</th><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td></tr>
+            <tr style="--grp-fill: var(--color-saffron-fill)"><th scope="row">بحث هجين وإعادة ترتيب بنموذج لغوي</th><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td></tr>
+            <tr style="--grp-fill: var(--color-saffron-fill)"><th scope="row">البحث الدلالي والبصري</th><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td></tr>
+            <tr class="grp" style="--grp: var(--color-slate); --grp-fill: var(--color-slate-fill)"><th colspan="8" scope="colgroup">التشغيل وMLOps</th></tr>
+            <tr style="--grp-fill: var(--color-slate-fill)"><th scope="row">تشغيل النماذج (vLLM ووحدات GPU)</th><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td></tr>
+            <tr style="--grp-fill: var(--color-slate-fill)"><th scope="row">خدمات FastAPI المصغّرة</th><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td></tr>
+            <tr style="--grp-fill: var(--color-slate-fill)"><th scope="row">Docker وCI/CD</th><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td></tr>
+            <tr style="--grp-fill: var(--color-slate-fill)"><th scope="row">تنسيق سير العمل (Prefect)</th><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td></tr>
+            <tr class="grp" style="--grp: var(--color-sky); --grp-fill: var(--color-sky-fill)"><th colspan="8" scope="colgroup">الجودة</th></tr>
+            <tr style="--grp-fill: var(--color-sky-fill)"><th scope="row">تقييم النماذج اللغوية ومراقبتها</th><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td></tr>
+            <tr style="--grp-fill: var(--color-sky-fill)"><th scope="row">إتاحة الواجهات واختبارها</th><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td></tr>
+            <tr class="grp" style="--grp: var(--color-coral); --grp-fill: var(--color-coral-fill)"><th colspan="8" scope="colgroup">البيانات وتعلّم الآلة</th></tr>
+            <tr style="--grp-fill: var(--color-coral-fill)"><th scope="row">معالجة اللغة (العربية والإنجليزية)</th><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td></tr>
+            <tr style="--grp-fill: var(--color-coral-fill)"><th scope="row">الرؤية الحاسوبية وتعلّم الآلة الصوتي</th><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td><td><i class="n"></i></td></tr>
+            <tr style="--grp-fill: var(--color-coral-fill)"><th scope="row">ETL وSQL</th><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td></tr>
+            <tr style="--grp-fill: var(--color-coral-fill)"><th scope="row">الحوسبة السحابية (AWS وAzure)</th><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="n"></i></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="y"></i><span class="sr-only">نعم</span></td><td><i class="n"></i></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="matrix-legend"><span>مستقل وسابق: Logic Controls (واجهات)، وAestheticsPro، وMisria Digital Payments.</span><span>وأيضًا: Python وPyTorch وTensorFlow وscikit-learn وPostgreSQL وKubernetes (EKS) وLinux.</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 07 -->
+<section class="section section--band" id="education" aria-labelledby="edu-title">
+  <div class="container">
+    <header class="sec-head">
+      <div class="sec-head__rule"><span class="sec-head__index">08</span><span class="eyebrow">التعليم والشهادات</span></div>
+      <div class="sec-head__row"><h2 class="sec-head__title" id="edu-title">تخرّجت مهندسًا، ثم تخصّصت في الذكاء الاصطناعي.</h2></div>
+    </header>
+    <div class="edu">
+      <div class="card card--pad">
+        <h3 class="eyebrow" style="margin-block-end:1.25rem">الشهادات الجامعية</h3>
+        <ul class="edu__list" role="list">
+          <li class="edu__item"><img class="edu__logo" src="../assets/logos/tiles/cairo-university-96.webp" alt="" width="44" height="44"><div><div class="edu__title">ماجستير علوم البيانات</div><div class="edu__sub">جامعة القاهرة، كلية الدراسات العليا للبحوث الإحصائية</div></div><div class="edu__when">2023 – 2026</div></li>
+          <li class="edu__item"><img class="edu__logo" src="../assets/logos/tiles/iti-96.webp" alt="" width="44" height="44"><div><div class="edu__title">دبلوم الذكاء الاصطناعي</div><div class="edu__sub">معهد تكنولوجيا المعلومات (ITI)، 9 أشهر، بالشراكة مع EPITA باريس</div></div><div class="edu__when">2021 – 2022</div></li>
+          <li class="edu__item"><img class="edu__logo" src="../assets/logos/tiles/tanta-university-96.webp" alt="" width="44" height="44"><div><div class="edu__title">بكالوريوس الهندسة الإنشائية</div><div class="edu__sub">جامعة طنطا، كلية الهندسة</div></div><div class="edu__when">2015 – 2020</div></li>
+        </ul>
+      </div>
+      <div class="card card--pad">
+        <h3 class="eyebrow" style="margin-block-end:1.25rem">الشهادات المهنية والتكريم</h3>
+        <div class="cert-feature"><img class="edu__logo" src="../assets/logos/tiles/aws-96.webp" alt="" width="44" height="44"><div><div class="edu__title" lang="en" dir="ltr" style="text-align:end">AWS Certified Machine Learning – Specialty</div><div class="edu__sub">شهادة AWS التخصصية في تعلّم الآلة · 2022</div></div></div>
+        <ul class="edu__list" role="list">
+          <li class="edu__item"><span class="icon-tile icon-tile--saffron" style="width:2.75rem;height:2.75rem"><svg class="icon" aria-hidden="true"><use href="#i-award"/></svg></span><div><div class="edu__title">أفضل مهندس في العام</div><div class="edu__sub">Empoweromics</div></div><div class="edu__when">2022</div></li>
+          <li class="edu__item"><span class="icon-tile icon-tile--slate" style="width:2.75rem;height:2.75rem"><svg class="icon" aria-hidden="true"><use href="#i-certificate"/></svg></span><div><div class="edu__title" lang="en" dir="ltr" style="text-align:end">Data Scientist with Python · Data Analyst with SQL Server</div><div class="edu__sub">مسارات DataCamp المهنية</div></div><div class="edu__when">2021 · 2022</div></li>
+          <li class="edu__item"><span class="icon-tile icon-tile--slate" style="width:2.75rem;height:2.75rem"><svg class="icon" aria-hidden="true"><use href="#i-certificate"/></svg></span><div><div class="edu__title" lang="en" dir="ltr" style="text-align:end">AWS Academy Cloud Foundations · Intro to Tableau</div><div class="edu__sub">AWS Academy · 365 Data Science</div></div><div class="edu__when"></div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 08 -->
+<section class="section" id="contact" aria-labelledby="contact-title">
+  <div class="container contact">
+    <div class="stack" style="--stack-gap:1.5rem">
+      <div class="sec-head__rule"><span class="sec-head__index">09</span><span class="eyebrow">تواصل</span></div>
+      <h2 class="contact__title" id="contact-title">لنتحدث.</h2>
+      <div class="contact__intro">
+        <div class="portrait" aria-hidden="true"><img src="../assets/photo/mh-square-320.webp" alt="" loading="lazy"><img src="../assets/photo/orbit-ring.svg" alt="" style="position:absolute;inset:0;width:100%;height:100%;border-radius:0;background:none"></div>
+        <p class="lede">تبحث عن مهندس لدور في الذكاء الاصطناعي أو LLM أو MLOps، أو تخطط لمشروع؟ أسرع طريقة للوصول إليّ هي WhatsApp أو البريد الإلكتروني. أو <button class="link" type="button" data-open-chat style="font-size:inherit">اسأل مساعدي الذكي</button> أولًا.</p>
+      </div>
+      <dl class="facts">
+        <div><dt>أقيم في</dt><dd>القاهرة، مصر</dd></div>
+        <div><dt>المنطقة الزمنية</dt><dd><span dir="ltr">UTC+2</span> · الساعة الآن <time data-cairo-time>14:32</time></dd></div>
+        <div class="wide"><dt>منفتح على</dt><dd>أدوار قيادة فرق الذكاء الاصطناعي، وهندسة الذكاء الاصطناعي، وLLM، والوكلاء الأذكياء، وMLOps، وتعلّم الآلة</dd></div>
+        <div class="wide"><dt>اللغات</dt><dd>العربية (اللغة الأم) · الإنجليزية (كفاءة مهنية)</dd></div>
+      </dl>
+      <div class="channels">
+        <a class="channel card--link" href="https://wa.me/201142070946"><span class="icon-tile icon-tile--sage"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg></span><span><span class="channel__label">واتساب</span><br><span class="channel__value latin" dir="ltr">+20 114 207 0946</span></span><svg class="icon icon--sm muted icon--flip" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></a>
+        <div class="channel"><span class="icon-tile"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg></span><span><span class="channel__label">البريد الإلكتروني</span><br><a class="channel__value link latin" dir="ltr" href="mailto:hatem@mohamedhatem.dev" style="text-decoration:none;color:var(--color-ink)">hatem@mohamedhatem.dev</a></span><button class="btn btn--ghost btn--sm btn--icon channel__copy" type="button" data-copy="hatem@mohamedhatem.dev" aria-label="نسخ عنوان البريد"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg></button></div>
+        <a class="channel card--link" href="https://www.linkedin.com/in/mohamed-hatem-6a5790173"><span class="icon-tile icon-tile--sky"><svg class="icon" aria-hidden="true"><use href="#i-linkedin"/></svg></span><span><span class="channel__label">LinkedIn</span><br><span class="channel__value latin" dir="ltr">in/mohamed-hatem</span></span><svg class="icon icon--sm muted icon--flip" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></a>
+        <a class="channel card--link" href="https://github.com/mhatem5351"><span class="icon-tile icon-tile--slate"><svg class="icon" aria-hidden="true"><use href="#i-github"/></svg></span><span><span class="channel__label">GitHub</span><br><span class="channel__value latin" dir="ltr">mhatem5351</span></span><svg class="icon icon--sm muted icon--flip" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></a>
+      </div>
+    </div>
+    <form class="card card--pad form" action="#" method="post" novalidate>
+      <div><h3 class="t-lg">أو أرسل رسالة</h3><p class="muted t-sm" style="margin-block-start:.25rem">تصل مباشرة إلى بريدي، وأردّ من <span class="latin" dir="ltr">hatem@mohamedhatem.dev</span>.</p></div>
+      <div class="form__row">
+        <div class="field"><label for="f-name">الاسم</label><input class="input" id="f-name" name="name" autocomplete="name" required></div>
+        <div class="field"><label for="f-email">البريد الإلكتروني</label><input class="input" id="f-email" name="email" type="email" dir="ltr" autocomplete="email" required aria-invalid="true" aria-describedby="f-email-err" value="hatem@"><p class="field__error" id="f-email-err"><svg class="icon icon--sm" aria-hidden="true"><use href="#i-close"/></svg>اكتب عنوان بريد كاملًا، مثل name@company.com</p></div>
+      </div>
+      <div class="form__row">
+        <div class="field"><label for="f-company">الشركة <span class="opt">(اختياري)</span></label><input class="input" id="f-company" name="company" autocomplete="organization"></div>
+        <div class="field"><label for="f-topic">موضوع الرسالة</label><select class="input" id="f-topic" name="topic" required><option value="">اختر موضوعًا</option><option>فرصة عمل</option><option>مشروع أو استشارة</option><option>محاضرة أو تعاون</option><option>موضوع آخر</option></select></div>
+      </div>
+      <div class="field"><label for="f-msg">الرسالة</label><textarea class="input" id="f-msg" name="message" required placeholder="بضعة أسطر عن الدور أو المشروع…"></textarea></div>
+      <div class="turnstile-slot">Turnstile · 300×65 · language="ar"</div>
+      <div class="form__foot"><p class="field__hint">محمي بواسطة Cloudflare Turnstile. بلا تتبّع.</p><button class="btn btn--primary" type="submit">إرسال الرسالة<svg class="icon arrow icon--flip" aria-hidden="true"><use href="#i-arrow-right"/></svg></button></div>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="stack" style="--stack-gap:1rem">
+        <a class="brand" href="#top"><svg viewBox="0 0 64 64" class="brand__mark" aria-hidden="true"><rect width="64" height="64" rx="14.08" fill="var(--color-surface-inverse)"/><path d="M13.12 47.415L13.12 15.049L17.751 15.049L24.448 27.074L31.145 15.049L35.776 15.049L35.776 47.415L31.461 47.415L31.461 22.798L26.763 31.232L22.133 31.232L17.435 22.798L17.435 47.415ZM33.618 29.209L48.722 29.209L48.722 33.255L33.618 33.255ZM46.565 15.049L50.88 15.049L50.88 47.415L46.565 47.415Z" fill="var(--color-on-inverse)"/><circle cx="24.45" cy="31.23" r="4.38" fill="var(--color-accent-fill)"/></svg>محمد حاتم</a>
+        <p class="muted t-sm" style="max-width:32ch">قائد فريق الذكاء الاصطناعي في Globant. أنظمة الوكلاء المتعددة، وRAG، وتشغيل النماذج. من القاهرة، عن بُعد.</p>
+        <span class="stripe stripe--sm" aria-hidden="true"><i></i><i></i><i></i></span>
+      </div>
+      <nav aria-label="الموقع"><h2>الموقع</h2><ul><li><a href="#work">أعمال مختارة</a></li><li><a href="#experience">الخبرات</a></li><li><a href="#open-source">المصادر المفتوحة</a></li><li><a href="cv.html">السيرة الذاتية</a></li></ul></nav>
+      <nav aria-label="في أماكن أخرى"><h2>في أماكن أخرى</h2><ul><li><a href="https://www.linkedin.com/in/mohamed-hatem-6a5790173">LinkedIn</a></li><li><a href="https://github.com/mhatem5351">GitHub</a></li><li><a href="mailto:hatem@mohamedhatem.dev">البريد الإلكتروني</a></li><li><a href="https://wa.me/201142070946">واتساب</a></li></ul></nav>
+      <div><h2>عن هذا الموقع</h2><ul><li><a href="https://github.com/mhatem5351/mohamedhatem.dev">الشيفرة المصدرية</a></li><li><a href="index.html" lang="en" hreflang="en">English version</a></li><li><button class="theme-toggle link" type="button" data-mode="system" style="font-size:var(--text-sm);color:var(--color-ink-2);text-decoration:none">تغيير المظهر</button></li></ul></div>
+    </div>
+    <div class="footer__base"><span>© 2026 محمد حاتم</span><span>بُني الموقع بـAstro وTailwind CSS ويعمل على Cloudflare Workers، ويعتمد المساعد على Google Gemini.</span></div>
+  </div>
+</footer>
+
+<button class="chat-launcher" type="button" data-open-chat aria-haspopup="dialog" title="افتح المساعد الذكي لحاتم">
+  <span class="chat-launcher__icon" aria-hidden="true"><svg class="icon"><use href="#i-ask"/></svg></span><span class="chat-launcher__label">اسأل المساعد</span>
+</button>
+
+<noscript><style>.chat-launcher{display:none}</style><details class="chat-noscript"><summary class="chat-launcher"><span class="chat-launcher__icon" aria-hidden="true"><svg class="icon"><use href="#i-ask"/></svg></span><span class="chat-launcher__label">اسأل المساعد</span></summary><div class="chat-noscript__card"><p>يحتاج المساعد إلى JavaScript. ويمكنك التواصل مع حاتم عبر البريد الإلكتروني أو WhatsApp.</p><p class="chat-noscript__links"><a href="mailto:hatem@mohamedhatem.dev">راسله بالبريد</a><a href="https://wa.me/201142070946">واتساب</a></p></div></details></noscript>
+<p id="live" class="sr-only" aria-live="polite"></p>
+<div class="proto-bar" aria-label="أدوات النموذج"><button type="button" class="theme-toggle" data-mode="system">Theme</button><button type="button" data-toggle-notes>Notes</button><a href="index.html">EN</a></div>
+<script src="proto.js"></script>
+<script src="chat.js" defer></script>
+</body>
+</html>

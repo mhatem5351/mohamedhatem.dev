@@ -1,0 +1,23 @@
+---
+/**
+ * 2 px reading-progress hairline on the nav's bottom edge (pages.css §1). Purely visual (aria-hidden): the TOC shows
+ * the same progress as "% read". CSS scroll timeline where supported (case.css); this script is the fallback.
+ */
+---
+<div class="read-progress" aria-hidden="true" data-read-progress><i></i></div>
+<script>
+  if (!CSS.supports("animation-timeline: scroll()")) {
+    const bar = document.querySelector<HTMLElement>("[data-read-progress] i");
+    if (bar) {
+      let raf = 0;
+      const update = () => {
+        raf = 0;
+        const max = document.documentElement.scrollHeight - innerHeight;
+        bar.style.setProperty("--p", String(max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0));
+      };
+      addEventListener("scroll", () => (raf ||= requestAnimationFrame(update)), { passive: true });
+      addEventListener("resize", update);
+      update();
+    }
+  }
+</script>
