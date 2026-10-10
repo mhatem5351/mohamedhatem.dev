@@ -4,10 +4,11 @@ import { workLayout } from "~/lib/home-work";
 
 describe("home: selected work layout (audit VUX-03)", () => {
   const layout = workLayout();
-  it("the 14-agent assistant is the feature card, then three equal cards (no wide flagship card)", () => {
-    expect(layout.feature?.slug).toBe("arabsstock-assistant");
-    expect(layout.grid.map((c) => c.slug)).toEqual(["wakeb-bilingual-chatbot", "empoweromics-ml", "logic-controls-website"]);
-    expect(layout.wide).toBeUndefined();
+  it("the Saudi Tourism Authority assistants are the feature card, then the 14-agent assistant leads three equal cards", () => {
+    expect(layout.feature?.slug).toBe("sta-tourism-assistants");
+    expect(layout.grid.map((c) => c.slug)).toEqual(["arabsstock-assistant", "wakeb-bilingual-chatbot", "empoweromics-ml"]);
+    // The fifth featured card would sit alone in its row: it becomes a wide card (logic-controls.com), never a flagship.
+    expect(layout.wide?.slug).toBe("logic-controls-website");
   });
   it("brief case studies (details not public) sit in More work, never at flagship weight", () => {
     const brief = caseStudies.filter((c) => c.depth === "brief").map((c) => c.slug);

@@ -50,7 +50,7 @@
   .toolbox__list { display: flex; flex-wrap: wrap; gap: .375rem; list-style: none; margin-block-start: .125rem; }
   .tool { display: inline-flex; align-items: center; gap: .3125rem; min-height: 1.75rem; padding: .1875rem .5625rem; border-radius: var(--radius-xs); border: 1px solid var(--color-line); background: var(--color-surface-2); color: var(--color-ink-2); font-size: var(--text-xs); font-weight: 500; line-height: 1.25; }
   .tool__count { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.125rem; padding-inline: .25rem; border-radius: var(--radius-full); background: var(--color-surface); border: 1px solid var(--color-line-strong); font-family: var(--font-mono); font-size: .625rem; font-weight: 600; color: var(--color-muted); font-variant-numeric: tabular-nums; }
-  .tool__check { width: .875rem; height: .875rem; color: var(--color-sage); }
+  .tool__check { width: .875rem; height: .875rem; color: var(--color-success); }
   .toolbox__note { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.25rem; font-size: var(--text-xs); color: var(--color-muted); }
   .toolbox__note span { display: inline-flex; align-items: center; gap: .375rem; }
 
@@ -97,7 +97,7 @@
   .contact__lede .link { font-size: inherit; }
   .contact__time { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); display: inline-flex; align-items: center; gap: .5rem; }
   :lang(ar) .contact__time { font-family: var(--font-sans); }
-  .contact__time .dot { background: var(--color-sage-fill); }
+  .contact__time .dot { background: var(--color-teal-fill); }
   .channel { position: relative; }
   a.channel { color: inherit; }
   a.channel:focus-visible { border-radius: var(--radius-md); }
@@ -106,7 +106,7 @@
   .channel__alt { display: block; margin-block-start: .125rem; font-size: var(--text-xs); color: var(--color-muted); line-height: 1.4; }
   .channel__alt a { color: var(--color-ink-2); text-decoration: underline; text-decoration-color: var(--color-line-strong); text-underline-offset: .2em; overflow-wrap: anywhere; }
   .channel__alt a:hover { color: var(--color-accent); text-decoration-color: currentColor; }
-  .channel__copy .i-check { display: none; color: var(--color-sage); }
+  .channel__copy .i-check { display: none; color: var(--color-success); }
   .channel__copy[data-state="copied"] .i-copy { display: none; }
   .channel__copy[data-state="copied"] .i-check { display: block; }
   .channel__arrow { color: var(--color-muted); }

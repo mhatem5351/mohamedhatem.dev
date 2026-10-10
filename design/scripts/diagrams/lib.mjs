@@ -83,7 +83,7 @@ export function css(cats = CATS, { full = false } = {}) {
   r.push(`.dg-e{fill:none;stroke:var(--_edge);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.dg-a{stroke-dasharray:4 5}`);
   r.push(`.dg-ah{fill:none;stroke:var(--_edge);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}`);
   r.push(`.dg-el{font:500 10.5px/1 ${MONO};fill:var(--_mut)}`);
-  r.push(`.dg-co circle{fill:var(--_saffron-f);stroke:var(--_cv);stroke-width:2}.dg-co text{font:700 11px/1 ${MONO};fill:var(--color-on-saffron,#14212B);text-anchor:middle}`);
+  r.push(`.dg-co circle{fill:var(--_saffron-f);stroke:var(--_cv);stroke-width:2}.dg-co text{font:700 11px/1 ${MONO};fill:var(--color-on-saffron,${TOK.light["color-on-saffron"]});text-anchor:middle}`);
   r.push(`.dg-cap{font:500 12px/1 ${MONO};fill:var(--_ink2)}.dg-stk{opacity:.55}`);
   r.push(`.dg-lg{font:500 11px/1 ${MONO};fill:var(--_mut)}.dg-lsw{stroke:var(--nl);stroke-width:1}`);
   r.push(`.dg-dot{fill:var(--ni,var(--_mut))}.dg-mute{fill:var(--_mut)}.dg-ink2{fill:var(--_ink2)}`);

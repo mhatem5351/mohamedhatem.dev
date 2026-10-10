@@ -35,8 +35,8 @@
 
   /* ---------- the sheet ---------- */
   .sheet {
-    --ink: #14212B; --ink-2: #33414C; --muted: #5A6670; --line: #E2DBCE; --accent: #0A766C; --accent-fill: #16A394; --saffron: #9C5800;
-    width: min(210mm, 100% - 2 * var(--space-gutter)); margin: 2rem auto 0; background: #FFFEFB; color: var(--ink);
+    --ink: #131D36; --ink-2: #323D55; --muted: #5B6375; --line: #DDDAD4; --accent: #2B51AA; --accent-fill: #3E6DC8; --saffron: #885716;
+    width: min(210mm, 100% - 2 * var(--space-gutter)); margin: 2rem auto 0; background: #FEFDFC; color: var(--ink);
     padding: 14mm 14mm 12mm; border-radius: 6px; box-shadow: var(--shadow-lg); border: 1px solid var(--color-line);
     font-family: var(--font-sans); font-size: 9.1pt; line-height: 1.4; font-feature-settings: "cv05", "calt";
     color-scheme: light;
@@ -51,9 +51,9 @@
   .sheet a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: .2em; }
   .sheet :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
   .sheet .icon { width: auto; height: auto; }
-  .sheet .mono-tile { fill: #14212B; }
-  .sheet .mono-letters { fill: #FBF8F3; }
-  .sheet .mono-node { fill: #16A394; }
+  .sheet .mono-tile { fill: #131D36; }
+  .sheet .mono-letters { fill: #F7F6F3; }
+  .sheet .mono-node { fill: #E4AD4B; }
 
   .cv-head { display: grid; grid-template-columns: auto 1fr; gap: 0 5mm; align-items: center; padding-block-end: 4.5mm; border-block-end: 1px solid var(--line); }
   .cv-head__mark { width: 15mm; height: 15mm; grid-row: span 2; }
@@ -71,9 +71,9 @@
   .cv-contact .icon { width: 3.2mm; height: 3.2mm; color: var(--accent); }
   .cv-stripe { display: inline-flex; gap: 1.2mm; margin-block-start: 3.5mm; grid-column: 1 / -1; }
   .cv-stripe i { height: 1.1mm; border-radius: 1mm; }
-  .cv-stripe i:nth-child(1) { width: 11mm; background: #16A394; }
-  .cv-stripe i:nth-child(2) { width: 6mm; background: #E9A23B; }
-  .cv-stripe i:nth-child(3) { width: 3.2mm; background: #E4683F; }
+  .cv-stripe i:nth-child(1) { width: 11mm; background: #038586; }
+  .cv-stripe i:nth-child(2) { width: 6mm; background: #B47D19; }
+  .cv-stripe i:nth-child(3) { width: 3.2mm; background: #B84D30; }
 
   .cv-summary { margin: 4mm 0 0; font-size: 9.6pt; line-height: 1.5; color: var(--ink-2); max-width: 172mm; }
   .cv-summary:lang(ar) { line-height: 1.7; }
@@ -113,7 +113,7 @@
      stream after the rest, which separated every bullet from its role in extracted text (ATS parsers, copy-paste). */
   .job li {
     padding-inline-start: 3.6mm;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Ccircle cx='5' cy='5' r='3.85' fill='none' stroke='%2316A394' stroke-width='2.3'/%3E%3C/svg%3E") no-repeat left .5mm top .58em / 1.3mm 1.3mm;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Ccircle cx='5' cy='5' r='3.85' fill='none' stroke='%233E6DC8' stroke-width='2.3'/%3E%3C/svg%3E") no-repeat left .5mm top .58em / 1.3mm 1.3mm;
   }
   [dir="rtl"] .job li { background-position: right .5mm top .72em; }
   .earlier { display: grid; gap: 2mm; margin-block-start: 1.6mm; }
@@ -122,11 +122,6 @@
   .earlier__row em { font-style: normal; font-family: var(--font-mono); font-size: 7.9pt; color: var(--muted); white-space: nowrap; }
   :lang(ar) .earlier__row em { font-family: var(--font-sans); font-size: 8.3pt; }
   .earlier__row p { grid-column: 1 / -1; margin: 0; }
-
-  /* projects (main column) */
-  .cv-projects { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.8mm; }
-  .cv-projects li { break-inside: avoid; color: var(--ink-2); }
-  .cv-projects b { font-family: var(--font-mono); font-size: 8.3pt; font-weight: 600; color: var(--ink); direction: ltr; unicode-bidi: isolate; }
 
   /* sidebar */
   .side-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.2mm; }
@@ -144,8 +139,8 @@
   :lang(ar) .skill-g p { line-height: 1.6; }
   /* Short sidebar sections stay whole: a heading is never left without its entries. */
   .cv-sec--keep { break-inside: avoid; }
-  .cert-hero { padding: 2.2mm 2.6mm; border-radius: 2mm; background: #FAEFDC; border: 1px solid #F0D3A4; }
-  .cert-hero b { color: #14212B; }
+  .cert-hero { padding: 2.2mm 2.6mm; border-radius: 2mm; background: #FAEDDB; border: 1px solid #E8CEAA; }
+  .cert-hero b { color: #131D36; }
 
   .cv-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1mm 4mm; margin-block-start: 5mm; padding-block-start: 2.5mm; border-block-start: 1px solid var(--line); font-family: var(--font-mono); font-size: 7.8pt; color: var(--muted); break-inside: avoid; }
   .cv-foot:lang(ar), :lang(ar) .cv-foot { font-family: var(--font-sans); font-size: 8.2pt; }
@@ -181,7 +176,64 @@
   .sheet:lang(ar) { font-size: 9.4pt; }
   .sheet a { color: inherit !important; text-decoration: none !important; }
   .cv-grid { grid-template-columns: minmax(0, 1fr) 54mm; }
-  .job__head, .job li, .skill-g, .earlier__row, .side-list li, .cv-projects li, .cv-sec--keep { break-inside: avoid; }
+  .job__head, .job li, .skill-g, .earlier__row, .side-list li, .cv-sec--keep { break-inside: avoid; }
   .job__head, .job li:first-child, .cv-h { break-after: avoid; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* ---------- CV round 4: logos, client line, open-to (layout only) ---------- */
+@layer components {
+  /*
+   * The logo column: each role's (and each degree's) tile sits at the start of its first line, the role's text and
+   * its bullets start after it, and the bullets' rings are centred under the tile. Plain grid items, no `position`
+   * (positioned boxes are written to the PDF's text stream last). Mirrored by the grid in the Arabic sheet.
+   */
+  .sheet { --cv-logo: 4mm; --cv-logo-gap: 2mm; --cv-rail: calc(var(--cv-logo) + var(--cv-logo-gap)); --cv-logo-drop: .45mm; }
+  .sheet:lang(ar) { --cv-logo-drop: .75mm; }
+  .sheet .cv-logo { display: block; width: var(--cv-logo); height: var(--cv-logo); max-width: none; border-radius: 22%; box-shadow: 0 0 0 .2mm var(--line); align-self: start; margin-block-start: var(--cv-logo-drop); }
+
+  .sheet .job__head--logo { grid-template-columns: var(--cv-logo) minmax(0, 1fr) auto; column-gap: var(--cv-logo-gap); }
+  .job__head--logo > .cv-logo { grid-column: 1; grid-row: 1; }
+  .job__head--logo > .job__name { grid-column: 2; }
+  .job__head--logo > .job__when { grid-column: 3; margin-inline-start: 1mm; }
+  .job__head--logo > .job__where { grid-column: 2 / -1; }
+  .job li { padding-inline-start: var(--cv-rail); background-position: left calc(var(--cv-logo) / 2 - .65mm) top .58em; }
+  [dir="rtl"] .job li { background-position: right calc(var(--cv-logo) / 2 - .65mm) top .72em; }
+
+  .sheet .earlier__row--logo { grid-template-columns: var(--cv-logo) minmax(0, 1fr) auto; column-gap: var(--cv-logo-gap); }
+  .earlier__row--logo > .cv-logo { grid-column: 1; grid-row: 1; --cv-logo-drop: .25mm; }
+  :lang(ar) .earlier__row--logo > .cv-logo { --cv-logo-drop: .5mm; }
+  .earlier__row--logo > span { grid-column: 2; }
+  .earlier__row--logo > em { grid-column: 3; margin-inline-start: 1mm; }
+  .earlier__row--logo > p { grid-column: 2 / -1; }
+
+  /* A little more air between roles and bullets (the space "Selected projects" used to take). */
+  .job { padding-block-end: 3.2mm; }
+  .job:not(:last-child) { margin-block-end: 3.4mm; }
+  .job ul { margin-block-start: 1.8mm; }
+  .job li + li { margin-block-start: 1.4mm; }
+  .earlier { gap: 2.4mm; }
+
+  /* The role's client: one line under the head, aligned with the role's text, before the bullets. */
+  .job__client { margin: .8mm 0 0; padding-inline-start: var(--cv-rail); font-size: 8.4pt; line-height: 1.4; color: var(--ink-2); break-inside: avoid; break-after: avoid; }
+  .job__client-k { color: var(--muted); }
+  .job__client-name { font-weight: 600; color: var(--ink); }
+
+  /* Education: the institution's tile beside the degree. */
+  .edu-list__logo { display: grid; grid-template-columns: var(--cv-logo) minmax(0, 1fr); column-gap: var(--cv-logo-gap); align-items: start; }
+  .edu-list__logo > .cv-logo { grid-column: 1; grid-row: 1 / span 2; --cv-logo-drop: 0mm; }
+  .edu-list__logo > :not(.cv-logo) { grid-column: 2; }
+
+  /* A main role's featured case study, at the end of its where-line. */
+  .sheet .job__case { color: var(--accent); white-space: nowrap; text-decoration: underline; text-decoration-thickness: .1mm; text-underline-offset: .6mm; }
+  .sheet .job__case .icon { display: inline-block; width: 2.5mm; height: 2.5mm; margin-inline-start: .5mm; vertical-align: -.3mm; }
+
+  /* Open to: the roles (team lead first), then the work arrangements; one per line. */
+  .open-to { gap: 1.8mm; }
+  .open-to > li > span { display: block; line-height: 1.45; }
+  .open-to__roles > span { font-size: 8.8pt; font-weight: 600; color: var(--ink); }
+}
+@media print {
+  .job__client { break-inside: avoid; break-after: avoid; }
+}
+/* ---------- end CV round 4 ---------- */

@@ -15,8 +15,8 @@
 // Rules (DESIGN.md 9): never redraw. Light files are the official artwork for light backgrounds. Dark files are the
 // official reversed variant where one exists (Globant: the wordmark in white as on its official reversed rasters;
 // Wakeb, ArabsStock: their own reversed SVGs; MDP: its official all-white symbol). Where none exists, only the parts
-// that would vanish on the dark page (< 3:1 on #0C151D) are rendered light (#ECF1F4) and every brand-colour accent
-// keeps its colour (Tabaqat). Empoweromics publishes its lockup only as a 45 px raster, so the row rebuilds it from its
+// that would vanish on the dark page (< 3:1 on the dark bg token, #080E1C) are rendered light (the dark ink token,
+// #F4F0E7) and every brand-colour accent keeps its colour (Tabaqat). Empoweromics publishes its lockup only as a 45 px raster, so the row rebuilds it from its
 // two official high-resolution parts (symbol, wordmark) at the positions and proportions the lockup gives them.
 import fs from "node:fs";
 import path from "node:path";
@@ -28,7 +28,7 @@ const SRC = path.join(LOGOS, "brand/src");
 const OUT = path.join(LOGOS, "brand");
 const TILES = path.join(LOGOS, "tiles");
 const LIGHT_BG = tok("bg", "light"), DARK_BG = tok("bg", "dark");
-const LIGHT_INK = tok("ink", "dark"); // #ECF1F4: the dark theme's ink, for parts rendered light
+const LIGHT_INK = tok("ink", "dark"); // #F4F0E7: the dark theme's ink, for parts rendered light
 const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const ratio = (a, b) => { const x = lumOf(a), y = lumOf(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
 
@@ -81,7 +81,7 @@ async function empoweromicsLockup() {
     .png({ compressionLevel: 9 }).toBuffer();
 }
 
-/** Tabaqat on the dark page: its black, dark-teal and maroon parts (< 3:1 on #0C151D) rendered light; accents kept. */
+/** Tabaqat on the dark page: its black, dark-teal and maroon parts (< 3:1 on the dark bg) rendered light; accents kept. */
 async function tabaqatDark() {
   const { data, info } = await sharp(path.join(SRC, "tabaqat.png")).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const dark = rgb(DARK_BG), light = rgb(LIGHT_INK);
@@ -116,7 +116,7 @@ async function tile(S, { src, bg, fit }) {
     .composite([{ input: markPng, left: Math.round((F - mw) / 2), top: Math.round((F - mh) / 2) }]).png().toBuffer();
   const small = await sharp(big).resize(S, S, { kernel: "lanczos3" }).png().toBuffer();
   const r = S * TILE_RADIUS;
-  const hair = lumOf(rgb(bg)) > 0.4 ? "rgb(20 33 43 / 0.13)" : "rgb(255 255 255 / 0.16)";
+  const hair = lumOf(rgb(bg)) > 0.4 ? `rgb(${rgb(tok("ink")).join(" ")} / 0.13)` : "rgb(255 255 255 / 0.16)";
   const mask = `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}"><rect width="${S}" height="${S}" rx="${r}" fill="#fff"/></svg>`;
   const line = `<svg xmlns="http://www.w3.org/2000/svg" width="${S}" height="${S}"><rect x=".5" y=".5" width="${S - 1}" height="${S - 1}" rx="${r - 0.5}" fill="none" stroke="${hair}" stroke-width="1"/></svg>`;
   const masked = await sharp(small).ensureAlpha().composite([{ input: Buffer.from(mask), blend: "dest-in" }]).png().toBuffer();

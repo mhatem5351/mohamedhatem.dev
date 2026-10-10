@@ -80,7 +80,8 @@ site/
 │   │   ├── home/           the home sections (Hero + hero/, Capabilities, SelectedWork, ExperienceTrace, About,
 │   │   │                   OpenSource, AssistantSection, Skills, Education, Contact + contact/)
 │   │   ├── work/           CaseCard, ArchThumb, DateRun
-│   │   ├── case/           case-study template parts (hero, figure, component view, TOC, next case, CTA…)
+│   │   ├── case/           case-study template parts (hero, figure, component view, screens gallery, TOC, next
+│   │   │                   case, CTA…)
 │   │   ├── cv/ notfound/   CV sheet + toolbar, 404 art
 │   │   ├── hero-graph/     the live agent graph (from design/assets/hero-graph: SSR render + runtime module)
 │   │   ├── chat/ChatMount  thin wrapper around ../chat-widget (see "Chat widget")
@@ -93,7 +94,7 @@ site/
 │   ├── styles/             global.css (Tailwind + tokens + layers), base/components (ported from
 │   │                       design/prototypes/proto.css), diagram.css, site.css (CSP-safe additions), page CSS
 │   └── assets/             fonts (subset), photo, logo tiles and brand logos (design/assets/logos), showcase
-│                           screenshots, diagrams, icon sprite
+│                           screenshots, product screens (screens/<slug>/), diagrams, icon sprite
 └── tests/
     ├── unit/               Vitest
     └── e2e/                Playwright
@@ -151,10 +152,30 @@ the What I build feature, case-study figures, the next-case card), the experienc
 2. That's enough for a page in both languages: `/work/<slug>/` and `/ar/work/<slug>/` are generated, with a component
    view of the architecture from `profile.ts`, the home-page card, the OG images, JSON-LD, the sitemap and llms.txt.
 3. Optional:
+   - **Product screens** (only with the client's approval): put the cleaned captures in `src/assets/screens/<slug>/`
+     and list them in the case study's `screens` (see below); add `client` to name the client in JSON-LD.
    - **Designed diagram:** add its SVGs (wide, compact, thumb) and its `diagrams.json` entry under
      `src/assets/diagrams/`, then map the slug in `CASE_DIAGRAMS` (`src/lib/diagrams.ts`).
    - **Card accent:** `CASE_ACCENT` in `src/lib/home-work.ts`.
 4. Add the slug to `tests/e2e/pages.ts`. A unit test fails until you do.
+
+## Product screens (the STA case study)
+
+`components/case/ScreenGallery.astro` (styles: `src/styles/screens.css`) shows a case study's `screens` in their own
+section between Approach and Architecture, grouped by product: desktop screens in a browser-like frame (no address bar:
+the hosts aren't public), the phone screen in the home showcase's phone bezel, a cropped dialog on its own stage. From
+48rem the grid has a wide and a narrow column (2 : 1): a group's first desktop screen spans both when it has three or
+more, and phone or dialog captures sit beside the rest (`screenGroups()` in `lib/case.ts`).
+- **Images:** `<Image>` in WebP (quality 88: the text in the screens stays sharp), `loading="lazy"`, `srcset` up to the
+  capture's own width and `sizes` per slot (measured: the lead ≈ 56rem, the wide column ≈ 36rem from 80rem). The 2x
+  desktop captures (1500–1600 px) offer 480/640/960/1280/native; the 1x
+  captures (the phone screen, 390 px; the dialog, 448 px) offer only their native width and are never shown wider.
+- **Enlarge:** each screen links to its full-size file (works without JS). With JS the link opens a modal `<dialog>`:
+  on phones at the screen's natural size (a 2x capture at half its pixels) to pan and pinch-zoom; from 48rem as large
+  as the window allows, never beyond the capture's pixels. Escape, the close button or the backdrop closes it, focus
+  returns to the screen, and the chat launcher steps away while it is open.
+- **Captions** come from `profile.ts` (EN/AR) and say what a screen shows, never how it was captured; the section
+  says "Screens from the apps, with personal data removed" (`m.work.page.screensCredit`).
 
 ## Security
 
@@ -201,8 +222,8 @@ panel arrives on the first interaction and isn't counted in the JS budget.
 - **No JavaScript:** a `<noscript>` card offers email and WhatsApp instead.
 - **Avatar launcher (`src/scripts/chat-avatar.ts`):** once the page has loaded and the browser is idle, `chat.ts`
   imports it and it dresses the widget's launcher through `window.MHChat.launcher` (the widget README's "Launcher
-  hook"): Hatem's illustrated avatar (`design/assets/avatar/mh-avatar.svg`, imported `?raw`) on a deep ink disc with a
-  teal rim, named "Ask Hatem's AI assistant", and a comic greeting that pops out of it behind two balls ("Hi, I'm
+  hook"): Hatem's illustrated avatar (`design/assets/avatar/mh-avatar.svg`, imported `?raw`) on a lapis-night disc in a
+  gold rim, named "Ask Hatem's AI assistant", and a comic greeting that pops out of it behind two balls ("Hi, I'm
   Hatem! 👋 Ask my AI assistant about my work.", copy in `content/i18n` → `chat.avatar`), which is the launcher's
   description. The panel header uses the same avatar (`avatar` option) and its mouth talks while an answer streams.
   - Until it is in, `[data-mh-chat]:not([data-art])` keeps the launcher hidden (site.css), so the default launcher
@@ -214,7 +235,7 @@ panel arrives on the first interaction and isn't counted in the JS budget.
     Escape hides it; it stays while hovered or focused; it hides when page focus lands under it.
   - `site.ts` sets `data-hush` on the host while the greeting would cover a `[data-chat-avoid]` element (the greeting
     hides, the launcher may stay), alongside `data-dodge` for the launcher itself.
-  - The disc: `data-av-disc` in ChatMount.astro (`dark`, the default, or `teal`), or `--mh-av-disc`, `--mh-av-rim`,
+  - The disc: `data-av-disc` in ChatMount.astro (`dark`, the default: lapis night in gold, or `teal`: turquoise), or `--mh-av-disc`, `--mh-av-rim`,
     `--mh-av-glow`, `--mh-av-glow-o` on `[data-mh-chat]`.
 - **Build step:** `npm run content:gen` (part of `dev`, `build` and `check`) runs `../worker/scripts/gen-content.mjs`,
   which writes the widget's generated strings and suggestions.
@@ -239,7 +260,9 @@ CV PDF only (nothing on the site imports them). `postbuild/cv-pdf.mjs` swaps the
 embeds variable fonts in a PDF as Type 3 fonts, which split words in copied text and break search in Preview, Quick
 Look and some ATS parsers; static ones embed as TrueType (and the PDFs dropped from 397 / 353 KB to 110 / 155 KB). The
 build fails if a Type 3 font is left. The CV sheet also avoids positioned elements (they are written to the PDF's text
-stream last, which separated bullets from their roles in extracted text).
+stream last, which separated bullets from their roles in extracted text). Its logo tiles are 64 px JPEGs (about 4 mm
+on paper, about 400 dpi; the tile's rounded corners come from CSS): Chromium embeds a JPEG as it is, so the twelve
+tiles add about 20 KB to each PDF, where PNGs were re-compressed to about 50 KB.
 
 Preloads:
 - **English pages:** Space Grotesk (the H1 face).
@@ -251,8 +274,8 @@ Preloads:
 ## Budgets (`scripts/check-budgets.mjs`, part of `npm test`)
 
 - **JS:** ≤ 60 KB gzip loaded on first view of each page. The lazy chat panel and the launcher's avatar (loaded after
-  `load`, 7.0 KB gzip; design target ≤ 12 KB) are excluded; the loader counts. Today: home 19.0 KB, case studies with a
-  diagram 9.2 KB, other pages 6.3–7.1 KB, hero graph 7.0 KB.
+  `load`, 7.1 KB gzip; design target ≤ 12 KB) are excluded; the loader counts. Today: home 19.0 KB, case studies with a
+  diagram 9.2 KB (9.7 KB with the screens gallery), other pages 6.3–7.1 KB, hero graph 7.0 KB.
 - **CSS:** ≤ 40 KB gzip per page. Today: 19.8–26.1 KB.
 - **Fonts:** self-hosted woff2 only, with exactly the preloads listed under "Fonts".
 - **Images:** any high-priority image must be preloaded. The LCP element is text (the H1, or the lede on Arabic
@@ -264,11 +287,12 @@ Lighthouse (`npm run lighthouse`; mobile = simulated slow 4G, desktop preset):
 |---|---|---|
 | Home, English | 98 | 100 |
 | Home, Arabic | 97 | 100 |
+| Saudi Tourism Authority case study (screens gallery), English / Arabic | 99 / 98 | 100 |
 | ArabsStock case study, English / Arabic | 99 / 98 | 100 |
 | AIP semantic search (a brief case study) | 99 | 100 |
-| CV | 99 | 100 |
+| CV, English / Arabic (logos, round 4) | 99 / 98 | 100 |
 
-Accessibility, best practices and SEO are 100 on every run (measured 2026-10-10, after the design review fixes, again after the avatar launcher, and again with dark as the default theme, the living charts and the brand-colour logos: the same scores).
+Accessibility, best practices and SEO are 100 on every run (measured 2026-10-10, after the design review fixes, again after the avatar launcher, again with dark as the default theme, the living charts and the brand-colour logos, again with the STA case study and the CV's logos, and again with the Lapis & Gold palette: the same scores).
 CLS ≤ 0.001, TBT ≤ 30 ms (home, mobile; 0 ms elsewhere), and mobile LCP is 1.8–2.3 s.
 
 The runner blocks the Cloudflare analytics beacon (`--with-analytics` keeps it). From localhost, CORS refuses the
@@ -282,8 +306,15 @@ beacon's report, which logs a console error the live site doesn't have.
 - **i18n:** parity, placeholders, digits, and the date and duration helpers.
 - **Trace geometry:** checked against the prototype's numbers.
 - **Diagram motion values:** every pulse carries its length and hop, every lit node its arrival (`data-vars`).
+- **Palette (`palette.test.ts`):** the site's token stylesheets are exactly the generated ones,
+  `design/scripts/check-contrast.mjs` passes (every token pair in both themes, the components with their own colours,
+  and the category colours under deuteranopia and protanopia), and the theme-color defaults and the web manifest follow
+  the `bg` tokens.
 - **Brand logos:** the six employers in order, a file per theme that exists, equal visual area within 25 %, every file
   documented in `design/assets/logos/SOURCES.md`.
+- **CV data:** no projects list; a logo tile for every role and degree; a client named only on the Wakeb Data role,
+  never in a bullet or case study; the CV's "Open to" (three roles, team lead first, three arrangements); the Globant
+  lines keep the STA wording and the approved facts only.
 - **Skills matrix:** every dot must have a receipt in `profile.ts`, in the right column.
 - **Contact form:** validation, which must match the Worker's limits and email regex.
 - **Case studies, JSON-LD and diagrams:** case-study helpers; JSON-LD content, including the honesty checks (the
@@ -291,8 +322,14 @@ beacon's report, which logs a console error the live site doesn't have.
 - **CSP integration.**
 - **Bold receipts:** `emphasize()`, and every `Fact.strong` / `cv.summaryStrong` phrase occurs in its text in both
   languages, on word boundaries (a phrase starting inside an Arabic word would split it between two weights).
-- **Home work layout:** the 14-agent assistant is the feature card, then three equal cards; brief case studies sit in
+- **Home work layout:** the Saudi Tourism Authority assistants are the feature card, then three equal cards led by the
+  14-agent assistant, then logic-controls.com as a wide card (a fifth card would sit alone); brief case studies sit in
   "More work".
+- **Case studies:** the TOC lists Screens only where a case study has screens; the screens exist on disk, carry EN/AR
+  alt text and captions, and keep their density (2x desktop, 1x phone and dialog); the gallery groups (lead across
+  the grid, phone and dialog beside); the STA case study stays at the approved, light level (one agent, the one
+  figure, no provider or infrastructure names, never "multi-agent", "in production" or "led the project").
+- **JSON-LD:** a named client appears as `about.sponsor` only on the STA case study.
 - **PDF page text:** `scripts/lib/pdf-text.mjs` (the CV build's page-break check).
 
 **Static (`npm run test:static`):** run on `../dist` after a build.
@@ -344,9 +381,17 @@ running server such as `wrangler dev`.
   chose light gets light before first paint; the mobile menu closes on Escape and returns focus.
 - **CV:** `/cv/` and `/ar/cv/` print to ≤ 2 A4 pages, the generated PDFs are served with title, author, subject,
   keywords and language, the Arabic CV links to `/ar/`, its degree years read in the same order on every row, and print
-  hides the site chrome; the bold receipts are there in both languages, "Open to" starts with the team-lead role,
-  names ("Umm Al-Qura University", "Learning – Specialty") never break inside, and in both PDFs every sidebar heading
-  shares a page with its first entry and Education is on one page (read from the PDFs' text, `scripts/lib/pdf-text.mjs`).
+  hides the site chrome; the bold receipts are there in both languages, "Open to" starts with the team-lead role and
+  lists the CV's three roles in order, then its three work arrangements, one per line; there is no "Selected projects"
+  section; every role (main and earlier) has its logo tile, loaded, decorative (`alt=""`), square, not positioned,
+  centred on the role's line and on its inline-start side (right in Arabic); the Wakeb Data role's client line
+  ("Client: Saudi Ministry of Defense (GADD)" / «العميل: …») sits between the role head and the bullets, never in
+  a bullet; each main role with a featured case study links it ("Case study", the CV's language: the STA case study
+  on the Globant role) in the page and as a link in both PDFs; names ("Umm Al-Qura University", "Learning –
+  Specialty") never break inside; and both PDFs are exactly two
+  pages, contain the client line and no "Selected projects", keep every role head intact (a logo adds no text), read
+  head → client → first bullet in order (English), and keep every sidebar heading on a page with its first entry and
+  Education on one page (read from the PDFs' text, `scripts/lib/pdf-text.mjs`).
 - **Contact form** (API mocked, Turnstile stubbed):
   - Client-side validation, with errors linked to their fields and focus on the error summary.
   - The Worker contract: subject mapping, `mh_hp` honeypot, language, token.
@@ -381,6 +426,15 @@ running server such as `wrangler dev`.
   card, and the cards in a row line up.
 - **Skills on phones (`skills.spec.ts`):** below 40rem a list with exactly the table's receipts and no sideways scroll;
   the toolbox behind "Show all N tools" (open without JS); desktop keeps the table.
+- **The STA case study (`sta.spec.ts`):** EN and AR: the title, the one approved figure, every section, no
+  "multi-agent" / "in production" wording; the gallery's two product groups, every screen's alt text, caption, lazy
+  loading and `srcset`, and every image loaded; 1x captures never wider than captured and no overflow at 1440, 390 and
+  320; on desktop the phone beside the stacked screens and the dialog beside the staff screen; the enlarge dialog
+  (named by its caption, focus on Close, larger than the page shows it and never beyond the capture's pixels; natural
+  size on phones; Escape and Close close it, focus returns); without JS the links serve the WebP; axe with the gallery
+  and with the dialog open (dark and light × 1440, 390 and 320); the Article JSON-LD (headline, language, Globant as
+  producer, the authority as sponsor, its OG image); home: the feature card with the Globant tile and ArabsStock first
+  in the grid, the trace's Globant role linking the case study, About naming the authority.
 - **SEO (`seo.spec.ts`):** the 301 redirects and their targets (the brief case studies kept their URLs), every case study
   200 at its URL in both languages and in the sitemap, UTF-8 text files, sitemap `<lastmod>`, the home H1
   (name and role, then the tagline), per-page `og:image:alt`, `article:*` dates on case studies.

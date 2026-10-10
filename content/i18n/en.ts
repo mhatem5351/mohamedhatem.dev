@@ -202,6 +202,8 @@ export const en = {
       context: "Context",
       contribution: "My part",
       period: "When",
+      /** The case-study gallery of product screens (where the client approved publishing them). */
+      screens: "Screens",
     },
     readCase: "Read the case study",
     /** CTA of a brief case study (implementation details not public). */
@@ -275,6 +277,12 @@ export const en = {
       briefTitle: "A brief case study",
       briefSources: "From {sources}.",
       whatIDid: "What I did",
+      /** Under the gallery heading: where the screens come from, never how they were captured. */
+      screensCredit: "Screens from the apps, with personal data removed.",
+      /** A screen's link to its full-size view ({alt} = the screen's text alternative). */
+      enlarge: "Enlarge: {alt}",
+      /** Closes the full-size view of a screen. */
+      closeScreen: "Close",
     },
   },
 
@@ -439,7 +447,6 @@ export const en = {
       summary: "Summary",
       experience: "Experience",
       skills: "Skills",
-      projects: "Selected projects",
       education: "Education",
       certifications: "Certifications",
       awards: "Awards",
@@ -448,6 +455,8 @@ export const en = {
       contact: "Contact",
     },
     earlierRoles: "Earlier roles",
+    /** Label of a role's client line (profile.ts Role.client), followed by ": " and the client's name. */
+    client: "Client",
     backToSite: "Back to the portfolio",
     /** Focus line in the CV header, after the title and employer. */
     focus: "Multi-agent LLM systems, RAG, LLM serving",

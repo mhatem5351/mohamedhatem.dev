@@ -4,8 +4,9 @@
  *
  * Full case studies: hero (breadcrumbs, eyebrow, H1, summary, actions, meta card, key facts) with figure 1 (the
  * designed diagram, or the component view drawn from profile.ts), then an article with a sticky TOC: problem,
- * approach (+ an engineering decision where the sources state one), architecture (component list, extra figures),
- * outcome, stack, links, and where the facts come from. Brief case studies (implementation details not public) are
+ * approach (+ an engineering decision where the sources state one), the product screens where the client approved
+ * publishing them (ScreenGallery), architecture (component list, extra figures), outcome, stack, links, and where
+ * the facts come from. Brief case studies (implementation details not public) are
  * compact and say so: a "Brief" tag in the eyebrow, no key-facts strip, then the problem, what I did and the outcome
  * next to a note card (why the page is short, where the facts come from, ask my AI), and the component view only
  * when it has more than three parts (a three-box capability view adds nothing to the text). Both end with the next
@@ -18,6 +19,7 @@ import CaseHero from "~/components/case/CaseHero.astro";
 import FigurePanel from "~/components/case/FigurePanel.astro";
 import ComponentView from "~/components/case/ComponentView.astro";
 import SiteShots from "~/components/case/SiteShots.astro";
+import ScreenGallery from "~/components/case/ScreenGallery.astro";
 import Toc from "~/components/case/Toc.astro";
 import Decision from "~/components/case/Decision.astro";
 import NextCase from "~/components/case/NextCase.astro";
@@ -172,6 +174,21 @@ const ogAlt = format(m.meta.ogImageAltCase, {
               </ol>
             </div>
           </section>
+
+          {cs.screens && cs.screens.length > 0 && (
+            <section class="cs-sec" id="screens" aria-labelledby="h-screens">
+              <div class="cs-sec__rule">
+                <span class="sec-head__index" dir="ltr">{num("screens")}</span>
+              </div>
+              <h2 class="cs-sec__title" id="h-screens">
+                {m.work.labels.screens}
+              </h2>
+              <div class="cs-prose">
+                <p>{m.work.page.screensCredit}</p>
+                <ScreenGallery locale={locale} cs={cs} />
+              </div>
+            </section>
+          )}
 
           <section class="cs-sec" id="components" aria-labelledby="h-components">
             <div class="cs-sec__rule">

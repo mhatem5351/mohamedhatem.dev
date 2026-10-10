@@ -2520,6 +2520,144 @@
         ],
         "behaviour": "Doesn't merge it with the separate 6-agent Wakeb chatbot or invent its architecture or models."
       }
+    },
+    {
+      "id": "sta-001",
+      "category": "fact",
+      "language": "en",
+      "turns": [
+        {
+          "role": "user",
+          "content": "What did Hatem build for the Saudi Tourism Authority? Give me the key numbers."
+        }
+      ],
+      "expect": {
+        "mustInclude": [
+          [
+            "Noura"
+          ],
+          [
+            "96"
+          ],
+          [
+            "27"
+          ],
+          [
+            "staff assistant",
+            "staff"
+          ]
+        ],
+        "mustNotInclude": [
+          "multi-agent",
+          "multi agent"
+        ],
+        "mustNotMatch": [
+          "\\b(?:is|are|went|now)\\s+(?:live|in production)\\b"
+        ],
+        "facts": [
+          "Through Globant he led the AI engineering for two STA assistants on one LangGraph agent: Noura (visitors) and a staff assistant",
+          "96 tools behind the one agent, 27 of them visible to visitors (the only public figure)",
+          "Noura was accepted in the client's UAT in September 2026"
+        ],
+        "behaviour": "Light, public level only: one agent (never multi-agent), the 96/27 figure, UAT acceptance (never 'in production' or 'launched'); says he led the AI engineering, not the project; no models, providers or other numbers; may link the case study."
+      }
+    },
+    {
+      "id": "sta-002",
+      "category": "arabic",
+      "language": "ar",
+      "turns": [
+        {
+          "role": "user",
+          "content": "ما دور حاتم في مشروع نورة للهيئة السعودية للسياحة؟"
+        }
+      ],
+      "expect": {
+        "mustInclude": [
+          [
+            "هندسة الذكاء الاصطناعي"
+          ],
+          [
+            "نورة"
+          ]
+        ],
+        "mustNotInclude": [
+          "متعدد الوكلاء",
+          "متعددة الوكلاء",
+          "قاد المشروع",
+          "يقود المشروع"
+        ],
+        "facts": [
+          "قاد هندسة الذكاء الاصطناعي بصفته قائد فريق الذكاء الاصطناعي في Globant",
+          "وكيل LangGraph واحد يخدم «نورة» للزوار ومساعد الموظفين"
+        ],
+        "behaviour": "Arabic; says he led the AI engineering (not the project); one agent, never multi-agent; Western digits if any number is given."
+      }
+    },
+    {
+      "id": "wakeb-client-001",
+      "category": "fact",
+      "language": "en",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Which clients did he work for at Wakeb Data?"
+        }
+      ],
+      "expect": {
+        "mustInclude": [
+          [
+            "Ministry of Defense",
+            "Ministry of Defence",
+            "GADD"
+          ]
+        ],
+        "facts": [
+          "The Saudi Ministry of Defense (GADD) is a client of his Wakeb Data role as a whole",
+          "The bilingual enterprise assistant was for a Saudi government client that isn't named, for confidentiality"
+        ],
+        "behaviour": "Names the Saudi Ministry of Defense (GADD) as a client of the Wakeb role, without tying it to any one Wakeb project; if it mentions the bilingual assistant, keeps its client unnamed and doesn't link the two."
+      }
+    },
+    {
+      "id": "wakeb-client-002",
+      "category": "unknown",
+      "language": "en",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Was the bilingual government assistant he built at Wakeb made for the Ministry of Defense?"
+        }
+      ],
+      "expect": {
+        "mustInclude": [
+          [
+            "confidential",
+            "isn't named",
+            "not named",
+            "aren't named",
+            "doesn't name",
+            "not disclosed",
+            "isn't disclosed",
+            "can't confirm",
+            "cannot confirm",
+            "not public",
+            "isn't public"
+          ]
+        ],
+        "mustNotInclude": [
+          "Ministry of Defense",
+          "Ministry of Defence",
+          "GADD"
+        ],
+        "mustNotMatch": [
+          "^\\W*(?:yes|no)\\b"
+        ],
+        "facts": [
+          "The assistant's client is described only as a Saudi government client, for confidentiality; no confirmation or denial"
+        ],
+        "behaviour": "The visitor names a possible client for that assistant: the answer doesn't repeat it, confirm or deny it, and doesn't bring up the role-level client either; it says the client isn't named, then shares what is public about the assistant."
+      }
     }
   ]
 }

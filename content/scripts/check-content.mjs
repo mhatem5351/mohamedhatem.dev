@@ -108,8 +108,14 @@ for (const r of profile.experience) {
   for (const b of r.cvBullets)
     for (const loc of ["en", "ar"]) if ([...b.text[loc]].length > 230) fail(`role ${r.id}: cv bullet over 230 chars (${loc})`);
 }
-for (const id of profile.cv.projects) if (!projectIds.has(id)) fail(`cv.projects: unknown project ${id}`);
 if (!profile.cv.skills.length) fail("cv.skills is empty");
+if (!profile.cv.openTo.roles.length || !profile.cv.openTo.arrangements.length) fail("cv.openTo needs roles and arrangements");
+// A client is named at the role level only, and never on the bullet about the unnamed Saudi government client.
+for (const r of profile.experience) {
+  if (!r.client) continue;
+  for (const b of [...r.bullets, ...r.cvBullets])
+    for (const loc of ["en", "ar"]) if (b.text[loc].includes(r.client.name[loc])) fail(`role ${r.id}: the client is named on a bullet`);
+}
 
 // ---------- binding decisions ----------
 if (profile.basics.title.en !== "AI Team Lead") fail("basics.title must be AI Team Lead");

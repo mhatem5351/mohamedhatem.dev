@@ -18,8 +18,8 @@
   Recommended display size: 160 px and up (below that use the photo alone, e.g. mh-avatar-*).
 -->
 <style>
-svg.mh-orbit:root{--color-teal-fill:#16A394;--color-saffron-fill:#E9A23B;--color-coral-fill:#E4683F;--color-sky-fill:#4A8FD6;--color-sage-fill:#89A447;--color-graph-node:#FFFEFB;color:#D6CCBA}
-@media (prefers-color-scheme:dark){svg.mh-orbit:root{--color-teal-fill:#2CC2B0;--color-saffron-fill:#EFAE48;--color-coral-fill:#F57A54;--color-sky-fill:#5EA2E6;--color-sage-fill:#9DB95A;--color-graph-node:#0F1A23;color:#2C3E4D}}
+svg.mh-orbit:root{--color-teal-fill:#038586;--color-saffron-fill:#B47D19;--color-coral-fill:#B84D30;--color-sky-fill:#2855AD;--color-sage-fill:#A66BB9;--color-graph-node:#FEFDFC;color:#CFCCC5}
+@media (prefers-color-scheme:dark){svg.mh-orbit:root{--color-teal-fill:#5AC0BC;--color-saffron-fill:#E8B458;--color-coral-fill:#DA6C50;--color-sky-fill:#6591E1;--color-sage-fill:#DFBCEB;--color-graph-node:#0B1222;color:#363F54}}
 .mh-orbit .o-ring{stroke:var(--color-teal-fill)}
 .mh-orbit .o-orbit{stroke:currentColor}
 .mh-orbit .n-ring{fill:var(--color-graph-node)}

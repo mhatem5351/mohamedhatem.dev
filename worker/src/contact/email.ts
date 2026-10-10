@@ -56,15 +56,15 @@ export function buildContactEmail(d: ContactData, meta: EmailMeta): ContactEmail
     `Reply to this email to answer ${d.name} directly (Reply-To is ${d.email}).\n`;
 
   const cell = "padding:6px 12px 6px 0;vertical-align:top";
-  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#FBF8F3">
-<div style="max-width:600px;margin:0 auto;font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.6;color:#14212B">
-<p style="margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#0A766C">mohamedhatem.dev · contact form</p>
+  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#F7F6F3">
+<div style="max-width:600px;margin:0 auto;font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;font-size:15px;line-height:1.6;color:#131D36">
+<p style="margin:0 0 4px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#2B51AA">mohamedhatem.dev · contact form</p>
 <h1 style="margin:0 0 16px;font-size:20px;line-height:1.3">${escapeHtml(SUBJECT_LABEL[d.subject])} from ${escapeHtml(who)}</h1>
 <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 16px">
-${rows.map(([k, v]) => `<tr><td style="${cell};color:#5A6670;white-space:nowrap">${escapeHtml(k)}</td><td style="${cell}">${k === "Email" ? `<a href="mailto:${escapeHtml(v)}" style="color:#0A766C">${escapeHtml(v)}</a>` : escapeHtml(v)}</td></tr>`).join("\n")}
+${rows.map(([k, v]) => `<tr><td style="${cell};color:#5B6375;white-space:nowrap">${escapeHtml(k)}</td><td style="${cell}">${k === "Email" ? `<a href="mailto:${escapeHtml(v)}" style="color:#2B51AA">${escapeHtml(v)}</a>` : escapeHtml(v)}</td></tr>`).join("\n")}
 </table>
-<div dir="auto" style="white-space:pre-wrap;padding:16px;border:1px solid #E7E0D3;border-radius:12px;background:#FFFEFB">${escapeHtml(d.message)}</div>
-<p style="margin:16px 0 0;font-size:13px;color:#5A6670">Reply to this email to answer ${escapeHtml(d.name)} directly.</p>
+<div dir="auto" style="white-space:pre-wrap;padding:16px;border:1px solid #E2DFDA;border-radius:12px;background:#FEFDFC">${escapeHtml(d.message)}</div>
+<p style="margin:16px 0 0;font-size:13px;color:#5B6375">Reply to this email to answer ${escapeHtml(d.name)} directly.</p>
 </div></body></html>`;
 
   return {

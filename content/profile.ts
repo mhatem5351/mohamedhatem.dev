@@ -137,6 +137,7 @@ export type RoleId =
 
 /** URL slug of a case study (also its anchor id). */
 export type CaseStudySlug =
+  | "sta-tourism-assistants"
   | "arabsstock-assistant"
   | "wakeb-bilingual-chatbot"
   | "aip-semantic-search"
@@ -331,7 +332,20 @@ export interface Role {
   readonly honors: readonly string[];
   /** `true` for the four main roles shown expanded; the rest sit under "Earlier roles". */
   readonly primary: boolean;
+  /**
+   * Optional: the client of the whole role, where Mohamed approved naming it. Role level only: the CV shows it on its
+   * own line under the role head ("Client: …"), never on a bullet, a project or a case study.
+   */
+  readonly client?: RoleClient;
   /** Provenance of the role itself (title, dates, company). */
+  readonly source: Sources;
+}
+
+/** The client a role's work was for (`Role.client`). */
+export interface RoleClient {
+  /** Client name as shown after the "Client:" label (`m.cv.client`). */
+  readonly name: L10n;
+  /** Provenance. */
   readonly source: Sources;
 }
 
@@ -395,6 +409,37 @@ export interface Figure {
   readonly source: Sources;
 }
 
+/**
+ * A screen of a shipped product, shown in a case study's gallery. The file is a cleaned capture (personal data and
+ * internal names removed before export) in `site/src/assets/screens/<slug>/`. Captions describe what the screen
+ * shows, never how it was captured.
+ */
+export interface Screen {
+  /** File name in `site/src/assets/screens/<slug>/` (WebP). */
+  readonly file: string;
+  /**
+   * Pixel density of the capture: 2 = captured at twice the size it is shown (the desktop screens); 1 = a 1x capture
+   * (the phone screen, a dialog), shown at its native width or smaller, never upscaled.
+   */
+  readonly density: 1 | 2;
+  /** `desktop` (a browser-like frame), `phone` (a phone bezel) or `panel` (a cropped dialog on its own). */
+  readonly frame: "desktop" | "phone" | "panel";
+  /** Which product the screen belongs to (groups the gallery). */
+  readonly product: L10n;
+  /** Short text alternative. */
+  readonly alt: L10n;
+  /** Caption under the screen. */
+  readonly caption: L10n;
+}
+
+/** The client a case study was built for, where the client approved being named (JSON-LD `about`). */
+export interface Client {
+  /** Official name. */
+  readonly name: L10n;
+  /** Abbreviation used in the sources (e.g. "STA"). */
+  readonly abbreviation?: string;
+}
+
 /** A case study: problem -> approach -> architecture -> outcome. */
 export interface CaseStudy {
   /** URL slug / anchor id. */
@@ -440,6 +485,10 @@ export interface CaseStudy {
   readonly stack: readonly string[];
   /** Public links (live site, code). */
   readonly links: readonly Link[];
+  /** The named client, only where the client approved being named (unnamed clients never appear here). */
+  readonly client?: Client;
+  /** Screens of the product (a gallery on the case-study page), where the client approved publishing them. */
+  readonly screens?: readonly Screen[];
   /** Provenance of the case study as a whole. */
   readonly source: Sources;
 }
@@ -622,8 +671,18 @@ export interface Cv {
   readonly summaryStrong: readonly L10n[];
   /** Skills summary, one line per group. */
   readonly skills: readonly CvSkillLine[];
-  /** Projects listed on the CV, in order. */
-  readonly projects: readonly ProjectId[];
+  /**
+   * "Open to" on the CV: a short list, strongest first (the first role leads the block). CV only: the site's About
+   * section, llms.txt and the assistant use the fuller `basics.openTo`.
+   */
+  readonly openTo: {
+    /** Roles, in order. */
+    readonly roles: readonly L10n[];
+    /** Work arrangements, in order. */
+    readonly arrangements: readonly L10n[];
+    /** Provenance. */
+    readonly source: Sources;
+  };
   /** Suggested PDF file names. */
   readonly fileName: L10n;
   /** Day the CV content was last reviewed (shown as month and year). */
@@ -684,10 +743,11 @@ const basics: Basics = {
   ),
   bio: [
     fact(
-      "I'm an AI Team Lead at Globant, based in Cairo. I design, ship and run production LLM systems: multi-agent orchestration, retrieval, self-hosted model serving, and the evaluation and monitoring that keep them honest.",
-      "أعمل قائدًا لفريق الذكاء الاصطناعي في Globant، وأقيم في القاهرة. أصمّم أنظمة النماذج اللغوية الكبيرة وأطلقها وأشغّلها في بيئة الإنتاج: تنسيق الوكلاء المتعددين، والاسترجاع، وخدمة النماذج ذاتية الاستضافة، والتقييم والمراقبة اللذين يضمنان موثوقية إجاباتها.",
+      "I'm an AI Team Lead at Globant, based in Cairo. I design, ship and run production LLM systems: multi-agent orchestration, retrieval, self-hosted model serving, and the evaluation and monitoring that keep them honest. At Globant I lead the AI engineering for the Saudi Tourism Authority's assistants: Noura for visitors and an assistant for staff.",
+      "أعمل قائدًا لفريق الذكاء الاصطناعي في Globant، وأقيم في القاهرة. أصمّم أنظمة النماذج اللغوية الكبيرة وأطلقها وأشغّلها في بيئة الإنتاج: تنسيق الوكلاء المتعددين، والاسترجاع، وخدمة النماذج ذاتية الاستضافة، والتقييم والمراقبة اللذين يضمنان موثوقية إجاباتها. وفي Globant أقود هندسة الذكاء الاصطناعي لمساعدَي الهيئة السعودية للسياحة: «نورة» للزوار، ومساعد للموظفين.",
       "github",
       "linkedin",
+      "mohamed",
     ),
     fact(
       "I came to AI through data. I started in 2020 writing SQL for a payments company, moved into data science, then built AI platforms in production. Before Globant I architected a 14-agent assistant for ArabsStock and, at Wakeb Data, a 6-agent bilingual chatbot whose Qwen models I served with vLLM on A100 GPUs.",
@@ -917,16 +977,25 @@ const experience: readonly Role[] = [
       ),
     ],
     cvBullets: [
-      // The CV's 230-character line budget: the same facts as the site's bullet, a few words tighter.
+      // The CV's 230-character line budget: the same facts as the site's bullet, a few words tighter. LangGraph and
+      // the human approval are named once, in the second bullet.
       factB(
         ["Saudi Tourism Authority (STA) project", "مشروع الهيئة السعودية للسياحة (STA)"],
-        "Leading AI engineering on the Saudi Tourism Authority (STA) project: an agentic LangGraph runtime with retrieval, human-approval gates and evaluation for Noura, the visitor assistant, and a staff assistant, in Arabic and English.",
-        "قيادة هندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA): بيئة تشغيل وكيلية على LangGraph تجمع الاسترجاع وبوابات الموافقة البشرية والتقييم، وتخدم «نورة» مساعدة الزوار ومساعدًا للموظفين، بالعربية والإنجليزية.",
+        "Leading AI engineering on the Saudi Tourism Authority (STA) project: an agentic LLM runtime with retrieval and evaluation for Noura, the visitor assistant, and a staff assistant, in Arabic and English.",
+        "قيادة هندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA): بيئة تشغيل وكيلية للنماذج اللغوية تجمع الاسترجاع والتقييم، وتخدم «نورة» مساعدة الزوار ومساعدًا للموظفين، بالعربية والإنجليزية.",
+        "mohamed",
+      ),
+      // Approved for the CV by Mohamed (2026-10-10), from the STA case study: one agent (never "multi-agent"), the
+      // tool counts, the approval rule and the UAT acceptance (never "in production" or "launched").
+      factB(
+        ["One LangGraph agent behind 96 tools", "وكيل واحد على LangGraph مزوّد بـ96 أداة"],
+        "One LangGraph agent behind 96 tools (27 visible to visitors), with human approval before every action; Noura was accepted in the client's UAT in September 2026.",
+        "وكيل واحد على LangGraph مزوّد بـ96 أداة، منها 27 متاحة للزوار، مع موافقة بشرية قبل أي إجراء، واعتماد «نورة» في اختبار القبول لدى العميل في سبتمبر 2026.",
         "mohamed",
       ),
     ],
     tech: ["LangGraph", l("Agentic LLM runtime", "بيئة تشغيل وكيلية للنماذج اللغوية"), l("Retrieval", "الاسترجاع"), l("Human-approval gates", "بوابات الموافقة البشرية"), l("Evaluation", "التقييم")],
-    caseStudies: [],
+    caseStudies: ["sta-tourism-assistants"],
     honors: [],
     primary: true,
     source: ["mohamed", "linkedin", "github"],
@@ -1053,6 +1122,12 @@ const experience: readonly Role[] = [
     caseStudies: ["wakeb-bilingual-chatbot", "aip-semantic-search", "gov-bilingual-assistant"],
     honors: [],
     primary: true,
+    // Named by Mohamed (2026-10-10) for the CV, at the role level only. It is not attached to any project or bullet;
+    // the bilingual government assistant's client stays unnamed ("a Saudi government client").
+    client: {
+      name: l("Saudi Ministry of Defense (GADD)", "وزارة الدفاع السعودية (GADD)"),
+      source: ["mohamed"],
+    },
     source: ["cv", "linkedin", "github"],
   },
   {
@@ -1461,9 +1536,210 @@ const experience: readonly Role[] = [
 ];
 
 const caseStudies: readonly CaseStudy[] = [
+  // Saudi Tourism Authority (STA), through Globant. Named with written approval from Globant and STA (relayed
+  // 2026-10-10), as are the products: Noura (the public visitor assistant) and the internal staff assistant. Kept
+  // deliberately light at Mohamed's request: the only figure is "96 tools, 27 visible to visitors" behind one agent;
+  // it is one agentic runtime (never "multi-agent") and Noura was accepted in the client's UAT in September 2026
+  // (never "in production" or "launched"). He led the AI engineering, not the project.
+  {
+    slug: "sta-tourism-assistants",
+    order: 1,
+    featured: true,
+    depth: "full",
+    title: l(
+      "Saudi Tourism Authority: Noura for visitors and an AI assistant for staff",
+      "الهيئة السعودية للسياحة: «نورة» للزوار ومساعد ذكي للموظفين",
+    ),
+    shortTitle: l("STA: Noura and the staff assistant", "هيئة السياحة: نورة ومساعد الموظفين"),
+    context: l("Globant, for the Saudi Tourism Authority (STA)", "Globant، لصالح الهيئة السعودية للسياحة"),
+    roleId: "globant",
+    contribution: l("Led the AI engineering (AI Team Lead)", "قيادة هندسة الذكاء الاصطناعي (قائد فريق الذكاء الاصطناعي)"),
+    period: { start: "2026-04", end: null },
+    published: "2026-10-10",
+    updated: "2026-10-10",
+    summary: l(
+      "Led the AI engineering for two Saudi Tourism Authority assistants on one LangGraph agent: Noura for visitors and a staff assistant, in Arabic and English.",
+      "قيادة هندسة الذكاء الاصطناعي لمساعدَين للهيئة السعودية للسياحة على وكيل LangGraph واحد: «نورة» للزوار ومساعد للموظفين، بالعربية والإنجليزية.",
+    ),
+    problem: l(
+      "The Saudi Tourism Authority wanted two assistants: Noura, a public travel assistant for visitors, and an internal assistant for its staff. Both had to answer from the authority's own content, in Arabic and English, and a visitor could never reach staff tools or data.",
+      "أرادت الهيئة السعودية للسياحة مساعدَين: «نورة»، مساعدة سفر عامة للزوار، ومساعدًا داخليًا لموظفيها. وكان على كليهما أن يجيب من محتوى الهيئة نفسها بالعربية والإنجليزية، دون أن يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم.",
+    ),
+    approach: [
+      fact(
+        "One agent, two audiences: a single LangGraph agent serves both assistants, and an audience gate decides which tools and knowledge each session can use, so a visitor never reaches staff tools or data.",
+        "وكيل واحد لجمهورين: وكيل LangGraph واحد يخدم المساعدَين، وبوابة للجمهور تحدّد الأدوات والمعرفة المتاحة لكل جلسة، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم.",
+        "mohamed",
+      ),
+      fact(
+        "Tools that answer with cards: destinations, events, visas, weather and trip plans for visitors; meeting rooms, leave and office requests for staff.",
+        "أدوات تجيب ببطاقات: الوجهات والفعاليات والتأشيرات والطقس وخطط الرحلات للزوار، وقاعات الاجتماعات والإجازات وطلبات المكتب للموظفين.",
+        "mohamed",
+      ),
+      fact(
+        "Answers grounded in the authority's own documents and tourism content, with their sources shown.",
+        "إجابات تستند إلى وثائق الهيئة ومحتواها السياحي، مع عرض مصادرها.",
+        "mohamed",
+      ),
+      fact(
+        "A person approves every action: booking a room, placing an order or building an itinerary waits for the user's yes.",
+        "موافقة بشرية على كل إجراء: حجز قاعة أو تنفيذ طلب أو بناء برنامج رحلة لا يتم إلا بعد موافقة المستخدم.",
+        "mohamed",
+      ),
+      fact(
+        "Arabic and English throughout, right to left and left to right, on desktop and phone.",
+        "العربية والإنجليزية في كل شيء، من اليمين إلى اليسار ومن اليسار إلى اليمين، على الحاسوب والهاتف.",
+        "mohamed",
+      ),
+      fact(
+        "Answer quality and retrieval measured by evaluations, not assumed.",
+        "قياس جودة الإجابات ودقة الاسترجاع بالتقييم بدل افتراضهما.",
+        "mohamed",
+      ),
+    ],
+    architecture: {
+      caption: l(
+        "Capability view: one LangGraph agent serves visitors and staff; an audience gate decides what each session may use, answers come from the authority's own content with their sources, and every action waits for a person's approval.",
+        "عرض للقدرات: وكيل LangGraph واحد يخدم الزوار والموظفين، وبوابة الجمهور تحدّد ما يتاح لكل جلسة، والإجابات تأتي من محتوى الهيئة مع مصادرها، وكل إجراء ينتظر موافقة بشرية.",
+      ),
+      nodes: [
+        { id: "visitors", label: l("Visitors (Noura)", "الزوار (نورة)"), kind: "user" },
+        { id: "staff", label: l("Staff (staff assistant)", "الموظفون (مساعد الموظفين)"), kind: "user" },
+        {
+          id: "gate",
+          label: l("Audience gate", "بوابة الجمهور"),
+          kind: "quality",
+          note: l("Tools and knowledge per audience", "الأدوات والمعرفة لكل جمهور"),
+        },
+        {
+          id: "agent",
+          label: l("One LangGraph agent", "وكيل LangGraph واحد"),
+          kind: "orchestrator",
+          note: l("96 tools, 27 visible to visitors", "96 أداة، منها 27 متاحة للزوار"),
+        },
+        { id: "llm", label: l("LLM", "نموذج لغوي"), kind: "model" },
+        {
+          id: "tools",
+          label: l("Typed tools and cards", "أدوات منظّمة وبطاقات"),
+          kind: "service",
+          note: l("Destinations, events, visas, weather, trip plans, staff requests", "الوجهات والفعاليات والتأشيرات والطقس وخطط الرحلات وطلبات الموظفين"),
+        },
+        { id: "approval", label: l("Human approval", "الموافقة البشرية"), kind: "quality", note: l("Before any action", "قبل أي إجراء") },
+        { id: "retrieval", label: l("Retrieval with sources", "استرجاع مع المصادر"), kind: "retrieval" },
+        { id: "content", label: l("The authority's documents and tourism content", "وثائق الهيئة ومحتواها السياحي"), kind: "data" },
+        { id: "evals", label: l("Evaluation", "التقييم"), kind: "quality", note: l("Answer quality, retrieval", "جودة الإجابات والاسترجاع") },
+      ],
+      edges: [
+        { from: "visitors", to: "gate" },
+        { from: "staff", to: "gate" },
+        { from: "gate", to: "agent", label: l("what each audience may use", "ما يتاح لكل جمهور") },
+        { from: "agent", to: "llm" },
+        { from: "agent", to: "tools" },
+        { from: "approval", to: "tools", label: l("before any action", "قبل أي إجراء") },
+        { from: "agent", to: "retrieval" },
+        { from: "retrieval", to: "content" },
+        { from: "evals", to: "agent" },
+      ],
+    },
+    outcome: [
+      fact(
+        "One agent serves both Noura and the staff assistant, kept apart by the audience gate.",
+        "وكيل واحد يخدم «نورة» ومساعد الموظفين، وتفصل بينهما بوابة الجمهور.",
+        "mohamed",
+      ),
+      fact(
+        "Noura was accepted in the client's user-acceptance testing (UAT) in September 2026.",
+        "اعتمد العميل «نورة» في اختبار قبول المستخدم في سبتمبر 2026.",
+        "mohamed",
+      ),
+      fact(
+        "Every action waits for the user's approval, and answers show their sources.",
+        "كل إجراء ينتظر موافقة المستخدم، والإجابات تعرض مصادرها.",
+        "mohamed",
+      ),
+    ],
+    figures: [
+      { value: same("1"), unit: l("agent", "وكيل"), label: l("serving both assistants", "يخدم المساعدَين"), source: ["mohamed"] },
+      { value: same("96"), unit: l("tools", "أداة"), label: l("typed, all called by that one agent", "منظّمة يستدعيها هذا الوكيل وحده"), source: ["mohamed"] },
+      { value: same("27"), label: l("of them visible to visitors", "منها متاحة للزوار"), source: ["mohamed"] },
+    ],
+    stack: ["LangGraph", "Python", "FastAPI", "RAG", "LLM evaluation", "React", "TypeScript"],
+    links: [],
+    client: { name: l("Saudi Tourism Authority", "الهيئة السعودية للسياحة"), abbreviation: "STA" },
+    // Cleaned captures (personal data, persona photo and internal names removed in the pixels before export).
+    screens: [
+      {
+        file: "01-noura-home-en.webp",
+        density: 2,
+        frame: "desktop",
+        product: l("Noura, for visitors", "نورة للزوار"),
+        alt: l("Noura's home screen in English", "الشاشة الرئيسية لنورة بالإنجليزية"),
+        caption: l(
+          "Noura's home screen: top attractions and live events from Visit Saudi, with saved favourites.",
+          "الشاشة الرئيسية لنورة: أبرز المعالم والفعاليات الجارية من «روح السعودية»، مع المفضّلة المحفوظة.",
+        ),
+      },
+      {
+        file: "02-noura-answer-ar.webp",
+        density: 2,
+        frame: "desktop",
+        product: l("Noura, for visitors", "نورة للزوار"),
+        alt: l("Noura answering in Arabic, right to left", "نورة تجيب بالعربية من اليمين إلى اليسار"),
+        caption: l(
+          "Noura answering in Arabic, right to left: a destination card for AlUla and a sourced summary.",
+          "نورة تجيب بالعربية من اليمين إلى اليسار: بطاقة وجهة للعُلا وملخّص يذكر مصدره.",
+        ),
+      },
+      {
+        file: "04-noura-itinerary-en.webp",
+        density: 2,
+        frame: "desktop",
+        product: l("Noura, for visitors", "نورة للزوار"),
+        alt: l("A one-day AlUla itinerary built by Noura", "برنامج يوم واحد في العُلا بنته نورة"),
+        caption: l(
+          "A one-day AlUla itinerary built from the traveller's preferences, including the sunset viewpoint they asked for.",
+          "برنامج يوم واحد في العُلا مبني على تفضيلات المسافر، ويشمل نقطة مشاهدة الغروب التي طلبها.",
+        ),
+      },
+      {
+        file: "06-noura-mobile-en.webp",
+        density: 1,
+        frame: "phone",
+        product: l("Noura, for visitors", "نورة للزوار"),
+        alt: l("Noura on a phone", "نورة على الهاتف"),
+        caption: l(
+          "Noura on a phone: the same answers and follow-up suggestions in a narrow layout.",
+          "نورة على الهاتف: الإجابات نفسها واقتراحات المتابعة في تخطيط مناسب للشاشة الصغيرة.",
+        ),
+      },
+      {
+        file: "08-employee-home-ar.webp",
+        density: 2,
+        frame: "desktop",
+        product: l("The staff assistant", "مساعد الموظفين"),
+        alt: l("The staff assistant's home screen in Arabic", "الشاشة الرئيسية لمساعد الموظفين بالعربية"),
+        caption: l(
+          "The staff assistant's home screen in Arabic, with suggested questions and memory controls.",
+          "الشاشة الرئيسية لمساعد الموظفين بالعربية، مع أسئلة مقترحة وإعدادات الذاكرة.",
+        ),
+      },
+      {
+        file: "10-employee-approval-en.webp",
+        density: 1,
+        frame: "panel",
+        product: l("The staff assistant", "مساعد الموظفين"),
+        alt: l("An approval request before a coffee order", "طلب موافقة قبل تنفيذ طلب قهوة"),
+        caption: l(
+          "Human approval before any action: the assistant asks before placing a coffee order.",
+          "موافقة بشرية قبل أي إجراء: المساعد يستأذن قبل تنفيذ طلب القهوة.",
+        ),
+      },
+    ],
+    source: ["mohamed"],
+  },
   {
     slug: "arabsstock-assistant",
-    order: 1,
+    order: 2,
     featured: true,
     depth: "full",
     title: l(
@@ -1597,7 +1873,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "wakeb-bilingual-chatbot",
-    order: 2,
+    order: 3,
     featured: true,
     depth: "full",
     title: l(
@@ -1726,7 +2002,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "gov-bilingual-assistant",
-    order: 5,
+    order: 6,
     featured: false,
     depth: "brief",
     title: l(
@@ -1796,7 +2072,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "empoweromics-ml",
-    order: 3,
+    order: 4,
     featured: true,
     depth: "full",
     title: l(
@@ -1916,7 +2192,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "logic-controls-website",
-    order: 4,
+    order: 5,
     featured: true,
     depth: "full",
     title: l(
@@ -2018,7 +2294,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "aip-semantic-search",
-    order: 6,
+    order: 7,
     featured: false,
     depth: "brief",
     title: l("AIP semantic search, version 2", "الإصدار الثاني من البحث الدلالي لمشروع AIP"),
@@ -2080,7 +2356,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "tabaqat-gis",
-    order: 7,
+    order: 8,
     featured: false,
     depth: "brief",
     title: l("GIS data pipelines and map serving", "خطوط بيانات GIS وخدمة الخرائط"),
@@ -2723,7 +2999,20 @@ const cvData: Cv = {
       source: ["logic-controls", "github"],
     },
   ],
-  projects: ["staged-llm-evaluator", "prompt-reliability-harness", "rag-answering-service", "logic-controls-website"],
+  // Mohamed's CV wording (2026-10-10): three roles, team lead first, and three arrangements.
+  openTo: {
+    roles: [
+      l("AI/ML Team Lead", "قائد فريق ذكاء اصطناعي / تعلّم آلة"),
+      l("Senior AI / LLM Engineer", "مهندس أول للذكاء الاصطناعي / LLM"),
+      l("MLOps Engineer", "مهندس MLOps"),
+    ],
+    arrangements: [
+      l("Remote", "عن بُعد"),
+      l("Relocation to the Gulf or Europe", "الانتقال إلى الخليج أو أوروبا"),
+      l("Hybrid in Cairo", "عمل هجين في القاهرة"),
+    ],
+    source: ["mohamed"],
+  },
   fileName: l("Mohamed-Hatem-CV.pdf", "Mohamed-Hatem-CV-Arabic.pdf"),
   updated: "2026-10-10",
 };

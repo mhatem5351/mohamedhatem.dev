@@ -5,12 +5,14 @@
  * dist/og/. Base.astro points og:image / twitter:image at them (src/lib/site.ts → ogImage()).
  *
  * Look: the design's sharing cards (design/assets/brand/og/og-home-*.png, og-case-*.png). The decorative layer
- * (deep-ink background, glows, dot grid, agent graph) is taken from the design templates copied into scripts/og/
+ * (lapis-night background, glows, dot grid, agent graph) is taken from the design templates copied into scripts/og/
  * (og-home.svg, og-case.svg); the text is laid out as HTML in headless Chromium with the site's self-hosted fonts,
  * so Arabic shaping, bidi and Latin runs inside Arabic are measured for real (the design script's approach).
  * Arabic cards mirror the layout: text from the right, the graph flips to the left, the monogram moves.
  *
- * Fast path: inputs (texts, templates, fonts, this script) are hashed into node_modules/.cache/mh-og/manifest.json; when nothing
+ * Colours: the design tokens' dark values (../design/tokens.json), the site's default theme.
+ *
+ * Fast path: inputs (texts, templates, tokens, fonts, this script) are hashed into node_modules/.cache/mh-og/manifest.json; when nothing
  * changed and every PNG exists, the script exits in milliseconds.
  *
  *   node scripts/og.mjs           render what changed
@@ -72,15 +74,20 @@ function layers(file) {
 }
 const TEMPLATES = { case: layers("og-case.svg"), home: layers("og-home.svg") };
 
-/* ------------------------------------------------------------------ chip colours by technology category */
-const CHIP = {
-  teal: ["#3DD6C3", "#10302E", "#1E4B47"],
-  saffron: ["#F4B95A", "#2E2614", "#4D3C1A"],
-  coral: ["#FF916E", "#33201A", "#563226"],
-  sky: ["#7DB6F0", "#15283A", "#23405C"],
-  sage: ["#B2CC72", "#1F2A17", "#344524"],
-  slate: ["#AFC3D3", "#1C2A35", "#2D4050"],
+/* ------------------------------------------------------------------ colours: the design tokens, dark theme */
+// The cards use the site's default theme (Lapis & Gold by night), read from the design tokens so they never drift.
+const TOKENS_FILE = `${SITE}../design/tokens.json`;
+const tokenBytes = readFileSync(TOKENS_FILE);
+const TOKENS = JSON.parse(tokenBytes.toString("utf8")).color;
+const C = (name) => {
+  const v = TOKENS[name]?.[1];
+  if (!v) throw new Error(`og: no dark value for --color-${name}`);
+  return v;
 };
+/** chip colours by technology category: text, tint, tint line */
+const CHIP = Object.fromEntries(
+  ["teal", "saffron", "coral", "sky", "sage", "slate"].map((c) => [c, [C(c), C(`${c}-tint`), C(`${c}-tint-line`)]]),
+);
 function chipCategory(tech) {
   const t = tech.toLowerCase();
   if (/langgraph|langchain|mcp|multi-agent|orchestr/.test(t)) return "teal";
@@ -151,38 +158,38 @@ const isolate = (s) => esc(s);
 
 const PAGE_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{width:${W}px;height:${H}px;background:#0C151D;overflow:hidden}
+html,body{width:${W}px;height:${H}px;background:${C("bg")};overflow:hidden}
 body{-webkit-font-smoothing:antialiased;font-kerning:normal;text-rendering:geometricPrecision}
-.card{position:relative;width:${W}px;height:${H}px;color:#ECF1F4;font-family:"OG Sans","OG Arabic",sans-serif}
+.card{position:relative;width:${W}px;height:${H}px;color:${C("ink")};font-family:"OG Sans","OG Arabic",sans-serif}
 .card[lang=ar]{font-family:"OG Sans","OG Arabic",sans-serif}
 .bg{position:absolute;inset:0;width:${W}px;height:${H}px}
 .top{position:absolute;inset-inline-start:${M}px;top:62px;height:40px;display:flex;align-items:center;gap:18px}
 .mark{width:46.7px;height:40px;overflow:visible}
-.domain{font:500 28px/1 "OG Mono",monospace;color:#97A5B1;direction:ltr;unicode-bidi:isolate}
+.domain{font:500 28px/1 "OG Mono",monospace;color:${C("muted")};direction:ltr;unicode-bidi:isolate}
 .flow{position:absolute;inset-inline-start:${M}px;top:172px;display:flex;flex-direction:column;align-items:flex-start}
-.eyebrow{font:600 28px/1 "OG Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:#3DD6C3}
+.eyebrow{font:600 28px/1 "OG Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:${C("accent")}}
 [lang=ar] .eyebrow{font:600 30px/1.2 "OG Arabic","OG Sans",sans-serif;letter-spacing:0;text-transform:none}
-.title{margin-top:16px;max-width:786px;font:600 58px/1.08 "OG Display","OG Arabic",sans-serif;letter-spacing:-.025em;color:#ECF1F4;text-wrap:balance}
+.title{margin-top:16px;max-width:786px;font:600 58px/1.08 "OG Display","OG Arabic",sans-serif;letter-spacing:-.025em;color:${C("ink")};text-wrap:balance}
 [lang=ar] .title{font-family:"OG Display","OG Arabic",sans-serif;font-weight:700;letter-spacing:0;line-height:1.33;max-width:800px}
-.summary{margin-top:14px;max-width:800px;font:400 30px/1.32 "OG Sans","OG Arabic",sans-serif;color:#C9D3DA;text-wrap:pretty}
+.summary{margin-top:14px;max-width:800px;font:400 30px/1.32 "OG Sans","OG Arabic",sans-serif;color:${C("ink-2")};text-wrap:pretty}
 [lang=ar] .summary{line-height:1.55}
 .chips{margin-top:24px;display:flex;flex-wrap:nowrap;gap:12px;max-width:1056px}
 .chip{display:inline-flex;align-items:center;height:52px;padding:0 18px;border-radius:10px;border:1.5px solid;font:500 28px/1 "OG Mono",monospace;white-space:nowrap;direction:ltr}
-.meta{margin-top:26px;max-width:856px;display:flex;align-items:baseline;gap:12px;font:500 30px/1.2 "OG Display","OG Arabic",sans-serif;color:#C9D3DA;white-space:nowrap}
+.meta{margin-top:26px;max-width:856px;display:flex;align-items:baseline;gap:12px;font:500 30px/1.2 "OG Display","OG Arabic",sans-serif;color:${C("ink-2")};white-space:nowrap}
 [lang=ar] .meta{font-family:"OG Display","OG Arabic",sans-serif}
-.meta .sep{color:#F4B95A}.meta .org{color:#3DD6C3}.meta .yrs{font:500 28px/1 "OG Mono",monospace;color:#97A5B1;direction:ltr;unicode-bidi:isolate}
+.meta .sep{color:${C("teal")}}.meta .org{color:${C("accent")}}.meta .yrs{font:500 28px/1 "OG Mono",monospace;color:${C("muted")};direction:ltr;unicode-bidi:isolate}
 .stripe{position:absolute;display:flex;gap:8.4px}
 .stripe i{display:block;height:7px;border-radius:3.5px}
-.stripe i:nth-child(1){width:75.6px;background:#2CC2B0}.stripe i:nth-child(2){width:42px;background:#EFAE48}.stripe i:nth-child(3){width:22.4px;background:#F57A54}
+.stripe i:nth-child(1){width:75.6px;background:${C("teal-fill")}}.stripe i:nth-child(2){width:42px;background:${C("saffron-fill")}}.stripe i:nth-child(3){width:22.4px;background:${C("coral-fill")}}
 .home .flow{top:0}
-.name{font:700 92px/1 "OG Display","OG Arabic",sans-serif;letter-spacing:-.035em;color:#ECF1F4;white-space:nowrap}
+.name{font:700 92px/1 "OG Display","OG Arabic",sans-serif;letter-spacing:-.035em;color:${C("ink")};white-space:nowrap}
 [lang=ar] .name{font-size:84px;letter-spacing:0;line-height:1.3}
-.role{margin-top:26px;display:flex;gap:12px;align-items:baseline;font:500 40px/1.2 "OG Display","OG Arabic",sans-serif;letter-spacing:-.01em;color:#C9D3DA;white-space:nowrap}
+.role{margin-top:26px;display:flex;gap:12px;align-items:baseline;font:500 40px/1.2 "OG Display","OG Arabic",sans-serif;letter-spacing:-.01em;color:${C("ink-2")};white-space:nowrap}
 [lang=ar] .role{font-size:38px;letter-spacing:0}
-.role .sep{color:#F4B95A}.role .org{color:#3DD6C3}
-.focus{margin-top:40px;max-width:720px;font:500 26px/1.5 "OG Mono","OG Arabic",monospace;color:#C9D3DA}
+.role .sep{color:${C("teal")}}.role .org{color:${C("accent")}}
+.focus{margin-top:40px;max-width:720px;font:500 26px/1.5 "OG Mono","OG Arabic",monospace;color:${C("ink-2")}}
 [lang=ar] .focus{font:500 30px/1.6 "OG Arabic","OG Sans",sans-serif}
-.focus .sep{color:#FF916E}
+.focus .sep{color:${C("coral")}}
 .home .stripe{position:static;margin-top:40px}
 bdi{unicode-bidi:isolate}
 .nw{white-space:nowrap}
@@ -192,7 +199,7 @@ function cardHtml(card, locale) {
   const rtl = locale === "ar";
   const t = TEMPLATES[card.kind];
   const mirror = rtl ? ` transform="translate(${W} 0) scale(-1 1)"` : "";
-  const bg = `<svg class="bg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${t.defs}<rect width="${W}" height="${H}" fill="#0C151D"/><g fill="none"${mirror}>${t.decor}</g></svg>`;
+  const bg = `<svg class="bg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${t.defs}<rect width="${W}" height="${H}" fill="${C("bg")}"/><g fill="none"${mirror}>${t.decor}</g></svg>`;
   const top = `<div class="top"><svg class="mark" viewBox="0 0 46.7 40" aria-hidden="true">${t.mark}</svg><span class="domain">mohamedhatem.dev</span></div>`;
   const sep = '<span class="sep" aria-hidden="true">·</span>';
   let flow;
@@ -278,7 +285,8 @@ function layout() {
 }
 
 /* ------------------------------------------------------------------ run */
-const scriptHash = createHash("sha256").update(readFileSync(fileURLToPath(import.meta.url))).update(TEMPLATES.case.decor).update(TEMPLATES.home.decor);
+const scriptHash = createHash("sha256").update(readFileSync(fileURLToPath(import.meta.url))).update(tokenBytes);
+for (const t of Object.values(TEMPLATES)) scriptHash.update(t.defs).update(t.decor).update(t.mark);
 for (const b of fontBytes) scriptHash.update(String(b.length));
 const base = scriptHash.digest("hex");
 const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, "utf8")) : {};

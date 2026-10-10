@@ -165,8 +165,13 @@ npm run test:widget:unit   # Vitest: markdown (links, isolation), SSE, language,
 npm run widget:size        # gzip budget
 ```
 
-Size today (gzip, fflate): loader 2.60 KB (budget 3 KB), total 19.48 KB (budget 19.5 KB, raised once from 18.5 KB for
-the phone sheet: keyboard fit, Back, focus return, 44 px targets, swipe to close, hover guards and Undo).
+Size today (gzip, fflate): loader 2.62 KB (budget 3 KB), total 19.50 KB (budget 19.5 KB). The budget was 18.5 KB,
+met to the byte after the launcher hook and the `avatar` option (+22 B). It rose by 20 B with the Lapis palette
+(2026-10-10): the token fallbacks in `VARS` and the default launcher's bubble and glyph carry the Lapis colours (lapis
+ink, alabaster, turquoise, gold, carnelian, lapis), +17 B gzip. The fallbacks only apply on a page without the design
+tokens, and the default launcher only shows when the site's avatar can't load (`data-art="off"`), but they are the
+brand as the widget ships it standalone. It was then raised once, to 19.5 KB, for the phone sheet: keyboard fit,
+Back, focus return, 44 px targets, swipe to close, hover guards and Undo.
 
 `tests/fixtures/site.html` mirrors the site's layout for the desktop tests (`tests/e2e/desktop.spec.ts`, 1440×807):
 64 px sticky header, scroll-padding, smooth scrolling, contact form in the right column.

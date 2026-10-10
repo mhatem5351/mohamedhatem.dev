@@ -19,7 +19,7 @@
       const label = { system: ar ? "المظهر: حسب النظام" : "Theme: system", light: ar ? "المظهر: فاتح" : "Theme: light", dark: ar ? "المظهر: داكن" : "Theme: dark" }[mode];
       if (!b.textContent.trim()) b.setAttribute("aria-label", label); b.title = label;
     });
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", resolved === "dark" ? "#0C151D" : "#FBF8F3");
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", resolved === "dark" ? "#080E1C" : "#F7F6F3");
   }
   applyTheme();
   mq.addEventListener("change", () => mode === "system" && applyTheme());

@@ -1,0 +1,165 @@
+---
+/**
+ * The product screens of a case study (content/profile.ts `screens`, shown where the client approved publishing
+ * them), grouped by product: desktop screens in a browser-like frame, the phone screen in the phone bezel of the
+ * home showcase, a cropped dialog on its own stage. Two columns from 48rem (2 : 1): a group's first desktop screen
+ * spans both when it has three or more, and phone or dialog captures sit in the narrow column beside the rest
+ * (src/lib/case.ts screenGroups). One column on phones.
+ *
+ * Images: lazy, responsive (srcset/sizes, WebP), never upscaled: 2x captures offer widths up to their native size,
+ * 1x captures (the phone screen, the dialog) only their native width and are never shown wider than it.
+ * Enlarge: each screen links to its full-size file (works without JS); with JS the link opens it in a modal
+ * <dialog>: on phones at its natural size (a 2x capture at half its pixels), scrollable and pinch-zoomable; on wider
+ * screens as large as the window allows, never beyond the capture's own pixels. Escape, the close button or a click
+ * on the backdrop closes it, and focus returns to the screen.
+ * Captions say what each screen shows, never how it was captured.
+ */
+import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
+import type { CaseStudy, Screen } from "@content/profile.ts";
+import Icon from "~/components/ui/Icon.astro";
+import { format, messages, tr, type Locale } from "~/lib/i18n";
+import { screenGroups, type ScreenSlot } from "~/lib/case";
+import "~/styles/screens.css";
+
+interface Props {
+  locale: Locale;
+  cs: CaseStudy;
+}
+const { locale, cs } = Astro.props;
+const m = messages(locale);
+const files = import.meta.glob<{ default: ImageMetadata }>("../../assets/screens/*/*.webp", { eager: true });
+const source = (s: Screen): ImageMetadata => {
+  const img = files[`../../assets/screens/${cs.slug}/${s.file}`]?.default;
+  if (!img) throw new Error(`screen ${cs.slug}/${s.file} not found in src/assets/screens`);
+  return img;
+};
+/** Rendered widths: up to the native width, never above it. */
+const widthsOf = (s: Screen, img: ImageMetadata): number[] =>
+  s.density === 1 ? [img.width] : [...new Set([480, 640, 960, 1280, img.width].filter((w) => w <= img.width))];
+/**
+ * Slot widths, measured in the article column: the lead ≈ 56rem from 80rem (892 px at 1440), the wide column ≈ 36rem
+ * (578 px), less beside the TOC rail from 64rem, the whole column below 48rem (the gutters off the viewport).
+ */
+const sizesOf = (slot: ScreenSlot, img: ImageMetadata): string => {
+  if (slot.screen.density === 1) return `(min-width: 48rem) min(${img.width}px, 17.5rem), min(${img.width}px, calc(100vw - 2.75rem))`;
+  if (slot.place === "lead") return "(min-width: 80rem) 56rem, (min-width: 64rem) 64vw, (min-width: 48rem) 92vw, calc(100vw - 2.75rem)";
+  return "(min-width: 80rem) 36rem, (min-width: 64rem) 42vw, (min-width: 48rem) 59vw, calc(100vw - 2.75rem)";
+};
+const groups = screenGroups(cs);
+const id = (i: number) => `screens-${i + 1}`;
+---
+<div class="screens wide">
+  {
+    groups.map((g, gi) => (
+      <section class="screens__group" aria-labelledby={id(gi)}>
+        <h3 class="eyebrow screens__title" id={id(gi)}>{tr(g.product, locale)}</h3>
+        <ul class="screens__grid" role="list">
+          {g.slots.map((slot) => {
+            const s = slot.screen;
+            const img = source(s);
+            const alt = tr(s.alt, locale);
+            const caption = tr(s.caption, locale);
+            return (
+              <li class:list={["shot", `shot--${s.frame}`, `shot--${slot.place}`, slot.place === "side" && `shot--rows-${slot.rows}`]}>
+                <figure class="shot__fig">
+                  <a
+                    class="shot__zoom"
+                    href={img.src}
+                    aria-label={format(m.work.page.enlarge, { alt })}
+                    data-zoom
+                    data-w={String(img.width)}
+                    data-h={String(img.height)}
+                    data-density={String(s.density)}
+                    data-alt={alt}
+                    data-caption={caption}
+                  >
+                    <span class:list={["shot__frame", s.frame === "phone" && "phone"]}>
+                      {s.frame === "desktop" && (
+                        <span class="shot__bar" aria-hidden="true">
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                      )}
+                      <Image
+                        src={img}
+                        widths={widthsOf(s, img)}
+                        sizes={sizesOf(slot, img)}
+                        format="webp"
+                        quality={88}
+                        alt={alt}
+                        loading="lazy"
+                        decoding="async"
+                        class="shot__img"
+                      />
+                    </span>
+                    <span class="shot__hint" aria-hidden="true">
+                      <Icon name="expand" size="sm" />
+                    </span>
+                  </a>
+                  <figcaption class="shot__cap">{caption}</figcaption>
+                </figure>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    ))
+  }
+  <dialog class="zoom" data-zoom-dialog aria-labelledby="zoom-cap">
+    <div class="zoom__bar">
+      <p class="zoom__cap" id="zoom-cap" data-zoom-cap></p>
+      <button class="btn btn--icon btn--ghost zoom__close" type="button" data-zoom-close aria-label={m.work.page.closeScreen}>
+        <Icon name="close" />
+      </button>
+    </div>
+    <div class="zoom__body" tabindex="0" role="group" aria-labelledby="zoom-cap" data-zoom-body></div>
+  </dialog>
+</div>
+
+<script>
+  // Enlarge a screen in a modal dialog (the link opens the image file without JS, or with a modifier key).
+  const dialog = document.querySelector<HTMLDialogElement>("[data-zoom-dialog]");
+  if (dialog && typeof dialog.showModal === "function") {
+    const cap = dialog.querySelector<HTMLElement>("[data-zoom-cap]")!;
+    const body = dialog.querySelector<HTMLElement>("[data-zoom-body]")!;
+    const img = document.createElement("img");
+    img.className = "zoom__img";
+    img.decoding = "async";
+    const narrow = matchMedia("(max-width: 47.99rem)");
+    let opener: HTMLElement | null = null;
+    document.addEventListener("click", (e) => {
+      const a = (e.target as Element).closest<HTMLAnchorElement>("a[data-zoom]");
+      if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      opener = a;
+      // Phones: the screen at its natural size (a 2x capture at half its pixels), to scroll and pinch-zoom. Wider
+      // screens: as large as the window allows, never beyond the capture's own pixels (screens.css).
+      const d = narrow.matches ? Number(a.dataset.density) || 1 : 1;
+      img.width = Math.round(Number(a.dataset.w) / d);
+      img.height = Math.round(Number(a.dataset.h) / d);
+      img.alt = a.dataset.alt ?? "";
+      img.src = a.href;
+      if (!img.isConnected) body.append(img);
+      cap.textContent = a.dataset.caption ?? "";
+      dialog.showModal();
+      // The chat launcher lives in the top layer too: keep it out of the way while a screen is enlarged.
+      document.documentElement.toggleAttribute("data-screen-open", true);
+      body.scrollTo(0, 0);
+      dialog.querySelector<HTMLElement>("[data-zoom-close]")?.focus();
+    });
+    dialog.querySelector("[data-zoom-close]")?.addEventListener("click", () => dialog.close());
+    // A click on the backdrop (the dialog box itself, outside its content) closes it.
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    dialog.addEventListener("close", () => {
+      document.documentElement.removeAttribute("data-screen-open");
+      img.remove();
+      img.removeAttribute("src");
+      opener?.focus();
+      opener = null;
+    });
+  }
+</script>

@@ -41,7 +41,7 @@ const [timeBefore, timeAfter] = m.contact.localTime.split("{time}") as [string, 
       <ul class="channels" role="list">
         <li>
           <a class="channel" href={whatsappHref(locale)}>
-            <span class="icon-tile icon-tile--sage"><Icon name="whatsapp" /></span>
+            <span class="icon-tile"><Icon name="whatsapp" /></span>
             <span>
               <span class="channel__label">{m.contact.channels.whatsapp.title}</span><br />
               <span class="channel__value"><Ltr>{whatsapp.display}</Ltr></span>
@@ -51,7 +51,7 @@ const [timeBefore, timeAfter] = m.contact.localTime.split("{time}") as [string, 
         </li>
         <li>
           <div class="channel">
-            <span class="icon-tile"><Icon name="mail" /></span>
+            <span class="icon-tile icon-tile--saffron"><Icon name="mail" /></span>
             <span>
               <span class="channel__label">{m.contact.channels.email.title}</span><br />
               <span class="channel__value"><a href={mailtoHref(locale)}><Ltr>{email.display}</Ltr></a></span>

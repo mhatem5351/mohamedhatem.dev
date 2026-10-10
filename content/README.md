@@ -15,7 +15,7 @@ content/
 │   ├── system-prompt.md    the assistant's instructions (not to be recited; contains a canary)
 │   ├── knowledge.md        the assistant's knowledge base (public facts only, third person)
 │   ├── suggestions.json    suggested questions, 8 per locale
-│   └── eval-set.json       74 test conversations with expected facts and behaviour
+│   └── eval-set.json       79 test conversations with expected facts and behaviour
 ├── scripts/
 │   └── check-content.mjs   content QA (lengths, digits, banned words, cross-refs, JSON, secrets)
 └── tsconfig.json           strict type-check for this folder only
@@ -106,7 +106,11 @@ Contact details and the binding decisions (title, "7 years", no Logic Controls f
 - Architecture diagrams contain only components and connections that the sources state or directly imply. Where the
   sources describe only capabilities (the government assistant, AIP), the diagram is a capability view and the case study is marked
   `depth: "brief"`.
-- Named: Globant (the Saudi Tourism Authority (STA) project: Noura and the staff assistant, named with the client's OK), Wakeb Data ("the AIP project"), ArabsStock, Empoweromics, Tabaqat,
+- Named: Globant (the Saudi Tourism Authority (STA) project: Noura and the staff assistant, named with written approval
+  from Globant and STA; its case study is deliberately light: one agent, the one figure "96 tools, 27 visible to
+  visitors", accepted in the client's UAT in September 2026, never "multi-agent" or "in production"), Wakeb Data ("the
+  AIP project"; the Saudi Ministry of Defense (GADD) is a client of the role as a whole, never tied to one Wakeb
+  project), ArabsStock, Empoweromics, Tabaqat,
   AestheticsPro, MDP, the universities and Logic Controls (never its founder or owner). One client is deliberately
   unnamed: "a Saudi government client" (the bilingual assistant at Wakeb). Its names appear nowhere in this
   repository; `check-content.mjs` enforces that with SHA-256 hashes of the forbidden names
@@ -139,10 +143,15 @@ Contact details and the binding decisions (title, "7 years", no Logic Controls f
   the rest go under "Earlier roles" (`m.experience.earlierTitle`). Logic Controls is freelance work shown as a case
   study and a project, as on his GitHub profile, not as a timeline role.
 - **Case studies.** `order` sets display order (featured ones first); `featured` ones form the main grid (the feature card
-  plus three equal cards); `depth: "brief"` ones (the government assistant, AIP, Tabaqat) are not featured: they sit in
-  "More work" ("Read the brief") and their pages use the compact brief template with `m.work.briefNote`. `figures` holds
+  (the Saudi Tourism Authority assistants), three equal cards led by ArabsStock, and logic-controls.com as a wide card
+  because a fifth card would sit alone in its row); `depth: "brief"` ones (the government assistant, AIP, Tabaqat)
+  are not featured: they sit in "More work" ("Read the brief") and their pages use the compact brief template with `m.work.briefNote`. `figures` holds
   2–4 sourced facts for full case studies (the strip is omitted below two); a figure may carry a small `unit`
-  ("21" + "months"). Show `m.work.architectureNote` near diagrams.
+  ("21" + "months"). Show `m.work.architectureNote` near diagrams. `client` names the client in JSON-LD (only where it
+  approved being named). `screens` lists product screens for the page's gallery (only with the client's approval):
+  cleaned captures in `site/src/assets/screens/<slug>/`, each with its `density` (2 for the desktop captures; 1 for the
+  phone screen and the dialog, which are never shown wider than captured), `frame`, `product`, `alt` and `caption`.
+  Captions say what a screen shows, never how it was captured ("Screens from the apps").
 - **Bold receipts.** A `Fact` may name one phrase of its text in `strong` (`factB(["en", "ar"], …)`), and the CV summary
   lists its phrases in `cv.summaryStrong`. Each phrase must occur verbatim in its text in both languages and start and
   end on word boundaries (an Arabic phrase that starts inside a word, after a joining prefix such as "ب" or "ل", would
@@ -158,20 +167,25 @@ Contact details and the binding decisions (title, "7 years", no Logic Controls f
 - **Local time.** `basics.location.timeZone` is `Africa/Cairo`; render with `Intl.DateTimeFormat(locale,
   { timeZone, hour: "numeric", minute: "2-digit" })` into `m.hero.localTime` / `m.contact.localTime`.
 - **Open to.** `basics.openTo` has the roles, the `arrangements` (remote, Gulf, Europe, Cairo hybrid/on-site) and a
-  one-line summary; label with `m.about.openTo` / `m.about.workArrangements`.
+  one-line summary; label with `m.about.openTo` / `m.about.workArrangements`. The site's About section, llms.txt and
+  the assistant use it. The CV has its own shorter list, `cv.openTo` (three roles, team lead first, and three
+  arrangements).
 - **CV (PDF + /cv page).** Build it from `profile.ts`, not from `_inputs/cv.pdf` (outdated title and years). Paths:
   `profile.site.pages.cv` (`/cv/`, `/ar/cv/`). Header: `basics.name`, `basics.headline`, `cv.summary`, contacts and
   links. Experience: each role's `cvBullets` (1-4, compiler-enforced), with `primary: false` roles condensed under
-  `m.cv.earlierRoles`. Then `cv.skills` (one line per group), `cv.projects`, `education` (respect `status`),
-  `certifications`, `honors`, `basics.languages`, `basics.openTo`. File names: `cv.fileName`; last reviewed:
-  `cv.updated`. UI strings: `m.cv.*`, `m.hero.ctaCv`, `m.nav.cv`, `m.meta.cv`.
+  `m.cv.earlierRoles`; each role and each degree shows its logo tile (`logo.file`, or the design tile named after
+  the role: Tabaqat, MTC); a role's `client`, where one is named, is its own line under the role head
+  (`m.cv.client`: "Client: …"), never a bullet. Then `cv.skills` (one line per group), `education` (respect
+  `status`), `certifications`, `honors`, `basics.languages`, `cv.openTo`. There is no projects section. File names:
+  `cv.fileName`; last reviewed: `cv.updated`. UI strings: `m.cv.*`, `m.hero.ctaCv`, `m.nav.cv`, `m.meta.cv`.
 
 ## Evaluating the assistant
 
-`chat/eval-set.json` has 74 single- or multi-turn cases (17 of them in Arabic, one in Spanish): fact recall (20),
-job-description matching (10, including JDs with planted claims about the candidate), unknowns, the unnamed client and
-private data (10), Arabic (9, including Egyptian and Gulf dialect and a code-switched question), prompt injection
-including a forged assistant turn (6), out-of-scope and ghost-writing (5), contact and CV (5), availability and
+`chat/eval-set.json` has 79 single- or multi-turn cases (18 of them in Arabic, one in Spanish): fact recall (24,
+including the STA case study and the Wakeb role's client), job-description matching (10, including JDs with planted
+claims about the candidate), unknowns, the unnamed client and private data (10, including a guess that ties the Wakeb
+role's client to the unnamed assistant), Arabic (10, including Egyptian and Gulf dialect and a code-switched
+question), prompt injection including a forged assistant turn (6), out-of-scope and ghost-writing (5), contact and CV (5), availability and
 relocation (4), salary (3), persona (1), other language (1). Run it through the Worker's `systemInstruction()` so the
 Worker's rules and date line are included (`npm run chat:eval`, worker/scripts/chat-eval.mjs).
 
@@ -271,8 +285,14 @@ Worker's rules and date line are included (`npm run chat:eval`, worker/scripts/c
    `aestheticspro`. His GitHub profile README still says "a US software company" and should be aligned outside this
    folder.
 4. **CV:** the site generates a CV (PDF + `/cv/` page) from `profile.ts`: `cv.summary`, per-role `cvBullets` (max 4),
-   `cv.skills`, `cv.projects`, plus i18n `cv.*`, `meta.cv`, `nav.cv`, `hero.ctaCv`. The knowledge base and system
-   prompt point CV requests to `/cv/`.
+   `cv.skills`, `cv.openTo`, plus i18n `cv.*`, `meta.cv`, `nav.cv`, `hero.ctaCv`. The knowledge base and system
+   prompt point CV requests to `/cv/`. Round 4 (2026-10-10): company logos beside every role, no "Selected
+   projects" section, a shorter "Open to" (AI/ML Team Lead, Senior AI / LLM Engineer, MLOps Engineer; remote,
+   relocation to the Gulf or Europe, hybrid in Cairo), a second Globant line from the STA case study (one LangGraph
+   agent behind 96 tools, 27 visible to visitors, human approval before every action, Noura accepted in the client's
+   UAT in September 2026), and the Wakeb Data role's client at the role level, "Saudi Ministry of Defense (GADD)"
+   (`Role.client`, CV only; never attached to a bullet, and the bilingual government assistant's client stays
+   unnamed).
 
 ## Open questions for Mohamed
 
@@ -308,5 +328,5 @@ Approximate, counted on the human-language strings.
 | `i18n/ar.ts` | about 1,100 |
 | `chat/knowledge.md` | about 5,000 |
 | `chat/system-prompt.md` | about 1,900 |
-| `chat/eval-set.json` | 74 cases |
+| `chat/eval-set.json` | 79 cases |
 | `chat/suggestions.json` | 8 + 8 questions |

@@ -1,5 +1,5 @@
 /**
- * Architecture diagrams from the design track (design/assets/diagrams → src/assets/diagrams): five systems, each in
+ * Architecture diagrams from the design track (design/assets/diagrams → src/assets/diagrams): six systems, each in
  * a wide (≈1120), compact (352, phones) and thumbnail (400×250, cards) variant, plus diagrams.json with the EN/AR
  * titles, captions, text descriptions and numbered callouts.
  *
@@ -14,7 +14,13 @@
 import data from "~/assets/diagrams/diagrams.json";
 import type { CaseStudySlug, Locale } from "@content/profile.ts";
 
-export type DiagramId = "arabsstock-assistant" | "wakeb-multi-agent-chatbot" | "llm-serving-a100" | "hybrid-rag" | "empoweromics-message-routing";
+export type DiagramId =
+  | "arabsstock-assistant"
+  | "wakeb-multi-agent-chatbot"
+  | "llm-serving-a100"
+  | "hybrid-rag"
+  | "empoweromics-message-routing"
+  | "sta-tourism-assistants";
 export type Variant = "wide" | "compact" | "thumb";
 
 interface Bi {
@@ -41,6 +47,7 @@ export const diagram = (id: DiagramId): Diagram => DIAGRAMS.find((d) => d.id ===
  * logic-controls.com) render their architecture from profile.ts data instead.
  */
 export const CASE_DIAGRAMS: Partial<Record<CaseStudySlug, DiagramId[]>> = {
+  "sta-tourism-assistants": ["sta-tourism-assistants"],
   "arabsstock-assistant": ["arabsstock-assistant"],
   "wakeb-bilingual-chatbot": ["wakeb-multi-agent-chatbot", "hybrid-rag", "llm-serving-a100"],
   "empoweromics-ml": ["empoweromics-message-routing"],

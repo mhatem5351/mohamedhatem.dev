@@ -13,9 +13,9 @@
 }
 /* private variables: on the host (button, toggletip) and on the svg itself, so svg-only markup works in any host */
 .hg, .hg-svg {
-  --hg-edge: var(--color-graph-edge, #D3C8B5);
-  --hg-node: var(--color-graph-node, #FFFEFB);
-  --hg-mut: var(--color-muted, #5A6670);
+  --hg-edge: var(--color-graph-edge, #CECAC2);
+  --hg-node: var(--color-graph-node, #FEFDFC);
+  --hg-mut: var(--color-muted, #5B6375);
   --hg-ease: var(--ease-standard, cubic-bezier(.2, 0, 0, 1));
   --hg-k: 1;
   --hg-ls: 1;
@@ -27,12 +27,12 @@
 .hg-svg:focus { outline: none }
 .hg-sr { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0 }
 
-.hg-c-teal { --hg-f: var(--color-teal-fill, #16A394); --hg-t: var(--color-teal, #0A766C); --hg-tint: var(--color-teal-tint, #E3F1EE); --hg-tl: var(--color-teal-tint-line, #B9DFD8) }
-.hg-c-saffron { --hg-f: var(--color-saffron-fill, #E9A23B); --hg-t: var(--color-saffron, #9C5800); --hg-tint: var(--color-saffron-tint, #FAEFDC); --hg-tl: var(--color-saffron-tint-line, #F0D3A4) }
-.hg-c-coral { --hg-f: var(--color-coral-fill, #E4683F); --hg-t: var(--color-coral, #B3421C); --hg-tint: var(--color-coral-tint, #FAE7DF); --hg-tl: var(--color-coral-tint-line, #F0BFA9) }
-.hg-c-sky { --hg-f: var(--color-sky-fill, #4A8FD6); --hg-t: var(--color-sky, #2B65A6); --hg-tint: var(--color-sky-tint, #E4EDF7); --hg-tl: var(--color-sky-tint-line, #B7CDE8) }
-.hg-c-sage { --hg-f: var(--color-sage-fill, #89A447); --hg-t: var(--color-sage, #55702A); --hg-tint: var(--color-sage-tint, #ECF1DF); --hg-tl: var(--color-sage-tint-line, #CBD8A9) }
-.hg-c-slate { --hg-f: var(--color-slate-fill, #7F99AE); --hg-t: var(--color-slate, #4A6072); --hg-tint: var(--color-slate-tint, #E8EDF1); --hg-tl: var(--color-slate-tint-line, #C3CFD9) }
+.hg-c-teal { --hg-f: var(--color-teal-fill, #038586); --hg-t: var(--color-teal, #136868); --hg-tint: var(--color-teal-tint, #E0F4F4); --hg-tl: var(--color-teal-tint-line, #B3DCDC) }
+.hg-c-saffron { --hg-f: var(--color-saffron-fill, #B47D19); --hg-t: var(--color-saffron, #885716); --hg-tint: var(--color-saffron-tint, #FAEDDB); --hg-tl: var(--color-saffron-tint-line, #E8CEAA) }
+.hg-c-coral { --hg-f: var(--color-coral-fill, #B84D30); --hg-t: var(--color-coral, #A03B22); --hg-tint: var(--color-coral-tint, #FFEAE4); --hg-tl: var(--color-coral-tint-line, #FAC4B5) }
+.hg-c-sky { --hg-f: var(--color-sky-fill, #2855AD); --hg-t: var(--color-sky, #2B51AA); --hg-tint: var(--color-sky-tint, #E7F0FE); --hg-tl: var(--color-sky-tint-line, #BCD4FE) }
+.hg-c-sage { --hg-f: var(--color-sage-fill, #A66BB9); --hg-t: var(--color-sage, #794589); --hg-tint: var(--color-sage-tint, #F7EAFC); --hg-tl: var(--color-sage-tint-line, #E3C7EC) }
+.hg-c-slate { --hg-f: var(--color-slate-fill, #515B6C); --hg-t: var(--color-slate, #515B6C); --hg-tint: var(--color-slate-tint, #EDEFF4); --hg-tl: var(--color-slate-tint-line, #CED3DC) }
 
 /* ---------------------------------------------------------------- edges */
 .hg-e {
@@ -40,7 +40,7 @@
   transition: opacity .16s var(--hg-ease), stroke .24s var(--hg-ease);
 }
 .hg-sp { stroke-width: calc(1.5px * var(--hg-k)); stroke-dasharray: 1 5 }
-.hg-sp.is-cmd { stroke: var(--color-teal-fill, #16A394) }
+.hg-sp.is-cmd { stroke: var(--color-teal-fill, #038586) }
 /* the request route in its category colours: the still frame and the running flow alike (the pulse lights the hop
    it travels, then the edge settles back) */
 .hg-rt {
@@ -64,7 +64,7 @@
 .hg-spin { stroke: var(--hg-f); stroke-width: 1.4; stroke-dasharray: 5 4; opacity: .6 } /* centred at 0 0: default origin */
 .hg-glyph { stroke: var(--hg-t); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round }
 .hg-gd { fill: var(--hg-t); stroke: none }
-.hg-focus { stroke: var(--color-focus, #0A766C); stroke-width: 2px; vector-effect: non-scaling-stroke; opacity: 0 }
+.hg-focus { stroke: var(--color-focus, #2B51AA); stroke-width: 2px; vector-effect: non-scaling-stroke; opacity: 0 }
 .hg-node:focus-visible .hg-focus { opacity: 1 }
 .hg-lbl {
   font: 500 13px/1 var(--font-mono, ui-monospace, monospace); letter-spacing: 0; fill: var(--hg-mut);
@@ -73,19 +73,19 @@
 .hg-chip { transform: scale(var(--hg-ls)) }
 .hg-chip rect { fill: var(--hg-tint); stroke: var(--hg-tl) }
 .hg-chip text { font: 600 13px/1 var(--font-mono, ui-monospace, monospace); letter-spacing: 0; fill: var(--hg-t) }
-.hg-term { fill: var(--hg-node); stroke: var(--color-line-input, #8E8676); stroke-width: 1.5; transition: fill .38s var(--hg-ease), stroke .38s var(--hg-ease) }
+.hg-term { fill: var(--hg-node); stroke: var(--color-line-input, #7B808D); stroke-width: 1.5; transition: fill .38s var(--hg-ease), stroke .38s var(--hg-ease) }
 .hg-port .hg-gd { fill: var(--hg-mut); transition: fill .38s var(--hg-ease) }
 
 /* lit: every node in the still frame; only the active ones while the flow runs */
 .hg-svg:not(.is-run) .hg-disc, .is-lit > .hg-disc { fill: var(--hg-tint); stroke-width: calc(2.5px * var(--hg-k)) }
 .hg-svg:not(.is-run) .hg-aura, .is-lit > .hg-aura { opacity: .1 }
-.hg-svg:not(.is-run) .hg-lbl, .is-lit .hg-lbl { fill: var(--color-ink-2, #33414C) }
+.hg-svg:not(.is-run) .hg-lbl, .is-lit .hg-lbl { fill: var(--color-ink-2, #323D55) }
 .hg-svg:not(.is-run) .hg-term, .is-lit > .hg-term { fill: var(--hg-tint); stroke: var(--hg-f) }
 .hg-svg:not(.is-run) .hg-port .hg-gd, .hg-port.is-lit .hg-gd { fill: var(--hg-t) }
 
 /* hover / focus: highlight a node's edges and neighbours, dim the rest */
 .hg-svg.is-dim :is(.hg-node, .hg-port, .hg-e):not(.is-near) { opacity: .35 }
-.hg-svg.is-dim .hg-e.is-near { stroke: var(--hg-hl, var(--color-line-input, #8E8676)) }
+.hg-svg.is-dim .hg-e.is-near { stroke: var(--hg-hl, var(--color-line-input, #7B808D)) }
 .hg-svg.is-dim .hg-rt:not(.is-near) { opacity: .12 }
 
 /* ---------------------------------------------------------------- pulse (comet) */
@@ -107,14 +107,14 @@
 .hg-btn {
   position: absolute; z-index: 3; top: 0; inset-inline-end: 0;
   display: grid; place-items: center; box-sizing: border-box; width: 32px; height: 32px; padding: 0;
-  border: 1px solid var(--color-line, #E7E0D3); border-radius: 8px;
-  background: var(--color-surface, #FFFEFB); color: var(--color-muted, #5A6670);
-  box-shadow: var(--shadow-xs, 0 1px 1px rgb(20 33 43 / .04)); cursor: pointer;
+  border: 1px solid var(--color-line, #E2DFDA); border-radius: 8px;
+  background: var(--color-surface, #FEFDFC); color: var(--color-muted, #5B6375);
+  box-shadow: var(--shadow-xs, 0 1px 1px rgb(19 29 54 / .04)); cursor: pointer;
   transition: color .16s var(--hg-ease), border-color .16s var(--hg-ease);
 }
 .hg-btn[hidden] { display: none }
-.hg-btn:hover { color: var(--color-ink, #14212B); border-color: var(--color-line-strong, #D6CCBA) }
-.hg-btn:focus-visible { outline: 2px solid var(--color-focus, #0A766C); outline-offset: 2px }
+.hg-btn:hover { color: var(--color-ink, #131D36); border-color: var(--color-line-strong, #CFCCC5) }
+.hg-btn:focus-visible { outline: 2px solid var(--color-focus, #2B51AA); outline-offset: 2px }
 .hg-btn svg { width: 14px; height: 14px; overflow: visible }
 .hg-i-pause { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round }
 .hg-i-play { fill: currentColor; stroke: currentColor; stroke-width: 1.2; stroke-linejoin: round }
@@ -122,7 +122,7 @@
 .hg-btn::after {
   content: attr(data-pause); position: absolute; top: calc(100% + 6px); inset-inline-end: 0;
   padding: 4px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none;
-  background: var(--color-surface-inverse, #14212B); color: var(--color-on-inverse, #FBF8F3);
+  background: var(--color-surface-inverse, #131D36); color: var(--color-on-inverse, #F7F6F3);
   font: 500 12px/1.35 var(--font-sans, system-ui, sans-serif); opacity: 0; transition: opacity .16s var(--hg-ease);
 }
 .hg-btn[aria-pressed="true"]::after { content: attr(data-play) }
@@ -132,9 +132,9 @@
 .hg-tip {
   position: absolute; z-index: 4; top: 0; left: 0; box-sizing: border-box;
   width: max-content; max-width: min(272px, calc(100% - 8px)); margin: 0; padding: 11px 14px 12px;
-  border: 1px solid var(--color-line, #E7E0D3); border-radius: 12px;
-  background: var(--color-surface, #FFFEFB); color: var(--color-ink-2, #33414C);
-  box-shadow: var(--shadow-lg, 0 18px 40px -12px rgb(20 33 43 / .14), 0 6px 12px -6px rgb(20 33 43 / .06));
+  border: 1px solid var(--color-line, #E2DFDA); border-radius: 12px;
+  background: var(--color-surface, #FEFDFC); color: var(--color-ink-2, #323D55);
+  box-shadow: var(--shadow-lg, 0 18px 40px -12px rgb(19 29 54 / .14), 0 6px 12px -6px rgb(19 29 54 / .06));
   font: 400 13.5px/1.5 var(--font-sans, system-ui, sans-serif); text-align: start;
   opacity: 0; transform: translateY(4px);
   transition: opacity .16s var(--ease-out, ease-out), transform .24s var(--ease-out, ease-out);
@@ -149,7 +149,7 @@
 .hg-tip-id:empty { display: none }
 .hg-tip-caret {
   position: absolute; left: var(--hg-cx, 50%); bottom: -6px; width: 10px; height: 10px; box-sizing: border-box;
-  background: inherit; border: solid var(--color-line, #E7E0D3); border-width: 0 1px 1px 0;
+  background: inherit; border: solid var(--color-line, #E2DFDA); border-width: 0 1px 1px 0;
   transform: translateX(-50%) rotate(45deg);
 }
 .hg-tip.is-below .hg-tip-caret { top: -6px; bottom: auto; border-width: 1px 0 0 1px }
