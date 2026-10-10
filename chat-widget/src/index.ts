@@ -1,15 +1,17 @@
 /**
- * mohamedhatem.dev chat widget: the loader. This module is all a page pays for up front (≈2 KB gzip): a floating
- * "Ask my AI" bubble in a shadow root. The panel (panel.ts and the rest) is fetched on the first hover, focus or
- * touch of the bubble, so it is usually ready before the click lands, or at once when it was open on the previous
- * page of this tab (desktop only).
+ * mohamedhatem.dev chat widget: the loader. This module is all a page pays for up front (≈2.6 KB gzip): a floating
+ * "Ask my AI" bubble in a shadow root. The panel (panel.ts and the rest) is fetched and built on the first hover,
+ * focus or touch of the bubble, so it is usually ready before the click lands, or at once when it was open on the
+ * previous page of this tab (desktop only). Page code can do the same earlier with `window.MHChat.warm()`: on the
+ * intent to open it from its own buttons (pointerdown, focus), or once the page is idle.
  *
  *   import { mountChat } from "…/chat-widget/src/index";
  *   mountChat({ turnstileSiteKey: "…", avatarSrc: "/images/mh-square-96.webp" });
  *
  * Other page elements can open the chat with `window.MHChat.open({ question })`, `openChat({ question })` or
  * `document.dispatchEvent(new CustomEvent("mh:open-chat", { detail: { question } }))`. The panel announces open and
- * close with a `mh:chat-state` event on document (`detail: { open: boolean }`).
+ * close with a `mh:chat-state` event on document (`detail: { open: boolean }`). Focus returns to whatever had it when
+ * the chat was opened (falling back to the bubble).
  */
 import type { ChatLauncher, ChatWidgetConfig, OpenOptions, PanelApi } from "./types";
 
@@ -30,7 +32,8 @@ const VARS =
 const CSS = `${VARS}
 .b{position:fixed;z-index:var(--z);inset-block-end:max(1rem,env(safe-area-inset-bottom));inset-inline-end:max(1rem,env(safe-area-inset-right));display:flex;align-items:center;gap:.5rem;height:3.5rem;min-width:3.5rem;padding:0 1.125rem 0 .875rem;border:1px solid transparent;border-radius:999px;background:#131d36;color:#f7f6f3;font:600 .9375rem/1 var(--font);cursor:pointer;box-shadow:0 0 0 1px rgb(255 255 255/.14),0 18px 40px -12px rgb(19 29 54/.4),0 6px 12px -6px rgb(19 29 54/.2);transition:transform .25s var(--ease),padding .3s var(--ease),gap .3s var(--ease);animation:in .5s var(--ease) .4s both;-webkit-tap-highlight-color:transparent}
 :host([dir=rtl]) .b{padding:0 .875rem 0 1.125rem}
-.b:hover{transform:translateY(-2px)}
+@media (hover:hover){.b:hover{transform:translateY(-2px)}}
+.b:active{transform:scale(.94)}
 .b:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .g,.x{flex:none;width:1.75rem;height:1.75rem}
 .x{display:none;width:1.375rem;margin:0 .1875rem}
@@ -55,7 +58,7 @@ const GLYPH =
 const CLOSE =
   '<svg class="x" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
-let api: { open(o?: OpenOptions): void; close(): void; launcher: ChatLauncher } | undefined;
+let api: { open(o?: OpenOptions): void; close(): void; warm(): void; launcher: ChatLauncher } | undefined;
 
 /**
  * Adds styles to the shadow root as a constructed stylesheet: CSSOM, so a strict Content-Security-Policy (no
@@ -126,7 +129,8 @@ export function mountChat(config: ChatWidgetConfig = {}): void {
   const warm = () => void load().catch(() => {});
   bubble.addEventListener("pointerenter", warm, { once: true });
   bubble.addEventListener("focus", warm, { once: true });
-  bubble.addEventListener("touchstart", warm, { once: true, passive: true });
+  // A touch listener also lets iOS show the :active (pressed) states inside the widget.
+  host.addEventListener("touchstart", warm, { passive: true });
   bubble.addEventListener("click", () => {
     compact();
     load().then((p) => p.toggle(), () => {});
@@ -143,9 +147,11 @@ export function mountChat(config: ChatWidgetConfig = {}): void {
   api = {
     open: (o) => {
       compact();
-      load().then((p) => p.open(o), () => {});
+      const by = document.activeElement; // now: the hero bar's input blurs right after asking
+      load().then((p) => p.open(o, false, by), () => {});
     },
     close: () => void panel?.then((p) => p.close(), () => {}),
+    warm,
     // For page code that dresses the launcher (mohamedhatem.dev: the avatar and its speech bubble, see the README).
     launcher: { host, root, button: bubble },
   };

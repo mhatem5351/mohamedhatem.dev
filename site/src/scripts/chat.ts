@@ -6,11 +6,15 @@
  * loaded and the browser is idle. Until it is in, the launcher is hidden (site.css: [data-mh-chat]:not([data-art])),
  * so the default launcher never shows and then changes shape; if the module can't load, data-art="off" shows the
  * default one. The panel header uses the same avatar once it has loaded (ChatWidgetConfig.avatar).
+ *
+ * Two more things for phones (see `warmUp` and `manners` below): the panel is ready before the first tap, and the
+ * launcher keeps off what the visitor is reading or typing.
  */
 import { mountChat, type ChatLauncher } from "@chat/index.ts";
 
 type OpenRequest = { question?: string };
-type ChatWindow = Window & { MHChatQueue?: OpenRequest[]; MHChat?: { open(o?: OpenRequest): void; launcher?: ChatLauncher } };
+type ChatWindow = Window & { MHChatQueue?: OpenRequest[]; MHChat?: { open(o?: OpenRequest): void; warm?(): void; launcher?: ChatLauncher } };
+type Connection = { saveData?: boolean; effectiveType?: string };
 
 export function mountChatWidget(): void {
   const el = document.getElementById("mh-chat-config");
@@ -39,14 +43,115 @@ export function mountChatWidget(): void {
 
   const launcher = w.MHChat?.launcher;
   if (!launcher) return;
+  manners(launcher.host, launcher.button);
+  const prefetch = warmUp(w);
+  const afterLoad = (fn: () => void) => (document.readyState === "complete" ? fn() : addEventListener("load", fn, { once: true }));
   const fallback = () => (launcher.host.dataset.art ||= "off");
-  if (!d.avName || !d.avHi || !d.avText || !d.avHide) return void fallback();
+  if (!d.avName || !d.avHi || !d.avText || !d.avHide) {
+    fallback();
+    return afterLoad(prefetch);
+  }
   const copy = { name: d.avName, hi: d.avHi, text: d.avText, hide: d.avHide };
   const load = () =>
     import("./chat-avatar")
       .then((m) => (header = m.mountAvatar(launcher, copy, { disc: d.avDisc || "dark" }).header))
-      .catch(fallback);
-  const idle = () => ("requestIdleCallback" in window ? requestIdleCallback(() => void load(), { timeout: 1500 }) : setTimeout(load, 300));
-  if (document.readyState === "complete") idle();
-  else addEventListener("load", idle, { once: true });
+      .catch(fallback)
+      .finally(prefetch); // after the avatar, which the panel header shows too
+  afterLoad(() => ("requestIdleCallback" in window ? requestIdleCallback(() => void load(), { timeout: 1500 }) : setTimeout(load, 300)));
+}
+
+/**
+ * The first open feels instant: the panel (its code, then the panel itself) is fetched and built as soon as the
+ * visitor shows the intent to open it (pointerdown or focus on any [data-open-chat] button or the hero's ask bar; the
+ * launcher does the same on its own), and otherwise once the page is idle, except with Save-Data or on 2G.
+ * Safari doesn't focus a button it taps or clicks: the button that opens the chat takes focus here, so focus can go
+ * back to it when the chat closes (the widget returns it to whatever had focus when it opened).
+ * Returns the idle prefetch, to run once the avatar is in.
+ */
+function warmUp(w: ChatWindow): () => void {
+  const warm = () => w.MHChat?.warm?.();
+  const intent = (e: Event) => (e.target as Element).closest?.("[data-open-chat],[data-hero-ask]") && warm();
+  document.addEventListener("pointerdown", intent, { capture: true, passive: true });
+  document.addEventListener("focusin", intent);
+  // Before site.ts's click handler opens the chat (capture phase).
+  document.addEventListener(
+    "click",
+    (e) => (e.target as Element).closest?.<HTMLElement>("button[data-open-chat]")?.focus({ preventScroll: true }),
+    { capture: true },
+  );
+  const net = (navigator as Navigator & { connection?: Connection }).connection;
+  if (net?.saveData || /2g/.test(net?.effectiveType ?? "")) return () => {};
+  return () => void ("requestIdleCallback" in window ? requestIdleCallback(warm, { timeout: 4000 }) : setTimeout(warm, 1500));
+}
+
+/**
+ * The launcher steps aside (data-aside on the widget's host, styled here like site.ts's data-dodge: it fades out, then
+ * leaves the tab order) while
+ *   - a text field outside the widget has focus on a touch screen: the keyboard is up, and with
+ *     interactive-widget=resizes-content the launcher would ride up onto the field;
+ *   - it is over a form (the contact form: its fields and its controls, not only Send);
+ *   - on phones, the visitor scrolls down the page: nothing slides under it while they read on, and it comes back
+ *     as soon as they stop (1.2 s), scroll up or reach the end of the page.
+ * Never while the chat is open or the launcher has focus. The avatar (chat-avatar.ts) waits for it to come back
+ * before it greets.
+ */
+function manners(host: HTMLElement, button: HTMLElement): void {
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(
+    "[data-mh-chat][data-aside]{opacity:0;visibility:hidden;transition:opacity var(--duration-fast) var(--ease-standard),visibility 0s linear var(--duration-fast)}" +
+      "@media (prefers-reduced-motion:reduce){[data-mh-chat][data-aside]{transition:none}}",
+  );
+  document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+
+  const touch = matchMedia("(pointer: coarse), (max-width: 39.99rem)");
+  const phone = matchMedia("(max-width: 39.99rem)");
+  const FIELD = "input:not([type=checkbox],[type=radio],[type=button],[type=submit],[type=reset],[type=range],[type=color],[type=file],[type=image]),textarea,select,[contenteditable]:not([contenteditable=false])";
+  const forms = [...document.querySelectorAll("form")];
+  const PAD = 12;
+  let open = false;
+  let reading = false;
+  let lastY = scrollY;
+  let frame = 0;
+  let pause = 0;
+
+  const update = () => {
+    frame = 0;
+    const a = document.activeElement;
+    const typing = touch.matches && !!a && a !== host && a.matches(FIELD);
+    const b = button.getBoundingClientRect();
+    const overForm = forms.some((f) => {
+      const r = f.getBoundingClientRect();
+      return r.width > 0 && r.right + PAD > b.left && r.left - PAD < b.right && r.bottom + PAD > b.top && r.top - PAD < b.bottom;
+    });
+    host.toggleAttribute("data-aside", !open && !host.matches(":focus-within") && (typing || overForm || reading));
+  };
+  const schedule = () => void (frame ||= requestAnimationFrame(update));
+
+  addEventListener(
+    "scroll",
+    () => {
+      const y = scrollY;
+      const end = y + innerHeight >= document.documentElement.scrollHeight - 48;
+      // 8 px of hysteresis: jitter keeps the direction.
+      if (end || Math.abs(y - lastY) >= 8) {
+        reading = phone.matches && !end && y > lastY;
+        lastY = y;
+      }
+      clearTimeout(pause);
+      if (reading) pause = window.setTimeout(() => ((reading = false), schedule()), 1200);
+      schedule();
+    },
+    { passive: true },
+  );
+  addEventListener("resize", schedule);
+  document.addEventListener("focusin", schedule);
+  document.addEventListener("focusout", schedule);
+  document.addEventListener("mh:chat-state", (e) => {
+    open = !!(e as CustomEvent<{ open?: boolean }>).detail?.open;
+    // At once, not on the next frame: the panel is inside the host, which must be visible.
+    if (open) host.removeAttribute("data-aside");
+    else reading = false; // back from the chat: the launcher is where the visitor left it
+    schedule();
+  });
+  update();
 }

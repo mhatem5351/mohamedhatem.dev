@@ -91,8 +91,11 @@ export interface ChatLauncher {
 
 /** What the lazily loaded panel module exposes to the loader. */
 export interface PanelApi {
-  /** `quiet`: reopening after a page navigation (no focus move, no scroll, Turnstile waits for the textarea). */
-  open(options?: OpenOptions, quiet?: boolean): void;
+  /**
+   * `quiet`: reopening after a page navigation (no focus move, no scroll, Turnstile waits for the textarea).
+   * `opener`: what had focus when the chat was asked to open; focus returns there when it closes.
+   */
+  open(options?: OpenOptions, quiet?: boolean, opener?: Element | null): void;
   close(): void;
   toggle(): void;
 }

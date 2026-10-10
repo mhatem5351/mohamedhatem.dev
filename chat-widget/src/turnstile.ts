@@ -75,6 +75,8 @@ export function createVerifier(container: HTMLElement, sitekey: string, lang: La
         size: container.clientWidth < 324 ? "compact" : "normal",
         "refresh-expired": "manual",
         language: lang === "ar" ? "ar-eg" : "en",
+        // The page's theme when the page sets one (<html data-theme="light|dark">: it can differ from the OS one).
+        theme: document.documentElement.dataset.theme || "auto",
         callback: (t: string) => {
           if (!waiters.length) return void (ready = t);
           drop();
