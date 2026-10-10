@@ -31,9 +31,11 @@ export interface HeadProps {
   /** Browser-chrome colours (default: the page background in each theme; dark is the default theme). */
   themeColor?: { light: string; dark: string };
   /**
-   * Fonts to preload beyond the defaults: the display face on EN pages; on AR pages all three Plex Arabic weights
-   * (≈53 KB after scripts/subset-fonts.mjs). Preloading only 700, as first planned, let 400/600 swap in late and
-   * shift the page (CLS ≈ 0.03 on phones, where the lede is the LCP element).
+   * Fonts to preload beyond the defaults (EN pages: the display face and Inter, the lede's face: on phones the lede is
+   * the LCP element and it re-wrapped when Inter swapped in late, CLS ≈ 0.07 at 360 px, audit PERF-02; AR pages: all
+   * three Plex Arabic weights, ≈53 KB after scripts/subset-fonts.mjs. Preloading only 700, as first planned, let
+   * 400/600 swap in late and shift the page, CLS ≈ 0.03 on phones). `sans` also preloads Inter on Arabic pages: the
+   * CV's sheet sets its Latin runs (names, tools) in Inter, and its summary shifted when Inter swapped in late.
    */
   preloadFonts?: { sans?: boolean; arabicWeights?: readonly (400 | 600 | 700)[] };
   /** Extra <link rel="preload"> for this page's LCP image, if any. */
@@ -107,14 +109,15 @@ const alternates = indexable
 {indexable ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
 {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
 <Font cssVariable="--font-face-display" preload={locale === "en" || latinOnArabicCase} />
-<Font cssVariable="--font-face-sans" preload={(locale === "en" && !!preloadFonts.sans) || latinOnArabicCase} />
+<Font cssVariable="--font-face-sans" preload={locale === "en" || latinOnArabicCase || !!preloadFonts.sans} />
 <Font cssVariable="--font-face-mono" />
 {locale === "ar" && <Font cssVariable="--font-face-arabic" preload={arabicPreload} />}
 {preload.map((p) => <link rel="preload" {...p} fetchpriority="high" />)}
 <link rel="icon" href="/favicon.ico" sizes="32x32" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-<link rel="manifest" href="/site.webmanifest" />
+<link rel="manifest" href={locale === "ar" ? "/ar.webmanifest" : "/site.webmanifest"} />
+<meta name="apple-mobile-web-app-title" content={m.pwa.shortName} />
 <meta property="og:type" content={ogType} />
 <meta property="og:site_name" content={m.meta.siteName} />
 <meta property="og:title" content={title} />

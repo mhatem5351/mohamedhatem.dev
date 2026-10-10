@@ -8,10 +8,11 @@
  *
  * Images: lazy, responsive (srcset/sizes, WebP), never upscaled: 2x captures offer widths up to their native size,
  * 1x captures (the phone screen, the dialog) only their native width and are never shown wider than it.
- * Enlarge: each screen links to its full-size file (works without JS); with JS the link opens it in a modal
- * <dialog>: on phones at its natural size (a 2x capture at half its pixels), scrollable and pinch-zoomable; on wider
- * screens as large as the window allows, never beyond the capture's own pixels. Escape, the close button or a click
- * on the backdrop closes it, and focus returns to the screen.
+ * Enlarge: each screen links to its full-size file (works without JS); with JS the link opens it in the page's
+ * enlarge view (components/case/ZoomDialog.astro, shared with the figures): on phones at its natural size (a 2x capture
+ * at half its pixels), scrollable and pinch-zoomable; on wider screens as large as the window allows, never beyond the
+ * capture's own pixels. Escape, the close button, a click on the backdrop or Back closes it, and focus returns to the
+ * screen.
  * Captions say what each screen shows, never how it was captured.
  */
 import { Image } from "astro:assets";
@@ -107,59 +108,5 @@ const id = (i: number) => `screens-${i + 1}`;
       </section>
     ))
   }
-  <dialog class="zoom" data-zoom-dialog aria-labelledby="zoom-cap">
-    <div class="zoom__bar">
-      <p class="zoom__cap" id="zoom-cap" data-zoom-cap></p>
-      <button class="btn btn--icon btn--ghost zoom__close" type="button" data-zoom-close aria-label={m.work.page.closeScreen}>
-        <Icon name="close" />
-      </button>
-    </div>
-    <div class="zoom__body" tabindex="0" role="group" aria-labelledby="zoom-cap" data-zoom-body></div>
-  </dialog>
 </div>
 
-<script>
-  // Enlarge a screen in a modal dialog (the link opens the image file without JS, or with a modifier key).
-  const dialog = document.querySelector<HTMLDialogElement>("[data-zoom-dialog]");
-  if (dialog && typeof dialog.showModal === "function") {
-    const cap = dialog.querySelector<HTMLElement>("[data-zoom-cap]")!;
-    const body = dialog.querySelector<HTMLElement>("[data-zoom-body]")!;
-    const img = document.createElement("img");
-    img.className = "zoom__img";
-    img.decoding = "async";
-    const narrow = matchMedia("(max-width: 47.99rem)");
-    let opener: HTMLElement | null = null;
-    document.addEventListener("click", (e) => {
-      const a = (e.target as Element).closest<HTMLAnchorElement>("a[data-zoom]");
-      if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      e.preventDefault();
-      opener = a;
-      // Phones: the screen at its natural size (a 2x capture at half its pixels), to scroll and pinch-zoom. Wider
-      // screens: as large as the window allows, never beyond the capture's own pixels (screens.css).
-      const d = narrow.matches ? Number(a.dataset.density) || 1 : 1;
-      img.width = Math.round(Number(a.dataset.w) / d);
-      img.height = Math.round(Number(a.dataset.h) / d);
-      img.alt = a.dataset.alt ?? "";
-      img.src = a.href;
-      if (!img.isConnected) body.append(img);
-      cap.textContent = a.dataset.caption ?? "";
-      dialog.showModal();
-      // The chat launcher lives in the top layer too: keep it out of the way while a screen is enlarged.
-      document.documentElement.toggleAttribute("data-screen-open", true);
-      body.scrollTo(0, 0);
-      dialog.querySelector<HTMLElement>("[data-zoom-close]")?.focus();
-    });
-    dialog.querySelector("[data-zoom-close]")?.addEventListener("click", () => dialog.close());
-    // A click on the backdrop (the dialog box itself, outside its content) closes it.
-    dialog.addEventListener("click", (e) => {
-      if (e.target === dialog) dialog.close();
-    });
-    dialog.addEventListener("close", () => {
-      document.documentElement.removeAttribute("data-screen-open");
-      img.remove();
-      img.removeAttribute("src");
-      opener?.focus();
-      opener = null;
-    });
-  }
-</script>

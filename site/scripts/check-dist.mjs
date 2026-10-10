@@ -15,9 +15,14 @@
  *   pages            <html lang/dir> (Arabic under /ar/), <title>, meta description, canonical + hreflang en/ar/
  *                    x-default (not on 404 pages, which must be noindex), og:image file present, JSON-LD parses,
  *                    exactly one <h1>, internal links / src / srcset / #anchors resolve, no insecure http:// URLs
- *   files            _headers, _redirects, robots.txt, sitemap-index.xml, llms.txt, favicons and manifest are present;
+ *   files            _headers, _redirects, robots.txt, sitemap-index.xml, llms.txt, favicons and manifests are present;
  *                    _redirects has a 301 for every page's slash-less URL and for /work/; text files declare UTF-8;
  *                    every sitemap URL has a <lastmod> date
+ *   vCard            mohamed-hatem.vcf parses as a vCard 3.0 (BEGIN/END, VERSION, N, FN; CRLF, lines <= 75 octets, a
+ *                    JPEG PHOTO) and _headers serves it as text/vcard
+ *   manifests        site.webmanifest (en) and ar.webmanifest (ar): parse, lang/dir/start_url, one id and scope, icons
+ *                    and shortcut targets exist; every page links its language's manifest and an
+ *                    apple-mobile-web-app-title equal to that manifest's short_name
  *   structured data  one Person and one WebSite description on every page (same @id, same content); a WebSite node
  *                    wherever #website is referenced; Articles with full ISO datePublished / dateModified;
  *                    codeRepository only on SoftwareSourceCode; og:image:alt describes each page's own card
@@ -73,7 +78,7 @@ function secretValues() {
   return out;
 }
 const SECRETS = secretValues();
-const TEXT_FILE = /\.(html|js|mjs|css|txt|xml|json|webmanifest|svg|map)$|(^|\/)_headers$/;
+const TEXT_FILE = /\.(html|js|mjs|css|txt|xml|json|webmanifest|vcf|svg|map)$|(^|\/)_headers$/;
 
 /* ------------------------------------------------------------------ honesty */
 // Hashes of the unnamed client's names: the repository's one list (worker/src/chat/confidential-hashes.json, shared
@@ -104,7 +109,7 @@ for (const f of files) {
 }
 
 /* ------------------------------------------------------------------ required files */
-for (const f of ["_headers", "_redirects", "robots.txt", "sitemap-index.xml", "llms.txt", "favicon.ico", "favicon.svg", "apple-touch-icon.png", "site.webmanifest", "404.html"])
+for (const f of ["_headers", "_redirects", "robots.txt", "sitemap-index.xml", "llms.txt", "favicon.ico", "favicon.svg", "apple-touch-icon.png", "site.webmanifest", "ar.webmanifest", "404.html"])
   if (!fileSet.has(f)) fail(f, "missing from the build");
 
 /* ------------------------------------------------------------------ redirects (Workers static assets _redirects) */
@@ -160,6 +165,31 @@ if (fileSet.has("_headers"))
   for (const f of ["robots.txt", "llms.txt", "llms-full.txt"])
     if (!new RegExp(`^/${f.replace(".", "\\.")}\\s*\\n\\s+Content-Type: text/plain; charset=utf-8`, "m").test(read("_headers"))) fail("_headers", `no UTF-8 Content-Type rule for /${f}`);
 
+/* ------------------------------------------------------------------ vCard ("Add to contacts") */
+// src/pages/mohamed-hatem.vcf.ts renders it from content/profile.ts (src/lib/vcard.ts; field-by-field test in
+// tests/unit/vcard.test.ts). Here: the built file is a vCard 3.0 a phone will read, served as text/vcard.
+const VCARD = "mohamed-hatem.vcf";
+if (!fileSet.has(VCARD)) fail(VCARD, "missing from the build");
+else {
+  const card = read(VCARD);
+  const props = card.replace(/\r?\n[ \t]/g, "").split(/\r?\n/); // structure; line endings are checked on their own
+  const value = (name) => props.find((l) => l.split(/[;:]/)[0].toUpperCase() === name)?.replace(/^[^:]*:/, "");
+  if (/\r(?!\n)|(?<!\r)\n/.test(card)) fail(VCARD, "line endings are not CRLF");
+  if (card.split(/\r?\n/).some((l) => Buffer.byteLength(l, "utf8") > 75)) fail(VCARD, "a line is longer than 75 octets (not folded)");
+  if (props[0] !== "BEGIN:VCARD" || props[1] !== "VERSION:3.0") fail(VCARD, "does not start with BEGIN:VCARD and VERSION:3.0");
+  if (props.at(-2) !== "END:VCARD" || props.at(-1) !== "") fail(VCARD, "does not end with END:VCARD and a line break");
+  if (props.filter((l) => /^(BEGIN|END):VCARD$/.test(l)).length !== 2) fail(VCARD, "is not exactly one card (one BEGIN, one END)");
+  if (!/^[^;]+;[^;]+/.test(value("N") ?? "")) fail(VCARD, `N is "${value("N")}" (expected family;given;;;)`);
+  if (!/Mohamed Hatem/.test(value("FN") ?? "")) fail(VCARD, `FN is "${value("FN")}"`);
+  for (const name of ["TITLE", "ORG", "EMAIL", "TEL", "URL"]) if (!value(name)) fail(VCARD, `no ${name}`);
+  const photo = props.find((l) => /^PHOTO;ENCODING=b;TYPE=JPEG:/i.test(l))?.replace(/^[^:]*:/, "");
+  if (!photo) fail(VCARD, "no embedded JPEG PHOTO");
+  else if (Buffer.from(photo, "base64").subarray(0, 3).toString("hex") !== "ffd8ff") fail(VCARD, "PHOTO is not a JPEG");
+  else if (photo.length > 12 * 1024) fail(VCARD, `PHOTO is ${photo.length} base64 characters (budget 12 KB)`);
+}
+if (fileSet.has("_headers") && !/^\/mohamed-hatem\.vcf\s*\n\s+Content-Type: text\/vcard; charset=utf-8\s*\n\s+Content-Disposition: inline; filename="Mohamed-Hatem\.vcf"/m.test(read("_headers")))
+  fail("_headers", "no text/vcard rule (Content-Type, then Content-Disposition inline) for /mohamed-hatem.vcf");
+
 /* ------------------------------------------------------------------ sitemap <lastmod> */
 for (const f of files.filter((x) => /^sitemap-\d+\.xml$/.test(x))) {
   const urls = [...read(f).matchAll(/<url>([\s\S]*?)<\/url>/g)].map((m) => m[1]);
@@ -176,6 +206,8 @@ const expected = new Set(await allPages());
 let checkedLinks = 0;
 const entities = new Map();
 const ogAlts = new Map();
+/** Each page's manifest link and iOS home-screen title, checked against the manifests below. */
+const appLinks = [];
 for (const f of htmlFiles) {
   const html = read(f);
   const path = pagePath(f);
@@ -251,6 +283,7 @@ for (const f of htmlFiles) {
   if (!ogAlt) fail(f, "missing og:image:alt");
   else if (ogAlt !== metaByName("twitter:image:alt")) fail(f, "og:image:alt and twitter:image:alt differ");
   if (ogAlt && !is404 && path !== "/" && path !== "/ar/") ogAlts.set(f, ogAlt);
+  appLinks.push({ f, ar, manifest: links.find((l) => l.attrs.get("rel") === "manifest")?.attrs.get("href"), title: metaByName("apple-mobile-web-app-title") });
 
   // JSON-LD
   const nodes = [];
@@ -319,6 +352,45 @@ for (const f of htmlFiles) {
 
 // Each page's sharing card has its own description (not the home card's on every page).
 for (const [f, alt] of ogAlts) if ([...ogAlts.values()].filter((a) => a === alt).length > 1) fail(f, `og:image:alt is shared with another page: "${alt.slice(0, 60)}…"`);
+
+/* ------------------------------------------------------------------ web app manifests */
+// Written by design/scripts/brand/manifest.mjs from content/ and the tokens (tests/unit/palette.test.ts checks they are
+// current). Here: each language's manifest is complete, its targets exist, and every page links its own.
+const MANIFESTS = { en: "site.webmanifest", ar: "ar.webmanifest" };
+const manifests = {};
+for (const [lang, f] of Object.entries(MANIFESTS)) {
+  if (!fileSet.has(f)) continue; // reported under required files
+  let m;
+  try {
+    m = JSON.parse(read(f));
+  } catch (e) {
+    fail(f, `does not parse: ${e.message}`);
+    continue;
+  }
+  manifests[lang] = m;
+  const home = lang === "ar" ? "/ar/" : "/";
+  for (const [k, v] of Object.entries({ lang, dir: lang === "ar" ? "rtl" : "ltr", start_url: home, id: "/", scope: "/", display: "standalone" }))
+    if (m[k] !== v) fail(f, `${k} is "${m[k]}" (expected "${v}")`);
+  for (const k of ["name", "short_name", "description", "theme_color", "background_color"]) if (!m[k]) fail(f, `no ${k}`);
+  if (!(m.icons ?? []).some((i) => i.purpose === "maskable")) fail(f, "no maskable icon");
+  if (!m.shortcuts?.length) fail(f, "no shortcuts");
+  for (const icon of [...(m.icons ?? []), ...(m.shortcuts ?? []).flatMap((s) => s.icons ?? [])])
+    if (!fileSet.has(fileForPath(icon.src) ?? "")) fail(f, `icon ${icon.src} is missing`);
+  for (const s of m.shortcuts ?? []) {
+    const url = new URL(s.url, `${SITE}/`);
+    const page = fileForPath(url.pathname);
+    if (url.origin !== SITE || !url.pathname.startsWith(home) || (lang === "en" && url.pathname.startsWith("/ar/")))
+      fail(f, `shortcut "${s.name}" leaves the manifest's language: ${s.url}`);
+    else if (!fileSet.has(page)) fail(f, `shortcut "${s.name}" → ${s.url} has no page`);
+    else if (url.hash && !ids.get(page)?.has(url.hash.slice(1))) fail(f, `shortcut "${s.name}" → ${s.url} has no target id`);
+  }
+}
+if (manifests.en && manifests.ar && manifests.en.id !== manifests.ar.id) fail("ar.webmanifest", "id differs from site.webmanifest (one app, two languages)");
+for (const { f, ar, manifest, title } of appLinks) {
+  const lang = ar ? "ar" : "en";
+  if (manifest !== `/${MANIFESTS[lang]}`) fail(f, `manifest link is ${manifest} (expected /${MANIFESTS[lang]})`);
+  if (manifests[lang] && title !== manifests[lang].short_name) fail(f, `apple-mobile-web-app-title is "${title}" (expected the manifest's short_name "${manifests[lang].short_name}")`);
+}
 
 /* ------------------------------------------------------------------ analytics beacon */
 // When the repo's .env configures Cloudflare Web Analytics, every page must carry the (cookieless) beacon with it.

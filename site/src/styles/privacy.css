@@ -16,7 +16,7 @@
   .doc__sec p { color: var(--color-ink-2); }
   .doc__sec p + p { margin-block-start: .25rem; }
   .doc__sec a { color: var(--color-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
-  .doc__sec a:hover { color: var(--color-accent-strong); text-decoration-color: currentColor; }
+  @media (hover: hover) { .doc__sec a:hover { color: var(--color-accent-strong); text-decoration-color: currentColor; } }
   .doc__back { margin-block-start: 2rem; }
   .doc__layout { display: grid; gap: 1.5rem; }
   .doc__toc { display: none; }
@@ -27,7 +27,7 @@
     .doc__toc li { counter-increment: toc; }
     .doc__toc a { display: flex; gap: .625rem; padding: .375rem .875rem; margin-inline-start: -1px; border-inline-start: 2px solid transparent; font-size: var(--text-sm); color: var(--color-ink-2); }
     .doc__toc a::before { content: counter(toc, decimal-leading-zero); font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); padding-block-start: .2em; }
-    .doc__toc a:hover { color: var(--color-ink); border-inline-start-color: var(--color-line-strong); }
+    @media (hover: hover) { .doc__toc a:hover { color: var(--color-ink); border-inline-start-color: var(--color-line-strong); } }
     .doc__toc a[aria-current="true"] { color: var(--color-accent); border-inline-start-color: var(--color-accent); }
     .doc__body { order: 2; }
   }

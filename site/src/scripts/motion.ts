@@ -21,12 +21,15 @@
  *                             graph's, toggles the one site-wide preference (motion-pref.ts, WCAG 2.2.2).
  *
  * prefers-reduced-motion: nothing plays and the buttons hide (CSS); the charts are the static drawings.
+ * A modal over the page (the case study's enlarge view, "mh:dialog") rests every chart until it closes.
  */
 import { motionPaused, onMotionChange, setMotionPaused } from "./motion-pref";
 
 const reduce = matchMedia("(prefers-reduced-motion: reduce)");
 let paused = motionPaused();
 let hidden = document.visibilityState === "hidden";
+/** A modal dialog covers the page (zoom-dialog.ts announces it): nothing behind it moves. */
+let covered = false;
 const inView = new Map<HTMLElement, boolean>();
 const playing = new WeakSet<HTMLElement>();
 const primed = new WeakSet<HTMLElement>();
@@ -155,7 +158,7 @@ function playComets(host: HTMLElement): void {
 }
 
 function sync(host: HTMLElement): void {
-  const run = !reduce.matches && !paused && !hidden && inView.get(host) === true;
+  const run = !reduce.matches && !paused && !hidden && !covered && inView.get(host) === true;
   if (run === playing.has(host)) return;
   if (!run) {
     playing.delete(host);
@@ -225,6 +228,10 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("visibilitychange", () => {
   hidden = document.visibilityState === "hidden";
+  syncAll();
+});
+document.addEventListener("mh:dialog", (e) => {
+  covered = !!(e as CustomEvent<{ open?: boolean }>).detail?.open;
   syncAll();
 });
 reduce.addEventListener("change", syncAll);

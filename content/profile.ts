@@ -222,6 +222,11 @@ export interface Basics {
   readonly tagline: L10n;
   /** Hero lead: two sentences with the scale facts. */
   readonly intro: L10n;
+  /**
+   * The hero lead on phones (≤ 120 characters in English): the scale facts without the role, which the person chip
+   * right above it already states, so the actions and availability fit the first screen of a small phone.
+   */
+  readonly introShort: L10n;
   /** About section, first person, 2-3 short paragraphs. */
   readonly bio: readonly Fact[];
   /** Years of professional experience (binding decision: 7; CV and LinkedIn say "6+"). */
@@ -740,6 +745,10 @@ const basics: Basics = {
   intro: l(
     "AI Team Lead at Globant with 7 years in data and AI. I built a 14-agent assistant for the stock-media platform ArabsStock and, at Wakeb Data, a 6-agent bilingual chatbot whose self-hosted models I ran on A100 GPUs.",
     "قائد فريق الذكاء الاصطناعي في Globant، بخبرة 7 سنوات في البيانات والذكاء الاصطناعي. بنيت مساعدًا من 14 وكيلًا لمنصة ArabsStock للصور ومقاطع الفيديو المرخّصة، وفي Wakeb Data روبوت محادثة ثنائي اللغة من 6 وكلاء، وتولّيت تشغيل نماذجه ذاتية الاستضافة على وحدات A100.",
+  ),
+  introShort: l(
+    "7 years in data and AI. I built a 14-agent assistant for ArabsStock and a 6-agent chatbot on self-hosted A100s.",
+    "خبرة 7 سنوات في البيانات والذكاء الاصطناعي. بنيت مساعدًا من 14 وكيلًا لمنصة ArabsStock، وروبوت محادثة من 6 وكلاء بنماذج ذاتية الاستضافة على A100.",
   ),
   bio: [
     fact(

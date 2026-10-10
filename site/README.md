@@ -13,7 +13,7 @@ npm run dev          # http://localhost:4321 (Turnstile test key; no CSP in dev)
 npm run build        # content:gen → OG images → astro build → ../dist → 404 relocation, _redirects, early hints, CV PDFs
 npm run serve        # serve ../dist like Workers static assets (404 pages, _headers) on :4321
 npm test             # unit tests + static checks of ../dist (secrets, CSP, links, budgets, HTML validity)
-npm run test:e2e     # Playwright: Chromium desktop, Pixel 7, iPhone 15 (WebKit) against ../dist
+npm run test:e2e     # Playwright: Chromium desktop, Pixel 7, iPhone 15 (WebKit), iPhone SE (phone checks) against ../dist
 npm run lighthouse   # Lighthouse mobile + desktop on key pages → lighthouse/
 npm run screenshots  # every page × 1440/768/390 × light/dark → screenshots/ (needs `npm run serve -- --port 4380`)
 node scripts/verify-csp.mjs   # the CSP against the real Turnstile and analytics scripts (network), Chromium + WebKit
@@ -76,12 +76,12 @@ site/
 │   ├── layouts/            Base (site chrome) and Document (the CV: own toolbar); both use components/Head.astro
 │   ├── components/
 │   │   ├── Head.astro      meta, canonical + hreflang, fonts + preloads, OG/Twitter, JSON-LD, analytics beacon
-│   │   ├── nav/ Footer     nav + mobile menu sheet, footer
+│   │   ├── nav/ Footer     nav + mobile menu sheet (+ scrim), the phone action dock (ActionDock), footer
 │   │   ├── home/           the home sections (Hero + hero/, Capabilities, SelectedWork, ExperienceTrace, About,
 │   │   │                   OpenSource, AssistantSection, Skills, Education, Contact + contact/)
 │   │   ├── work/           CaseCard, ArchThumb, DateRun
-│   │   ├── case/           case-study template parts (hero, figure, component view, screens gallery, TOC, next
-│   │   │                   case, CTA…)
+│   │   ├── case/           case-study template parts (hero, figure, component view, screens gallery, the enlarge
+│   │   │                   dialog (ZoomDialog), TOC, next case, CTA…)
 │   │   ├── cv/ notfound/   CV sheet + toolbar, 404 art
 │   │   ├── hero-graph/     the live agent graph (from design/assets/hero-graph: SSR render + runtime module)
 │   │   ├── chat/ChatMount  thin wrapper around ../chat-widget (see "Chat widget")
@@ -89,7 +89,8 @@ site/
 │   │                       MotionToggle (the charts' pause button)
 │   ├── lib/                pure helpers (unit-tested): i18n, site, trace, skills-matrix, contact-form, case,
 │   │                       home-work, diagrams, jsonld, icons, env
-│   ├── scripts/            site.ts (theme, menu, scroll-spy, reveal, copy, Cairo clock, "/" and data-open-chat),
+│   ├── scripts/            site.ts (theme, menu, header, language switch, scroll-spy, reveal, copy, Cairo clock, "/",
+│   │                       data-open-chat and ?ask=1), dock.ts (the phone action dock), zoom-dialog.ts (enlarge view),
 │   │                       chat.ts (mounts the widget), motion.ts + motion-pref.ts (the living charts, see "Motion")
 │   ├── styles/             global.css (Tailwind + tokens + layers), base/components (ported from
 │   │                       design/prototypes/proto.css), diagram.css, site.css (CSP-safe additions), page CSS
@@ -135,6 +136,45 @@ the What I build feature, case-study figures, the next-case card), the experienc
   pausing anywhere shows the still drawings everywhere, and it persists.
 - **prefers-reduced-motion:** nothing runs, no buttons; the charts are exactly the static drawings.
 
+## Phones
+
+The phone round (the audit's plan, `tests/e2e/mobile.spec.ts` locks each item in):
+- **First screen** (`Hero.astro`, components.css §21a): on a 375 × 667 phone the availability line sits above the H1,
+  the H1 is 2rem, the lede is `profile.basics.introShort` (both ledes are static HTML, switched by CSS), so the ask bar,
+  both buttons and "Open to new roles" are on the first screen. Below 40rem the metric strip and the logos come before
+  the graph. The ask field is ≥ 16 px (iOS never zooms into it); its typed examples run one pass on touch screens.
+- **CV on a phone:** on touch screens the hero's CV button opens `/cv/` (with a mouse it downloads the PDF); `/cv/`'s
+  PDF button opens the PDF in the viewer (no `download`; "Save the PDF" under the sheet downloads it), Share (Web
+  Share: the PDF file where files can be shared, fetched ahead on idle; else the link) replaces Copy link where it
+  exists, and "Add to contacts" serves the vCard.
+- **vCard** (`src/pages/mohamed-hatem.vcf.ts`, `src/lib/vcard.ts`): vCard 3.0 generated from `profile.ts` at build
+  time (name, title, employer, emails, the WhatsApp number, site, LinkedIn, GitHub, Cairo, a 160 px photo), served
+  `text/vcard` (`public/_headers`); linked from the CV toolbar and the contact section.
+- **Action dock** (`nav/ActionDock.astro`, `scripts/dock.ts`, §21g): CV, WhatsApp and email at the bottom of the
+  screen below 40rem, beside the chat launcher (it ends `--dock-launcher` = 4rem before the inline-end edge: the 3.5rem
+  launcher + 0.5rem). It appears once `[data-dock-after]` (the hero's, or the case study's, buttons) has scrolled away
+  and steps away while `#contact` or the footer is on screen, while the menu, the chat (`mh:chat-state`) or a dialog
+  (`mh:dialog`) is open, and while a text field has focus. `[data-chat-hush]` makes the launcher's greeting step aside
+  from it without moving the launcher.
+- **Menu and header** (site.ts): the open menu is modal (`html.menu-open` locks scrolling, a scrim closes it, main,
+  the footer, the skip link, the dock and the chat are inert; the launcher steps away). Below 64rem the header slides
+  away on scroll down and back on scroll up (`html[data-nav-hidden]`; not while the menu is open or focus is in it, not
+  for an in-page jump); the case study's TOC bar and reading progress follow it. The language switch adds the current
+  section's id, so the other language opens at the same section. Menu jumps land the section's eyebrow just under the
+  header (`scroll-margin` takes back the section's top padding).
+- **Case studies:** a figure's Enlarge button opens the page's enlarge view (`ZoomDialog.astro`, shared with the
+  product screens) with the wide drawing at its design size; Back, Escape, × and the backdrop close it, focus returns,
+  the living charts rest meanwhile (`mh:dialog`). Figure 1 is cut at 70svh on phones with "Show the full diagram".
+- **Touch:** 44 px targets on touch screens (§21b); hover effects only under `@media (hover: hover)`, pressed states
+  under `@media (hover: none)` (§21c; site.ts adds a passive `touchstart` listener so iOS applies `:active`).
+- **Contact form:** see "Tests"; hints and errors show above the field on phones; Turnstile loads on first use on touch
+  screens, with the compact widget's height reserved.
+- **Safe areas, zoom:** gutters, the menu, the TOC bar, the footer, the dock and the dialog pad for
+  `env(safe-area-inset-*)`; at 200 % text or 175 % page zoom nothing scrolls sideways (§21k, §21p).
+- **Installed app** (`public/site.webmanifest`, `public/ar.webmanifest`, written by `design/scripts/brand/manifest.mjs`):
+  an Arabic manifest for `/ar/` pages, shortcuts (Ask my AI → `/?ask=1`, which opens the assistant once and drops the
+  parameter; CV; Contact) and an iOS home-screen title.
+
 ## Company logos
 
 - "Shipped at" (`components/home/LogoRow.astro`): official logos in their real colours from `src/assets/logos/brand/`
@@ -170,7 +210,8 @@ more, and phone or dialog captures sit beside the rest (`screenGroups()` in `lib
   capture's own width and `sizes` per slot (measured: the lead ≈ 56rem, the wide column ≈ 36rem from 80rem). The 2x
   desktop captures (1500–1600 px) offer 480/640/960/1280/native; the 1x
   captures (the phone screen, 390 px; the dialog, 448 px) offer only their native width and are never shown wider.
-- **Enlarge:** each screen links to its full-size file (works without JS). With JS the link opens a modal `<dialog>`:
+- **Enlarge:** each screen links to its full-size file (works without JS). With JS the link opens the page's enlarge
+  view (`ZoomDialog.astro`, shared with the figures; Back closes it too), a modal `<dialog>`:
   on phones at the screen's natural size (a 2x capture at half its pixels) to pan and pinch-zoom; from 48rem as large
   as the window allows, never beyond the capture's pixels. Escape, the close button or the backdrop closes it, focus
   returns to the screen, and the chat launcher steps away while it is open.
@@ -249,7 +290,7 @@ All fonts are self-hosted through Astro's Fonts API (metric-matched Latin fallba
 |---|---|---|
 | Space Grotesk | weights 500–700 | 19 KB |
 | Inter | weights 400–700 | 30 KB |
-| JetBrains Mono | weights 400–700 | 23 KB |
+| JetBrains Mono | weights 400–700, without its code ligatures | 13 KB |
 | Plex Arabic 400/600/700 | Arabic-language block | 17.5 KB each |
 | "MH Arabic Label" | the few Arabic words English pages show | 7 KB |
 
@@ -265,17 +306,20 @@ on paper, about 400 dpi; the tile's rounded corners come from CSS): Chromium emb
 tiles add about 20 KB to each PDF, where PNGs were re-compressed to about 50 KB.
 
 Preloads:
-- **English pages:** Space Grotesk (the H1 face).
+- **English pages:** Space Grotesk (the H1 face) and Inter (the lede's face: on phones the lede is the LCP element, and
+  it re-wrapped when Inter swapped in late, CLS ≈ 0.07 at 360 px).
 - **Arabic pages:** the three Plex Arabic weights. Preloading only 700 let 400/600 swap in late: the lede is the LCP
   element on phones, and the page shifted.
 - **Arabic case-study pages:** Space Grotesk and Inter as well. Latin names in the H1 and summary otherwise re-wrapped
   when the fonts swapped in.
+- **The Arabic CV:** Inter as well (the sheet's Latin runs: names and tools; its summary shifted when Inter swapped in).
 
 ## Budgets (`scripts/check-budgets.mjs`, part of `npm test`)
 
 - **JS:** ≤ 60 KB gzip loaded on first view of each page. The lazy chat panel and the launcher's avatar (loaded after
-  `load`, 7.1 KB gzip; design target ≤ 12 KB) are excluded; the loader counts. Today: home 19.0 KB, case studies with a
-  diagram 9.2 KB (9.7 KB with the screens gallery), other pages 6.3–7.1 KB, hero graph 7.0 KB.
+  `load`, 7.1 KB gzip; design target ≤ 12 KB) and the hero graph's runtime (after `load` on idle, 8.4 KB) are
+  excluded; the loader counts. Today: home 13.8 KB, case studies with a diagram 11.3 KB (with the enlarge view), other
+  pages 7.6–8.1 KB.
 - **CSS:** ≤ 40 KB gzip per page. Today: 19.8–26.1 KB.
 - **Fonts:** self-hosted woff2 only, with exactly the preloads listed under "Fonts".
 - **Images:** any high-priority image must be preloaded. The LCP element is text (the H1, or the lede on Arabic
@@ -287,13 +331,13 @@ Lighthouse (`npm run lighthouse`; mobile = simulated slow 4G, desktop preset):
 |---|---|---|
 | Home, English | 98 | 100 |
 | Home, Arabic | 97 | 100 |
-| Saudi Tourism Authority case study (screens gallery), English / Arabic | 99 / 98 | 100 |
-| ArabsStock case study, English / Arabic | 99 / 98 | 100 |
-| AIP semantic search (a brief case study) | 99 | 100 |
-| CV, English / Arabic (logos, round 4) | 99 / 98 | 100 |
+| Saudi Tourism Authority case study (screens gallery), English / Arabic | 98 / 98 | 100 |
+| ArabsStock case study, English | 99 | 100 |
+| CV, English / Arabic | 99 / 99 | 100 |
 
-Accessibility, best practices and SEO are 100 on every run (measured 2026-10-10, after the design review fixes, again after the avatar launcher, again with dark as the default theme, the living charts and the brand-colour logos, again with the STA case study and the CV's logos, and again with the Lapis & Gold palette: the same scores).
-CLS ≤ 0.001, TBT ≤ 30 ms (home, mobile; 0 ms elsewhere), and mobile LCP is 1.8–2.3 s.
+Accessibility, best practices and SEO are 100 on every run (measured 2026-10-10, after the design review fixes, again after the avatar launcher, again with dark as the default theme, the living charts and the brand-colour logos, again with the STA case study and the CV's logos, again with the Lapis & Gold palette, and again after the phone round: the same scores).
+CLS ≤ 0.001 (the Arabic CV 0.017, from 0.06: its Latin title words in the display face), TBT 0 ms, and mobile LCP is
+1.9–2.3 s.
 
 The runner blocks the Cloudflare analytics beacon (`--with-analytics` keeps it). From localhost, CORS refuses the
 beacon's report, which logs a console error the live site doesn't have.
@@ -353,7 +397,8 @@ beacon's report, which logs a console error the live site doesn't have.
   - `unique-landmark`: the menu sheet's nav is hidden whenever the desktop nav shows.
   - Inline styles: already enforced, more strictly, by the CSP integration.
 
-**End to end (`npm run test:e2e`, Playwright):** Chromium desktop, Pixel 7 and iPhone 15 (WebKit), against
+**End to end (`npm run test:e2e`, Playwright):** Chromium desktop, Pixel 7 and iPhone 15 (WebKit), plus iPhone SE (3rd
+gen, WebKit, 375 × 667) for `mobile.spec.ts` only, against
 `scripts/serve.mjs` on `../dist`. `E2E_SERVER=astro` uses `astro preview` instead, and `E2E_BASE_URL` points at a
 running server such as `wrangler dev`.
 - **Every page** in EN and AR returns 200, with correct `lang`/`dir`, one H1, canonical and hreflang, and no console
@@ -439,6 +484,24 @@ running server such as `wrangler dev`.
   200 at its URL in both languages and in the sitemap, UTF-8 text files, sitemap `<lastmod>`, the home H1
   (name and role, then the tagline), per-page `og:image:alt`, `article:*` dates on case studies.
 - **CSP (`csp.spec.ts`):** see "Security".
+- **Phones (`mobile.spec.ts`, iPhone SE, iPhone 15, Pixel 7; EN and AR, dark and light where the theme matters):**
+  the first screen holds the ask bar, both buttons and "Open to new roles" (the ask bar inside Safari's 548 px on an
+  iPhone SE), the proof before the graph, CLS < 0.01; every text field ≥ 16 px; the typed examples rest after one pass;
+  no tap target under 44 px on /, /ar/, /cv/, the STA and ArabsStock case studies and /privacy/ (the 44 px square
+  around each control is probed, so padding and pseudo-element hit areas count; links in running text are exempt);
+  no sticky hover after a tap, a pressed state while held; the Email card's main area is a link; safe-area padding in
+  the stylesheets; the menu is modal (no scroll behind it, main and footer inert; Escape, the scrim and a link close
+  it, focus returns); menu jumps land the section title ≤ 140 px from the top, below the header; the language switch
+  keeps the section; the header slides away and back, the TOC bar follows it; the contact form sends on the first tap
+  after an error (WebKit), scrolls its summary under the header, shows errors above the fields, moves on with the
+  return key, loads Turnstile only on use with its height reserved; the hero CV opens /cv/ with no download, /cv/ opens
+  the PDF in the viewer, Share only where Web Share exists, the vCard is served as `text/vcard`; the dock (EN/AR ×
+  dark/light) is one tap away from Work, Experience and Skills, 44 px, ≥ 8 px from the launcher, away at Contact and
+  with the menu, axe-clean; compact diagram labels ≥ 11 px; figure 1 cut and expandable; the Enlarge dialog (Back,
+  Escape and Close close it, focus returns, history doesn't grow, the charts rest, axe-clean); < 10 % of the text under
+  13 px and none under 12 px; the shorter home page (swipe row, disclosures); trace durations; 200 % text and 214 px
+  (175 % zoom) without sideways scrolling or cut-off content; no raster image more than twice what the screen needs;
+  `/?ask=1` opens the assistant once.
 - **Accessibility details (`a11y-details.spec.ts`):** axe at 320 px (every page light, key pages dark); the home link's
   name below 360 px; user text spacing (WCAG 1.4.12) clips nothing in the work cards or the trace at 1440, 390 and
   320; focus outlines under forced colors; each role in the trace is an h3; the skills table is a focusable region

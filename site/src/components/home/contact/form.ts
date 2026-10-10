@@ -4,6 +4,18 @@
  * A 429 or 5xx that isn't the Worker's JSON (Cloudflare answering for it, e.g. once the free plan's daily request
  * limit is reached, or an edge rule) means the form can't work right now: the status says so and offers email and
  * WhatsApp, instead of a misleading "wait a minute".
+ *
+ * Phones (audit CONTACT-01..03, PERF-09, CONTACT-05):
+ * - After a failed submit, leaving a field re-checks that field a beat later (never at the moment of the tap) and
+ *   never collapses the error summary: the summary keeps its box until the next submit. Otherwise the layout moved
+ *   under the finger between touch-down and click, and Safari delivered the tap on Send to the section behind it.
+ * - The error summary is scrolled into view (block: start, clear of the header) before it takes focus; WebKit didn't
+ *   scroll a focused tabindex=-1 element into view.
+ * - The keyboard's return key on name, email and company moves to the next field (enterkeyhint="next") instead of
+ *   submitting a half-filled form.
+ * - Touch screens load Turnstile when the visitor starts using the form, not when it nears the viewport (most phone
+ *   visitors tap WhatsApp or email above it). The challenge's slot reserves the compact widget's height from the
+ *   start when the slot is under 300 px, so nothing moves when it renders.
  */
 import { contactPayload, serverFieldErrors, validateContact, type ContactValues, type Field, type FieldError } from "~/lib/contact-form";
 
@@ -62,6 +74,8 @@ export function initContactForm(): void {
   // no token is held.
   const sizeFor = (): "flexible" | "compact" => (slot.clientWidth < 300 ? "compact" : "flexible");
   let size: "flexible" | "compact" | undefined;
+  // Reserve the right height before the widget loads (home-b.css: the compact widget is 140 px tall, flexible 65 px).
+  slot.dataset.size = sizeFor();
   const render = (): void => {
     const ts = (window as TurnstileWindow).turnstile;
     if (!ts || widgetId !== undefined) return;
@@ -120,7 +134,9 @@ export function initContactForm(): void {
       tick();
     });
 
-  if ("IntersectionObserver" in window) {
+  // Mouse and keyboard: ready by the time the form is reached. Touch screens: on first use of the form (the managed
+  // challenge solves long before four fields are filled), so visitors who only tap a channel above never load it.
+  if (!matchMedia("(pointer: coarse)").matches && "IntersectionObserver" in window) {
     const io = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
@@ -133,6 +149,7 @@ export function initContactForm(): void {
     io.observe(form);
   }
   form.addEventListener("focusin", () => void loadTurnstile().catch(() => {}), { once: true });
+  form.addEventListener("pointerdown", () => void loadTurnstile().catch(() => {}), { once: true, passive: true });
 
   /* ---------------------------------------------------------------- validation UI */
   const values = (): ContactValues => ({
@@ -185,7 +202,11 @@ export function initContactForm(): void {
       list.append(li);
     }
     summary.hidden = false;
-    if (focusSummary) summary.focus();
+    if (focusSummary) {
+      // Scroll first (it may be far above on a phone), then focus without a second jump. scroll-margin in home-b.css.
+      summary.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      summary.focus({ preventScroll: true });
+    }
   }
 
   /** Shows (or clears) the status message; `channels` adds the email and WhatsApp links under it. */
@@ -202,10 +223,27 @@ export function initContactForm(): void {
     submit.querySelector<HTMLElement>("[data-submit-label]")!.textContent = on ? t.sending : t.submit;
   }
 
-  // After the first submit, re-check on blur (and clear a fixed error as soon as it's fixed).
+  // After the first submit, re-check a field when it is left (and clear a fixed error as soon as it's fixed, below).
+  // Only the field errors: the summary keeps its box until the next submit. A beat later, not at once: leaving a field
+  // is often the start of a tap on Send, and a layout change before that tap's click lands would move Send away from
+  // under the finger (Safari then clicks whatever is there). The submit, if that's what it was, validates everything.
   form.addEventListener("focusout", (e) => {
-    if (!submitted || !(e.target as Element).closest?.("input, select, textarea")) return;
-    showErrors(validateContact(values()), false);
+    const el = e.target as Element;
+    if (!submitted || !el.closest?.("input, select, textarea")) return;
+    const f = el.id.replace(/^cf-/, "") as Field;
+    if (!FIELDS.includes(f)) return;
+    setTimeout(() => {
+      if (busy || form.hidden) return;
+      setFieldError(f, validateContact(values()).find((x) => x.field === f));
+    }, 250);
+  });
+  // The keyboard's return key on a single-line field moves on (enterkeyhint="next"), it doesn't submit.
+  form.addEventListener("keydown", (e) => {
+    const el = e.target as HTMLElement;
+    if (e.key !== "Enter" || e.isComposing || !(el instanceof HTMLInputElement) || el.getAttribute("enterkeyhint") !== "next") return;
+    e.preventDefault();
+    const i = FIELDS.indexOf(el.id.replace(/^cf-/, "") as Field);
+    input(FIELDS[i + 1] ?? "message").focus();
   });
   form.addEventListener("input", (e) => {
     const el = e.target as HTMLElement;

@@ -13,7 +13,8 @@
  *   CSS   gzip of the stylesheets the page links. Budget: 40 KB.
  *   HTML  gzip size, reported (warning above 60 KB).
  * Fonts: every @font-face source is a self-hosted .woff2; the English home preloads Space Grotesk (its H1 face) and
- * nothing else; the Arabic home preloads the three IBM Plex Sans Arabic weights (≈53 KB after
+ * Inter (the lede's face: on phones the lede is the LCP element, and it re-wrapped when Inter swapped in late, audit
+ * PERF-02) and nothing else; the Arabic home preloads the three IBM Plex Sans Arabic weights (≈53 KB after
  * scripts/subset-fonts.mjs: preloading only 700 let 400/600 swap in late and shift the page) and no Latin face.
  * LCP: an image marked fetchpriority="high" must be preloaded (the design's LCP is the H1 text, so normally none).
  * Third-party scripts (Cloudflare Web Analytics, Turnstile) are listed but not counted: they load deferred / on use.
@@ -97,6 +98,8 @@ for (const f of pageFiles) {
       const text = readFileSync(`${DIST}/${p}`, "utf8");
       // the launcher's avatar and speech bubble (src/scripts/chat-avatar.ts), imported after load on idle
       if (/mhb-t/.test(text)) chatAvatar = lazy;
+      // the hero graph's runtime, imported after load on idle (HeroGraph.astro)
+      else if (/hg-tip-caret/.test(text)) heroGraph = { ...lazy, lazy: true };
       else if (/mhc-panel/.test(text)) widgetPanel = lazy;
     }
   }
@@ -137,7 +140,12 @@ for (const f of pageFiles) {
     const label = path === "/" ? "Space Grotesk" : "IBM Plex Sans Arabic 700";
     if (!want) errors.push(`${path}: no @font-face for ${label}`);
     else if (!fontPreloads.includes(want)) errors.push(`${path}: ${label} is not preloaded`);
-    const allowed = path === "/" ? [want] : [400, 600, 700].map((w) => faceUrl("IBM Plex Sans Arabic", w));
+    if (path === "/") {
+      const inter = faceUrl("Inter");
+      if (!inter) errors.push(`${path}: no @font-face for Inter`);
+      else if (!fontPreloads.includes(inter)) errors.push(`${path}: Inter is not preloaded`);
+    }
+    const allowed = path === "/" ? [want, faceUrl("Inter")] : [400, 600, 700].map((w) => faceUrl("IBM Plex Sans Arabic", w));
     for (const p of fontPreloads) if (!allowed.includes(p)) errors.push(`${path}: unexpected font preload ${p}`);
     for (const p of fontPreloads) if (!tags(html, "link").find((l) => l.attrs.get("href") === p && l.attrs.has("crossorigin"))) errors.push(`${path}: font preload ${p} lacks crossorigin`);
   }
@@ -156,7 +164,7 @@ rows.sort((a, b) => a.path.localeCompare(b.path));
 const pad = (s, n) => String(s).padEnd(n);
 console.log(`${pad("page", 40)} ${pad("JS gz", 10)} ${pad("CSS gz", 10)} ${pad("HTML gz", 10)} modules`);
 for (const r of rows) console.log(`${pad(r.path, 40)} ${pad(kb(r.js), 10)} ${pad(kb(r.css), 10)} ${pad(kb(r.html), 10)} ${r.scripts}${r.third ? ` (+${r.third} third-party, not counted)` : ""}`);
-if (heroGraph) console.log(`hero graph module: ${heroGraph.file} ${kb(heroGraph.gzip)} gzip (design budget 15 KB with its CSS)`);
+if (heroGraph) console.log(`hero graph module${heroGraph.lazy ? " (after load, not counted)" : ""}: ${heroGraph.file} ${kb(heroGraph.gzip)} gzip (design budget 15 KB with its CSS)`);
 if (widgetPanel) console.log(`chat widget panel (lazy, not counted): ${widgetPanel.file} ${kb(widgetPanel.gzip)} gzip`);
 if (chatAvatar) console.log(`chat launcher avatar (after load, not counted; design target 12 KB): ${chatAvatar.file} ${kb(chatAvatar.gzip)} gzip`);
 for (const w of [...new Set(warnings)]) console.warn(`  warn  ${w}`);

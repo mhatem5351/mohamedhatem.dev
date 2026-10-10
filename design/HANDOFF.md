@@ -298,8 +298,11 @@ Files: `graph-data.ts` (nodes, edges, geometry, EN/AR copy: single source), `ren
 (`?theme=dark&lang=ar&motion=reduce&chrome=0`). `bundle/` holds the built `hero-graph.js`, the lazy
 `hero-graph.render.js` (only fetched when a host is empty), `hero-graph.css` and static `hero-graph.{en,ar}.svg|html`.
 
-Measured gzip: JS 5.24 KB + CSS 2.49 KB = **7.73 KB** (6.99 KB brotli); budget 15 KB. The SSR markup has no inline
-styles (strict CSP friendly).
+Measured gzip (site build): JS 8.4 KB, loaded after `load` on idle (the SSR markup is the still frame until then) +
+CSS ≈ 3 KB; budget 15 KB. The SSR markup has no inline styles (strict CSP friendly). Every moving part is a long-running
+transform / opacity animation (compositor), so a graph on screen costs ≈ 30 ms of main thread per 10 s on a Pixel 7
+at 4× CPU (it was ≈ 750 ms). Phones (< 64rem): labels step up by container width so every label reads ≥ 11 px down to
+a 260 px graph, `generate` / `answer` move inside the edge below 381 px, and node tap circles are ≥ 44 px.
 
 Astro (SSR, zero CLS, visible without JS):
 ```astro
@@ -309,12 +312,14 @@ import "../components/hero-graph/hero-graph.css";
 const dir = lang === "ar" ? "rtl" : "ltr";
 ---
 <Fragment set:html={renderHeroGraph({ lang, dir })} />
-<script>import "../components/hero-graph/hero-graph.ts";</script>
+<script>/* after load, on idle */ addEventListener("load", () => requestIdleCallback(() => import("../components/hero-graph/hero-graph.ts")), { once: true });</script>
 ```
 The module auto-mounts every `[data-hero-graph]` after idle; API `mountHeroGraph(host, { lang, dir }) → { play, pause,
 destroy }` (also the default export) and `initHeroGraphs(root)` (call on `astro:page-load` if view transitions are
 used). Behaviour: 9 s loop (every second loop adds the tools detour, ≈ 11.9 s at the same pulse speed; length from
-`--duration-graph-loop`), pauses offscreen / hidden tab / pause button (persisted), static frame under reduced motion
+`--duration-graph-loop`), runs only while ≥ 35 % of it is on screen, pauses in a hidden tab and with the pause button
+(persisted); on touch screens it rests on the still frame after 3 loops and plays 3 more on re-entry or a tap; static
+frame under reduced motion
 (live media-query changes honoured), pointer parallax on fine pointers, hover/focus highlights a node's edges and dims
 the rest to 35%, Enter/Space/click opens the toggletip, Escape closes. A11y: `<figure>` with a visually hidden flow
 caption; SVG `role="group"`; nodes `role="button"` with roving tabindex (one tab stop, arrows mirrored in RTL,
@@ -327,7 +332,7 @@ animation"). Container queries scale labels up on phones (1.15× ≤ 540 px, 1.3
 Six systems × three variants, generated from data by `design/scripts/diagrams/build.mjs` (`--strict` fails on layout
 warnings, `--audit` prints the contrast table; specs in `specs.mjs`, captions in `captions.mjs`):
 
-| Diagram | Wide (≈1120 w) | Compact (352 w, phones) | Thumb (400 × 250, cards) |
+| Diagram | Wide (≈1120 w) | Compact (320 w, phones; labels ≥ 12 units) | Thumb (400 × 250, cards) |
 |---|---|---|---|
 | `arabsstock-assistant` | 5.0 KB gz | 5.0 KB gz | 2.5 KB gz |
 | `wakeb-multi-agent-chatbot` | 4.1 | 4.1 | 2.8 |
@@ -368,7 +373,7 @@ import compact from "../assets/diagrams/arabsstock-assistant-compact.svg?raw";
 
 ### 4.3 Icons (`design/assets/icons/`)
 
-84 icons (24 grid, 1.75 stroke, round caps, `currentColor`), individual SVGs + `sprite.svg` (22 KB, 3.8 KB gzip,
+86 icons (24 grid, 1.75 stroke, round caps, `currentColor`), individual SVGs + `sprite.svg` (22 KB, 3.8 KB gzip,
 symbols `i-<name>`), preview `prototypes/icons.html`. Inline the sprite once per page in `Base.astro` (or tree-shake
 to the ~35 used ids at build time) and use `<svg class="icon" aria-hidden="true"><use href="#i-name"/></svg>`. Names
 used by the site include: agents, orchestrator, retrieve, rerank, guard, generate, evaluate, tools-mcp, serving,

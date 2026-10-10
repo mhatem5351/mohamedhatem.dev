@@ -26,10 +26,11 @@ const phone = otherLocale(locale) === "ar" ? phoneAr : phoneEn;
   <div class="devices shots__devices" aria-hidden="true">
     <div class="browser">
       <div class="browser__bar"><span class="browser__dots"><i></i><i></i><i></i></span><span class="browser__url">logic-controls.com</span><span class="browser__pad"></span></div>
-      <Picture src={desktop} formats={["avif", "webp"]} widths={[960, 1440]} sizes="(min-width: 80rem) 60rem, 92vw" alt="" loading="lazy" decoding="async" />
+      <Picture src={desktop} formats={["avif", "webp"]} widths={[640, 960, 1440]} sizes="(min-width: 80rem) 60rem, calc(92vw - 2rem)" alt="" loading="lazy" decoding="async" />
     </div>
     <div class="phone">
-      <Picture src={phone} formats={["avif", "webp"]} widths={[390, 780]} sizes="12rem" alt="" loading="lazy" decoding="async" />
+      {/* Sized for its real width: 11rem from 64rem, about a quarter of the frame below (phones render it 76–94 px). */}
+      <Picture src={phone} formats={["avif", "webp"]} widths={[240, 390, 780]} sizes="(min-width: 64rem) 11rem, 24vw" alt="" loading="lazy" decoding="async" />
     </div>
   </div>
   <figcaption class="fig__caption">

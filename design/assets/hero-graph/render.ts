@@ -6,8 +6,8 @@
  * The pause button, toggletip and live region are added by the runtime (they only make sense with JS).
  */
 import {
-  CAT, COPY, EDGES, LABEL, ORDER, PLACE, R_SPIN, ROUTE, VIEW,
-  catOf, pathD, pos, seg, sideOf, type Dir, type Lang, type NodeId, type Side,
+  CAT, COPY, EDGES, LABEL, LABEL_PHONE, ORDER, PLACE, R_SPIN, ROUTE, VIEW,
+  catOf, pathD, pos, seg, sideOf, type Dir, type Id, type Lang, type NodeId,
 } from "./graph-data";
 
 export interface RenderOptions {
@@ -36,19 +36,38 @@ const GLYPH: Record<NodeId, string> = {
   evaluate: '<path d="M6 18.5A8.5 8.5 0 1 1 18 18.5M8.7 12.7l2.3 2.3 4.4-4.6"/>',
   tools: '<path d="M9 3.5v4M15 3.5v4M6.5 7.5h11v3a5.5 5.5 0 0 1-11 0zM12 16v4.5"/>',
 };
+/* the pulse's tail: TAIL units long, drawn as chords: [class, chord length, count] for the soft halo (its front 32
+   units, drawn first) and the line itself */
+const TAIL = 56;
+const TAIL_SEG: [string, number, number][] = [["hg-th", 16, 2], ["hg-tl", 14, 4]];
+
 /* glyphs that encode reading direction are mirrored in RTL */
 const MIRROR: Partial<Record<NodeId, true>> = { rerank: true, generate: true };
 
 /* Labels sit in a group translated to their anchor point, so the phone-size scale (CSS, origin 0 0)
-   grows them away from the node in every engine. */
-function label(text: string, side: Side, r: number): string {
-  const g = r + 10;
+   grows them away from the node in every engine. Each is drawn twice: muted (the text, in an hg-off group, since a
+   <use> copy takes the rules its original matches) and lit (a <use> of it, hg-on, in the colour it inherits).
+   Lighting a node cross-fades the two (opacity runs on the compositor; a fill transition repaints every frame). The
+   copy lives in the <use>'s own shadow tree, so a node's text is its label once and still matches its accessible name
+   (WCAG 2.5.3). A label with a phone placement (LABEL_PHONE) gets that second position too; a container query shows
+   one of the two (the other is display: none). */
+function label(id: Id, dir: Dir, r: number, pfx: string): string {
+  const t = esc(LABEL[id]), side = sideOf(id, dir), g = r + 10;
   const [x, y, at] =
     side === "n" ? [0, -g, 'text-anchor="middle"'] :
     side === "s" ? [0, g, 'dy=".8em" text-anchor="middle"'] :
     side === "e" ? [g, 0, 'dy=".34em" text-anchor="start"'] :
     [-g, 0, 'dy=".34em" text-anchor="end"'];
-  return `<g transform="translate(${x} ${y})"><text class="hg-lbl" ${at}>${esc(text)}</text></g>`;
+  const at2 = (cls: string, x: number, y: number, a: string, lid: string): string =>
+    `<g class="${cls}" transform="translate(${x} ${y})"><g class="hg-off"><text class="hg-lbl" id="${lid}" ${a}>${t}</text></g>` +
+    `<use class="hg-lbl-on hg-on" href="#${lid}" aria-hidden="true"/></g>`;
+  const lid = `${pfx}-l-${id}`;
+  const ph = LABEL_PHONE[id];
+  if (!ph) return at2("hg-lp", x, y, at, lid);
+  const rtl = dir === "rtl";
+  const anchor = ph.anchor === "middle" ? "middle" : (ph.anchor === "end") !== rtl ? "end" : "start";
+  return at2("hg-lp hg-lp-w", x, y, at, lid) +
+    at2("hg-lp hg-lp-n", rtl ? -ph.x : ph.x, ph.y, `${ph.below ? 'dy=".8em" ' : ""}text-anchor="${anchor}"`, `${lid}-n`);
 }
 
 function glyph(id: NodeId, dir: Dir, scale: number): string {
@@ -70,12 +89,12 @@ function node(id: NodeId, dir: Dir, lang: Lang, pfx: string): string {
     const cw = Math.round(LABEL[id].length * 7.8 + 18), cy = R_SPIN + 9;
     inner +=
       `<circle class="hg-spin" r="${R_SPIN}" pathLength="288"/>` +
-      `<circle class="hg-disc" r="${r}"/><circle class="hg-ring2" r="${r - 6}"/>` +
+      `<circle class="hg-disc hg-off" r="${r}"/><circle class="hg-disc hg-on" r="${r}"/><circle class="hg-ring2" r="${r - 6}"/>` +
       glyph(id, dir, 1.25) +
       `<g transform="translate(0 ${cy})"><g class="hg-chip"><rect x="${-cw / 2}" y="0" width="${cw}" height="22" rx="6"/>` +
       `<text x="0" y="15.5" text-anchor="middle">${esc(LABEL[id])}</text></g></g>`;
   } else {
-    inner += `<circle class="hg-disc" r="${r}"/>` + glyph(id, dir, 0.88) + label(LABEL[id], sideOf(id, dir), r);
+    inner += `<circle class="hg-disc hg-off" r="${r}"/><circle class="hg-disc hg-on" r="${r}"/>` + glyph(id, dir, 0.88) + label(id, dir, r, pfx);
   }
   return (
     `<g class="hg-node hg-c-${CAT[id]}" data-id="${id}" data-title="${esc(c.title)}" data-label="${esc(LABEL[id])}" ` +
@@ -84,12 +103,14 @@ function node(id: NodeId, dir: Dir, lang: Lang, pfx: string): string {
   );
 }
 
-function port(id: "query" | "answer", dir: Dir): string {
+function port(id: "query" | "answer", dir: Dir, pfx: string): string {
   const p = pos(id, dir), r = PLACE[id].r;
   return (
     `<g class="hg-port hg-c-${catOf(id)}" data-id="${id}" transform="translate(${p.x} ${p.y})">` +
-    `<circle class="hg-ripple" r="${r + 2}"/><rect class="hg-term" x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" rx="3.5"/>` +
-    `<circle class="hg-gd" r="1.9"/>${label(LABEL[id], sideOf(id, dir), r)}</g>`
+    `<circle class="hg-ripple" r="${r + 2}"/>` +
+    `<rect class="hg-term hg-off" x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" rx="3.5"/>` +
+    `<rect class="hg-term hg-on" x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" rx="3.5"/>` +
+    `<circle class="hg-gd hg-off" r="1.9"/><circle class="hg-gd hg-on" r="1.9"/>${label(id, dir, r, pfx)}</g>`
   );
 }
 
@@ -99,19 +120,38 @@ export function renderHeroGraphSVG(o: SvgOptions = {}): string {
   const pfx = o.id || "hg";
   const copy = COPY[lang];
 
-  let rimPort = "", spokes = "", routeRim = "", routeSpoke = "";
+  let rimPort = "", spokes = "", cmds = "", routeRim = "", routeSpoke = "", hotRim = "", hotSpoke = "";
   for (const e of EDGES) {
     const sp = e.k === "spoke";
     const cls = sp ? "hg-e hg-sp" : e.k === "rim" ? "hg-e hg-rim" : "hg-e hg-pe";
-    const el = `<path class="${cls}" data-a="${e.a}" data-b="${e.b}" d="${pathD(seg(e.a, e.b, dir))}"/>`;
-    if (sp) spokes += el; else rimPort += el;
+    const d = `data-a="${e.a}" data-b="${e.b}" d="${pathD(seg(e.a, e.b, dir))}"`;
+    if (sp) {
+      spokes += `<path class="${cls}" ${d}/>`;
+      // the spoke in the accent, shown while the orchestrator commands a hop along the rim
+      cmds += `<path class="hg-cmd" ${d}/>`;
+    } else rimPort += `<path class="${cls}" ${d}/>`;
   }
-  // the request route, drawn faintly in category colours for the still frame
+  // the request route, drawn faintly in category colours for the still frame; its "hot" twin lights the hop the pulse
+  // travels (an opacity cross-fade, so it never repaints the graph)
   for (let i = 0; i < ROUTE.length - 1; i++) {
-    const a = ROUTE[i], b = ROUTE[i + 1];
+    const a = ROUTE[i]!, b = ROUTE[i + 1]!;
     const sp = EDGES.some(x => x.k === "spoke" && ((x.a === a && x.b === b) || (x.a === b && x.b === a)));
-    const el = `<path class="hg-rt hg-c-${catOf(a)}${sp ? " hg-sp" : ""}" data-a="${a}" data-b="${b}" d="${pathD(seg(a, b, dir))}"/>`;
-    if (sp) routeSpoke += el; else routeRim += el;
+    const c = `hg-c-${catOf(a)}${sp ? " hg-sp" : ""}" data-a="${a}" data-b="${b}" d="${pathD(seg(a, b, dir))}"/>`;
+    if (sp) { routeSpoke += `<path class="hg-rt ${c}`; hotSpoke += `<path class="hg-rh ${c}`; }
+    else { routeRim += `<path class="hg-rt ${c}`; hotRim += `<path class="hg-rh ${c}`; }
+  }
+  // the pulse: a head, and a tail of short chords that the runtime carries along the hop with transform keyframes
+  // (data-f = how far behind the head a chord's front is, data-l = its length); each chord's gradient is its slice of
+  // the tail's fade, from 0 at TAIL behind the head to 1 at the head
+  let tail = "", grads = "";
+  for (const [cls, len, n] of TAIL_SEG) {
+    for (let i = n - 1; i >= 0; i--) {
+      const a0 = 1 - (len * (i + 1)) / TAIL, a1 = 1 - (len * i) / TAIL, gid = `${pfx}-${cls}${i}`;
+      grads += `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${-len}" y1="0" x2="0" y2="0">` +
+        `<stop offset="0" class="hg-cs" stop-opacity="${+a0.toFixed(3)}"/><stop offset="1" class="hg-cs" stop-opacity="${+a1.toFixed(3)}"/>` +
+        `</linearGradient>`;
+      tail += `<path class="${cls}" data-f="${len * i}" data-l="${len}" d="M${-len} 0H0" stroke="url(#${gid})"/>`;
+    }
   }
   // DOM order = reading / keyboard order (guard, orchestrator, retrieve, ...); the orchestrator keeps its own layer
   const sats = (ids: NodeId[]): string => ids.map(id => node(id, dir, lang, pfx)).join("");
@@ -124,13 +164,11 @@ export function renderHeroGraphSVG(o: SvgOptions = {}): string {
     `data-dir="${dir}" data-lang="${lang}" data-pause="${esc(copy.pause)}" data-play="${esc(copy.play)}">` +
     `<desc id="${pfx}-desc">${esc(o.describe === false ? copy.hint : copy.caption + " " + copy.hint)}</desc>` +
     `<g class="hg-descs" display="none" aria-hidden="true">${descs}</g>` +
-    `<g class="hg-sl" aria-hidden="true">${rimPort}${routeRim}</g>` +
-    `<g class="hg-spokes" aria-hidden="true">${spokes}${routeSpoke}</g>` +
-    `<g class="hg-comet hg-c-teal" aria-hidden="true">` +
-    `<linearGradient id="${pfx}-cg" gradientUnits="userSpaceOnUse"><stop offset="0" class="hg-cs0"/><stop offset="1" class="hg-cs1"/></linearGradient>` +
-    `<path class="hg-tail-h" stroke="url(#${pfx}-cg)"/><path class="hg-tail" stroke="url(#${pfx}-cg)"/>` +
-    `<circle class="hg-head-h" r="8"/><circle class="hg-head" r="3.4"/></g>` +
-    `<g class="hg-sl"><g aria-hidden="true">${port("query", dir)}${port("answer", dir)}</g>${sats(["guard"])}</g>` +
+    `<g class="hg-sl" aria-hidden="true">${rimPort}${routeRim}${hotRim}</g>` +
+    `<g class="hg-spokes" aria-hidden="true">${spokes}${cmds}${routeSpoke}${hotSpoke}</g>` +
+    `<g class="hg-comet hg-c-teal" aria-hidden="true">${grads}${tail}` +
+    `<g class="hg-hd"><circle class="hg-head-h" r="8"/><circle class="hg-head" r="3.4"/></g></g>` +
+    `<g class="hg-sl"><g aria-hidden="true">${port("query", dir, pfx)}${port("answer", dir, pfx)}</g>${sats(["guard"])}</g>` +
     `<g class="hg-ol">${node("orchestrator", dir, lang, pfx)}</g>` +
     `<g class="hg-sl">${sats(ORDER.slice(2))}</g>` +
     `</svg>`

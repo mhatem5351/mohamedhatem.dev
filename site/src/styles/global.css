@@ -53,6 +53,9 @@
   max-width: calc(var(--container-max) + 2 * var(--space-gutter));
   margin-inline: auto;
   padding-inline: var(--space-gutter);
+  /* Safe areas (viewport-fit=cover): landscape gutters clear the sensor housing and corners (physical, like the insets). */
+  padding-left: max(var(--space-gutter), env(safe-area-inset-left));
+  padding-right: max(var(--space-gutter), env(safe-area-inset-right));
 }
 
 /*

@@ -3,6 +3,9 @@
  * Sticky site nav (DESIGN.md 12.1) + the mobile menu sheet (12.2).
  * Behaviour lives in src/scripts/site.ts: hairline after 8 px of scroll, menu open/close (Escape, outside click,
  * link click; focus returns to the button), theme toggle (dark by default ↔ light), section scroll-spy on the home page.
+ * While the menu is open it is modal: the page behind is locked and inert, and the scrim under the sheet closes it on
+ * tap. The sheet stays a disclosure of the menu button (its language and theme controls sit inside its nav landmark).
+ * Below 64rem the header slides away on scroll down and back on scroll up.
  */
 import Monogram from "~/components/brand/Monogram.astro";
 import Icon from "~/components/ui/Icon.astro";
@@ -137,3 +140,4 @@ const themeLabel = (mode: string) => `${m.theme.label}: ${mode}`;
     </div>
   )
 }
+{variant === "full" && <div class="menu-scrim" hidden data-menu-scrim aria-hidden="true" />}

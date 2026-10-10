@@ -145,19 +145,19 @@
           "file": "assets/diagrams/arabsstock-assistant.svg",
           "viewBox": "0 0 1120 760",
           "bytes": 23375,
-          "gzip": 5417
+          "gzip": 5420
         },
         "compact": {
           "file": "assets/diagrams/arabsstock-assistant-compact.svg",
-          "viewBox": "0 0 352 1576",
-          "bytes": 23282,
-          "gzip": 5368
+          "viewBox": "0 0 320 1624",
+          "bytes": 23651,
+          "gzip": 5430
         },
         "thumb": {
           "file": "assets/diagrams/arabsstock-assistant-thumb.svg",
           "viewBox": "0 0 400 250",
           "bytes": 11526,
-          "gzip": 2879
+          "gzip": 2878
         }
       },
       "ids": {
@@ -268,19 +268,19 @@
           "file": "assets/diagrams/wakeb-multi-agent-chatbot.svg",
           "viewBox": "0 0 1120 432",
           "bytes": 20123,
-          "gzip": 4558
+          "gzip": 4562
         },
         "compact": {
           "file": "assets/diagrams/wakeb-multi-agent-chatbot-compact.svg",
-          "viewBox": "0 0 352 1088",
-          "bytes": 19981,
-          "gzip": 4499
+          "viewBox": "0 0 320 1088",
+          "bytes": 20157,
+          "gzip": 4526
         },
         "thumb": {
           "file": "assets/diagrams/wakeb-multi-agent-chatbot-thumb.svg",
           "viewBox": "0 0 400 250",
           "bytes": 13168,
-          "gzip": 3126
+          "gzip": 3129
         }
       },
       "ids": {
@@ -382,19 +382,19 @@
           "file": "assets/diagrams/llm-serving-a100.svg",
           "viewBox": "0 0 1120 352",
           "bytes": 17289,
-          "gzip": 4284
+          "gzip": 4289
         },
         "compact": {
           "file": "assets/diagrams/llm-serving-a100-compact.svg",
-          "viewBox": "0 0 352 912",
-          "bytes": 16498,
-          "gzip": 4143
+          "viewBox": "0 0 320 912",
+          "bytes": 16687,
+          "gzip": 4173
         },
         "thumb": {
           "file": "assets/diagrams/llm-serving-a100-thumb.svg",
           "viewBox": "0 0 400 250",
           "bytes": 9033,
-          "gzip": 2688
+          "gzip": 2692
         }
       },
       "ids": {
@@ -476,19 +476,19 @@
           "file": "assets/diagrams/hybrid-rag.svg",
           "viewBox": "0 0 1120 296",
           "bytes": 12596,
-          "gzip": 3254
+          "gzip": 3253
         },
         "compact": {
           "file": "assets/diagrams/hybrid-rag-compact.svg",
-          "viewBox": "0 0 352 648",
-          "bytes": 12633,
-          "gzip": 3234
+          "viewBox": "0 0 320 648",
+          "bytes": 12794,
+          "gzip": 3276
         },
         "thumb": {
           "file": "assets/diagrams/hybrid-rag-thumb.svg",
           "viewBox": "0 0 400 250",
           "bytes": 8516,
-          "gzip": 2396
+          "gzip": 2394
         }
       },
       "ids": {
@@ -572,19 +572,19 @@
           "file": "assets/diagrams/empoweromics-message-routing.svg",
           "viewBox": "0 0 1120 584",
           "bytes": 19297,
-          "gzip": 4505
+          "gzip": 4509
         },
         "compact": {
           "file": "assets/diagrams/empoweromics-message-routing-compact.svg",
-          "viewBox": "0 0 352 1064",
-          "bytes": 17029,
-          "gzip": 4362
+          "viewBox": "0 0 320 1064",
+          "bytes": 17186,
+          "gzip": 4388
         },
         "thumb": {
           "file": "assets/diagrams/empoweromics-message-routing-thumb.svg",
           "viewBox": "0 0 400 250",
           "bytes": 11814,
-          "gzip": 2878
+          "gzip": 2881
         }
       },
       "ids": {
@@ -686,19 +686,19 @@
           "file": "assets/diagrams/sta-tourism-assistants.svg",
           "viewBox": "0 0 1120 464",
           "bytes": 20187,
-          "gzip": 5135
+          "gzip": 5141
         },
         "compact": {
           "file": "assets/diagrams/sta-tourism-assistants-compact.svg",
-          "viewBox": "0 0 352 1104",
-          "bytes": 20270,
-          "gzip": 5137
+          "viewBox": "0 0 320 1104",
+          "bytes": 20411,
+          "gzip": 5161
         },
         "thumb": {
           "file": "assets/diagrams/sta-tourism-assistants-thumb.svg",
           "viewBox": "0 0 400 250",
           "bytes": 12974,
-          "gzip": 3210
+          "gzip": 3216
         }
       },
       "ids": {

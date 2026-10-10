@@ -24,6 +24,10 @@ type Entry = { name: string; symbolOnly: boolean; files: { light: File; dark: Fi
 const files = import.meta.glob<{ default: ImageMetadata }>("../../assets/logos/brand/*.{svg,png}", { eager: true });
 const src = (f: string) => files[`../../assets/logos/brand/${f}`]!.default;
 const ROW = Object.entries(brand.logos as Record<string, Entry>);
+/*
+ * Raster logos (Empoweromics, Tabaqat) at WebP quality 70: on phones the row is on the first screen, so its bytes count,
+ * and at 2x/3x their flat shapes and type stay clean (q92 was ~2.3x the bytes for no visible gain). Vectors are SVG.
+ */
 ---
 <div class="logos">
   <p class="eyebrow logos__label">{m.metrics.logosLabel}</p>
@@ -39,7 +43,7 @@ const ROW = Object.entries(brand.logos as Record<string, Entry>);
             width={f.width}
             height={f.height}
             densities={f.file.endsWith(".png") ? [1, 2, 3] : undefined}
-            quality={92}
+            quality={f.file.endsWith(".png") ? 70 : 92}
             class={cls}
             loading="lazy"
             decoding="async"

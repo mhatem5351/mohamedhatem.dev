@@ -21,9 +21,9 @@ const DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 //    lapis (sky), amethyst (sage) and slate. Token names are kept from the first palette, so `teal` is turquoise and
 //    `sage` is amethyst (no longer green: availability dots and "success" read turquoise).
 //    Authored in OKLCH (lapis-night hue 266, gold 80-88, turquoise 192-195, carnelian 35, amethyst 318) and rounded
-//    to sRGB hex. Every *text* colour below is checked against every surface it may sit on, every -fill against the
-//    page as a graphic (3:1), and the six category fills are kept apart under deuteranopia and protanopia
-//    (check-contrast.mjs).
+//    to sRGB hex. Every *text* colour below is checked against every surface it may sit on (4.5:1, and 6:1 for the
+//    colours set at 12 px or less), every -fill against the page as a graphic (3:1), and the six category fills are
+//    kept apart under deuteranopia and protanopia (check-contrast.mjs).
 // ---------------------------------------------------------------------------------------------
 export const COLOR = {
   //                      light        dark
@@ -37,7 +37,8 @@ export const COLOR = {
   "line-input":        ["#7B808D", "#6B748A"], // form-control boundaries (>= 3:1, WCAG 1.4.11)
   "ink":               ["#131D36", "#F4F0E7"], // primary text (lapis ink / warm ivory)
   "ink-2":             ["#323D55", "#CBD1DC"], // secondary text, body copy on cards
-  "muted":             ["#5B6375", "#A1A9BC"], // meta text, captions, placeholders (>= 4.5:1)
+  "muted":             ["#525A6C", "#A1A9BC"], // meta text, captions, placeholders: the 12 px colour, so >= 6:1 on every
+                                                // surface (light oklch(0.4675 0.031 266): lightness 0.50 -> 0.4675 for surface-2)
   "subtle":            ["#7A808E", "#7E8698"], // decorative / disabled only. Not for body text in light.
   "on-inverse":        ["#F7F6F3", "#080E1C"], // text on surface-inverse
 
@@ -51,8 +52,10 @@ export const COLOR = {
   "accent-tint":       ["#E7F0FE", "#2F2005"], // chip / badge background
   "accent-tint-line":  ["#BCD3FE", "#4E370C"],
 
-  // category colours: <name> = text-safe, -fill = stroke/fill (>= 3:1 on the page), -tint = chip bg, -tint-line = chip border
-  "teal":              ["#136868", "#82D9D5"], // faience turquoise: agents, orchestration, current role
+  // category colours: <name> = text-safe, -fill = stroke/fill (>= 3:1 on the page), -tint = chip bg, -tint-line = chip border.
+  // The light text values of teal, coral, sage and slate sit a hair darker than first authored (OKLCH lightness only,
+  // -0.003 to -0.014) so their 12 px chip and group labels reach 6:1 on every surface and on their own tint.
+  "teal":              ["#0C6464", "#82D9D5"], // faience turquoise: agents, orchestration, current role
   "teal-fill":         ["#038586", "#5AC0BC"],
   "teal-tint":         ["#E0F4F4", "#0B2827"],
   "teal-tint-line":    ["#B3DCDC", "#184442"],
@@ -61,7 +64,7 @@ export const COLOR = {
   "saffron-tint":      ["#FAEDDB", "#2E2006"],
   "saffron-tint-line": ["#E8CEAA", "#4D3810"],
   "on-saffron":        ["#091123", "#091123"], // numerals on saffron-fill discs (diagram callouts, flow steps)
-  "coral":             ["#A03B22", "#F3957B"], // carnelian: generation, LLM output; errors
+  "coral":             ["#9D381F", "#F3957B"], // carnelian: generation, LLM output; errors
   "coral-fill":        ["#B84D30", "#DA6C50"],
   "coral-tint":        ["#FFEAE4", "#371911"],
   "coral-tint-line":   ["#FAC4B5", "#5C2C20"],
@@ -69,19 +72,19 @@ export const COLOR = {
   "sky-fill":          ["#2855AD", "#6591E1"],
   "sky-tint":          ["#E7F0FE", "#162339"],
   "sky-tint-line":     ["#BCD4FE", "#293B5E"],
-  "sage":              ["#794589", "#E5C3EF"], // amethyst: guard, safety; bilingual; teaching
+  "sage":              ["#784488", "#E5C3EF"], // amethyst: guard, safety; bilingual; teaching
   "sage-fill":         ["#A66BB9", "#DFBCEB"],
   "sage-tint":         ["#F7EAFC", "#281F2B"],
   "sage-tint-line":    ["#E3C7EC", "#443649"],
-  "slate":             ["#515B6C", "#B3BFCE"], // slate: serving, infra, tools/MCP, storage
+  "slate":             ["#505A6B", "#B3BFCE"], // slate: serving, infra, tools/MCP, storage
   "slate-fill":        ["#515B6C", "#7C8795"],
   "slate-tint":        ["#EDEFF4", "#202327"],
   "slate-tint-line":   ["#CED3DC", "#373C42"],
 
   // status (aliases of the category colours, kept separate so they can diverge later)
-  "success":           ["#136868", "#82D9D5"],
+  "success":           ["#0C6464", "#82D9D5"],
   "warning":           ["#885716", "#E9BB61"],
-  "danger":            ["#A03B22", "#F3957B"],
+  "danger":            ["#9D381F", "#F3957B"],
   "danger-tint":       ["#FFEAE4", "#371911"],
   "info":              ["#2B51AA", "#9EBEF8"],
 
@@ -99,7 +102,7 @@ export const COLOR = {
 };
 
 // ---------------------------------------------------------------------------------------------
-// 2. Type. Fluid between 360px and 1440px viewports (Utopia-style clamp). Caps at 1440;
+// 2. Type. Fluid between 360px and 1440px viewports (Utopia-style clamp), except 2xs and xs, which are fixed. Caps at 1440;
 //    from 1920px the root font-size steps up (see base rules) so 2560 screens stay proportional.
 //    AR pages multiply text sizes by --script-scale (body) / --script-scale-display (headings).
 // ---------------------------------------------------------------------------------------------
@@ -110,10 +113,11 @@ export const FONT = {
   "arabic":  `"IBM Plex Sans Arabic", "IBM Plex Sans Arabic Fallback", "Geeza Pro", "Segoe UI", Tahoma, sans-serif`,
 };
 
-// name: [clamp, line-height, letter-spacing, which script multiplier]
+// name: [size (clamp, or fixed), line-height, letter-spacing, which script multiplier]
 export const TEXT = {
-  "2xs":     ["clamp(0.6875rem, 0.6667rem + 0.0926vw, 0.75rem)",   "1.45", "0",        "text"],
-  "xs":      ["clamp(0.75rem, 0.7292rem + 0.0926vw, 0.8125rem)",   "1.5",  "0",        "text"],
+  // 2xs and xs are fixed at their old desktop size: no content text under 12 px on phones (they were 11 -> 12 and 12 -> 13)
+  "2xs":     ["0.75rem",                                           "1.45", "0",        "text"],
+  "xs":      ["0.8125rem",                                         "1.5",  "0",        "text"],
   "sm":      ["clamp(0.875rem, 0.8542rem + 0.0926vw, 0.9375rem)",  "var(--lh-ui)",   "0", "text"],
   "base":    ["clamp(1rem, 0.9792rem + 0.0926vw, 1.0625rem)",      "var(--lh-body)", "0", "text"],
   "md":      ["clamp(1.125rem, 1.0833rem + 0.1852vw, 1.25rem)",    "var(--lh-lead)", "-0.005em", "text"],

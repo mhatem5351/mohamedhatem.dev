@@ -1,5 +1,5 @@
 // Builds the "MH" identity: monogram, tile, EN + AR lockups (text outlined, no font needed),
-// favicons (SVG with dark-mode swap, ICO 16+32, PNGs), app icons, web manifest, and the
+// favicons (SVG with dark-mode swap, ICO 16+32, PNGs), app icons, web manifests (manifest.mjs), and the
 // verification renders in design/screens/assets/brand-*.png.
 //
 //   node design/scripts/brand/brand.mjs
@@ -11,6 +11,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { mh, MASTER, FAVICON } from "./monogram-geom.mjs";
+import { writeManifests } from "./manifest.mjs";
 import { BRAND, SCREENS, sharp, tok, palette, outline, initFonts, transformPath, shoot, closeBrowser, write, kb, round as R, esc } from "./lib.mjs";
 
 // ---------------------------------------------------------------- geometry
@@ -175,26 +176,9 @@ put("icon-512.png", await png(tileSVG(512, { title: false }), 512));
 // maskable: full-bleed ink; the mark must stay inside the central 80 % circle (r = 204.8 px)
 put("icon-maskable-512.png", await png(tileSVG(512, { fullBleed: true, markScale: 0.86, title: false }), 512, { opaque: INK }));
 
-put("site.webmanifest", JSON.stringify({
-  name: "Mohamed Hatem",
-  short_name: "M. Hatem",
-  description: "Mohamed Hatem, AI Team Lead at Globant: multi-agent LLM systems, RAG and LLM serving.",
-  id: "/",
-  start_url: "/",
-  scope: "/",
-  lang: "en",
-  dir: "ltr",
-  display: "standalone",
-  // dark is the default theme for every visitor (DESIGN.md 3.4): the splash and the browser chrome are lapis night
-  background_color: tok("bg", "dark"),
-  theme_color: tok("bg", "dark"),
-  icons: [
-    { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-    { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-    { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-    { src: "/favicon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-  ],
-}, null, 2) + "\n");
+// web app manifests (EN + AR): names and labels from content/, colours from the dark bg token (manifest.mjs, which also
+// writes them to site/public/)
+for (const f of await writeManifests()) console.log(`manifest: ${f}`);
 
 // safe-zone check for the maskable icon: farthest mark point from the centre must be < 204.8 px
 {

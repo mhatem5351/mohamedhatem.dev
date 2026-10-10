@@ -65,7 +65,7 @@ const GROUP_COLOR: Record<string, string> = {
               <tbody>
                 <tr class:list={["grp", `accent-${GROUP_ACCENT[group]}`]}>
                   <th colspan={colCount} scope="rowgroup">
-                    {mx.groups[group]}
+                    <span class="matrix__grp">{mx.groups[group]}</span>
                   </th>
                 </tr>
                 {rows.map((row) => (

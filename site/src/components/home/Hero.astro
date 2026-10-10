@@ -3,6 +3,15 @@
  * Home hero (DESIGN.md 12.5, prototype .hero): H1 (person chip with name and role, then the tagline: the LCP element), lede, the working "Ask my AI"
  * input, actions, availability + live Cairo time, and the live agent graph; the metric strip and the logo row close
  * the section so they peek above the fold at 1440 × 900.
+ *
+ * Phones (< 30rem, components.css §9): the first screen does a recruiter's job. The availability line moves above the
+ * headline, the lede is the short one (profile.basics.introShort: the person chip already states the role), and the
+ * headline is set smaller, so the ask bar, both buttons and "Open to new roles" fit the first screen of a 375 × 667
+ * phone. Both ledes are static HTML, switched by CSS (no shift, no script). Below 40rem the metric strip and the logo
+ * row come before the graph (CSS order, one graph).
+ * The CV button: on touch screens it opens the CV page, which reads well on a phone (the A4 PDF is one tap further,
+ * opened in the browser's viewer); with a mouse it downloads the PDF as before. Both links are in the markup and CSS
+ * shows one (pointer media query), so nothing changes after load.
  */
 import { Picture } from "astro:assets";
 import square from "~/assets/photo/mh-square-480.jpg";
@@ -11,8 +20,8 @@ import MetricStrip from "~/components/home/MetricStrip.astro";
 import LogoRow from "~/components/home/LogoRow.astro";
 import AskBar from "~/components/home/hero/AskBar.astro";
 import HeroGraph from "~/components/home/hero/HeroGraph.astro";
-import { cairoTime, messages, type Locale } from "~/lib/i18n";
-import { CV_PDF, profile } from "~/lib/site";
+import { cairoTime, localePath, messages, type Locale } from "~/lib/i18n";
+import { CV_PDF, PATHS, profile } from "~/lib/site";
 import { introHtml, taglineHtml } from "./hero/text";
 
 interface Props {
@@ -27,6 +36,10 @@ const [before, after] = m.hero.localTime.split("{time}");
   <div class="hero__bg" aria-hidden="true"></div>
   <div class="container hero__grid">
     <div class="hero__copy">
+      {/* Phones only (< 30rem): availability above the headline; from 30rem it sits in the meta line under the buttons. */}
+      <p class="hero__status">
+        <a class="hero__status-link" href="#open-to"><i class="dot" aria-hidden="true"></i><span>{m.hero.availability}<span class="hero__status-detail"> · {m.hero.arrangementsShort}</span></span></a>
+      </p>
       {
         /*
          * The H1 carries who and what (name, role) as its first line, the person chip, and the tagline as its main
@@ -41,16 +54,21 @@ const [before, after] = m.hero.localTime.split("{time}");
         </span>
         <span class="hero__title" set:html={taglineHtml(b.tagline[locale], locale)} />
       </h1>
-      <p class="hero__lede" set:html={introHtml(b.intro[locale], locale, b.yearsOfExperience)} />
+      <p class="hero__lede hero__lede--long" set:html={introHtml(b.intro[locale], locale, b.yearsOfExperience)} />
+      <p class="hero__lede hero__lede--short" set:html={introHtml(b.introShort[locale], locale, b.yearsOfExperience)} />
       <AskBar locale={locale} />
-      <div class="hero__actions">
+      <div class="hero__actions" data-dock-after>
         <a class="btn btn--secondary" href="#work">
           {m.hero.ctaWork}
           <Icon name="arrow-down" class="arrow arrow--down" />
         </a>
-        <a class="btn btn--ghost" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf">
+        <a class="btn btn--ghost hero__cv hero__cv--pdf" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf">
           <Icon name="file-text" />
           {m.hero.ctaCv}
+        </a>
+        <a class="btn btn--ghost hero__cv hero__cv--page" href={localePath(PATHS.cv, locale)} data-cv-cta>
+          <Icon name="file-text" />
+          {m.hero.ctaCvView}
         </a>
         <p class="hero__meta">
           {/* Availability and work arrangements up front (recruiters scan for them); the link goes to the full list. */}
@@ -72,7 +90,7 @@ const [before, after] = m.hero.localTime.split("{time}");
 
 <style>
   /* The down arrow nudges down, not sideways (the shared .btn:hover .arrow rule assumes a forward arrow). */
-  @media (prefers-reduced-motion: no-preference) {
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
     .btn:hover :global(.arrow--down),
     :global([dir="rtl"]) .btn:hover :global(.arrow--down) {
       transform: translateY(2px);
@@ -82,5 +100,10 @@ const [before, after] = m.hero.localTime.split("{time}");
   :global([data-hero][data-paused]) :global(.dot--live)::after {
     animation: none;
     opacity: 0;
+  }
+  /* The live dot rests whenever the graph does (off screen, hidden tab, after its loops on touch screens: the
+     runtime sets .is-frozen on the svg), so it doesn't ping for the rest of the visit. */
+  :global(.hero__art:has(.is-frozen)) :global(.dot--live)::after {
+    animation-play-state: paused;
   }
 </style>

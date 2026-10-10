@@ -71,9 +71,16 @@ test.describe("full case studies", () => {
 });
 
 test.describe("home: selected work", () => {
-  test("brief case studies are in More work, the rest in the grid; /#craft lands on the logic-controls.com card", async ({ page }) => {
+  test("brief case studies are in More work, the rest in the grid; /#craft lands on the logic-controls.com card", async ({ page, isMobile }) => {
     await page.goto("/");
     const more = page.locator(".more-work");
+    // Phones: More work waits behind its "Show more work" button.
+    if (isMobile) {
+      const toggle = more.locator("[data-disclose-toggle]");
+      await expect(toggle).toBeVisible();
+      await toggle.tap();
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    }
     for (const cs of brief) await expect(more.getByRole("link", { name: cs.title.en })).toBeVisible();
     for (const cs of full) await expect(page.locator(".work-list").getByRole("link", { name: new RegExp(cs.title.en.slice(0, 20).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) })).toBeVisible();
     await expect(more).toContainText(en.work.readBrief);

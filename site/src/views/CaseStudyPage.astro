@@ -20,6 +20,7 @@ import FigurePanel from "~/components/case/FigurePanel.astro";
 import ComponentView from "~/components/case/ComponentView.astro";
 import SiteShots from "~/components/case/SiteShots.astro";
 import ScreenGallery from "~/components/case/ScreenGallery.astro";
+import ZoomDialog from "~/components/case/ZoomDialog.astro";
 import Toc from "~/components/case/Toc.astro";
 import Decision from "~/components/case/Decision.astro";
 import NextCase from "~/components/case/NextCase.astro";
@@ -348,6 +349,9 @@ const ogAlt = format(m.meta.ogImageAltCase, {
       </div>
     )
   }
+
+  {/* The enlarge view for this page's figures and screens (one dialog, shared). */}
+  {(diagrams.length > 0 || (cs.screens?.length ?? 0) > 0) && <ZoomDialog locale={locale} />}
 
   <section class="section section--band cs-next" aria-labelledby="next-title">
     <div class="container">

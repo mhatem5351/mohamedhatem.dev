@@ -3,7 +3,7 @@
  * Builds the site's web fonts from the design's files (design/assets/fonts), cut to what the site renders:
  *
  *   Latin faces (Space Grotesk, Inter, JetBrains Mono): Google's "latin" range plus the arrows and symbols the copy
- *     uses, and the weight axis limited to the weights the CSS asks for (DESIGN.md 4.2: display 500–700, text and
+ *     uses (JetBrains Mono without its code ligatures), and the weight axis limited to the weights the CSS asks for (DESIGN.md 4.2: display 500–700, text and
  *     mono 400–700; nothing lighter). Variable fonts carry the full axis otherwise.
  *   Plex Arabic 400 / 600 / 700: the Arabic-language block only (no Persian/Urdu letters, no Arabic-Indic digits,
  *     no presentation-form code points; hb-subset keeps every glyph the shaping rules reach, so joining, lam-alef
@@ -41,7 +41,9 @@ export const ARABIC = [[0x0600, 0x065f], [0x066a, 0x066d], [0x0670], [0x200c, 0x
 const jobs = [
   { src: "space-grotesk-latin-wght.woff2", out: "space-grotesk-latin-500-700.woff2", text: chars(LATIN), axes: { wght: { min: 500, max: 700 } } },
   { src: "inter-latin-wght.woff2", out: "inter-latin-400-700.woff2", text: chars(LATIN), axes: { wght: { min: 400, max: 700 } } },
-  { src: "jetbrains-mono-ascii-wght.woff2", out: "jetbrains-mono-400-700.woff2", text: chars(LATIN), axes: { wght: { min: 400, max: 700 } } },
+  // Mono: no layout closure (code ligatures such as "->" and their alternates aren't kept; the site's mono text is
+  // labels, dates and names, and real arrows are their own characters): 24 KB → 13 KB on every page (audit PERF-07).
+  { src: "jetbrains-mono-ascii-wght.woff2", out: "jetbrains-mono-400-700.woff2", text: chars(LATIN), axes: { wght: { min: 400, max: 700 } }, noLayoutClosure: true },
   ...[400, 600, 700].map((w) => ({
     src: `ibm-plex-sans-arabic-${w}.woff2`,
     out: `ibm-plex-sans-arabic-${w}-msa.woff2`,
@@ -67,7 +69,7 @@ let before = 0;
 let after = 0;
 for (const job of jobs) {
   const input = readFileSync(new URL(job.src, DESIGN));
-  const buf = await subsetFont(input, job.text, { targetFormat: "woff2", ...(job.axes ? { variationAxes: job.axes } : {}) });
+  const buf = await subsetFont(input, job.text, { targetFormat: "woff2", ...(job.axes ? { variationAxes: job.axes } : {}), ...(job.noLayoutClosure ? { noLayoutClosure: true } : {}) });
   writeFileSync(new URL(job.out, OUT), buf);
   before += input.length;
   after += buf.length;

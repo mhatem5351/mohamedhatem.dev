@@ -1,0 +1,31 @@
+---
+/**
+ * The case study's one "enlarge" view (DESIGN.md 12.11): a modal <dialog> that shows a product screen
+ * (ScreenGallery.astro, `a[data-zoom]`) or an architecture figure's wide drawing (FigurePanel.astro,
+ * `button[data-zoom-figure]` + its <template>) large enough to read, to pan and to pinch-zoom on a phone.
+ * Escape, the close button, a click on the backdrop and the phone's Back all close it, and focus returns to what opened
+ * it. While it is open the page's living charts rest and the chat launcher and the action dock step away.
+ * Behaviour: src/scripts/zoom-dialog.ts. Styles: case.css (section 12).
+ */
+import Icon from "~/components/ui/Icon.astro";
+import { messages, type Locale } from "~/lib/i18n";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+---
+<dialog class="zoom" data-zoom-dialog aria-labelledby="zoom-cap">
+  <div class="zoom__bar">
+    <p class="zoom__cap" id="zoom-cap" data-zoom-cap></p>
+    <button class="btn btn--icon btn--ghost zoom__close" type="button" data-zoom-close aria-label={m.work.page.closeScreen}>
+      <Icon name="close" />
+    </button>
+  </div>
+  <div class="zoom__body" tabindex="0" role="group" aria-labelledby="zoom-cap" data-zoom-body></div>
+  <p class="zoom__hint" data-zoom-hint>{m.work.page.zoomHint}</p>
+</dialog>
+<script>
+  import "~/scripts/zoom-dialog";
+</script>

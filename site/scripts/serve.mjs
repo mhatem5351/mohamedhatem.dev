@@ -36,6 +36,7 @@ const TYPES = {
   ".woff2": "font/woff2",
   ".pdf": "application/pdf",
   ".webmanifest": "application/manifest+json",
+  ".vcf": "text/vcard; charset=utf-8",
 };
 
 /** Parses dist/_redirects into Map(from → { to, status }) (static rules only: exact paths). */

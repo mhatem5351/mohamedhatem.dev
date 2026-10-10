@@ -49,7 +49,7 @@ const question = askQuestion(cs, locale);
         </p>
         <h1 class="cs-hero__title" id="cs-title">{tr(cs.title, locale)}</h1>
         <p class="cs-hero__summary">{tr(cs.summary, locale)}</p>
-        <div class="cs-hero__actions">
+        <div class="cs-hero__actions" data-dock-after>
           <button class="btn btn--secondary" type="button" data-open-chat data-question={question} aria-haspopup="dialog" data-chat-avoid>
             <Icon name="ask" />
             {m.work.page.ask}

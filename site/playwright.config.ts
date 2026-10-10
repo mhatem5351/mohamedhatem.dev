@@ -7,7 +7,8 @@
  *   npm run build && npm run test:e2e
  *   npx playwright test --project=chromium-desktop tests/e2e/contact.spec.ts
  *
- * Projects: Chromium desktop (1440×900), Pixel 7 (Chromium), iPhone 15 (WebKit).
+ * Projects: Chromium desktop (1440×900), Pixel 7 (Chromium), iPhone 15 (WebKit); iPhone SE (3rd gen, WebKit, 375×667)
+ * runs the phone acceptance checks only (tests/e2e/mobile.spec.ts).
  * Tags: @desktop-only runs once (viewport-independent sweeps), @chromium-only needs page.pdf().
  */
 import { defineConfig, devices } from "@playwright/test";
@@ -37,6 +38,7 @@ export default defineConfig({
     { name: "chromium-desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
     { name: "pixel-7", use: { ...devices["Pixel 7"] }, grepInvert: /@desktop-only|@chromium-only/ },
     { name: "iphone-15", use: { ...devices["iPhone 15"] }, grepInvert: /@desktop-only|@chromium-only/ },
+    { name: "iphone-se", use: { ...devices["iPhone SE (3rd gen)"] }, testMatch: /mobile\.spec\.ts/, grepInvert: /@desktop-only|@chromium-only/ },
   ],
   webServer: external
     ? undefined

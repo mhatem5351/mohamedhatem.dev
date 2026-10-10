@@ -35,9 +35,9 @@ const owner = "mhatem5351";
 const repoPath = (url: string) => url.replace(/^https:\/\/github\.com\//, "");
 ---
 <section class="section" id="projects" aria-labelledby="projects-title">
-  <div class="container">
+  <div class="container disclose" data-disclose>
     <SectionHeader index="05" eyebrow={m.projects.eyebrow} title={m.projects.title} titleId="projects-title" lede={m.projects.lead} />
-    <ul class="repos" role="list">
+    <ul class="repos" id="repos-list" role="list">
       {
         [...primary, ...small].map((p, i) => {
           const look = LOOK[p.id] ?? { icon: "code", accent: "teal" as const };
@@ -45,7 +45,7 @@ const repoPath = (url: string) => url.replace(/^https:\/\/github\.com\//, "");
           const tileClass = look.accent === "teal" ? "icon-tile" : `icon-tile icon-tile--${look.accent}`;
           return (
             <li
-              class:list={["card card--pad card--link repo", `accent-${look.accent}`, isSmall && "repo--small"]}
+              class:list={["card card--pad card--link repo", `accent-${look.accent}`, isSmall && "repo--small disclose__extra"]}
               data-reveal
               data-reveal-i={String(i % 3)}
             >
@@ -80,11 +80,20 @@ const repoPath = (url: string) => url.replace(/^https:\/\/github\.com\//, "");
         })
       }
     </ul>
+    {/* Phones: the three smaller repositories wait behind this (open without JS and from 40rem). */}
+    <button class="btn btn--secondary disclose__toggle repos__toggle" type="button" aria-expanded="false" aria-controls="repos-list" data-disclose-toggle>
+      {format(m.projects.moreToggle, { count: small.length })}
+      <Icon name="chevron-down" class="disclose__chev" />
+    </button>
     <div class="repos__more">
-      <div class="repos__archive">
+      <div class="repos__archive disclose" data-disclose>
         <p class="repos__archive-title">{m.projects.archiveTitle}</p>
         <p>{m.projects.archiveLead}</p>
-        <ul class="repos__archive-list" role="list">
+        <button class="btn btn--secondary btn--sm disclose__toggle" type="button" aria-expanded="false" aria-controls="archive-list" data-disclose-toggle>
+          {format(m.projects.archiveToggle, { count: coursework.length })}
+          <Icon name="chevron-down" class="disclose__chev" />
+        </button>
+        <ul class="repos__archive-list disclose__body" id="archive-list" role="list">
           {
             coursework.map((p) => (
               <li>

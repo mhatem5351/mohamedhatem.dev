@@ -135,6 +135,9 @@ const DEFS = [
   ["pause", "Pause", "ui", R(6.5, 5, 3, 14, 1) + R(14.5, 5, 3, 14, 1)],
   ["play", "Play", "ui", P("M7.5 4.8v14.4a1 1 0 0 0 1.5.86l11.6-7.2a1 1 0 0 0 0-1.72L9 3.94a1 1 0 0 0-1.5.86z")],
   ["file-text", "CV", "ui", P("M14 3H6.5A2.5 2.5 0 0 0 4 5.5v13A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V9zM14 3v4.5A1.5 1.5 0 0 0 15.5 9H20M8 13h8M8 17h5")],
+  // platform-neutral share: an open-topped box with the arrow leaving it upwards
+  ["share", "Share", "ui", P("M12 3.5V14M8 7.5l4-4 4 4") + P("M9 10H7a2.5 2.5 0 0 0-2.5 2.5v6A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.5-2.5v-6A2.5 2.5 0 0 0 17 10h-2")],
+  ["user-plus", "Add to contacts", "ui", C(9.5, 8, 4) + P("M2.5 20.5a7 7 0 0 1 14 0") + P("M18.75 7.75v5.5M16 10.5h5.5")],
 
   // ---- brand (simplified monoline; see header note) ----
   ["whatsapp", "WhatsApp", "brand",

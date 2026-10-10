@@ -55,6 +55,14 @@
 /llms-full.txt
   Content-Type: text/plain; charset=utf-8
 
+# "Add to contacts" (src/pages/mohamed-hatem.vcf.ts, generated from content/profile.ts). The type is set here rather than
+# left to the extension (.vcf maps to text/x-vcard in some MIME tables): iOS Safari opens text/vcard as a contact card,
+# Android hands it to Contacts. One rule, so the Content-Type replaces the default.
+/mohamed-hatem.vcf
+  Content-Type: text/vcard; charset=utf-8
+  Content-Disposition: inline; filename="Mohamed-Hatem.vcf"
+  Cache-Control: public, max-age=3600
+
 # Icons, the logo masks and the profile photo used in structured data: stable, unversioned file names.
 /favicon.ico
   Cache-Control: public, max-age=604800
@@ -65,6 +73,8 @@
 /icon-*
   Cache-Control: public, max-age=604800
 /site.webmanifest
+  Cache-Control: public, max-age=86400
+/ar.webmanifest
   Cache-Control: public, max-age=86400
 /logos/*
   Cache-Control: public, max-age=604800

@@ -1,8 +1,10 @@
 /**
  * Site-wide behaviour, one small module on every page (no framework):
  *   theme (dark by default for every visitor; the toggle flips dark ↔ light and the choice persists; segmented
- *   control in the menu), nav hairline after scroll, mobile menu,
- *   home scroll-spy, reveal on scroll, copy buttons, live Cairo clock, "open the assistant" triggers and the "/" key.
+ *   control in the menu), nav hairline after scroll, the header sliding away on phones, the mobile menu (modal while
+ *   open), the language switch landing on the same section, home scroll-spy, reveal on scroll, copy buttons, live
+ *   Cairo time, "open the assistant" triggers ("?ask=1" from the installed app's shortcut, and the "/" key), and the
+ *   phone action dock (dock.ts).
  * Everything degrades: without JS the page is complete (in the default dark theme, menu links are reachable in the
  * footer, the assistant offers email/WhatsApp in a <noscript> card).
  */
@@ -11,9 +13,14 @@ type Theme = "light" | "dark";
 type OpenRequest = { question?: string };
 type ChatWindow = Window & { MHChat?: { open(o?: OpenRequest): void }; MHChatQueue?: OpenRequest[] };
 
+import "./dock";
+
 const root = document.documentElement;
 const KEY = "mh-theme";
 const reduceMq = matchMedia("(prefers-reduced-motion: reduce)");
+
+// iOS Safari applies :active (the pressed states in components.css 21c) only when a touch listener exists.
+document.addEventListener("touchstart", () => {}, { passive: true });
 
 /* ------------------------------------------------------------------ theme */
 /** Dark unless the visitor chose light (the head's boot script applies the same rule before first paint). */
@@ -66,12 +73,26 @@ addEventListener("storage", (e) => {
 });
 
 /* ------------------------------------------------------------------ chat */
+/** Closes the mobile menu if it is open (set by the menu below): the chat can't open behind an inert page. */
+let closeMenu: () => void = () => {};
 function openChat(req: OpenRequest = {}): void {
+  closeMenu();
   const w = window as ChatWindow;
   if (w.MHChat?.open) w.MHChat.open(req);
   else (w.MHChatQueue ??= []).push(req);
 }
 (window as Window & { mhOpenChat?: typeof openChat }).mhOpenChat = openChat;
+
+// The installed app's "Ask my AI" shortcut (site.webmanifest: /?ask=1): open the assistant once and drop the parameter
+// (the hash stays), so a reload or a shared link doesn't open it again.
+{
+  const url = new URL(location.href);
+  if (url.searchParams.has("ask")) {
+    url.searchParams.delete("ask");
+    history.replaceState(history.state, "", url.pathname + url.search + url.hash);
+    openChat({});
+  }
+}
 
 /* ------------------------------------------------------------------ clicks */
 document.addEventListener("click", async (e) => {
@@ -130,31 +151,98 @@ document.addEventListener("keydown", (e) => {
   openChat({});
 });
 
-/* ------------------------------------------------------------------ nav: hairline + mobile menu */
+/* ------------------------------------------------------------------ nav: hairline, height, sliding away */
 const nav = document.querySelector<HTMLElement>("[data-nav]");
-if (nav) {
-  const onScroll = () => (nav.dataset.scrolled = String(scrollY > 8));
-  onScroll();
-  addEventListener("scroll", onScroll, { passive: true });
-  // The chat panel's top edge sits below the sticky header (chat-widget README: --mh-chat-top). The widget measures it
-  // too when it opens; this keeps the page-level value right from the start and whenever the header's height changes
-  // (zoom, text size, a wrapped nav). The header is sticky at the top, so its height is its bottom edge.
-  const setChatTop = () => root.style.setProperty("--mh-chat-top", `${Math.round(nav.getBoundingClientRect().height) + 12}px`);
-  setChatTop();
-  if ("ResizeObserver" in window) new ResizeObserver(setChatTop).observe(nav);
-}
-
 const menuBtn = document.querySelector<HTMLButtonElement>("[data-menu-button]");
 const sheet = document.querySelector<HTMLElement>("[data-menu-sheet]");
+const menuOpen = () => !!sheet && !sheet.hidden;
+if (nav) {
+  // The chat panel's top edge sits below the sticky header (chat-widget README: --mh-chat-top). The widget measures it
+  // too when it opens; this keeps the page-level value right from the start and whenever the header's height changes
+  // (zoom, text size, a wrapped nav). The header is sticky at the top, so its height is its bottom edge. --nav-real
+  // is the same height for the menu sheet and its scrim (the header grows with text zoom).
+  const setChatTop = () => {
+    const h = Math.round(nav.getBoundingClientRect().height);
+    root.style.setProperty("--mh-chat-top", `${h + 12}px`);
+    root.style.setProperty("--nav-real", `${h}px`);
+  };
+  setChatTop();
+  if ("ResizeObserver" in window) new ResizeObserver(setChatTop).observe(nav);
+
+  // Below 64rem the header slides up on scroll down (after 200 px, 8 px hysteresis) and comes back on any scroll up,
+  // the way phone browsers treat their own toolbars (audit NAV-03). Never while the menu is open or focus is in the
+  // header, and not for an in-page jump (a menu or TOC link scrolls down to its target: the header stays, so the target
+  // lands clear of it). <html data-nav-hidden> drives the CSS (components.css 21e, case.css: the TOC bar follows).
+  const narrow = matchMedia("(max-width: 63.99rem)");
+  let lastY = scrollY;
+  let holdUntil = 0;
+  const setHidden = (hide: boolean) => {
+    if (hide === root.hasAttribute("data-nav-hidden")) return;
+    root.toggleAttribute("data-nav-hidden", hide);
+  };
+  const onScroll = () => {
+    const y = scrollY;
+    nav.dataset.scrolled = String(y > 8);
+    // Keyboard focus in the header keeps it (a tap leaves no visible focus there, so it doesn't).
+    const kbFocus = !!nav.querySelector(":focus-visible");
+    if (!narrow.matches || menuOpen() || kbFocus || performance.now() < holdUntil || y < 200) {
+      setHidden(false);
+      lastY = y;
+      return;
+    }
+    const dy = y - lastY;
+    if (Math.abs(dy) < 8) return;
+    setHidden(dy > 0);
+    lastY = y;
+  };
+  onScroll();
+  addEventListener("scroll", onScroll, { passive: true });
+  narrow.addEventListener("change", onScroll);
+  nav.addEventListener("focusin", (e) => (e.target as Element).matches(":focus-visible") && setHidden(false));
+  /** An in-page jump keeps the header (its target lands below it); scrolling resumes the rule once it settles. */
+  const hold = () => {
+    holdUntil = performance.now() + 1200;
+    setHidden(false);
+  };
+  document.addEventListener("click", (e) => {
+    const a = (e.target as Element | null)?.closest<HTMLAnchorElement>("a[href*='#']");
+    if (a && a.pathname === location.pathname && a.hash) hold();
+  });
+  addEventListener("hashchange", hold);
+  addEventListener("scrollend", () => {
+    if (performance.now() < holdUntil) {
+      holdUntil = 0;
+      lastY = scrollY;
+    }
+  });
+}
+
+/* ------------------------------------------------------------------ mobile menu (modal while open) */
 if (menuBtn && sheet) {
+  const scrim = document.querySelector<HTMLElement>("[data-menu-scrim]");
+  /**
+   * While open, the menu is modal (audit NAV-01): the page behind can't scroll (overflow on <html>, plus the sheet's
+   * overscroll containment), a scrim covers it and closes the menu on tap, and everything behind the header is inert
+   * (main, the footer, the skip link, the dock, the chat), so screen-reader swipes stay in the header and the sheet. The
+   * sheet stays the menu button's disclosure: the button (now "Close menu") remains reachable right above it.
+   */
+  const background = () =>
+    [...document.querySelectorAll<HTMLElement>("main, body > footer, .skip-link, [data-dock], [data-mh-chat]")];
   const set = (open: boolean, focusButton: boolean = true) => {
     sheet.hidden = !open;
+    if (scrim) scrim.hidden = !open;
+    root.classList.toggle("menu-open", open);
+    for (const el of background()) el.inert = open;
     menuBtn.setAttribute("aria-expanded", String(open));
     menuBtn.setAttribute("aria-label", (open ? menuBtn.dataset.labelClose : menuBtn.dataset.labelOpen) || "");
+    document.dispatchEvent(new CustomEvent("mh:menu", { detail: { open } }));
     if (open) sheet.querySelector<HTMLElement>("a, button")?.focus({ preventScroll: true });
     else if (focusButton) menuBtn.focus({ preventScroll: true });
   };
   menuBtn.addEventListener("click", () => set(Boolean(sheet.hidden)));
+  closeMenu = () => {
+    if (!sheet.hidden) set(false, false);
+  };
   sheet.addEventListener("click", (e) => {
     if ((e.target as Element).closest("a")) set(false, false);
   });
@@ -163,10 +251,17 @@ if (menuBtn && sheet) {
   });
   document.addEventListener("click", (e) => {
     const t = e.target as Node;
-    if (!sheet.hidden && !sheet.contains(t) && !menuBtn.contains(t)) set(false, false);
+    // A tap on the scrim gives focus back to the menu button; a click elsewhere leaves focus where it went.
+    if (!sheet.hidden && !sheet.contains(t) && !menuBtn.contains(t)) set(false, !!scrim?.contains(t));
   });
   // Tabbing out of the open sheet (past its last control, or back past the menu button) closes it, leaving focus
-  // where it went, so the sheet never lingers over the element that has focus.
+  // where it went, so the sheet never lingers over the element that has focus. Past the last control the page behind
+  // is still inert at keydown, so the menu closes first and the Tab then moves on into the page.
+  sheet.addEventListener("keydown", (e) => {
+    if (e.key !== "Tab" || e.shiftKey) return;
+    const all = [...sheet.querySelectorAll<HTMLElement>("a[href], button:not([disabled])")];
+    if (document.activeElement === all[all.length - 1]) set(false, false);
+  });
   for (const el of [sheet, menuBtn])
     el.addEventListener("focusout", (e) => {
       const next = (e as FocusEvent).relatedTarget as Node | null;
@@ -175,6 +270,27 @@ if (menuBtn && sheet) {
   // Closing the sheet when the layout grows past the breakpoint keeps aria-expanded truthful.
   matchMedia("(min-width: 64rem)").addEventListener("change", (e) => e.matches && !sheet.hidden && set(false, false));
 }
+
+/* ------------------------------------------------------------------ language switch: same section, other language */
+// Both languages share their section ids (home: #work, #experience…; case studies: #problem, #approach…), so a
+// visitor switching language mid-page lands on the section they were reading instead of the top (audit NAV-02). The
+// section is read from the page's geometry (the last section whose top has passed 40 % of the viewport), not from
+// the desktop scroll-spy, which phones don't have.
+function currentSectionId(): string | null {
+  const line = innerHeight * 0.4;
+  let id: string | null = null;
+  for (const s of document.querySelectorAll<HTMLElement>("main section[id]")) {
+    const r = s.getBoundingClientRect();
+    if (r.height > 0 && r.top <= line) id = s.id;
+  }
+  return id && id !== "top" ? id : null;
+}
+document.addEventListener("click", (e) => {
+  const a = (e.target as Element | null)?.closest<HTMLAnchorElement>("a.lang-switch, .footer a[hreflang]");
+  if (!a || a.origin !== location.origin) return;
+  const id = currentSectionId();
+  if (id) a.hash = id;
+});
 
 /* ------------------------------------------------------------------ scroll regions (skills table) */
 // A wide table is a keyboard-focusable, labelled region only while it actually scrolls sideways; when it fits, the
@@ -197,11 +313,11 @@ for (const wrap of document.querySelectorAll<HTMLElement>("[data-scroll-region]"
   void document.fonts?.ready.then(update);
 }
 
-/* ------------------------------------------------------------------ toolbox disclosure (phones) */
-// Below 40rem the long tool list sits behind "Show all N tools" (home-b.css hides it while .js is set, so there is no
-// shift on load); the button only toggles it. Without JS the list is always shown.
-for (const box of document.querySelectorAll<HTMLElement>("[data-toolbox]")) {
-  const btn = box.querySelector<HTMLButtonElement>("[data-toolbox-toggle]");
+/* ------------------------------------------------------------------ phone disclosures (toolbox, more work, coursework) */
+// Below 40rem a few long lists sit behind a "Show …" button (home-b.css / components.css hide them while .js is set,
+// so there is no shift on load); the button only toggles them. Without JS the lists are always shown.
+for (const box of document.querySelectorAll<HTMLElement>("[data-toolbox], [data-disclose]")) {
+  const btn = box.querySelector<HTMLButtonElement>("[data-toolbox-toggle], [data-disclose-toggle]");
   btn?.addEventListener("click", () => {
     const open = !box.hasAttribute("data-open");
     box.toggleAttribute("data-open", open);
@@ -217,10 +333,12 @@ for (const box of document.querySelectorAll<HTMLElement>("[data-toolbox]")) {
 // Stepping aside is `data-dodge` on the widget's host (site.css): it fades out, then leaves the tab order and the
 // accessibility tree (visibility: hidden). Never while the chat is open or the bubble has keyboard focus.
 // The avatar's comic speech bubble (chat-avatar.ts) sits above the launcher: while it would cover a marked element,
-// `data-hush` on the host hides the speech bubble alone.
+// `data-hush` on the host hides the speech bubble alone. Elements marked [data-chat-hush] (the phone action dock, which
+// sits beside the launcher by design) only hush the bubble; they never move the launcher.
 const avoidEls = [...document.querySelectorAll<HTMLElement>("[data-chat-avoid]")];
+const hushEls = [...document.querySelectorAll<HTMLElement>("[data-chat-hush]")];
 const afterEl = document.querySelector<HTMLElement>("[data-chat-after]");
-if (avoidEls.length || afterEl) {
+if (avoidEls.length || hushEls.length || afterEl) {
   const phone = matchMedia("(max-width: 39.99rem)");
   const onScreen = new Set<HTMLElement>(avoidEls);
   const PAD = 12;
@@ -235,12 +353,17 @@ if (avoidEls.length || afterEl) {
     const hits = (r: DOMRect, o: DOMRect) => r.width > 0 && r.right + PAD > o.left && r.left - PAD < o.right && r.bottom + PAD > o.top && r.top - PAD < o.bottom;
     // The avatar's speech bubble (chat-avatar.ts), measured whether it is showing or not.
     const bub = host.shadowRoot?.querySelector(".bub")?.getBoundingClientRect();
-    let hide = !!afterEl && phone.matches && afterEl.getBoundingClientRect().bottom > 0;
+    // While the mobile menu is open the launcher (and its greeting) step away too: the page behind is inert.
+    let hide = (!!afterEl && phone.matches && afterEl.getBoundingClientRect().bottom > 0) || menuOpen();
     let hush = false;
     for (const el of onScreen) {
       const r = el.getBoundingClientRect();
       hide ||= hits(r, b);
       hush ||= !!bub?.width && hits(r, bub);
+    }
+    for (const el of hushEls) {
+      if (el.hidden || el.hasAttribute("data-away")) continue;
+      hush ||= !!bub?.width && hits(el.getBoundingClientRect(), bub);
     }
     host.toggleAttribute("data-dodge", hide && !chatOpen && !host.matches(":focus-within"));
     // The bubble alone steps aside while it would cover a marked element (the launcher may stay).
@@ -264,6 +387,8 @@ if (avoidEls.length || afterEl) {
   phone.addEventListener("change", schedule);
   document.addEventListener("focusout", schedule);
   document.addEventListener("mh:chat-art", schedule); // the avatar and its bubble have just been added
+  document.addEventListener("mh:dock", schedule); // the dock has just come or gone
+  document.addEventListener("mh:menu", schedule);
   document.addEventListener("mh:chat-state", (e) => {
     chatOpen = !!(e as CustomEvent<{ open?: boolean }>).detail?.open;
     // At once, not on the next frame: the panel focuses its composer right after this event, and a hidden host
@@ -321,6 +446,12 @@ if (reveal.length) {
     for (const el of reveal) io.observe(el);
   }
 }
+
+/* ------------------------------------------------------------------ PDFs on touch screens */
+// A PDF link marked data-open-on-touch opens in the browser's viewer on a phone (it has its own share and save) rather
+// than downloading an A4 file the phone can't show (audit CV-01). With a mouse it still downloads.
+if (matchMedia("(pointer: coarse)").matches)
+  for (const a of document.querySelectorAll<HTMLAnchorElement>("a[download][data-open-on-touch]")) a.removeAttribute("download");
 
 /* ------------------------------------------------------------------ live Cairo time */
 const clocks = document.querySelectorAll<HTMLTimeElement>("time[data-cairo-time]");

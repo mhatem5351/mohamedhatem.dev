@@ -96,7 +96,7 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
               <i />
               <i />
             </span>
-            <Picture src={lc} formats={["avif", "webp"]} widths={[480, 720, 960]} sizes={big ? "(min-width: 64rem) 40rem, 100vw" : "(min-width: 64rem) 24rem, 100vw"} alt="" loading="lazy" decoding="async" />
+            <Picture src={lc} formats={["avif", "webp"]} widths={[480, 720, 960]} sizes={big ? "(min-width: 64rem) 40rem, calc(100vw - 5rem)" : "(min-width: 64rem) 24rem, (min-width: 48rem) calc(50vw - 4rem), calc(100vw - 5rem)"} alt="" loading="lazy" decoding="async" />
           </div>
         ) : (
           <ArchThumb cs={cs} />

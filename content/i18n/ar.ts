@@ -66,6 +66,7 @@ export const ar: Messages = {
     profilePhoto: "صورة شخصية لمحمد حاتم",
     logo: "شعار {name}",
     skillsTable: "جدول المهارات، يمكن تمريره أفقيًا",
+    quickActions: "إجراءات سريعة",
   },
 
   nav: {
@@ -79,6 +80,12 @@ export const ar: Messages = {
     assistant: "اسأل المساعد",
     contact: "تواصل",
     cv: "السيرة الذاتية",
+  },
+
+  dock: {
+    cv: "السيرة",
+    whatsapp: "WhatsApp",
+    email: "البريد",
   },
 
   language: {
@@ -103,11 +110,13 @@ export const ar: Messages = {
     greeting: "مرحبًا، أنا",
     availability: "منفتح على فرص جديدة",
     arrangements: "عن بُعد، أو في القاهرة، أو بالانتقال إلى الخليج أو أوروبا",
+    arrangementsShort: "عن بُعد أو بالانتقال",
     localTime: "{time} في القاهرة",
     ctaAsk: "اسأل مساعدي الذكي",
     ctaContact: "تواصل معي",
     ctaWork: "تصفّح أعمالي",
     ctaCv: "تنزيل السيرة الذاتية",
+    ctaCvView: "عرض سيرتي الذاتية",
     scrollCue: "مرّر لمزيد من التفاصيل",
     ask: {
       label: "اسأل مساعدي الذكي عن أعمالي",
@@ -178,6 +187,7 @@ export const ar: Messages = {
     title: "أنظمة بنيتها وتولّيت تشغيلها",
     lead: "أعمال منذ عام 2020، من المساعدات الذكية متعددة الوكلاء إلى خطوط البيانات. وأعرض تفاصيل العملاء في حدود ما تسمح به كل جهة عملت لديها.",
     moreTitle: "أعمال أخرى",
+    moreToggle: "اعرض المزيد من الأعمال ({count})",
     labels: {
       problem: "المشكلة",
       approach: "النهج",
@@ -257,6 +267,9 @@ export const ar: Messages = {
       screensCredit: "لقطات من التطبيقين، بعد حذف البيانات الشخصية.",
       enlarge: "تكبير: {alt}",
       closeScreen: "إغلاق",
+      enlargeFigure: "تكبير الشكل {n}",
+      showFullDiagram: "اعرض المخطط كاملًا",
+      zoomHint: "اسحب للتنقل، وباعد بإصبعين للتكبير.",
     },
   },
 
@@ -329,7 +342,9 @@ export const ar: Messages = {
     viewLive: "الموقع",
     license: "رخصة {license}",
     teamProject: "مشروع جماعي",
+    moreToggle: "اعرض مستودعات أخرى ({count})",
     archiveTitle: "من حيث بدأت",
+    archiveToggle: "اعرض مشروعات الدراسة ({count})",
     archiveLead: "مشروعات دراسية من دبلوم الذكاء الاصطناعي (2021–2022)، أبقيتها متاحة توثيقًا للبداية.",
     allRepos: "كل المستودعات على GitHub",
   },
@@ -448,6 +463,11 @@ export const ar: Messages = {
     backToSite: "العودة إلى الموقع",
     focus: "أنظمة LLM متعددة الوكلاء، وRAG، وخدمة النماذج اللغوية",
     pdfShort: "PDF",
+    openPdf: "فتح PDF",
+    savePdf: "حفظ ملف PDF",
+    share: "مشاركة",
+    shareLabel: "مشاركة هذه السيرة الذاتية",
+    addContact: "أضف إلى جهات الاتصال",
     footer: "دراسات الحالة والشيفرة ومساعد ذكي يجيب عن أسئلة حول عملي: mohamedhatem.dev",
   },
 
@@ -531,6 +551,7 @@ export const ar: Messages = {
       whatsapp: { title: "WhatsApp", action: "راسلني على WhatsApp" },
       linkedin: { title: "LinkedIn", action: "تواصل معي على LinkedIn" },
       github: { title: "GitHub", action: "اطّلع على شيفرتي" },
+      vcard: { title: "أضف إلى جهات الاتصال", value: "احفظ بياناتي في هاتفك" },
     },
     copyEmail: "نسخ عنوان البريد",
     emailCopied: "تم نسخ عنوان البريد",
@@ -682,6 +703,16 @@ export const ar: Messages = {
   seo: {
     ogFocus: ["أنظمة LLM متعددة الوكلاء", "RAG", "خدمة النماذج اللغوية"],
     ogCvSummary: "7\u00a0سنوات في البيانات والذكاء الاصطناعي: أنظمة LLM متعددة الوكلاء، وRAG، وخدمة النماذج عبر vLLM على وحدات A100.",
+  },
+
+  pwa: {
+    shortName: "محمد حاتم",
+    description: "{name}، {headline}: أنظمة LLM متعددة الوكلاء، وRAG، وخدمة النماذج اللغوية.",
+    shortcuts: {
+      ask: { name: "اسأل مساعدي الذكي", shortName: "اسأل المساعد" },
+      cv: { name: "السيرة الذاتية" },
+      contact: { name: "تواصل" },
+    },
   },
 };
 

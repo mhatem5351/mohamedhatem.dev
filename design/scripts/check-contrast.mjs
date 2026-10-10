@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// WCAG 2.2 contrast check for every text / UI / graphic token pair the design system allows, plus the few
-// components that set their own colours, plus colour-vision separation of the category colours.
+// WCAG 2.2 contrast check for every text / UI / graphic token pair the design system allows, plus a stricter 6:1 for
+// every colour set at 12 px or less (the small-text rule), plus the few components that set their own colours, plus
+// colour-vision separation of the category colours.
 // Parses design/tokens.css (the shipped artefact, not the generator) so it also catches hand edits, and reads the
 // component colours from the site's source files (so it checks what ships).
 //   node design/scripts/check-contrast.mjs            -> table + exit 1 on any failure
@@ -67,7 +68,7 @@ function ratio(fgTok, bgTok, theme, base = "bg") {
 // min 4.5 = normal text (AA 1.4.3); 3 = large text (>= 24px, or 18.66px bold) and UI/graphics (1.4.11)
 const SURFACES = ["bg", "bg-subtle", "surface", "surface-2"];
 const PAIRS = [];
-const add = (fg, bgs, min, use) => (Array.isArray(bgs) ? bgs : [bgs]).forEach(bg => PAIRS.push({ fg, bg, min, use }));
+const add = (fg, bgs, min, use, extra = {}) => (Array.isArray(bgs) ? bgs : [bgs]).forEach(bg => PAIRS.push({ fg, bg, min, use, ...extra }));
 
 add("ink", SURFACES, 4.5, "body text, headings");
 add("ink-2", SURFACES, 4.5, "secondary text");
@@ -99,6 +100,56 @@ for (const c of ["accent-fill", "teal-fill", "saffron-fill", "coral-fill", "sky-
 // decorative: reported, never fails (idle graph edges and hairlines; meaning is carried elsewhere)
 for (const c of ["graph-edge", "line", "line-strong"])
   add(c, ["bg", "surface"], 0, "decorative (informational only)");
+
+// ---- small text: 6:1 for every colour set at 12 px or less ---------------------------------------
+// --text-2xs is 12 px at every width (the type floor) and is the smallest step; a few fixed labels go down to 10 px.
+// Text that small, read on a phone and often outdoors, must reach 6:1 (a step above AA's 4.5:1) against every surface
+// it sits on, in both themes. The list holds every colour token the site sets at that size, with where, so a future
+// palette must pass too. A colour newly set at <= 12 px joins the list (grep site/src for `--text-2xs` and for fixed
+// font sizes under 12px).
+const SMALL_MIN = 6;
+const SMALL = { small: true };
+const SMALL_TEXT = {
+  // meta and captions (the 12 px default): hero caption and meta, .kbd, chart .axis, trace dates (.span__dates),
+  // .repo__owner, .facts dt, .matrix thead th, .edu__when, .edu__expected, .footer h2, .turnstile-slot,
+  // .browser__url, .assist-flow span, chat preview head / hints (components.css, home-b.css); case pages: .cs-meta dt,
+  // .cs-brief__tag, TOC numbers and labels, .fig-panel__bar, .cv-node__s, .cv-edges title and notes (case.css);
+  // privacy .doc__meta and TOC numbers (privacy.css); fixed sizes: .tool__count (10 px, home-b.css), the hero graph
+  // tooltip id (11.5 px, hero-graph.css) and the diagram labels (10-11 px, diagram.css)
+  "muted": "meta, captions, labels",
+  // the neutral .chip label (on surface-2), .cs-hero__brief, .fig-panel__title, .cap__stack b, archive links
+  // (.repos__archive-list); architecture thumbnail node labels (11 px, ArchThumb.astro); diagram captions (12 px)
+  "ink-2": "neutral chips, briefs, figure titles",
+  // architecture thumbnail hub labels (12 px, ArchThumb.astro)
+  "ink": "thumbnail hub labels",
+  // list counters (.owned, .steps), the trace's "now" marker, the current TOC number, .fig-panel__id, the default
+  // skills group heading (.matrix .grp th, .matrix-list__title), archive link hover
+  "accent": "counters, figure ids, current TOC number",
+  // category labels: .chip--<c> (case-study stack chips, the repo licence chip), component-view group labels
+  // (.cv-group__label in .accent-<c>, on the figure canvas), skills group headings (.matrix .grp th,
+  // .matrix-list__title in .accent-<c>); teal also .decision__label and .edu__badge (on teal-tint)
+  "teal": "category labels and chips",
+  "coral": "category labels and chips",
+  "sky": "category labels and chips",
+  "sage": "category labels and chips",
+  "slate": "category labels and chips",
+};
+for (const [c, use] of Object.entries(SMALL_TEXT)) add(c, SURFACES, SMALL_MIN, `small text (<= 12 px): ${use}`, SMALL);
+for (const c of ["teal", "coral", "sky", "sage", "slate"])
+  add(c, `${c}-tint`, SMALL_MIN, `small text: .chip--${c} label on its tint`, SMALL);
+add("muted", "teal-tint", SMALL_MIN, "small text: .decision__src on the decision card's teal tint", SMALL);
+add("on-inverse", "surface-inverse", SMALL_MIN, "small text: hero graph pause / play tooltip (12 px)", SMALL);
+// Known small-text uses that do not reach 6:1 yet and are moving off <= 12 px (to --text-xs, or to ink-2): printed as
+// "todo", never a failure. Delete an entry once its CSS has moved; never add one to get a palette through.
+//   saffron (light 5.32-5.68): .chip--saffron (case-study stack chips, retrieval / data tech), .cv-group__label in
+//     .accent-saffron groups (component view, on the figure canvas), the skills "Retrieval" group heading
+//     (.matrix .grp th, .matrix-list__title), .assist-flow b::before step numerals (11 px, on saffron-tint)
+//   on-saffron on saffron-fill (light 5.28): callout numerals .co (11 px, case.css) and .dg-co text (11 px, diagram.css)
+const PENDING = { small: true, pending: true };
+// Gold text is never set at 12 px or below on the site any more: the case-study hero's stack chips, the component
+// view's group labels, the assistant flow's step numerals and the callout discs (.co) are 13 px (--text-xs), where the
+// 4.5:1 rule applies and gold passes it. So `saffron` has no small-text rule; add it back if gold text goes under 13 px.
+add("on-saffron", "saffron-fill", SMALL_MIN, "small text (todo): the diagrams' own callout numerals (.dg-co text, 12-13 units)", PENDING);
 
 // ---- run ------------------------------------------------------------------------------------
 const rows = [];
@@ -209,19 +260,24 @@ for (const theme of ["light", "dark"]) for (const kind of ["fill", "text"]) for 
   const min = kind === "fill" ? CVD_MIN[type] : 0;
   vision.push({ theme, kind, type, worst: `${worst.a}/${worst.b}`, de: +worst.de.toFixed(1), min, pass: worst.de >= min });
 }
-const fails = [...rows.filter(r => !r.pass), ...vision.filter(v => !v.pass)];
+const fails = [...rows.filter(r => !r.pass && !r.pending), ...vision.filter(v => !v.pass)];
+const todo = rows.filter(r => !r.pass && r.pending);
 
 if (asJson) {
-  console.log(JSON.stringify({ file, drift, total: rows.length, failures: fails.length, rows, vision }, null, 2));
+  console.log(JSON.stringify({ file, drift, total: rows.length, failures: fails.length, pending: todo.length, rows, vision }, null, 2));
 } else {
   const pad = (s, n) => String(s).padEnd(n);
+  const status = r => (r.pass ? (r.min ? "ok  " : "info") : r.pending ? "todo" : "FAIL");
+  const line = r => `  ${status(r)} ${pad(r.fg, 19)} on ${pad(r.bg, 18)} ${pad(r.ratio.toFixed(2), 6)} (min ${r.min || "-"})  ${r.use}`;
   console.log(`contrast check: ${path.relative(process.cwd(), file)}\n`);
   for (const theme of ["light", "dark"]) {
     console.log(`${theme.toUpperCase()}`);
-    for (const r of rows.filter(r => r.theme === theme && !r.component))
-      console.log(`  ${r.pass ? (r.min ? "ok  " : "info") : "FAIL"} ${pad(r.fg, 19)} on ${pad(r.bg, 18)} ${pad(r.ratio.toFixed(2), 6)} (min ${r.min || "-"})  ${r.use}`);
+    for (const r of rows.filter(r => r.theme === theme && !r.component && !r.small)) console.log(line(r));
+    console.log(`  -- small text (<= 12 px): ${SMALL_MIN}:1 on every surface it sits on --`);
+    for (const r of rows.filter(r => r.theme === theme && r.small)) console.log(line(r));
+    console.log(`  -- components with their own colours --`);
     for (const r of rows.filter(r => r.theme === theme && r.component))
-      console.log(`  ${r.pass ? (r.min ? "ok  " : "info") : "FAIL"} ${pad(`${r.fgValue} on ${r.bgValue}`, 40)} ${pad(r.ratio.toFixed(2), 6)} (min ${r.min || "-"})  ${r.use}`);
+      console.log(`  ${status(r)} ${pad(`${r.fgValue} on ${r.bgValue}`, 40)} ${pad(r.ratio.toFixed(2), 6)} (min ${r.min || "-"})  ${r.use}`);
     console.log("");
   }
   console.log("COLOUR VISION (closest pair of the six category colours, CIEDE2000)");
@@ -229,7 +285,8 @@ if (asJson) {
     console.log(`  ${v.pass ? (v.min ? "ok  " : "info") : "FAIL"} ${pad(v.theme, 5)} ${pad(v.kind, 4)} ${pad(v.type, 6)} ${pad(v.de.toFixed(1), 5)} ${pad(v.worst, 14)} (min ${v.min || "-"})`);
   console.log("");
   if (drift.length) console.log("DRIFT: no dark (default theme) value for: " + drift.join(", "));
-  console.log(`${rows.length} pairs + ${vision.length} colour-vision checks, ${fails.length} failures${drift.length ? ", theme drift detected" : ""}.`);
+  const small = rows.filter(r => r.small && !r.pending).length;
+  console.log(`${rows.length} pairs (${small} of them the ${SMALL_MIN}:1 small-text rule) + ${vision.length} colour-vision checks, ${fails.length} failures${todo.length ? `, ${todo.length} small-text pairs to do (moving off <= 12 px; see PENDING)` : ""}${drift.length ? ", theme drift detected" : ""}.`);
 }
 // exitCode, not exit(): a piped --json result is larger than one pipe buffer and must be flushed first
 process.exitCode = fails.length || drift.length ? 1 : 0;

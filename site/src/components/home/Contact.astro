@@ -2,7 +2,9 @@
 /**
  * 09 Contact (DESIGN.md 12.17): direct channels first (WhatsApp and email are the quickest; the Gmail address sits
  * in the Email card as "or …", then LinkedIn and GitHub), the form second. The email row has a copy button
- * (src/scripts/site.ts copies and announces through the page's live region).
+ * (src/scripts/site.ts copies and announces through the page's live region). Every card is one link (the Email card's
+ * main area is its link, with the copy button beside it and the Gmail line under it), and the last one adds the contact card
+ * (/mohamed-hatem.vcf: the phone's "new contact" sheet).
  */
 import "~/styles/home-b.css";
 import Icon from "~/components/ui/Icon.astro";
@@ -11,6 +13,7 @@ import SectionHeader from "~/components/ui/SectionHeader.astro";
 import ContactForm from "~/components/home/contact/ContactForm.astro";
 import { cairoTime, messages, type Locale } from "~/lib/i18n";
 import { contact, link, mailtoHref, whatsappHref } from "~/lib/site";
+import { VCARD_PATH } from "~/lib/vcard";
 
 interface Props {
   locale: Locale;
@@ -23,6 +26,8 @@ const whatsapp = contact("whatsapp");
 const linkedin = link("linkedin");
 const github = link("github");
 const [timeBefore, timeAfter] = m.contact.localTime.split("{time}") as [string, string];
+/** On a narrow phone an address wraps after its "@", never inside a word. */
+const [emailUser, emailDomain] = email.display.split("@") as [string, string];
 ---
 <section class="section" id="contact" aria-labelledby="contact-title">
   <div class="container contact">
@@ -50,14 +55,15 @@ const [timeBefore, timeAfter] = m.contact.localTime.split("{time}") as [string, 
           </a>
         </li>
         <li>
-          <div class="channel">
-            <span class="icon-tile icon-tile--saffron"><Icon name="mail" /></span>
-            <span>
-              <span class="channel__label">{m.contact.channels.email.title}</span><br />
-              <span class="channel__value"><a href={mailtoHref(locale)}><Ltr>{email.display}</Ltr></a></span>
-              {/* The Gmail address as a second way to write, inside the Email card (not a half-styled row of its own). */}
-              <span class="channel__alt">{m.contact.channels.email.or} <a href={mailtoHref(locale, "gmail")}><Ltr>{gmail.display}</Ltr></a></span>
-            </span>
+          <div class="channel channel--split">
+            {/* The card's main area is one link (like the other cards); the copy button and the Gmail line sit beside it. */}
+            <a class="channel__main" href={mailtoHref(locale)}>
+              <span class="icon-tile icon-tile--saffron"><Icon name="mail" /></span>
+              <span>
+                <span class="channel__label">{m.contact.channels.email.title}</span><br />
+                <span class="channel__value"><Ltr>{emailUser}@<wbr />{emailDomain}</Ltr></span>
+              </span>
+            </a>
             <button
               class="btn btn--ghost btn--sm btn--icon channel__copy"
               data-chat-avoid
@@ -71,6 +77,8 @@ const [timeBefore, timeAfter] = m.contact.localTime.split("{time}") as [string, 
               <Icon name="copy" class="i-copy" />
               <Icon name="check" class="i-check" />
             </button>
+            {/* The Gmail address as a second way to write, inside the Email card (not a half-styled row of its own). */}
+            <span class="channel__alt">{m.contact.channels.email.or} <a href={mailtoHref(locale, "gmail")}><Ltr>{gmail.display}</Ltr></a></span>
           </div>
         </li>
         <li>
@@ -91,6 +99,16 @@ const [timeBefore, timeAfter] = m.contact.localTime.split("{time}") as [string, 
               <span class="channel__value"><Ltr>{github.display.replace(/^github\.com\//, "")}</Ltr></span>
             </span>
             <Icon name="arrow-up-right" size="sm" class="channel__arrow" />
+          </a>
+        </li>
+        <li>
+          <a class="channel" href={VCARD_PATH}>
+            <span class="icon-tile icon-tile--coral"><Icon name="user-plus" /></span>
+            <span>
+              <span class="channel__label">{m.contact.channels.vcard.value}</span><br />
+              <span class="channel__value">{m.contact.channels.vcard.title}</span>
+            </span>
+            <Icon name="download" size="sm" class="channel__arrow" />
           </a>
         </li>
       </ul>

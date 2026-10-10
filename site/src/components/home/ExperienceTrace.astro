@@ -15,7 +15,7 @@ import MotionToggle from "~/components/ui/MotionToggle.astro";
 import DateRun from "~/components/work/DateRun.astro";
 import Emph from "~/components/ui/Emph.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
-import { formatPeriod, localePath, messages, type Locale } from "~/lib/i18n";
+import { formatDuration, formatPeriod, localePath, messages, monthsInclusive, type Locale } from "~/lib/i18n";
 import { PATHS, caseStudyBySlug, profile } from "~/lib/site";
 import { axis, axisClasses, digitClasses, nowIndex, traceRows, yearIndex, type TraceRow } from "~/lib/trace";
 import "~/styles/home-a.css";
@@ -41,7 +41,9 @@ const techItems = (r: Role) =>
     const text = typeof x === "string" ? x : x[locale];
     return { text, latin: isLatin(text) };
   });
-function view(row: TraceRow): { title: string; org: string; dates: string; logo: { file: string | null; monogram: string }; srType: string | null; honors: typeof profile.honors[number][]; attrs: Attr[]; cases: NonNullable<ReturnType<typeof caseStudyBySlug>>[]; bullets: { text: string; strong?: string }[] } {
+/** "1 yr 8 mos": shown on phones beside the dates, where the timeline lane has no axis (audit READ-04). */
+const durationOf = (period: Role["period"]): string | undefined => (/-/.test(period.start) ? formatDuration(monthsInclusive(period, now), locale) : undefined);
+function view(row: TraceRow): { title: string; org: string; dates: string; duration?: string | undefined; logo: { file: string | null; monogram: string }; srType: string | null; honors: typeof profile.honors[number][]; attrs: Attr[]; cases: NonNullable<ReturnType<typeof caseStudyBySlug>>[]; bullets: { text: string; strong?: string }[] } {
   if (row.role) {
     const r = row.role;
     const honors = profile.honors.filter((h) => r.honors.includes(h.id));
@@ -49,6 +51,7 @@ function view(row: TraceRow): { title: string; org: string; dates: string; logo:
       title: r.title[locale],
       org: r.company[locale],
       dates: formatPeriod(r.period, locale),
+      duration: durationOf(r.period),
       logo: { file: r.logo.file ?? r.id, monogram: r.logo.monogram },
       srType: r.employmentType === "full-time" ? null : m.experience.employmentType[r.employmentType],
       honors,
@@ -127,6 +130,12 @@ function view(row: TraceRow): { title: string; org: string; dates: string; logo:
                         <span class="span__when">
                           {"\u00a0· "}
                           <DateRun text={v.dates} class="span__unit" />
+                          {v.duration && (
+                            <span class="span__dur">
+                              {"\u00a0· "}
+                              <span class="span__unit">{v.duration}</span>
+                            </span>
+                          )}
                         </span>
                         {v.srType && <span class="sr-only">, {v.srType}</span>}
                       </span>

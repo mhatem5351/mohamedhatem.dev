@@ -1,6 +1,8 @@
 /* Hero graph. Every colour comes from the design tokens (hex fallbacks = light theme).
    Default (no JS, reduced motion, user paused) is the still "snapshot" frame;
-   .is-run switches to the animated base, .is-live means motion is allowed and the runtime is active. */
+   .is-run switches to the animated base, .is-live means motion is allowed and the runtime is active.
+   While it runs, only opacity and transform change: the runtime animates pre-drawn lit twins, hot edges, ripples
+   and the pulse with Web Animations, so the compositor plays the flow and the main thread only wakes once per hop. */
 
 .hg {
   position: relative;
@@ -15,10 +17,11 @@
 .hg, .hg-svg {
   --hg-edge: var(--color-graph-edge, #CECAC2);
   --hg-node: var(--color-graph-node, #FEFDFC);
-  --hg-mut: var(--color-muted, #5B6375);
+  --hg-mut: var(--color-muted, #525A6C);
   --hg-ease: var(--ease-standard, cubic-bezier(.2, 0, 0, 1));
   --hg-k: 1;
   --hg-ls: 1;
+  --hg-hit: 1;
 }
 .hg-svg {
   display: block; width: 100%; height: auto; overflow: visible; direction: ltr; -webkit-user-select: none; user-select: none;
@@ -27,12 +30,12 @@
 .hg-svg:focus { outline: none }
 .hg-sr { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0 }
 
-.hg-c-teal { --hg-f: var(--color-teal-fill, #038586); --hg-t: var(--color-teal, #136868); --hg-tint: var(--color-teal-tint, #E0F4F4); --hg-tl: var(--color-teal-tint-line, #B3DCDC) }
+.hg-c-teal { --hg-f: var(--color-teal-fill, #038586); --hg-t: var(--color-teal, #0C6464); --hg-tint: var(--color-teal-tint, #E0F4F4); --hg-tl: var(--color-teal-tint-line, #B3DCDC) }
 .hg-c-saffron { --hg-f: var(--color-saffron-fill, #B47D19); --hg-t: var(--color-saffron, #885716); --hg-tint: var(--color-saffron-tint, #FAEDDB); --hg-tl: var(--color-saffron-tint-line, #E8CEAA) }
-.hg-c-coral { --hg-f: var(--color-coral-fill, #B84D30); --hg-t: var(--color-coral, #A03B22); --hg-tint: var(--color-coral-tint, #FFEAE4); --hg-tl: var(--color-coral-tint-line, #FAC4B5) }
+.hg-c-coral { --hg-f: var(--color-coral-fill, #B84D30); --hg-t: var(--color-coral, #9D381F); --hg-tint: var(--color-coral-tint, #FFEAE4); --hg-tl: var(--color-coral-tint-line, #FAC4B5) }
 .hg-c-sky { --hg-f: var(--color-sky-fill, #2855AD); --hg-t: var(--color-sky, #2B51AA); --hg-tint: var(--color-sky-tint, #E7F0FE); --hg-tl: var(--color-sky-tint-line, #BCD4FE) }
-.hg-c-sage { --hg-f: var(--color-sage-fill, #A66BB9); --hg-t: var(--color-sage, #794589); --hg-tint: var(--color-sage-tint, #F7EAFC); --hg-tl: var(--color-sage-tint-line, #E3C7EC) }
-.hg-c-slate { --hg-f: var(--color-slate-fill, #515B6C); --hg-t: var(--color-slate, #515B6C); --hg-tint: var(--color-slate-tint, #EDEFF4); --hg-tl: var(--color-slate-tint-line, #CED3DC) }
+.hg-c-sage { --hg-f: var(--color-sage-fill, #A66BB9); --hg-t: var(--color-sage, #784488); --hg-tint: var(--color-sage-tint, #F7EAFC); --hg-tl: var(--color-sage-tint-line, #E3C7EC) }
+.hg-c-slate { --hg-f: var(--color-slate-fill, #515B6C); --hg-t: var(--color-slate, #505A6B); --hg-tint: var(--color-slate-tint, #EDEFF4); --hg-tl: var(--color-slate-tint-line, #CED3DC) }
 
 /* ---------------------------------------------------------------- edges */
 .hg-e {
@@ -40,24 +43,29 @@
   transition: opacity .16s var(--hg-ease), stroke .24s var(--hg-ease);
 }
 .hg-sp { stroke-width: calc(1.5px * var(--hg-k)); stroke-dasharray: 1 5 }
-.hg-sp.is-cmd { stroke: var(--color-teal-fill, #038586) }
+/* a spoke in the accent while the orchestrator commands a hop along the rim (a twin path; the runtime fades it) */
+.hg-cmd {
+  fill: none; stroke: var(--color-teal-fill, #038586); stroke-width: calc(1.5px * var(--hg-k)); stroke-dasharray: 1 5;
+  stroke-linecap: round; opacity: 0; transition: opacity .24s var(--hg-ease);
+}
 /* the request route in its category colours: the still frame and the running flow alike (the pulse lights the hop
-   it travels, then the edge settles back) */
+   it travels: the runtime fades in a brighter, wider twin, then the edge settles back) */
 .hg-rt {
   fill: none; stroke: var(--hg-f); stroke-width: calc(1.8px * var(--hg-k)); stroke-linecap: round; opacity: .65;
-  transition: opacity .64s var(--hg-ease), stroke-width .64s var(--hg-ease);
+  transition: opacity .64s var(--hg-ease);
 }
 .hg-rt.hg-sp { stroke-width: calc(2.1px * var(--hg-k)) }
-.hg-svg.is-run .hg-rt.is-hot { opacity: 1; stroke-width: calc(2.2px * var(--hg-k)); transition-duration: .2s }
+.hg-rh, .hg-rh.hg-sp {
+  fill: none; stroke: var(--hg-f); stroke-width: calc(2.2px * var(--hg-k)); stroke-linecap: round; opacity: 0;
+  transition: opacity .64s var(--hg-ease);
+}
 
 /* ---------------------------------------------------------------- nodes */
 .hg-node { cursor: pointer; outline: none; transition: opacity .16s var(--hg-ease) }
 .hg-port { transition: opacity .16s var(--hg-ease) }
-.hg-hit { fill: transparent }
-.hg-disc {
-  fill: var(--hg-node); stroke: var(--hg-f); stroke-width: calc(2px * var(--hg-k));
-  transition: fill .38s var(--hg-ease), stroke-width .38s var(--hg-ease);
-}
+.hg-hit { fill: transparent; transform: scale(var(--hg-hit)) } /* scaled about the node's centre */
+.hg-disc { fill: var(--hg-node); stroke: var(--hg-f); stroke-width: calc(2px * var(--hg-k)) }
+.hg-disc.hg-on { fill: var(--hg-tint); stroke-width: calc(2.5px * var(--hg-k)) }
 .hg-ring2 { stroke: var(--hg-f); stroke-width: 1; opacity: .4 }
 .hg-aura { fill: var(--hg-f); opacity: 0; transition: opacity .38s var(--hg-ease) }
 .hg-ripple { stroke: var(--hg-f); stroke-width: 1.5; opacity: 0 }
@@ -66,38 +74,44 @@
 .hg-gd { fill: var(--hg-t); stroke: none }
 .hg-focus { stroke: var(--color-focus, #2B51AA); stroke-width: 2px; vector-effect: non-scaling-stroke; opacity: 0 }
 .hg-node:focus-visible .hg-focus { opacity: 1 }
-.hg-lbl {
-  font: 500 13px/1 var(--font-mono, ui-monospace, monospace); letter-spacing: 0; fill: var(--hg-mut);
-  transform: scale(var(--hg-ls)); transition: fill .38s var(--hg-ease);
-}
+/* a label's colour is inherited (from its group, or from the <use> that draws its lit copy) */
+.hg-lp { fill: var(--hg-mut) }
+.hg-lbl-on { fill: var(--color-ink-2, #323D55) }
+.hg-lbl { font: 500 13px/1 var(--font-mono, ui-monospace, monospace); letter-spacing: 0; transform: scale(var(--hg-ls)) }
+.hg-lp-n { display: none } /* the phone placement of a label (see the sizes below) */
 .hg-chip { transform: scale(var(--hg-ls)) }
 .hg-chip rect { fill: var(--hg-tint); stroke: var(--hg-tl) }
 .hg-chip text { font: 600 13px/1 var(--font-mono, ui-monospace, monospace); letter-spacing: 0; fill: var(--hg-t) }
-.hg-term { fill: var(--hg-node); stroke: var(--color-line-input, #7B808D); stroke-width: 1.5; transition: fill .38s var(--hg-ease), stroke .38s var(--hg-ease) }
-.hg-port .hg-gd { fill: var(--hg-mut); transition: fill .38s var(--hg-ease) }
+.hg-term { fill: var(--hg-node); stroke: var(--color-line-input, #7B808D); stroke-width: 1.5 }
+.hg-term.hg-on { fill: var(--hg-tint); stroke: var(--hg-f) }
+.hg-port .hg-gd { fill: var(--hg-mut) }
+.hg-port .hg-gd.hg-on { fill: var(--hg-t) }
 
-/* lit: every node in the still frame; only the active ones while the flow runs */
-.hg-svg:not(.is-run) .hg-disc, .is-lit > .hg-disc { fill: var(--hg-tint); stroke-width: calc(2.5px * var(--hg-k)) }
-.hg-svg:not(.is-run) .hg-aura, .is-lit > .hg-aura { opacity: .1 }
-.hg-svg:not(.is-run) .hg-lbl, .is-lit .hg-lbl { fill: var(--color-ink-2, #323D55) }
-.hg-svg:not(.is-run) .hg-term, .is-lit > .hg-term { fill: var(--hg-tint); stroke: var(--hg-f) }
-.hg-svg:not(.is-run) .hg-port .hg-gd, .hg-port.is-lit .hg-gd { fill: var(--hg-t) }
+/* lit: every node in the still frame; only the active ones while the flow runs. Each lit part has a twin drawn over
+   the plain one: the lit twin (.hg-on) fades in, an opacity change the compositor animates (a fill transition would
+   repaint the graph on every frame). While the flow runs the runtime fades the twins; in the still frame every twin
+   shows and the plain parts under them step out once the twins have faded in, so the frame is exactly the lit one. */
+.hg-on { opacity: 0; transition: opacity .38s var(--hg-ease) }
+.hg-svg:not(.is-run) .hg-on { opacity: 1 }
+.hg-svg:not(.is-run) .hg-off { opacity: 0; transition: opacity 0s .38s }
+.hg-svg:not(.is-run) .hg-aura { opacity: .1 }
 
 /* hover / focus: highlight a node's edges and neighbours, dim the rest */
 .hg-svg.is-dim :is(.hg-node, .hg-port, .hg-e):not(.is-near) { opacity: .35 }
 .hg-svg.is-dim .hg-e.is-near { stroke: var(--hg-hl, var(--color-line-input, #7B808D)) }
 .hg-svg.is-dim .hg-rt:not(.is-near) { opacity: .12 }
+.hg-svg.is-dim .hg-rh:not(.is-near), .hg-svg.is-dim .hg-cmd { visibility: hidden }
 
 /* ---------------------------------------------------------------- pulse (comet) */
+/* the runtime moves the head and the tail's chords with transform keyframes and fades the whole pulse in and out */
 .hg-comet { pointer-events: none; opacity: 0 }
 .hg-svg:not(.is-run) .hg-comet { display: none }
-.hg-tail, .hg-tail-h { fill: none; stroke-linecap: round }
-.hg-tail { stroke-width: calc(3px * var(--hg-k)) }
-.hg-tail-h { stroke-width: calc(9px * var(--hg-k)); opacity: .2 }
+.hg-tl, .hg-th { fill: none; stroke-linecap: butt }
+.hg-tl { stroke-width: calc(3px * var(--hg-k)) }
+.hg-th { stroke-width: calc(9px * var(--hg-k)); opacity: .2 }
 .hg-head { fill: var(--hg-t); stroke: var(--hg-f); stroke-width: 1.5 }
 .hg-head-h { fill: var(--hg-f); opacity: .24 }
-.hg-cs0 { stop-color: var(--hg-f); stop-opacity: 0 }
-.hg-cs1 { stop-color: var(--hg-f) }
+.hg-cs { stop-color: var(--hg-f) }
 
 .hg-svg.is-live .hg-spin { animation: hg-spin 48s linear infinite }
 .hg-svg.is-frozen .hg-spin { animation-play-state: paused }
@@ -108,12 +122,20 @@
   position: absolute; z-index: 3; top: 0; inset-inline-end: 0;
   display: grid; place-items: center; box-sizing: border-box; width: 32px; height: 32px; padding: 0;
   border: 1px solid var(--color-line, #E2DFDA); border-radius: 8px;
-  background: var(--color-surface, #FEFDFC); color: var(--color-muted, #5B6375);
+  background: var(--color-surface, #FEFDFC); color: var(--color-muted, #525A6C);
   box-shadow: var(--shadow-xs, 0 1px 1px rgb(19 29 54 / .04)); cursor: pointer;
   transition: color .16s var(--hg-ease), border-color .16s var(--hg-ease);
 }
 .hg-btn[hidden] { display: none }
-.hg-btn:hover { color: var(--color-ink, #131D36); border-color: var(--color-line-strong, #CFCCC5) }
+/* a 46 px target around the 32 px button (insets count from the padding box, inside the 1 px border); the graph's
+   corner it sits in holds no node at any width */
+.hg-btn::before { content: ""; position: absolute; inset: -.5rem }
+@media (hover: hover) {
+  .hg-btn:hover { color: var(--color-ink, #131D36); border-color: var(--color-line-strong, #CFCCC5) }
+}
+@media (hover: none) {
+  .hg-btn:active { background-color: color-mix(in srgb, var(--color-ink, #131D36) 9%, var(--color-surface, #FEFDFC)) }
+}
 .hg-btn:focus-visible { outline: 2px solid var(--color-focus, #2B51AA); outline-offset: 2px }
 .hg-btn svg { width: 14px; height: 14px; overflow: visible }
 .hg-i-pause { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round }
@@ -126,7 +148,8 @@
   font: 500 12px/1.35 var(--font-sans, system-ui, sans-serif); opacity: 0; transition: opacity .16s var(--hg-ease);
 }
 .hg-btn[aria-pressed="true"]::after { content: attr(data-play) }
-.hg-btn:hover::after, .hg-btn:focus-visible::after { opacity: 1 }
+.hg-btn:focus-visible::after { opacity: 1 }
+@media (hover: hover) { .hg-btn:hover::after { opacity: 1 } }
 
 /* ---------------------------------------------------------------- toggletip */
 .hg-tip {
@@ -145,7 +168,7 @@
 .hg-tip p { margin: 0 }
 .hg-tip-h { display: flex; align-items: baseline; gap: 8px; margin-block-end: 4px !important; font: 600 12.5px/1.4 var(--font-mono, ui-monospace, monospace); color: var(--hg-t) }
 .hg-tip-h::before { content: ""; flex: none; align-self: center; width: 8px; height: 8px; border-radius: 50%; background: var(--hg-f) }
-.hg-tip-id { font: 500 11.5px/1 var(--font-mono, ui-monospace, monospace); color: var(--hg-mut); direction: ltr; unicode-bidi: isolate }
+.hg-tip-id { font: 500 12px/1 var(--font-mono, ui-monospace, monospace); color: var(--hg-mut); direction: ltr; unicode-bidi: isolate }
 .hg-tip-id:empty { display: none }
 .hg-tip-caret {
   position: absolute; left: var(--hg-cx, 50%); bottom: -6px; width: 10px; height: 10px; box-sizing: border-box;
@@ -157,18 +180,30 @@
 .hg-tip:lang(ar) .hg-tip-h { font: 600 15px/1.5 var(--font-sans, system-ui, sans-serif) }
 
 /* ---------------------------------------------------------------- sizes: keep labels legible on phones */
-/* rendered label size = 13px x scale x width/600: about 11-13px from tablet to desktop, 10px on phones */
+/* rendered label size = 13px x scale x width/600: 11-13 px on desktop (a 382-576 px wide graph), unchanged there. */
 @container hg (max-width: 540px) { .hg-svg { --hg-k: 1.15; --hg-ls: 1.15 } }
 @container hg (max-width: 440px) { .hg-svg { --hg-k: 1.3; --hg-ls: 1.36 } .hg-tip { font-size: 13px } }
+/* Below the desktop layout (tablets 480 px, phones 280-600 px), the scale steps up so labels hold 11 px or more at the
+   narrow end of each step, down to a 260 px wide graph; from 381 px down, the labels that would then leave the viewBox
+   move to their phone placement (LABEL_PHONE in graph-data.ts), and --hg-hit grows each node's tap circle to 46 px or
+   more across (neighbouring circles never meet: 174 units apart, 2 x 37 x 1.45 at most). */
+@media (max-width: 63.99rem) {
+  @container hg (max-width: 460px) { .hg-svg { --hg-ls: 1.2 } }
+  @container hg (max-width: 440px) { .hg-svg { --hg-ls: 1.36 } }
+  @container hg (max-width: 381px) { .hg-svg { --hg-ls: 1.5; --hg-hit: 1.1 } .hg-lp-w { display: none } .hg-lp-n { display: inline } }
+  @container hg (max-width: 338px) { .hg-svg { --hg-ls: 1.66; --hg-hit: 1.22 } }
+  @container hg (max-width: 305px) { .hg-svg { --hg-k: 1.4; --hg-ls: 1.82; --hg-hit: 1.34 } }
+  @container hg (max-width: 278px) { .hg-svg { --hg-ls: 1.96; --hg-hit: 1.45 } }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .hg-spin { animation: none !important }
-  .hg, .hg *, .hg-svg * { transition-duration: 1ms !important }
+  .hg, .hg *, .hg-svg * { transition-duration: 1ms !important; transition-delay: 0s !important }
 }
 @media (forced-colors: active) {
   .hg-e, .hg-disc, .hg-term, .hg-spin, .hg-ring2, .hg-glyph, .hg-chip rect { stroke: CanvasText }
   .hg-disc, .hg-term, .hg-chip rect { fill: Canvas }
   .hg-gd, .hg-lbl, .hg-chip text { fill: CanvasText }
   .hg-focus { stroke: Highlight }
-  .hg-rt, .hg-aura, .hg-comet { display: none }
+  .hg-rt, .hg-rh, .hg-cmd, .hg-aura, .hg-comet { display: none }
 }

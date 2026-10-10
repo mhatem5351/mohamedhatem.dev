@@ -1,12 +1,23 @@
 ---
 /**
- * Sticky CV toolbar (design/prototypes/cv.html .cv-bar): back to the site, the same CV in the other language, copy
- * link, print, download the PDF. Hidden in print. Below 48rem the secondary buttons become icon buttons (their
- * accessible names stay the full labels); below 30rem Print goes (the PDF is the better path on phones).
+ * Sticky CV toolbar (design/prototypes/cv.html .cv-bar): back to the site, the same CV in the other language, share
+ * (or copy the link), add to contacts, print, and the PDF. Hidden in print. Below 48rem the secondary buttons become
+ * icon buttons (their accessible names stay the full labels); below 30rem Print goes (the PDF is the better path on
+ * phones).
+ *
+ * Phones (audit CV-01..03):
+ * - The PDF opens in the browser's viewer on touch screens (no download attribute: iOS shows its PDF view with its own
+ *   share and "Save to Files", Android its viewer), and downloads with a mouse. Both links are in the markup and CSS
+ *   shows one (pointer media query); "Save the PDF" below the sheet downloads it on touch screens.
+ * - Share (Web Share) replaces "Copy link" where the browser can share: the PDF file itself where it can share files
+ *   (fetched ahead on idle, so the share sheet opens within the tap), otherwise the page's link. Without Web Share the
+ *   button stays hidden and "Copy link" remains.
+ * - "Add to contacts" is the vCard (/mohamed-hatem.vcf, generated from profile.ts): the phone's new-contact sheet.
  */
 import Icon from "~/components/ui/Icon.astro";
 import { localePath, messages, otherLocale, type Locale } from "~/lib/i18n";
 import { CV_PDF, PATHS, profile } from "~/lib/site";
+import { VCARD_PATH } from "~/lib/vcard";
 
 interface Props {
   locale: Locale;
@@ -35,13 +46,36 @@ const title = `mohamedhatem.dev${localePath(PATHS.cv, locale).replace(/\/$/, "")
       <Icon name="link" />
       <span class="cv-bar__label">{m.cv.copyLink}</span>
     </button>
+    <button
+      class="btn btn--ghost btn--sm btn--collapse"
+      type="button"
+      hidden
+      data-share
+      data-share-title={m.meta.cv.title}
+      data-share-file={profile.cv.fileName[locale]}
+      aria-label={m.cv.shareLabel}
+      title={m.cv.shareLabel}
+    >
+      <Icon name="share" />
+      <span class="cv-bar__label" aria-hidden="true">{m.cv.share}</span>
+    </button>
+    <a class="btn btn--ghost btn--sm btn--collapse cv-bar__contact" href={VCARD_PATH} title={m.cv.addContact}>
+      <Icon name="user-plus" />
+      <span class="cv-bar__label">{m.cv.addContact}</span>
+    </a>
     <button class="btn btn--ghost btn--sm btn--collapse cv-bar__print" type="button" data-print>
       <Icon name="print" />
       <span class="cv-bar__label">{m.cv.print}</span>
     </button>
-    <a class="btn btn--primary btn--sm" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf">
+    <a class="btn btn--primary btn--sm cv-pdf cv-pdf--save" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf">
       <Icon name="download" />
       <span class="cv-bar__label-long">{m.cv.downloadPdf}</span>
+      <span class="cv-bar__label-short" aria-hidden="true">{m.cv.pdfShort}</span>
+      {fileInfo && <span class="sr-only">({fileInfo})</span>}
+    </a>
+    <a class="btn btn--primary btn--sm cv-pdf cv-pdf--open" href={CV_PDF[locale]} type="application/pdf" data-cv-pdf>
+      <Icon name="file-text" />
+      <span class="cv-bar__label-long">{m.cv.openPdf}</span>
       <span class="cv-bar__label-short" aria-hidden="true">{m.cv.pdfShort}</span>
       {fileInfo && <span class="sr-only">({fileInfo})</span>}
     </a>
@@ -49,4 +83,50 @@ const title = `mohamedhatem.dev${localePath(PATHS.cv, locale).replace(/\/$/, "")
 </header>
 <script>
   document.querySelector("[data-print]")?.addEventListener("click", () => window.print());
+
+  // Share: the PDF file where the browser shares files, else the page link; only where Web Share exists.
+  const share = document.querySelector<HTMLButtonElement>("[data-share]");
+  const pdf = document.querySelector<HTMLAnchorElement>("[data-cv-pdf]");
+  if (share && typeof navigator.share === "function") {
+    share.hidden = false;
+    document.querySelector<HTMLElement>('.cv-bar [data-copy="url"]')?.setAttribute("hidden", "");
+    const name = share.dataset.shareFile || "CV.pdf";
+    const title = share.dataset.shareTitle || document.title;
+    const url = location.href.split("#")[0]!;
+    let file: File | undefined;
+    // The file must be ready when the tap comes (Safari drops the share if a fetch runs in between), so it is fetched
+    // ahead, only where files can be shared (not with Save-Data), and only once the visitor engages with the page
+    // (a first touch, scroll or key) or after a while: never in the page's first-load window.
+    const canShareFiles = (() => {
+      try {
+        return !!navigator.canShare?.({ files: [new File([""], name, { type: "application/pdf" })] });
+      } catch {
+        return false;
+      }
+    })();
+    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+    if (canShareFiles && !saveData && pdf) {
+      const warm = () =>
+        fetch(pdf.href)
+          .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+          .then((b) => (file = new File([b], name, { type: "application/pdf" })))
+          .catch(() => {});
+      let started = false;
+      const start = () => {
+        if (started) return;
+        started = true;
+        void warm();
+      };
+      for (const ev of ["pointerdown", "keydown", "scroll"]) addEventListener(ev, start, { once: true, passive: true });
+      addEventListener("load", () => setTimeout(start, 8000), { once: true });
+    }
+    share.addEventListener("click", async () => {
+      try {
+        if (file && navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], title, text: url });
+        else await navigator.share({ title, url });
+      } catch {
+        /* dismissed, or not allowed: nothing to do */
+      }
+    });
+  }
 </script>

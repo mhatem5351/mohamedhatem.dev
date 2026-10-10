@@ -1,13 +1,14 @@
 ---
 /**
- * Every page's shell: <head> (components/Head.astro), skip link, nav, <main>, footer, the live region and the chat
- * mount.
+ * Every page's shell: <head> (components/Head.astro), skip link, nav, <main>, footer, the phone action dock
+ * (components/nav/ActionDock.astro), the live region and the chat mount.
  *
  * `path` is the page's English path ("/", "/cv/", "/work/<slug>/"); the Arabic twin is the same path under /ar/.
  */
 import "~/styles/global.css";
 import Nav from "~/components/nav/Nav.astro";
 import Footer from "~/components/Footer.astro";
+import ActionDock from "~/components/nav/ActionDock.astro";
 import ChatMount from "~/components/chat/ChatMount.astro";
 import Head from "~/components/Head.astro";
 import { dirOf, messages, type Locale } from "~/lib/i18n";
@@ -80,6 +81,7 @@ const dir = dirOf(locale);
       <slot />
     </main>
     <Footer locale={locale} path={path} alternatePath={alternatePath} variant={variant} />
+    {variant === "full" && <ActionDock locale={locale} />}
     <p id="live" class="sr-only" aria-live="polite"></p>
     <ChatMount locale={locale} />
     <script>

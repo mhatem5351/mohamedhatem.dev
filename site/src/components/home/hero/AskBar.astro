@@ -6,8 +6,13 @@
  *
  * While the field is empty and unfocused, an aria-hidden overlay types example questions (the chat's first
  * suggestions, plus one in the other language). It stops under reduced motion, in a hidden tab, offscreen, and while
- * the hero graph is paused (its pause button is the hero's motion control, WCAG 2.2.2). Without JS the placeholder
- * shows and the form leads to the contact section.
+ * the hero graph is paused (its pause button is the hero's motion control, WCAG 2.2.2); on touch screens it types each
+ * example once and then leaves the placeholder. A question longer than the field scrolls like real typing (the
+ * latest characters stay in view). The overlay is contained (each tick lays out only itself). Without JS the
+ * placeholder shows and the form leads to the contact section.
+ *
+ * The field is at least 16 px on every screen: iOS Safari zooms the page into any focused field under 16 px and
+ * doesn't zoom back out (audit HERO-02). Never "maximum-scale" in the viewport meta: it blocks pinch-zoom.
  */
 import suggestions from "@content/chat/suggestions.json";
 import Icon from "~/components/ui/Icon.astro";
@@ -78,7 +83,7 @@ const examples = [
     border: 0;
     background: transparent;
     color: var(--color-ink);
-    font-size: var(--text-base);
+    font-size: max(16px, var(--text-base));
     text-overflow: ellipsis;
   }
   .ask-bar__input:focus-visible {
@@ -96,17 +101,32 @@ const examples = [
     min-width: 0;
     pointer-events: none;
     color: var(--color-ink-2);
+    font-size: max(16px, var(--text-base));
     white-space: nowrap;
     overflow: hidden;
+    /* Absolutely positioned over the field: its size never depends on its text, so each tick lays out only it. */
+    contain: strict;
   }
+  /* A flex row aligned to its end: while a question is shorter than the field it sits at the start; once longer, the
+     start scrolls out and the latest characters stay beside the caret (in RTL too: flex-end follows the direction). */
   .ask-bar__typed-text {
+    display: flex;
+    justify-content: flex-end;
     overflow: hidden;
-    text-overflow: clip;
     white-space: nowrap;
     max-width: calc(100% - 4px);
   }
   .ask-bar__typed-text:empty {
     display: none;
+  }
+  /* A question longer than the field: its start fades out instead of showing half a letter. */
+  .ask-bar__typed.is-over .ask-bar__typed-text {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 1.5rem);
+    mask-image: linear-gradient(to right, transparent, #000 1.5rem);
+  }
+  .ask-bar__typed.is-over .ask-bar__typed-text:dir(rtl) {
+    -webkit-mask-image: linear-gradient(to left, transparent, #000 1.5rem);
+    mask-image: linear-gradient(to left, transparent, #000 1.5rem);
   }
   /* Typing state: the overlay replaces the placeholder. */
   .ask-bar.is-typing .ask-bar__typed {
@@ -119,19 +139,15 @@ const examples = [
     cursor: pointer;
     transition: background-color var(--duration-fast) var(--ease-standard);
   }
-  .ask-bar__go:hover {
-    background: var(--color-accent-solid-hover);
+  @media (hover: hover) {
+    .ask-bar__go:hover {
+      background: var(--color-accent-solid-hover);
+    }
   }
   .ask-bar__go:focus-visible {
     outline: 2px solid var(--color-focus);
     outline-offset: 2px;
     border-radius: 0.625rem;
-  }
-  @media (max-width: 29.99rem) {
-    .ask-bar__input,
-    .ask-bar__typed {
-      font-size: var(--text-sm);
-    }
   }
 </style>
 
@@ -167,6 +183,10 @@ const examples = [
 
     const examples: Example[] = JSON.parse(form.dataset.examples || "[]");
     const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+    // Touch screens: one pass through the examples, then the static placeholder (the hero is the whole first screen
+    // there, and a loop would keep the main thread busy for as long as it is read).
+    const onePass = matchMedia("(pointer: coarse)").matches;
+    let done = false;
     let inView = true;
     let paused = false;
     try {
@@ -175,12 +195,15 @@ const examples = [
       /* storage blocked */
     }
     let timer: number | undefined;
+    const range = document.createRange();
+    const overlay = out.parentElement;
     let qi = 0;
     let ci = 0;
     let step = 1;
     let wait = 0;
 
-    const active = () => !reduce.matches && !paused && inView && !document.hidden && examples.length > 0 && !input.value && document.activeElement !== input;
+    const active = () =>
+      !done && !reduce.matches && !paused && inView && !document.hidden && examples.length > 0 && !input.value && document.activeElement !== input;
 
     function tick(): void {
       if (wait > 0) {
@@ -191,21 +214,29 @@ const examples = [
       ci += step;
       out!.textContent = ex.text.slice(0, ci);
       out!.lang = ex.lang;
+      // Wider than the field? (Its overflow is on the start side, which scrollWidth doesn't count: measure the text.)
+      range.selectNodeContents(out!);
+      overlay?.classList.toggle("is-over", range.getBoundingClientRect().width > out!.clientWidth + 1);
       if (ci >= ex.text.length) {
         step = -1;
-        wait = 38;
+        wait = 26;
       }
       if (ci <= 0) {
         step = 1;
         qi = (qi + 1) % examples.length;
-        wait = 6;
+        wait = 4;
+        if (qi === 0 && onePass) {
+          done = true;
+          sync();
+        }
       }
     }
 
     function sync(): void {
       const on = active();
       form!.classList.toggle("is-typing", on);
-      if (on && timer === undefined) timer = window.setInterval(tick, 45);
+      // ~15 characters a second still reads as typing (it was 22: a third fewer DOM writes and layouts).
+      if (on && timer === undefined) timer = window.setInterval(tick, 65);
       if (!on && timer !== undefined) {
         clearInterval(timer);
         timer = undefined;

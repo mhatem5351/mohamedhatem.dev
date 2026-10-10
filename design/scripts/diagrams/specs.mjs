@@ -203,22 +203,23 @@ SPECS["empoweromics-message-routing"] = {
   },
 };
 
-// ============================================================================ compact (mobile, 352 wide) variants
+// ============================================================================ compact (mobile, 320 wide) variants
 // Same facts, linearised top to bottom. Cross-links that would need long detours are left out of the
-// compact drawing (they stay in the wide one, the caption and the callouts).
-const CW = 352;
+// compact drawing (they stay in the wide one, the caption and the callouts). 320 wide: shown about 294-308 px wide on
+// a 375 px phone, its 12-unit mono labels still render at 11 CSS px or more (lib.mjs TEXT).
+const CW = 320;
 
 SPECS["hybrid-rag"].compact = {
   w: CW, h: 648,
-  groups: [{ id: "par", x: 12, y: 104, w: 328, h: 104, tab: "parallel", tabAlign: "center", co: 1 }],
+  groups: [{ id: "par", x: 12, y: 104, w: 296, h: 104, tab: "parallel", tabAlign: "center", co: 1 }],
   nodes: [
-    { id: "q", kind: "ext", x: 72, y: 24, w: 208, h: 48, t: "Query", g: "user" },
-    { id: "bm25", kind: "data", x: 24, y: 128, w: 148, t: "BM25", s: "keyword", g: "keyword" },
-    { id: "vec", kind: "data", x: 180, y: 128, w: 148, t: "Dense vector", s: "embeddings", g: "embed" },
-    { id: "merge", kind: "data", x: 72, y: 240, w: 208, h: 48, t: "Merge", g: "merge", co: 2 },
-    { id: "rr", kind: "data", x: 72, y: 320, w: 208, h: 48, t: "LLM rerank", g: "rerank", co: 3 },
-    { id: "ctx", kind: "data", x: 72, y: 400, w: 208, h: 48, t: "Context", g: "file-text" },
-    { id: "gen", kind: "model", x: 72, y: 480, w: 208, t: "Generate", s: "LLM", g: "generate", co: 4 },
+    { id: "q", kind: "ext", x: 56, y: 24, w: 208, h: 48, t: "Query", g: "user" },
+    { id: "bm25", kind: "data", x: 24, y: 128, w: 116, t: "BM25", s: "keyword", g: "keyword" },
+    { id: "vec", kind: "data", x: 148, y: 128, w: 148, t: "Dense vector", s: "embeddings", g: "embed" },
+    { id: "merge", kind: "data", x: 56, y: 240, w: 208, h: 48, t: "Merge", g: "merge", co: 2 },
+    { id: "rr", kind: "data", x: 56, y: 320, w: 208, h: 48, t: "LLM rerank", g: "rerank", co: 3 },
+    { id: "ctx", kind: "data", x: 56, y: 400, w: 208, h: 48, t: "Context", g: "file-text" },
+    { id: "gen", kind: "model", x: 56, y: 480, w: 208, t: "Generate", s: "LLM", g: "generate", co: 4 },
   ],
   edges: [
     { id: "q1", from: "q:b", to: "bm25:t", via: { y: 88 } },
@@ -230,91 +231,95 @@ SPECS["hybrid-rag"].compact = {
     { id: "g", from: "ctx:b", to: "gen:t" },
   ],
   main: [["q1", "q2"], ["m1", "m2"], "r", "c", "g"],
-  legend: { x: 24, y: 576, w: 304, cols: 2 },
+  legend: { x: 24, y: 576, w: 272, cols: 2, colX: [0, 152] },
 };
 
+// The request chain sits right of centre so the edge into the LangGraph group clears its tab; the tools hang off a
+// trunk on the left.
 SPECS["wakeb-multi-agent-chatbot"].compact = {
   w: CW, h: 1088,
   groups: [
-    { id: "lg", x: 12, y: 288, w: 328, h: 308, tab: "LangGraph · async" },
-    { id: "ag", x: 72, y: 408, w: 208, h: 168, tab: "6 agents", co: 3 },
+    { id: "lg", x: 12, y: 288, w: 296, h: 308, tab: "LangGraph · async" },
+    { id: "ag", x: 80, y: 408, w: 208, h: 168, tab: "6 agents", co: 3 },
   ],
   nodes: [
-    { id: "user", kind: "ext", x: 64, y: 24, w: 224, t: "User", s: "Arabic · English", g: "bilingual" },
-    { id: "nginx", kind: "infra", x: 64, y: 112, w: 224, t: "Nginx", s: "reverse proxy", g: "gateway" },
-    { id: "api", kind: "infra", x: 64, y: 200, w: 224, t: "FastAPI services", s: "Docker · gRPC", g: "container", co: 1 },
-    { id: "orch", kind: "orch", x: 64, y: 320, w: 224, t: "Command routing", s: "no static edges", co: 2 },
-    ...[0, 1, 2, 3, 4, 5].map((i) => ({ id: `a${i}`, kind: "agent", x: 88 + (i % 3) * 64, y: 440 + Math.floor(i / 3) * 64, w: 48, h: 48, g: "agents", align: "center" })),
-    { id: "qwen", kind: "model", x: 48, y: 628, w: 280, t: "Qwen LLM", s: "vLLM · A100 GPUs", co: 4 },
-    { id: "hyb", kind: "data", x: 48, y: 708, w: 280, t: "Hybrid retrieval", s: "vector + BM25 · LLM rerank", co: 5 },
-    { id: "brave", kind: "infra", x: 48, y: 788, w: 280, t: "Brave Search", s: "via MCP", g: "tools-mcp", co: 6 },
-    { id: "cache", kind: "store", x: 48, y: 864, w: 280, h: 64, t: "Node cache", s: "SQLite", g: "cache", co: 7 },
+    { id: "user", kind: "ext", x: 80, y: 24, w: 208, t: "User", s: "Arabic · English", g: "bilingual" },
+    { id: "nginx", kind: "infra", x: 80, y: 112, w: 208, t: "Nginx", s: "reverse proxy", g: "gateway" },
+    { id: "api", kind: "infra", x: 80, y: 200, w: 208, t: "FastAPI services", s: "Docker · gRPC", g: "container", co: 1 },
+    { id: "orch", kind: "orch", x: 80, y: 320, w: 208, t: "Command routing", s: "no static edges", co: 2 },
+    ...[0, 1, 2, 3, 4, 5].map((i) => ({ id: `a${i}`, kind: "agent", x: 96 + (i % 3) * 64, y: 440 + Math.floor(i / 3) * 64, w: 48, h: 48, g: "agents", align: "center" })),
+    { id: "qwen", kind: "model", x: 48, y: 628, w: 256, t: "Qwen LLM", s: "vLLM · A100 GPUs", co: 4 },
+    { id: "hyb", kind: "data", x: 48, y: 708, w: 256, t: "Hybrid retrieval", s: "vector + BM25 · LLM rerank", co: 5 },
+    { id: "brave", kind: "infra", x: 48, y: 788, w: 256, t: "Brave Search", s: "via MCP", g: "tools-mcp", co: 6 },
+    { id: "cache", kind: "store", x: 48, y: 864, w: 256, h: 64, t: "Node cache", s: "SQLite", g: "cache", co: 7 },
   ],
   edges: [
     { id: "e1", from: "user:b", to: "nginx:t" },
     { id: "e2", from: "nginx:b", to: "api:t" },
     { id: "e3", from: "api:b", to: "orch:t" },
     { id: "e4", from: "orch:b", to: "ag:t" },
-    { id: "t1", from: "lg:b-148", to: "qwen:l" },
-    { id: "t2", from: "lg:b-148", to: "hyb:l" },
-    { id: "t3", from: "lg:b-148", to: "brave:l" },
-    { id: "t4", from: "lg:b-148", to: "cache:l" },
+    { id: "t1", from: "lg:b-132", to: "qwen:l" },
+    { id: "t2", from: "lg:b-132", to: "hyb:l" },
+    { id: "t3", from: "lg:b-132", to: "brave:l" },
+    { id: "t4", from: "lg:b-132", to: "cache:l" },
   ],
   main: ["e1", "e2", "e3", "e4", ["t1", "t2", "t3", "t4"]],
-  legend: { x: 24, y: 968, w: 304, cols: 2 },
+  legend: { x: 24, y: 968, w: 272, cols: 2, colX: [0, 152] },
 };
 
 SPECS["llm-serving-a100"].compact = {
   w: CW, h: 912,
   groups: [
-    { id: "deliv", x: 12, y: 24, w: 328, h: 144, tab: "Delivery · CI/CD", co: 1 },
-    { id: "prod", x: 12, y: 376, w: 296, h: 232, tab: "Production GPU servers", co: 4, coX: 208 },
+    { id: "deliv", x: 12, y: 24, w: 296, h: 144, tab: "Delivery · CI/CD", co: 1 },
+    { id: "prod", x: 12, y: 376, w: 276, h: 232, tab: "Production GPU servers", co: 4, coX: 228 },
   ],
   nodes: [
-    { id: "git", kind: "infra", tile: true, x: 24, y: 52, w: 88, h: 96, t: "Git", g: "branch" },
-    { id: "ci", kind: "infra", tile: true, x: 132, y: 52, w: 88, h: 96, t: "CI/CD", g: "pipeline" },
-    { id: "img", kind: "infra", tile: true, x: 240, y: 52, w: 88, h: 96, t: "Docker\nimages", g: "container" },
+    { id: "git", kind: "infra", tile: true, x: 24, y: 52, w: 80, h: 96, t: "Git", g: "branch" },
+    { id: "ci", kind: "infra", tile: true, x: 120, y: 52, w: 80, h: 96, t: "CI/CD", g: "pipeline" },
+    { id: "img", kind: "infra", tile: true, x: 216, y: 52, w: 80, h: 96, t: "Docker\nimages", g: "container" },
     { id: "ver", kind: "store", x: 24, y: 200, w: 200, h: 64, t: "Model versions", s: "Qwen", g: "layers", co: 2 },
     { id: "cfg", kind: "infra", x: 24, y: 288, w: 200, t: "vLLM config", s: "GPU allocation", g: "gpu", co: 3 },
-    { id: "s1", kind: "model", x: 24, y: 408, w: 272, t: "GPU server", s: "vLLM · Qwen · A100", g: "serving" },
-    { id: "s2", kind: "model", x: 24, y: 480, w: 272, t: "GPU server", s: "vLLM · Qwen · A100", g: "serving" },
-    { id: "more", kind: "more", x: 24, y: 552, w: 272, h: 40, t: "more servers", align: "center", g: null },
-    { id: "hm", kind: "eval", x: 24, y: 640, w: 272, t: "Health monitoring", g: "activity", co: 5 },
-    { id: "rs", kind: "infra", x: 24, y: 728, w: 272, t: "Automated restart", s: "restart pipelines", g: "refresh", co: 6 },
+    { id: "s1", kind: "model", x: 24, y: 408, w: 252, t: "GPU server", s: "vLLM · Qwen · A100", g: "serving" },
+    { id: "s2", kind: "model", x: 24, y: 480, w: 252, t: "GPU server", s: "vLLM · Qwen · A100", g: "serving" },
+    { id: "more", kind: "more", x: 24, y: 552, w: 252, h: 40, t: "more servers", align: "center", g: null },
+    { id: "hm", kind: "eval", x: 24, y: 640, w: 252, t: "Health monitoring", g: "activity", co: 5 },
+    { id: "rs", kind: "infra", x: 24, y: 728, w: 252, t: "Automated restart", s: "restart pipelines", g: "refresh", co: 6 },
   ],
   edges: [
     { id: "d1", from: "git:r", to: "ci:l" },
     { id: "d2", from: "ci:r", to: "img:l" },
-    { id: "d3", from: "img:b", to: "prod:t+124", label: "deploy", lt: 0.17 },
-    { id: "v1", from: "ver:r", to: "prod:t+124" },
-    { id: "c1", from: "cfg:r", to: "prod:t+124" },
+    { id: "d3", from: "img:b", to: "prod:t+106", label: "deploy", lt: 0.17 },
+    { id: "v1", from: "ver:r", to: "prod:t+106" },
+    { id: "c1", from: "cfg:r", to: "prod:t+106" },
     { id: "h1", from: "prod:b", to: "hm:t", async: true },
     { id: "h2", from: "hm:b", to: "rs:t" },
-    { id: "h3", from: "rs:r", to: "prod:r", pts: [[328, 756], [328, 492]] },
+    { id: "h3", from: "rs:r", to: "prod:r", pts: [[308, 756], [308, 492]] },
   ],
   main: ["d1", "d2", "d3", "h1", "h2", "h3"],
-  legend: { x: 24, y: 816, w: 304, cols: 2 },
+  legend: { x: 24, y: 816, w: 272, cols: 2, colX: [0, 152] },
 };
 
+// The integration group's tab is shortened to "Integration" (its node and callout name the data integration): the
+// full words do not fit a half-width group at the compact tab size.
 SPECS["empoweromics-message-routing"].compact = {
   w: CW, h: 1064,
   groups: [
-    { id: "main", x: 12, y: 24, w: 328, h: 432, tab: "WhatsApp message routing" },
-    { id: "etl", x: 12, y: 488, w: 160, h: 412, tab: "ETL", co: 3 },
-    { id: "int", x: 180, y: 488, w: 160, h: 412, tab: "Data integration", co: 4 },
+    { id: "main", x: 12, y: 24, w: 296, h: 432, tab: "WhatsApp message routing" },
+    { id: "etl", x: 12, y: 488, w: 144, h: 412, tab: "ETL", co: 3 },
+    { id: "int", x: 164, y: 488, w: 144, h: 412, tab: "Integration", co: 4 },
   ],
   nodes: [
-    { id: "wa", kind: "ext", x: 48, y: 56, w: 256, t: "WhatsApp messages", s: "text · images", g: "whatsapp" },
-    { id: "txt", kind: "model", tile: true, x: 24, y: 144, w: 148, h: 96, t: "Text classifier", s: "NLP", g: "chat", co: 1 },
-    { id: "imc", kind: "model", tile: true, x: 180, y: 144, w: 148, h: 96, t: "Image classifier", s: "computer vision", g: "image" },
-    { id: "rt", kind: "infra", x: 72, y: 272, w: 208, t: "Route", s: "by department", g: "route", co: 2 },
-    { id: "dep", kind: "ext", x: 48, y: 360, w: 256, h: 72, t: "Departments", s: "Tech · HR · Accounting\nOperations · Marketing", g: "users" },
-    { id: "cos", kind: "store", tile: true, x: 24, y: 520, w: 136, h: 104, t: "Cosmos DB", s: "NoSQL", wellTop: 4 },
-    { id: "etlj", kind: "infra", tile: true, x: 24, y: 648, w: 136, h: 104, t: "Scheduled ETL", s: "Azure triggers", g: "function", wellTop: 18 },
-    { id: "sql", kind: "store", tile: true, x: 24, y: 776, w: 136, h: 104, t: "SQL Server", s: "Microsoft", wellTop: 4 },
-    { id: "dev", kind: "ext", tile: true, x: 192, y: 520, w: 136, h: 104, t: "3,008+\ndevelopers", s: "unique schemas", g: "building", wellTop: 12 },
-    { id: "di", kind: "data", tile: true, x: 192, y: 648, w: 136, h: 104, t: "Data integration", g: "merge", wellTop: 26 },
-    { id: "map", kind: "ext", tile: true, x: 192, y: 776, w: 136, h: 104, t: "E-map", s: "real-time", g: "map", wellTop: 18 },
+    { id: "wa", kind: "ext", x: 32, y: 56, w: 256, t: "WhatsApp messages", s: "text · images", g: "whatsapp" },
+    { id: "txt", kind: "model", tile: true, x: 24, y: 144, w: 132, h: 96, t: "Text classifier", s: "NLP", g: "chat", co: 1 },
+    { id: "imc", kind: "model", tile: true, x: 164, y: 144, w: 132, h: 96, t: "Image classifier", s: "computer vision", g: "image" },
+    { id: "rt", kind: "infra", x: 56, y: 272, w: 208, t: "Route", s: "by department", g: "route", co: 2 },
+    { id: "dep", kind: "ext", x: 32, y: 360, w: 256, h: 72, t: "Departments", s: "Tech · HR · Accounting\nOperations · Marketing", g: "users" },
+    { id: "cos", kind: "store", tile: true, x: 24, y: 520, w: 120, h: 104, t: "Cosmos DB", s: "NoSQL", wellTop: 4 },
+    { id: "etlj", kind: "infra", tile: true, x: 24, y: 648, w: 120, h: 104, t: "Scheduled ETL", s: "Azure triggers", g: "function", wellTop: 18 },
+    { id: "sql", kind: "store", tile: true, x: 24, y: 776, w: 120, h: 104, t: "SQL Server", s: "Microsoft", wellTop: 4 },
+    { id: "dev", kind: "ext", tile: true, x: 176, y: 520, w: 120, h: 104, t: "3,008+\ndevelopers", s: "unique schemas", g: "building", wellTop: 12 },
+    { id: "di", kind: "data", tile: true, x: 176, y: 648, w: 120, h: 104, t: "Data integration", g: "merge", wellTop: 26 },
+    { id: "map", kind: "ext", tile: true, x: 176, y: 776, w: 120, h: 104, t: "E-map", s: "real-time", g: "map", wellTop: 18 },
   ],
   edges: [
     { id: "w1", from: "wa:b", to: "txt:t", via: { y: 128 } },
@@ -328,49 +333,51 @@ SPECS["empoweromics-message-routing"].compact = {
     { id: "y2", from: "di:b", to: "map:t" },
   ],
   main: [["w1", "w2"], ["c1", "c2"], "r1"],
-  legend: { x: 24, y: 940, w: 304, cols: 2 },
+  legend: { x: 24, y: 940, w: 272, cols: 2, colX: [0, 152] },
 };
 
+// Orchestrator and evaluation are tiles (two row nodes side by side do not fit 320); Pinecone's sublabel and the
+// ingestion tile's sublabel wrap for the same reason.
 {
   const rows = [["AI image generation", "image"], ["Content moderation", "shield-check"], ["Semantic search", "search"], ["Integrated AI services", "tools-mcp"], ["Database operations", "database"]];
   const serving = [["Image search", "image"], ["Sound generation", "audio"], ["Instrument classification", "tag"], ["BPM detection", "activity"], ["Audio watermarking", "guard"]];
   SPECS["arabsstock-assistant"].compact = {
-    w: CW, h: 1576,
+    w: CW, h: 1624,
     groups: [
-      { id: "media", x: 12, y: 24, w: 328, h: 244, tab: "Media pipelines", co: 6 },
-      { id: "assist", x: 12, y: 388, w: 328, h: 516, tab: "Assistant", tabAlign: "right" },
-      { id: "ag", x: 24, y: 508, w: 304, h: 280, tab: "14 agents", tabAlign: "right", co: 2 },
-      { id: "index", x: 12, y: 936, w: 328, h: 148, tab: "Indexing", co: 4 },
-      { id: "serve", x: 12, y: 1116, w: 328, h: 284, tab: "Model serving", co: 5 },
+      { id: "media", x: 12, y: 24, w: 296, h: 244, tab: "Media pipelines", co: 6 },
+      { id: "assist", x: 12, y: 388, w: 296, h: 556, tab: "Assistant", tabAlign: "right" },
+      { id: "ag", x: 24, y: 540, w: 272, h: 280, tab: "14 agents", tabAlign: "right", co: 2 },
+      { id: "index", x: 12, y: 976, w: 296, h: 156, tab: "Indexing", co: 4 },
+      { id: "serve", x: 12, y: 1164, w: 296, h: 284, tab: "Model serving", co: 5 },
     ],
     nodes: [
-      { id: "raw", kind: "ext", x: 48, y: 56, w: 256, h: 48, t: "Raw video & audio", g: "video" },
-      { id: "qual", kind: "infra", x: 48, y: 128, w: 256, h: 48, t: "Quality optimisation", g: "filter" },
-      { id: "meta", kind: "data", x: 48, y: 200, w: 256, h: 48, t: "Metadata enrichment", g: "tag" },
-      { id: "plat", kind: "ext", x: 12, y: 300, w: 328, t: "ArabsStock platform", s: "photos · videos · vectors · audio", g: "frontend" },
-      { id: "orch", kind: "orch", x: 24, y: 420, w: 148, t: "Orchestrator", s: "LangGraph", co: 1 },
-      { id: "eval", kind: "eval", x: 196, y: 420, w: 132, t: "Evaluation", s: "LLM agents", co: 3 },
-      ...rows.map(([t, g], i) => ({ id: `r${i}`, kind: "agent", x: 36, y: 540 + i * 48, w: 280, h: 40, t, g })),
-      { id: "db", kind: "store", x: 24, y: 820, w: 148, h: 64, t: "Database", s: "platform" },
-      { id: "pc", kind: "store", tone: "saffron", x: 180, y: 820, w: 148, h: 64, t: "Pinecone", s: "vector index" },
-      { id: "ing", kind: "infra", tile: true, x: 24, y: 968, w: 136, h: 96, t: "Batch ingestion", s: "millions of assets", g: "pipeline" },
-      { id: "emb", kind: "model", tile: true, x: 184, y: 968, w: 140, h: 96, t: "OpenAI\nembeddings", g: "embed" },
-      ...serving.map(([t, g], i) => ({ id: `s${i}`, kind: "model", x: 24, y: 1148 + i * 48, w: 304, h: 40, t, g })),
+      { id: "raw", kind: "ext", x: 32, y: 56, w: 256, h: 48, t: "Raw video & audio", g: "video" },
+      { id: "qual", kind: "infra", x: 32, y: 128, w: 256, h: 48, t: "Quality optimisation", g: "filter" },
+      { id: "meta", kind: "data", x: 32, y: 200, w: 256, h: 48, t: "Metadata enrichment", g: "tag" },
+      { id: "plat", kind: "ext", x: 12, y: 300, w: 296, t: "ArabsStock platform", s: "photos · videos · vectors · audio", g: "frontend" },
+      { id: "orch", kind: "orch", tile: true, x: 24, y: 420, w: 124, h: 88, t: "Orchestrator", s: "LangGraph", wellTop: 12, co: 1 },
+      { id: "eval", kind: "eval", tile: true, x: 172, y: 420, w: 124, h: 88, t: "Evaluation", s: "LLM agents", wellTop: 12, co: 3 },
+      ...rows.map(([t, g], i) => ({ id: `r${i}`, kind: "agent", x: 36, y: 572 + i * 48, w: 248, h: 40, t, g })),
+      { id: "db", kind: "store", x: 24, y: 852, w: 132, h: 72, t: "Database", s: "platform" },
+      { id: "pc", kind: "store", tone: "saffron", x: 164, y: 852, w: 132, h: 72, t: "Pinecone", s: "vector\nindex" },
+      { id: "ing", kind: "infra", tile: true, x: 24, y: 1008, w: 120, h: 104, t: "Batch ingestion", s: "millions\nof assets", g: "pipeline", wellTop: 12 },
+      { id: "emb", kind: "model", tile: true, x: 164, y: 1008, w: 132, h: 104, t: "OpenAI\nembeddings", g: "embed", wellTop: 12 },
+      ...serving.map(([t, g], i) => ({ id: `s${i}`, kind: "model", x: 24, y: 1196 + i * 48, w: 272, h: 40, t, g })),
     ],
     edges: [
       { id: "m1", from: "raw:b", to: "qual:t", async: true },
       { id: "m2", from: "qual:b", to: "meta:t", async: true },
       { id: "m3", from: "meta:b", to: "plat:t", async: true },
-      { id: "p1", from: "plat:b-78", to: "orch:t" },
+      { id: "p1", from: "plat:b-74", to: "orch:t" },
       { id: "o2", from: "orch:r", to: "eval:l", async: true },
-      { id: "o1", from: "orch:b", to: "ag:t-78" },
-      { id: "a2", from: "ag:b-78", to: "db:t" },
-      { id: "a1", from: "ag:b+78", to: "pc:t" },
+      { id: "o1", from: "orch:b", to: "ag:t-74" },
+      { id: "a2", from: "ag:b-70", to: "db:t" },
+      { id: "a1", from: "ag:b+70", to: "pc:t" },
       { id: "i1", from: "ing:r", to: "emb:l", async: true },
       { id: "i2", from: "emb:t", to: "pc:b", async: true },
     ],
     main: ["p1", "o1", "a1"],
-    legend: { x: 24, y: 1432, w: 304, cols: 2 },
+    legend: { x: 24, y: 1480, w: 272, cols: 2, colX: [0, 152] },
   };
 }
 
@@ -517,39 +524,40 @@ SPECS["empoweromics-message-routing"].thumb = {
     },
 
     // Vertical: the agent's trunk on the left reaches the look-up tools, the LLM and retrieval; the approval's bus on
-    // the right reaches the action tools.
+    // the right reaches the action tools. The tools' tab sits between the trunk and the bus, its callout on the
+    // group's top-left corner (no room beside the tab at 320 wide).
     compact: {
       w: CW, h: 1104,
-      groups: [{ id: "tools", x: 12, y: 424, w: 328, h: 248, tab, tabAlign: "center", co: 3, coX: 292 }],
+      groups: [{ id: "tools", x: 12, y: 424, w: 296, h: 248, tab, tabX: 63, co: 3, coX: 28 }],
       nodes: [
-        { id: "vis", kind: "ext", tile: true, x: 24, y: 24, w: 148, h: 104, t: "Visitors", s: "Noura\nArabic · English", g: "bilingual" },
-        { id: "staff", kind: "ext", tile: true, x: 180, y: 24, w: 148, h: 104, t: "Staff", s: "staff assistant\ninternal", g: "briefcase" },
-        { id: "gate", kind: "guard", x: 24, y: 160, w: 304, t: "Audience gate", s: "tools · knowledge per audience", co: 1 },
-        { id: "agent", kind: "orch", x: 24, y: 248, w: 148, t: "One agent", s: "LangGraph", co: 2 },
-        { id: "eval", kind: "eval", x: 196, y: 248, w: 132, t: "Evaluation", s: "quality", co: 6 },
-        { id: "appr", kind: "guard", x: 56, y: 336, w: 176, t: "Human approval", s: "before any action", g: "check", co: 4 },
-        ...look.map(([id, t, g], i) => ({ id, kind: "infra", x: 56, y: 456 + i * 48, w: 240, h: 40, t, g })),
-        ...act.map(([id, t, g], i) => ({ id, kind: "infra", x: 56, y: 568 + i * 48, w: 240, h: 40, t, g })),
-        { id: "llm", kind: "model", x: 56, y: 704, w: 240, h: 48, t: "LLM" },
-        { id: "ret", kind: "data", x: 56, y: 776, w: 240, t: "Retrieval", s: "with sources", co: 5 },
-        { id: "kb", kind: "store", x: 56, y: 856, w: 240, h: 64, t: "Authority content", s: "documents · tourism", g: "file-text" },
+        { id: "vis", kind: "ext", tile: true, x: 24, y: 24, w: 132, h: 104, t: "Visitors", s: "Noura\nArabic · English", g: "bilingual", wellTop: 12 },
+        { id: "staff", kind: "ext", tile: true, x: 164, y: 24, w: 132, h: 104, t: "Staff", s: "staff assistant\ninternal", g: "briefcase", wellTop: 12 },
+        { id: "gate", kind: "guard", x: 24, y: 160, w: 272, t: "Audience gate", s: "tools · knowledge", co: 1 },
+        { id: "agent", kind: "orch", x: 24, y: 248, w: 128, t: "One agent", s: "LangGraph", co: 2 },
+        { id: "eval", kind: "eval", x: 176, y: 248, w: 128, t: "Evaluation", s: "quality", co: 6 },
+        { id: "appr", kind: "guard", x: 64, y: 336, w: 188, t: "Human approval", s: "before any action", g: "check", co: 4 },
+        ...look.map(([id, t, g], i) => ({ id, kind: "infra", x: 64, y: 456 + i * 48, w: 208, h: 40, t, g })),
+        ...act.map(([id, t, g], i) => ({ id, kind: "infra", x: 64, y: 568 + i * 48, w: 208, h: 40, t, g })),
+        { id: "llm", kind: "model", x: 64, y: 704, w: 208, h: 48, t: "LLM" },
+        { id: "ret", kind: "data", x: 64, y: 776, w: 208, t: "Retrieval", s: "with sources", co: 5 },
+        { id: "kb", kind: "store", x: 64, y: 856, w: 208, h: 64, t: "Authority content", s: "documents · tourism", g: "file-text" },
       ],
       edges: [
         { id: "v1", from: "vis:b", to: "gate:t", via: { y: 144 } },
         { id: "s1", from: "staff:b", to: "gate:t", via: { y: 144 } },
-        { id: "g1", from: "gate:b-78", to: "agent:t" },
+        { id: "g1", from: "gate:b-72", to: "agent:t" },
         { id: "ev", from: "agent:r", to: "eval:l", async: true },
-        { id: "ap", from: "agent:b+46", to: "appr:t" },
-        { id: "t0", from: "agent:b-62", to: "r0:l" },
-        { id: "t1", from: "agent:b-62", to: "r1:l" },
-        { id: "a0", from: "appr:r", to: "r2:r", via: { x: 316 } },
-        { id: "a1", from: "appr:r", to: "r3:r", via: { x: 316 } },
-        { id: "l1", from: "agent:b-62", to: "llm:l" },
-        { id: "l2", from: "agent:b-62", to: "ret:l" },
+        { id: "ap", from: "agent:b+48", to: "appr:t-22" },
+        { id: "t0", from: "agent:b-42", to: "r0:l" },
+        { id: "t1", from: "agent:b-42", to: "r1:l" },
+        { id: "a0", from: "appr:r", to: "r2:r", via: { x: 292 } },
+        { id: "a1", from: "appr:r", to: "r3:r", via: { x: 292 } },
+        { id: "l1", from: "agent:b-42", to: "llm:l" },
+        { id: "l2", from: "agent:b-42", to: "ret:l" },
         { id: "k1", from: "ret:b", to: "kb:t" },
       ],
       main: ["v1", "g1", ["t0", "t1", "ap"], "a0"],
-      legend: { x: 24, y: 960, w: 304, cols: 2 },
+      legend: { x: 24, y: 960, w: 272, cols: 2, colX: [0, 152] },
     },
 
     // Thumbnail: two audiences, the gate, the agent, approval, and the tool set as pips.

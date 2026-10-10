@@ -142,10 +142,19 @@ test.describe("living charts", () => {
     await expect(page.locator("#fig-hybrid-rag [data-motion]")).toHaveClass(/dg-play/);
   });
 
-  test("the experience trace grows in once and pings 'now' on the current role", async ({ page }) => {
+  test("the experience trace grows in once and pings 'now' on the current role", async ({ page, isMobile }) => {
     await page.goto("/", { waitUntil: "networkidle" });
     const trace = page.locator(".trace");
     await expect(trace).toHaveAttribute("data-armed", "");
+    if (isMobile) {
+      // Phones show each role's dates and duration instead of the lane (no bars, so nothing grows or pings there).
+      await expect(trace.locator(".span__lane").first()).toBeHidden();
+      await centre(page, ".trace");
+      await expect(trace).toHaveClass(/is-in/);
+      await expect(trace.locator(".span__dur").first()).toBeVisible();
+      expect((await running(page)).some((a) => /span__bar/.test(a.cls))).toBe(false);
+      return;
+    }
     const bar = trace.locator(".span__bar").nth(2);
     expect(await bar.evaluate((b) => getComputedStyle(b).transform)).toMatch(/^matrix\(0(\.0+)?, /);
     await centre(page, ".trace");

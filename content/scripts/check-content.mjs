@@ -77,6 +77,11 @@ for (const [label, m] of [["en", en], ["ar", ar]]) {
   }
 }
 
+// ---------- the phone hero's short lede (it must fit the first screen of a 375 × 667 phone) ----------
+if ([...profile.basics.introShort.en].length > 120) fail(`basics.introShort.en is ${[...profile.basics.introShort.en].length} chars (max 120)`);
+if ([...profile.basics.introShort.ar].length > 150) fail(`basics.introShort.ar is ${[...profile.basics.introShort.ar].length} chars (max 150)`);
+if (profile.basics.introShort.en.includes(profile.basics.title.en)) fail("basics.introShort.en repeats the title (the person chip above it states it)");
+
 // ---------- cross-references ----------
 const roleIds = new Set(profile.experience.map((r) => r.id));
 const caseSlugs = new Set(profile.caseStudies.map((c) => c.slug));

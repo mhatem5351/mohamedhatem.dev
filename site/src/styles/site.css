@@ -81,7 +81,7 @@ bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
 /* Footer */
 .footer__summary { max-width: 30ch; }
 .footer__link-btn { font-size: var(--text-sm); color: var(--color-ink-2); text-align: start; }
-.footer__link-btn:hover { color: var(--color-accent); }
+@media (hover: hover) { .footer__link-btn:hover { color: var(--color-accent); } }
 .footer__base--flush { margin-block-start: 0; border-block-start: 0; padding-block-start: 0; }
 .footer a[lang="ar"] { font-family: var(--font-arabic); }
 
@@ -143,7 +143,7 @@ bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
 
 /* Hero meta line: availability with the work arrangements, linked to the About facts (#open-to). */
 .hero__open { display: inline-flex; align-items: baseline; gap: .5rem; color: inherit; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .22em; transition: text-decoration-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard); }
-.hero__open:hover { color: var(--color-ink-2); text-decoration-color: currentColor; }
+@media (hover: hover) { .hero__open:hover { color: var(--color-ink-2); text-decoration-color: currentColor; } }
 .hero__open { line-height: 1.5; }
 /* The dot sits on the first line when the line wraps (phones). */
 .hero__open .dot { align-self: flex-start; margin-block-start: calc(.75em - .25rem); }

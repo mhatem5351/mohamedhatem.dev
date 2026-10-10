@@ -27,7 +27,8 @@ interface Place { x: number; y: number; r: number; lab: Side }
 /**
  * LTR placement. Flow runs clockwise: guard (W) > orchestrator > retrieve (NW) > rerank (NE) > generate (E) > evaluate (SE);
  * the request enters at the top-left port and leaves at the bottom-right one. Label room is checked for the largest
- * (phone) label scale: e.g. generate's label must end before x = 600 at 1.36x.
+ * scale each placement is used at: e.g. generate's side label must end before x = 600 at 1.36x (graphs up to 440 px
+ * wide; 382 px at a 1024 px window); on phones below 382 px, LABEL_PHONE takes over.
  */
 export const PLACE: Record<Id, Place> = {
   orchestrator: { x: 300, y: 242, r: R_ORC, lab: "s" },
@@ -39,6 +40,20 @@ export const PLACE: Record<Id, Place> = {
   tools: { x: 190, y: 402, r: R_SAT, lab: "s" },
   query: { x: 40, y: 98, r: R_PORT, lab: "n" },
   answer: { x: 560, y: 462, r: R_PORT, lab: "s" },
+};
+
+/** A label's anchor point relative to its node (LTR), its text-anchor, and whether it hangs below the point. */
+export interface LabelAt { x: number; y: number; anchor: "start" | "middle" | "end"; below?: true }
+/**
+ * Phone placements (a graph 381 px wide or less, below the desktop layout, where labels are drawn 1.5-2x so they render
+ * at 11 px or more): the labels whose usual side would then leave the viewBox move inside it, flush with its right edge.
+ * generate goes above-right of its node, clear of the rerank > generate edge; answer stays under its port. Every other
+ * label keeps its side (room checked at 2x: no label meets a node, an edge, another label or the viewBox edge).
+ */
+const FLUSH = VIEW.w - 2;
+export const LABEL_PHONE: Partial<Record<Id, LabelAt>> = {
+  generate: { x: FLUSH - PLACE.generate.x, y: -(R_SAT + 11), anchor: "end" },
+  answer: { x: FLUSH - PLACE.answer.x, y: R_PORT + 10, anchor: "end", below: true },
 };
 
 export const CAT: Record<NodeId, Cat> = {

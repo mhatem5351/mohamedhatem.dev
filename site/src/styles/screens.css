@@ -1,7 +1,7 @@
 /*
  * Product screens on a case-study page (src/components/case/ScreenGallery.astro): grouped by product, framed
  * (desktop: a browser-like frame; phone: the home showcase's phone bezel; dialog crop: on its own stage), with
- * captions, and a modal <dialog> that shows a screen at its natural size.
+ * captions; each opens in the page's enlarge view (ZoomDialog.astro, styles in case.css).
  * Layout and structure only: every colour is a design token (or comes from the reused .phone bezel), so a palette
  * change needs no edit here.
  */
@@ -45,32 +45,17 @@
   /* "Enlarge" cue: shown on hover and keyboard focus, always on touch screens. */
   .shot__hint { position: absolute; inset-block-start: .5rem; inset-inline-end: .5rem; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: var(--radius-full); border: 1px solid var(--color-line-strong); background: var(--color-surface); color: var(--color-ink-2); box-shadow: var(--shadow-sm); opacity: 0; }
   .shot--desktop .shot__hint { inset-block-start: 2.25rem; }
-  .shot__zoom:hover .shot__hint, .shot__zoom:focus-visible .shot__hint { opacity: 1; }
+  .shot__zoom:focus-visible .shot__hint { opacity: 1; }
+  @media (hover: hover) { .shot__zoom:hover .shot__hint { opacity: 1; } }
   @media (hover: none) { .shot__hint { opacity: 1; } }
   @media (prefers-reduced-motion: no-preference) {
     .shot__hint { transition: opacity var(--duration-fast) var(--ease-standard); }
     .shot--desktop .shot__frame, .shot--panel .shot__img { transition: box-shadow var(--duration-base) var(--ease-standard); }
-    .shot__zoom:hover .shot__frame { box-shadow: var(--shadow-lg); }
+    @media (hover: hover) { .shot__zoom:hover .shot__frame { box-shadow: var(--shadow-lg); } }
   }
 
   .shot__cap { font-size: var(--text-sm); line-height: 1.55; color: var(--color-muted); max-width: 62ch; text-wrap: pretty; }
   :lang(ar) .shot__cap { line-height: 1.8; }
 
-  /* The enlarged screen: a modal dialog. Phones: the screen at its natural size (2x captures at half their pixels),
-     scrollable inside (and pinch-zoomable). */
-  .zoom { padding: 0; margin: auto; width: max-content; max-width: calc(100vw - 1rem); max-height: calc(100dvh - 1rem); overflow: hidden; border: 1px solid var(--color-line-strong); border-radius: var(--radius-xl); background: var(--color-surface); color: var(--color-ink); box-shadow: var(--shadow-xl); }
-  .zoom[open] { display: grid; grid-template-rows: auto minmax(0, 1fr); }
-  .zoom::backdrop { background: var(--color-scrim); }
-  .zoom__bar { display: flex; align-items: center; gap: 1rem; padding-block: .375rem; padding-inline: 1rem .375rem; border-block-end: 1px solid var(--color-line); }
-  .zoom__cap { margin: 0; flex: 1; min-width: 0; max-width: 70ch; font-size: var(--text-sm); line-height: 1.5; color: var(--color-ink-2); }
-  .zoom__body { overflow: auto; overscroll-behavior: contain; }
-  .zoom__body:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
-  .zoom__img { display: block; max-width: none; height: auto; margin-inline: auto; }
-  /* Wider screens: the whole screen in view, as large as the window allows (the width/height attributes are the
-     capture's own pixels, so it is never stretched beyond them). */
-  @media (min-width: 48rem) {
-    .zoom__img { width: auto; height: auto; max-width: calc(100vw - 3rem); max-height: calc(100dvh - 5.5rem); }
-  }
-  /* While a screen is enlarged, the chat launcher (also in the top layer) steps away. */
-  :root[data-screen-open] [data-mh-chat] { visibility: hidden; }
+  /* The enlarge view itself (shared with the figures) is in case.css, section 12. */
 }

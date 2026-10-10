@@ -5,11 +5,19 @@
  * the caption, the architecture disclaimer, the numbered callouts (numbers match the drawing) and the long text
  * description. Diagrams stay LTR on Arabic pages; their title/desc, caption and callouts are Arabic there. The drawing
  * moves while on screen (a request travelling its main path, src/scripts/motion.ts); its pause button sits in the bar.
+ *
+ * Phones (audit CASE-01, CASE-02):
+ * - "Enlarge" (the bar's expand button, 44 px on touch screens) opens the wide drawing in the page's enlarge view
+ *   (ZoomDialog.astro): full screen at its design size to pan and pinch-zoom; Back, Escape or × close it. The drawing
+ *   for it waits in a <template> (its own ids), so nothing is duplicated in the page until it opens. With JS only.
+ * - The first figure (`fig--hero`) is shown cut at about two-thirds of the screen with a fade and "Show the full
+ *   diagram", so the story isn't pushed three screens down; the callouts and the text description come with the full
+ *   diagram. Without JS the figure is shown whole.
  */
 import Icon from "~/components/ui/Icon.astro";
 import MotionToggle from "~/components/ui/MotionToggle.astro";
 import { diagram, diagramSvg, type DiagramId } from "~/lib/diagrams";
-import { format, messages, type Locale } from "~/lib/i18n";
+import { dirOf, format, messages, type Locale } from "~/lib/i18n";
 
 interface Props {
   locale: Locale;
@@ -26,18 +34,43 @@ const figLabel = format(m.work.page.figure, { n });
 const capId = `${anchor ?? id}-cap`;
 const wide = diagramSvg(id, "wide", { locale });
 const compact = diagramSvg(id, "compact", { locale });
+/** The enlarge view's copy: the wide drawing with its own ids (it is cloned into the dialog only when opened). */
+const zoomed = diagramSvg(id, "wide", { locale, idSuffix: "zoom" });
+const hero = (className ?? "").split(/\s+/).includes("fig--hero");
+const enlarge = format(m.work.page.enlargeFigure, { n });
 ---
 <figure class:list={["fig", className]} id={anchor} aria-labelledby={capId}>
   <div class="fig-panel">
     <div class="fig-panel__bar" dir="ltr">
       <span class="fig-panel__id">Fig. {n}</span>
       <span class="fig-panel__title" lang="en">{id} · architecture</span>
+      <button
+        class="fig-panel__zoom"
+        type="button"
+        dir={dirOf(locale)}
+        data-zoom-figure
+        data-caption={`${figLabel}. ${d.title[locale]}`}
+        aria-label={enlarge}
+        title={enlarge}
+        aria-haspopup="dialog"
+      >
+        <Icon name="expand" />
+      </button>
       <MotionToggle locale={locale} />
     </div>
     <div class="fig-panel__canvas" dir="ltr" data-motion="dg-play">
       <div class="dg-variant dg-variant--wide" set:html={wide} />
       <div class="dg-variant dg-variant--compact" set:html={compact} />
+      {
+        hero && (
+          <button class="btn btn--secondary fig-panel__more" type="button" dir={dirOf(locale)} data-fig-more data-chat-avoid>
+            {m.work.page.showFullDiagram}
+            <Icon name="chevron-down" />
+          </button>
+        )
+      }
     </div>
+    <template data-zoom-src><Fragment set:html={zoomed} /></template>
   </div>
   <figcaption class="fig__caption">
     <p class="fig__caption-text" id={capId}>
@@ -70,3 +103,23 @@ const compact = diagramSvg(id, "compact", { locale });
     </details>
   </figcaption>
 </figure>
+{
+  hero && (
+    <script>
+      // "Show the full diagram": the first figure is cut on phones (case.css); this shows all of it and moves focus to
+      // its caption (the button is gone), so the reader continues from there.
+      for (const btn of document.querySelectorAll<HTMLButtonElement>("[data-fig-more]")) {
+        btn.addEventListener("click", () => {
+          const fig = btn.closest<HTMLElement>("figure");
+          if (!fig) return;
+          fig.toggleAttribute("data-open", true);
+          const cap = fig.querySelector<HTMLElement>(".fig__caption-text");
+          if (cap) {
+            cap.tabIndex = -1;
+            cap.focus({ preventScroll: true });
+          }
+        });
+      }
+    </script>
+  )
+}

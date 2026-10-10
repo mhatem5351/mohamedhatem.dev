@@ -8,6 +8,10 @@
  * - Success replaces the form with a confirmation and moves focus to its heading.
  * - Without JavaScript the form still posts natively (the Worker accepts form posts); Turnstile then can't run,
  *   so the channels above remain the reliable path.
+ * - Phones: each field's hint and error show between its label and the input (CSS order; the DOM keeps label, input,
+ *   hint, error), so when the keyboard opens and the browser scrolls the field just into view, the reason it's invalid
+ *   is above it, not under the keyboard. Name, email and company send the keyboard's return key to the next field (enterkeyhint="next", form.ts);
+ *   names and companies capitalise words, and names and emails are never autocorrected.
  */
 import Icon from "~/components/ui/Icon.astro";
 import { format, messages, type Locale } from "~/lib/i18n";
@@ -73,7 +77,20 @@ const json = JSON.stringify(i18n).replace(/</g, "\\u003c");
     <div class="form__row">
       <div class="field">
         <label for="cf-name">{f.name.label}</label>
-        <input class="input" id="cf-name" name="name" type="text" autocomplete="name" required maxlength={LIMITS.name.max} aria-describedby="cf-name-err" />
+        <input
+          class="input"
+          id="cf-name"
+          name="name"
+          type="text"
+          autocomplete="name"
+          autocapitalize="words"
+          autocorrect="off"
+          spellcheck="false"
+          enterkeyhint="next"
+          required
+          maxlength={LIMITS.name.max}
+          aria-describedby="cf-name-err"
+        />
         <p class="field__error" id="cf-name-err" hidden><Icon name="alert" size="sm" /><span data-error-text></span></p>
       </div>
       <div class="field">
@@ -85,6 +102,9 @@ const json = JSON.stringify(i18n).replace(/</g, "\\u003c");
           type="email"
           inputmode="email"
           autocomplete="email"
+          autocorrect="off"
+          spellcheck="false"
+          enterkeyhint="next"
           dir="ltr"
           required
           maxlength={LIMITS.email.max}
@@ -99,7 +119,17 @@ const json = JSON.stringify(i18n).replace(/</g, "\\u003c");
     <div class="form__row">
       <div class="field">
         <label for="cf-company">{f.company.label} <span class="opt">({f.optional})</span></label>
-        <input class="input" id="cf-company" name="company" type="text" autocomplete="organization" maxlength={LIMITS.company.max} aria-describedby="cf-company-err" />
+        <input
+          class="input"
+          id="cf-company"
+          name="company"
+          type="text"
+          autocomplete="organization"
+          autocapitalize="words"
+          enterkeyhint="next"
+          maxlength={LIMITS.company.max}
+          aria-describedby="cf-company-err"
+        />
         <p class="field__error" id="cf-company-err" hidden><Icon name="alert" size="sm" /><span data-error-text></span></p>
       </div>
       <div class="field">
@@ -160,8 +190,8 @@ const json = JSON.stringify(i18n).replace(/</g, "\\u003c");
     <span class="icon-tile"><Icon name="check" /></span>
     <h3 tabindex="-1" data-success-title>{m.contact.success.title}</h3>
     <p data-success-body></p>
-    <p class="form-success__ref" hidden data-success-ref dir="auto"></p>
-    <button class="btn btn--secondary" type="button" data-again>{m.contact.success.again}</button>
+    <p class="form-success__ref" hidden data-success-ref dir="auto" data-chat-avoid></p>
+    <button class="btn btn--secondary" type="button" data-again data-chat-avoid>{m.contact.success.again}</button>
   </div>
 </div>
 <script type="application/json" data-contact-i18n set:html={json} />

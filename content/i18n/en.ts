@@ -71,6 +71,8 @@ export const en = {
     profilePhoto: "Portrait of Mohamed Hatem",
     logo: "{name} logo",
     skillsTable: "Skills table, scrolls sideways",
+    /** The phone action dock (CV, WhatsApp, email) at the bottom of the screen. */
+    quickActions: "Quick actions",
   },
 
   nav: {
@@ -84,6 +86,13 @@ export const en = {
     assistant: "Ask AI",
     contact: "Contact",
     cv: "CV",
+  },
+
+  /** Phones: the action dock at the bottom of the screen once the hero's buttons have scrolled away. */
+  dock: {
+    cv: "CV",
+    whatsapp: "WhatsApp",
+    email: "Email",
   },
 
   language: {
@@ -111,11 +120,15 @@ export const en = {
     availability: "Open to new roles",
     /** After the availability in the hero meta line; links to the About facts (roles and work arrangements). */
     arrangements: "remote, in Cairo, or relocating to the Gulf or Europe",
+    /** Phones: the availability line above the headline ("Open to new roles · remote or relocation"). */
+    arrangementsShort: "remote or relocation",
     localTime: "{time} in Cairo",
     ctaAsk: "Ask my AI assistant",
     ctaContact: "Get in touch",
     ctaWork: "See my work",
     ctaCv: "Download CV",
+    /** Touch screens: the CV button opens the CV page (readable on a phone) instead of downloading the A4 PDF. */
+    ctaCvView: "View my CV",
     scrollCue: "Scroll for more",
     /** The "Ask my AI" input in the hero: it opens the assistant with the typed question. */
     ask: {
@@ -192,6 +205,8 @@ export const en = {
     title: "Systems I've built and run",
     lead: "Work since 2020, from multi-agent assistants to data pipelines. Client details stay at the level each employer allows.",
     moreTitle: "More work",
+    /** Phones: "More work" sits behind this disclosure. */
+    moreToggle: "Show more work ({count})",
     labels: {
       problem: "The problem",
       approach: "Approach",
@@ -283,6 +298,12 @@ export const en = {
       enlarge: "Enlarge: {alt}",
       /** Closes the full-size view of a screen. */
       closeScreen: "Close",
+      /** A figure's button that opens the diagram full screen, to pan and pinch-zoom ({n} = the figure's number). */
+      enlargeFigure: "Enlarge figure {n}",
+      /** Phones: the first figure is shown cut short at first; this button shows all of it. */
+      showFullDiagram: "Show the full diagram",
+      /** In the enlarged diagram: how to explore it. */
+      zoomHint: "Drag to pan, pinch to zoom.",
     },
   },
 
@@ -343,7 +364,11 @@ export const en = {
     viewLive: "Live site",
     license: "{license} licence",
     teamProject: "Team project",
+    /** Phones: the smaller repositories sit behind this disclosure. */
+    moreToggle: "Show {count} more repositories",
     archiveTitle: "Where I started",
+    /** Phones: the coursework list sits behind this disclosure. */
+    archiveToggle: "Show the coursework ({count})",
     archiveLead: "Coursework from my AI diploma (2021–22), kept public as a record.",
     allRepos: "All repositories on GitHub",
   },
@@ -462,6 +487,15 @@ export const en = {
     focus: "Multi-agent LLM systems, RAG, LLM serving",
     /** Short label of the download button on narrow screens. */
     pdfShort: "PDF",
+    /** Touch screens: the PDF opens in the browser's viewer (it has its own share and save). */
+    openPdf: "Open PDF",
+    /** Touch screens: saves the PDF file instead of opening it. */
+    savePdf: "Save the PDF",
+    /** The native share sheet (Web Share): the PDF file where the browser can share files, else the page link. */
+    share: "Share",
+    shareLabel: "Share this CV",
+    /** The vCard (/mohamed-hatem.vcf): opens the phone's "new contact" card. */
+    addContact: "Add to contacts",
     footer: "Case studies, code and an AI assistant that answers questions about my work: mohamedhatem.dev",
   },
 
@@ -549,6 +583,8 @@ export const en = {
       whatsapp: { title: "WhatsApp", action: "Message me on WhatsApp" },
       linkedin: { title: "LinkedIn", action: "Connect on LinkedIn" },
       github: { title: "GitHub", action: "Read my code" },
+      /** The vCard: name, title, email, WhatsApp number and links in one tap. */
+      vcard: { title: "Add to contacts", value: "Save my details to your phone" },
     },
     copyEmail: "Copy email address",
     emailCopied: "Email address copied",
@@ -701,6 +737,23 @@ export const en = {
     ogFocus: ["Multi-agent LLM systems", "RAG", "LLM serving"],
     /** The CV's sharing card (the meta description reads as a page summary, not as text on an image). */
     ogCvSummary: "7\u00a0years in data and AI: multi-agent LLM systems, RAG and vLLM serving on A100 GPUs.",
+  },
+
+  /**
+   * The installed app: site/public/site.webmanifest and ar.webmanifest (written by design/scripts/brand/manifest.mjs)
+   * and the iOS home-screen title (Head.astro). The app's full name is `profile.basics.name`.
+   */
+  pwa: {
+    /** Label under the home-screen icon (manifest `short_name`, iOS `apple-mobile-web-app-title`): at most ~12 characters. */
+    shortName: "M. Hatem",
+    /** Install dialog description. {name}: `basics.name`; {headline}: `basics.headline`. */
+    description: "{name}, {headline}: multi-agent LLM systems, RAG and LLM serving.",
+    /** Long-press shortcuts on the installed icon (`shortName` where the launcher has little room). */
+    shortcuts: {
+      ask: { name: "Ask my AI assistant", shortName: "Ask AI" },
+      cv: { name: "CV" },
+      contact: { name: "Contact" },
+    },
   },
 } as const;
 

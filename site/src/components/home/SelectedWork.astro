@@ -3,11 +3,13 @@
  * 02 Selected work (DESIGN.md 12.10): featured case studies (feature card first, then the grid; an orphan last card
  * becomes a wide card), then the compact "More work" list: the brief case studies, whose implementation details
  * aren't public (content/profile.ts `featured: false`). Every card links to its case-study page.
+ * Phones: "More work" sits behind a "Show more work (3)" disclosure (with JS; open without it), like the toolbox.
  */
 import CaseCard from "~/components/work/CaseCard.astro";
+import Icon from "~/components/ui/Icon.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
 import { workLayout } from "~/lib/home-work";
-import { messages, type Locale } from "~/lib/i18n";
+import { format, messages, type Locale } from "~/lib/i18n";
 
 interface Props {
   locale: Locale;
@@ -32,9 +34,13 @@ const anchorOf = (cs: { slug: string }) => (cs.slug === "logic-controls-website"
     </div>
     {
       more.length > 0 && (
-        <div class="more-work">
+        <div class="more-work disclose" data-disclose>
           <h3 class="eyebrow more-work__title">{m.work.moreTitle}</h3>
-          <div class="more-work__list">
+          <button class="btn btn--secondary disclose__toggle" type="button" aria-expanded="false" aria-controls="more-work-list" data-disclose-toggle>
+            {format(m.work.moreToggle, { count: more.length })}
+            <Icon name="chevron-down" class="disclose__chev" />
+          </button>
+          <div class="more-work__list disclose__body" id="more-work-list">
             {more.map((cs, i) => (
               <CaseCard cs={cs} locale={locale} variant="compact" i={i + 1} headingLevel={4} />
             ))}

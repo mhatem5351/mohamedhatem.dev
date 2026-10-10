@@ -96,9 +96,22 @@ Source of truth: `design/scripts/build-tokens.mjs` (authored in OKLCH: lapis-nig
 (Tailwind 4 `@theme static` + dark overrides) and `tokens.json`; `site/src/styles/tokens*.css` are copies. Token names
 are kept from the first palette, so **`teal` is turquoise and `sage` is amethyst** (no longer green: the availability
 dots, "copied" checks and success states read `teal-fill` / `success`). Contrast is verified by
-`node design/scripts/check-contrast.mjs` (263 pairs in both themes, including every category `-fill` at 3:1 as a
-graphic and the components that set their own colours, read from their source: the CTA band and the chat launcher's
-disc, rim and comic bubble; plus 16 colour-vision checks; exits non-zero on any failure; currently 0 failures).
+`node design/scripts/check-contrast.mjs` (361 pairs in both themes, including every category `-fill` at 3:1 as a
+graphic, the small-text rule below and the components that set their own colours, read from their source: the CTA
+band and the chat launcher's disc, rim and comic bubble; plus 16 colour-vision checks; exits non-zero on any failure;
+currently 0 failures).
+
+**Small-text rule: 6:1 at 12 px or less.** Every colour token the site sets at 12 px or less (`--text-2xs` and the
+few fixed 10–11.5 px labels) must reach **6:1**, a step above AA's 4.5:1, against every surface it sits on (`bg`,
+`bg-subtle`, `surface`, `surface-2`, and a chip's own tint), in both themes: on a phone, often outdoors, small text
+needs the margin. The script lists those tokens with where each one is used (`muted`, `ink-2`, `ink`, `accent`,
+`on-inverse` and the category text colours teal, coral, sky, sage and slate), so a new palette has to pass it too.
+To meet it, the light `muted` went from `#5B6375` to `#525A6C` (OKLCH lightness 0.50 → 0.4675, hue and chroma
+kept), and the light teal, coral, amethyst and slate text colours went a hair darker (lightness only, −0.003 to
+−0.014; CIEDE2000 0.3 to 1.4). Gold text (`saffron`, light 5.32–5.68) is never set under 13 px (the case-study
+stack chips, the component view's group labels, the assistant flow's step numerals and the callout discs are
+`--text-xs`, where 4.5:1 applies), so it has no small-text rule; the diagrams' own callout numerals (`on-saffron`,
+5.28, 12–13 SVG units) are listed as *to do* (printed, not failing).
 
 ### 3.1 Semantic tokens
 
@@ -114,7 +127,7 @@ disc, rim and comic bubble; plus 16 colour-vision checks; exits non-zero on any 
 | `line-input` | `#7B808D` | `#6B748A` | form-control borders (≥ 3:1, WCAG 1.4.11) |
 | `ink` | `#131D36` lapis ink | `#F4F0E7` warm ivory | primary text |
 | `ink-2` | `#323D55` | `#CBD1DC` | body copy on cards, secondary text |
-| `muted` | `#5B6375` | `#A1A9BC` | meta, captions, placeholders (≥ 4.5:1 everywhere) |
+| `muted` | `#525A6C` | `#A1A9BC` | meta, captions, placeholders; the 12 px text colour (≥ 6:1 on every surface) |
 | `subtle` | `#7A808E` | `#7E8698` | decorative / disabled only (never body text in light) |
 | `on-inverse` | `#F7F6F3` | `#080E1C` | text on `surface-inverse` |
 | `accent` | `#2B51AA` lapis | `#E9BB61` gold | links, active states, focus, emphasis word in H1 |
@@ -136,12 +149,12 @@ bg), `-tint-line`.
 
 | Token | Colour | Light text / fill | Dark text / fill | Means |
 |---|---|---|---|---|
-| teal | faience turquoise (primary category) | `#136868` / `#038586` | `#82D9D5` / `#5AC0BC` | orchestration, agents, current role (Globant); availability, success |
+| teal | faience turquoise (primary category) | `#0C6464` / `#038586` | `#82D9D5` / `#5AC0BC` | orchestration, agents, current role (Globant); availability, success |
 | saffron | gold | `#885716` / `#B47D19` | `#E9BB61` / `#E8B458` | retrieval, data; honours (award badge) |
-| coral | carnelian | `#A03B22` / `#B84D30` | `#F3957B` / `#DA6C50` | generation, LLM output; errors (`danger`) |
+| coral | carnelian | `#9D381F` / `#B84D30` | `#F3957B` / `#DA6C50` | generation, LLM output; errors (`danger`) |
 | sky | lapis | `#2B51AA` / `#2855AD` | `#9EBEF8` / `#6591E1` | evaluation, observability, quality |
-| sage | amethyst | `#794589` / `#A66BB9` | `#E5C3EF` / `#DFBCEB` | guard, safety; bilingual; teaching |
-| slate | slate | `#515B6C` / `#515B6C` | `#B3BFCE` / `#7C8795` | serving, infra, tools/MCP, storage |
+| sage | amethyst | `#784488` / `#A66BB9` | `#E5C3EF` / `#DFBCEB` | guard, safety; bilingual; teaching |
+| slate | slate | `#505A6B` / `#515B6C` | `#B3BFCE` / `#7C8795` | serving, infra, tools/MCP, storage |
 
 Rules: one accent per component; category colour appears as a 3 px top bar, an icon tile, a chip, a node ring or a
 trace bar, never as a large fill. Never set text in a `-fill` colour. No gradients on text. No purple gradients, no
@@ -154,7 +167,7 @@ lapis is both the accent and the evaluation category. The label always says whic
 closest pair): dark 14.2 normal, **9.3 deuteranopia** (turquoise/amethyst), **12.9 protanopia**, 11.6 tritanopia; light
 13.4 normal, **9.3 deuteranopia** (gold/carnelian), **12.4 protanopia**, 11.2 tritanopia. `check-contrast.mjs` fails
 below 8 for deuteranopia and protanopia (1.x had 2.3: coral and sage collapsed). The text colours (chip labels) are
-closer under deuteranopia (light gold/carnelian 1.4, dark turquoise/slate 2.3, the same order as 1.x): they always sit
+closer under deuteranopia (light turquoise/slate 1.8, dark turquoise/slate 2.3, the same order as 1.x): they always sit
 inside a chip or next to a label that names the category, so no meaning rests on them (WCAG 1.4.1).
 
 **Components with their own colours** (not tokens, each checked by `check-contrast.mjs` from its source file):
@@ -166,36 +179,41 @@ inside a chip or next to a label that names the category, so no meaning rests on
 | Chat launcher disc (`chat-avatar.ts`) | disc `#131D36`, inner glow `#6591E1` 30%, rim `#E4AD4B` | lapis set in gold, both themes: rim 9.5:1 on the dark page, disc 15.5:1 on the light one, rim 8.3:1 on its disc |
 | Comic greeting (`chat-avatar.ts`) | paper `#FEFDFC` (94% over the page), ink `#131D36`, greeting line `#2B51AA`, Ben-Day dots `saffron-fill` | ink 14.5:1 and greeting 6.4:1 at worst (on the dark page's slightly greyer paper) |
 | Monogram node (`site.css`, brand assets) | `#E4AD4B` brand gold (by night `accent-fill`); `#B47D19` on light browser tabs | the mark keeps its gold on the lapis tile in both themes |
-| CV sheet (`cv.css`) | the light tokens as fixed values (`#131D36`, `#323D55`, `#5B6375`, lapis `#2B51AA`, gold `#885716`, stripe turquoise / gold / carnelian fills) | the A4 sheet and the PDFs are always paper |
-| Select chevron (`components.css`) | `muted` per theme (`#5B6375` / `#A1A9BC`) as two data URIs | a data URI can't read a custom property |
+| CV sheet (`cv.css`) | the light tokens as fixed values (`#131D36`, `#323D55`, lapis `#2B51AA`, gold `#885716`, stripe turquoise / gold / carnelian fills), with the earlier light muted `#5B6375` (5.93:1 on the sheet's `#FEFDFC`) | the A4 sheet and the PDFs are always paper |
+| Select chevron (`components.css`) | `muted` per theme (`#525A6C` / `#A1A9BC`) as two data URIs | a data URI can't read a custom property |
 | Phone bezel (`components.css`) | `#0A0F1A` | a device colour, near-black lapis |
 
 ### 3.3 Verified pairs (excerpt; full list: `node design/scripts/check-contrast.mjs`)
 
+"4.5 · 6" means 4.5:1 for text, and 6:1 where the token is set at 12 px or less (the small-text rule, §3).
+
 | Pair (fg on bg) | Light | Dark | Min |
 |---|---|---|---|
-| `ink` on `bg` | #131D36 / #F7F6F3 = **15.46** | #F4F0E7 / #080E1C = **16.94** | 4.5 |
-| `ink-2` on `bg` | #323D55 / #F7F6F3 = **10.05** | #CBD1DC / #080E1C = **12.56** | 4.5 |
-| `muted` on `bg` | #5B6375 / #F7F6F3 = **5.57** | #A1A9BC / #080E1C = **8.18** | 4.5 |
-| `muted` on `surface-2` | #5B6375 / #F1EFEA = **5.24** | #A1A9BC / #161E31 = **7.05** | 4.5 |
-| `accent` on `bg` | #2B51AA / #F7F6F3 = **6.79** | #E9BB61 / #080E1C = **10.78** | 4.5 |
-| `accent` on `surface` | #2B51AA / #FEFDFC = **7.23** | #E9BB61 / #0F1728 = **10.01** | 4.5 |
-| `teal` on `bg` | #136868 / #F7F6F3 = **6.06** | #82D9D5 / #080E1C = **11.78** | 4.5 |
-| `saffron` on `bg` | #885716 / #F7F6F3 = **5.68** | #E9BB61 / #080E1C = **10.78** | 4.5 |
-| `coral` on `bg` | #A03B22 / #F7F6F3 = **6.18** | #F3957B / #080E1C = **8.62** | 4.5 |
-| `sky` on `bg` | #2B51AA / #F7F6F3 = **6.79** | #9EBEF8 / #080E1C = **10.25** | 4.5 |
-| `sage` on `bg` | #794589 / #F7F6F3 = **6.42** | #E5C3EF / #080E1C = **12.28** | 4.5 |
-| `slate` on `bg` | #515B6C / #F7F6F3 = **6.34** | #B3BFCE / #080E1C = **10.33** | 4.5 |
-| `teal` on `teal-tint` | #136868 / #E0F4F4 = **5.74** | #82D9D5 / #0B2827 = **9.53** | 4.5 |
-| `saffron` on `saffron-tint` | #885716 / #FAEDDB = **5.32** | #E9BB61 / #2E2006 = **8.86** | 4.5 |
-| `coral` on `coral-tint` | #A03B22 / #FFEAE4 = **5.77** | #F3957B / #371911 = **7.17** | 4.5 |
-| `sky` on `sky-tint` | #2B51AA / #E7F0FE = **6.40** | #9EBEF8 / #162339 = **8.38** | 4.5 |
-| `sage` on `sage-tint` | #794589 / #F7EAFC = **5.99** | #E5C3EF / #281F2B = **10.13** | 4.5 |
-| `slate` on `slate-tint` | #515B6C / #EDEFF4 = **5.96** | #B3BFCE / #202327 = **8.46** | 4.5 |
-| `on-inverse` on `surface-inverse` | #F7F6F3 / #131D36 = **15.46** | #080E1C / #F4F0E7 = **16.94** | 4.5 |
+| `ink` on `bg` | #131D36 / #F7F6F3 = **15.46** | #F4F0E7 / #080E1C = **16.94** | 4.5 · 6 |
+| `ink-2` on `bg` | #323D55 / #F7F6F3 = **10.05** | #CBD1DC / #080E1C = **12.56** | 4.5 · 6 |
+| `muted` on `bg` | #525A6C / #F7F6F3 = **6.40** | #A1A9BC / #080E1C = **8.18** | 4.5 · 6 |
+| `muted` on `bg-subtle` | #525A6C / #F2F0EC = **6.07** | #A1A9BC / #0B1222 = **7.93** | 4.5 · 6 |
+| `muted` on `surface` | #525A6C / #FEFDFC = **6.80** | #A1A9BC / #0F1728 = **7.60** | 4.5 · 6 |
+| `muted` on `surface-2` (lowest) | #525A6C / #F1EFEA = **6.02** | #A1A9BC / #161E31 = **7.05** | 4.5 · 6 |
+| `accent` on `bg` | #2B51AA / #F7F6F3 = **6.79** | #E9BB61 / #080E1C = **10.78** | 4.5 · 6 |
+| `accent` on `surface` | #2B51AA / #FEFDFC = **7.23** | #E9BB61 / #0F1728 = **10.01** | 4.5 · 6 |
+| `teal` on `bg` | #0C6464 / #F7F6F3 = **6.43** | #82D9D5 / #080E1C = **11.78** | 4.5 · 6 |
+| `saffron` on `bg` | #885716 / #F7F6F3 = **5.68** | #E9BB61 / #080E1C = **10.78** | 4.5 (12 px uses: to do) |
+| `coral` on `bg` | #9D381F / #F7F6F3 = **6.44** | #F3957B / #080E1C = **8.62** | 4.5 · 6 |
+| `sky` on `bg` | #2B51AA / #F7F6F3 = **6.79** | #9EBEF8 / #080E1C = **10.25** | 4.5 · 6 |
+| `sage` on `bg` | #784488 / #F7F6F3 = **6.52** | #E5C3EF / #080E1C = **12.28** | 4.5 · 6 |
+| `slate` on `bg` | #505A6B / #F7F6F3 = **6.44** | #B3BFCE / #080E1C = **10.33** | 4.5 · 6 |
+| `teal` on `teal-tint` | #0C6464 / #E0F4F4 = **6.09** | #82D9D5 / #0B2827 = **9.53** | 4.5 · 6 |
+| `saffron` on `saffron-tint` | #885716 / #FAEDDB = **5.32** | #E9BB61 / #2E2006 = **8.86** | 4.5 (12 px uses: to do) |
+| `coral` on `coral-tint` | #9D381F / #FFEAE4 = **6.01** | #F3957B / #371911 = **7.17** | 4.5 · 6 |
+| `sky` on `sky-tint` | #2B51AA / #E7F0FE = **6.40** | #9EBEF8 / #162339 = **8.38** | 4.5 · 6 |
+| `sage` on `sage-tint` | #784488 / #F7EAFC = **6.08** | #E5C3EF / #281F2B = **10.13** | 4.5 · 6 |
+| `slate` on `slate-tint` | #505A6B / #EDEFF4 = **6.05** | #B3BFCE / #202327 = **8.46** | 4.5 · 6 |
+| `muted` on `teal-tint` (decision source line) | #525A6C / #E0F4F4 = **6.06** | #A1A9BC / #0B2827 = **6.62** | 6 |
+| `on-inverse` on `surface-inverse` | #F7F6F3 / #131D36 = **15.46** | #080E1C / #F4F0E7 = **16.94** | 4.5 · 6 |
 | `on-accent` on `accent-solid` | #FFFFFF / #2348A1 = **8.36** | #091123 / #E8B458 = **9.95** | 4.5 |
-| `on-saffron` on `saffron-fill` | #091123 / #B47D19 = **5.28** | #091123 / #E8B458 = **9.95** | 4.5 |
-| `danger` on `danger-tint` | #A03B22 / #FFEAE4 = **5.77** | #F3957B / #371911 = **7.17** | 4.5 |
+| `on-saffron` on `saffron-fill` | #091123 / #B47D19 = **5.28** | #091123 / #E8B458 = **9.95** | 4.5 (11 px numerals: to do) |
+| `danger` on `danger-tint` | #9D381F / #FFEAE4 = **6.01** | #F3957B / #371911 = **7.17** | 4.5 |
 | `line-input` on `surface` | #7B808D / #FEFDFC = **3.89** | #6B748A / #0F1728 = **3.83** | 3 (UI) |
 | `focus` on `bg` | #2B51AA / #F7F6F3 = **6.79** | #E9BB61 / #080E1C = **10.78** | 3 (UI) |
 | `subtle` on `bg` | #7A808E / #F7F6F3 = **3.66** | #7E8698 / #080E1C = **5.28** | 3 (large/UI only) |
@@ -220,7 +238,7 @@ inside a chip or next to a label that names the category, so no meaning rests on
   first frame and its chrome are dark; the boot script switches both to light (`data-light`, the page's own light
   colour: `#F7F6F3`, the CV's band `#F2F0EC`; the CV's dark chrome is its band, `#0B1222`) for a visitor who chose
   light, and the toggle keeps them in step. The web manifest's theme and background colours are `#080E1C`
-  (`brand.mjs` writes them from the dark `bg` token). The CV's A4 sheet stays paper-white inside the dark page, and
+  (`brand/manifest.mjs` writes them, and the Arabic manifest, from the dark `bg` token). The CV's A4 sheet stays paper-white inside the dark page, and
   print is unchanged (white).
 - Dark mode is not inverted light mode: surfaces step *up* in lightness for elevation, shadows deepen, glows rise to
   22%, and a 1 px top inner highlight (`--inset-highlight`, white 5%) gives cards their edge.
@@ -242,8 +260,8 @@ inside a chip or next to a label that names the category, so no meaning rests on
 
 | Token | Min → max | Line-height | Tracking | Use |
 |---|---|---|---|---|
-| `2xs` | 11 → 12 px | 1.45 | 0 | mono chips, trace dates, captions |
-| `xs` | 12 → 13 | 1.5 | 0 | eyebrows (mono uppercase +0.08em), meta |
+| `2xs` | 12 → 12 px | 1.45 | 0 | mono chips, trace dates, captions |
+| `xs` | 13 → 13 | 1.5 | 0 | eyebrows (mono uppercase +0.08em), meta |
 | `sm` | 14 → 15 | `--lh-ui` 1.45 | 0 | card body, nav, buttons |
 | `base` | 16 → 17 | `--lh-body` 1.65 | 0 | body copy |
 | `md` | 18 → 20 | `--lh-lead` 1.55 | −0.005em | ledes, hero sub-copy |
@@ -253,6 +271,9 @@ inside a chip or next to a label that names the category, so no meaning rests on
 | `3xl` | 32 → 52 | 1.08 | −0.03em | section titles (H2) |
 | `display` | 40 → 70 | `--lh-display` 1.02 | −0.035em | hero H1 only |
 | `mega` | 64 → 128 | 0.95 | −0.045em | 404 numeral |
+
+`2xs` and `xs` are fixed at their desktop size (they were 11 → 12 and 12 → 13): on phones no content text goes under
+12 px, and the desktop is unchanged. Text at 12 px also takes the 6:1 small-text contrast rule (§3).
 
 Exact `clamp()` values live in `tokens.css` (`--text-*`, with Tailwind companion vars `--text-*--line-height` and
 `--text-*--letter-spacing`). Headings use `text-wrap: balance`; paragraphs `text-wrap: pretty` (Firefox ignores it;
@@ -533,11 +554,21 @@ hairline; hidden < 768). Centre-end: links Work · Experience · Open source · 
 "Theme: Light"), **Ask my AI**
 (accent button, 36 px; "Ask AI" < 768), menu button (< 1024). Skip link is the first focusable element.
 `aria-current="page"` on the active link (section scroll-spy optional, `aria-current="true"`).
+Phones and tablets (< 1024): the header slides up on scroll down (after 200 px, 8 px hysteresis) and back on any scroll
+up, never while the menu is open or focus is in it, and not for an in-page jump (its target lands below the header);
+the case study's TOC bar and the reading progress follow it. On touch screens its controls are 44 px. Its height grows
+with text zoom (`min-height`) and the name truncates, then hides, before the actions do (a container query).
+Landscape phones (height < 30rem) get a 52 px header.
 
 ### 12.2 Mobile menu (`.menu-sheet`)
 Fixed sheet under the nav (< 1024): large Space Grotesk links with hairlines and arrows, then the language switch and
 a two-way segmented theme control (Light / Dark, `aria-pressed`; Dark is pressed by default). Closes on Escape, outside click or link
 click; focus returns to the menu button; `aria-expanded` on the button.
+While open it is modal: the page behind can't scroll, a `scrim` covers it (tap closes the menu and returns focus to the
+button), and everything behind the header is inert (main, footer, skip link, dock, chat; the chat launcher steps away).
+The sheet stays the button's disclosure, with its language and theme controls inside its nav landmark. Safe-area
+padding on its sides and bottom. Switching language from the menu (or the nav, or the footer) lands on the same
+section in the other language.
 
 ### 12.3 Buttons (`.btn`)
 Heights 36 (sm) / 44 (md, default) / 52 (lg). Variants: **primary** (ink, `surface-inverse`), **accent** (gold by night, lapis by day; reserved
@@ -562,6 +593,13 @@ the About facts, then clock icon + live Cairo time). Suggestion chips live in th
 assistant section and the chat welcome, not in the hero (the hero must fit 1440 × 900). Art column: hero graph +
 mono caption with a live dot. Background: dot grid + glows (section 10.3). Below: metric strip and logo row, inside the
 first viewport on 1440 × 900 (the strip's numerals peek above the fold as a scroll cue).
+**Phones (< 480):** the first screen does a recruiter's job on a 375 × 667 iPhone SE: the availability line moves above
+the H1 as a small sans pill ("● Open to new roles · remote or relocation", 13 px), the H1 is 2rem (no 15.5ch cap), the
+lede is `basics.introShort` (≤ 120 characters, no repeated role), gaps tighten, so the ask bar, both buttons and the
+availability are on the first screen (the ask bar inside Safari's 548 px). The ask field is ≥ 16 px (no iOS zoom); its
+typed examples scroll like real typing and run one pass on touch screens. On touch screens the CV button reads "View my
+CV" and opens `/cv/` (with a mouse it downloads the PDF). Below 640 the metric strip and the logo row come before the
+graph (CSS order). The live dot rests whenever the graph does.
 
 ### 12.6 Metric strip (`.metrics`)
 `<dl>` of five facts: value (Space Grotesk 600, `2xl`, tabular, optional small unit) over a label (sm, muted, ≤ 18ch).
@@ -614,6 +652,12 @@ grid: the group's first desktop screen spans both columns when it has three or m
 crop sit in the narrow column beside the stacked desktop screens. Captions in `sm` muted under each screen. Every
 screen enlarges in a modal dialog (natural size with panning on phones; as large as the window allows, never beyond
 the capture's pixels, from 48rem) with an "enlarge" cue on hover / focus (always on touch screens).
+**Figures on phones:** every figure's bar has an Enlarge button (44 px on touch screens) that opens the same dialog with
+the wide drawing at its design size, to pan and pinch-zoom (full screen on phones, with a "Drag to pan, pinch to zoom."
+line). The dialog closes with Escape, ×, the backdrop and the phone's Back; focus returns to its opener; the living
+charts rest while it is open. Figure 1 is cut at 70 % of the screen on phones, with a fade and "Show the full diagram";
+its callouts and text description come with the full diagram. The compact drawings keep every label ≥ 11 px on a
+375 px phone (viewBox 320 wide, labels 12–13 units).
 **Brief case studies** (implementation details not public) are compact and say so: a "Brief" tag in the eyebrow, no
 key-facts strip, then "The problem", "What I did" and "Outcome" beside a note card (why the page is short, where the
 facts come from, ask my AI, all work); the component view only when it has more than three parts.
@@ -674,6 +718,12 @@ a 320 px phone never scrolls sideways; `theme="auto"`, `language` = page locale)
 hint, "Send message". Validation on submit and on blur after the first submit: inline error under the field
 (`aria-invalid`, `aria-describedby`), an error summary at the top for screen readers, focus moves to the first
 invalid field. Success state replaces the form with a confirmation card (and keeps the channels visible).
+Phones: a field's hint and error show between its label and the input (so the keyboard never hides why it's invalid);
+errors are `sm`; after a failed submit, leaving a field re-checks only that field, a beat later, and the error summary
+keeps its box until the next submit (so Send never moves under the finger); the summary scrolls into view under the
+header; the return key on name, email and company moves to the next field. Every channel card is one link (the Email
+card's main area; its copy button and Gmail line beside it), and a fifth card, "Add to contacts", serves the vCard.
+On touch screens Turnstile loads when the form is first used; the compact widget's 140 px are reserved up front.
 
 ### 12.18 Footer
 Monogram + name, one-line summary, tri-colour stripe; columns Site / Elsewhere / This site (source code link, other
@@ -735,6 +785,30 @@ the summary ("7 years in data and AI", "14-agent assistant", "6-agent bilingual 
 (Arabic 9.4), sidebar 8.3–8.8 pt, small print ≥ 7.8 pt; roles may continue on the next page after their head and first
 two bullets; a sidebar heading never ends a page, and Education, Awards, Languages and Open to stay whole (the build
 checks the PDFs' page text). Names never break inside ("Umm Al-Qura University", "Learning – Specialty").
+**The CV on a phone:** the toolbar's PDF button opens the PDF in the browser's viewer on touch screens ("Open PDF"; "Save
+the PDF" sits under the sheet), Share (Web Share: the PDF file where the browser shares files, else the link) replaces
+Copy link where it exists, and "Add to contacts" serves the vCard (`/mohamed-hatem.vcf`, generated from the profile).
+44 px toolbar targets on touch screens; tablets (640–1199) read the sheet scaled ×1.12 like phones and desktops.
+
+### 12.23 Phones: action dock and touch
+- **Action dock** (`.dock`, < 640): CV (accent), WhatsApp and Email in a pill at the bottom (44 px targets, safe-area
+  aware, mirrored in RTL), beside the chat launcher, never over it (it ends 0.5rem before the launcher's corner, and the
+  launcher's greeting steps aside from it). It appears once the hero's (or the case study's) own buttons have scrolled
+  away, and steps away while the contact section or the footer is on screen, while the menu, the chat or a dialog is
+  open, and while a text field has focus.
+- **Touch targets:** 44 px on touch screens for every control outside running text (`.btn--sm`, nav and menu
+  controls, footer rows in a two-column grid, breadcrumbs, case links, the CV toolbar, figure tools); pause buttons keep
+  their 32 px look with a 44 px hit area.
+- **Feedback:** decorative hover lifts and tints apply only where hover exists (`@media (hover: hover)`); touch screens
+  get a pressed state (a token tint) within a frame on cards, rows, chips, menu links and icon buttons.
+- **Reading:** no text under 12 px; content set small on desktop (role attributes, skill places, case links, field
+  errors) is `sm` on phones. "What I build" is one swipeable row with the next card peeking; work thumbnails are
+  shorter and lose their labels; "More work", the smaller repositories and the coursework sit behind a "Show …" button;
+  the experience trace shows each role's dates and duration instead of an unlabelled lane.
+- **Safe areas:** gutters, the menu sheet, the TOC bar, the footer, the dock and the enlarge dialog pad for
+  `env(safe-area-inset-*)` (physical left/right, so RTL is right too).
+- **Zoom:** at 200 % text or 175 % page zoom nothing scrolls sideways: long words, buttons and chips wrap, the metric strip
+  and role attributes stack (container queries in `em`), the header wraps instead of pushing the menu button away.
 
 ---
 
@@ -755,7 +829,7 @@ checks the PDFs' page text). Names never break inside ("Umm Al-Qura University",
 - Contrast: all token pairs verified (section 3.3). UI boundaries ≥ 3:1 (inputs, focus ring, buttons against page).
 - Focus: visible 2 px ring with 2 px offset on every interactive element, never removed; not obscured by the sticky
   nav or the chat launcher (scroll padding + the page reserves bottom space for the launcher on phones).
-- Targets ≥ 24 × 24 (we use 36–56 px for controls).
+- Targets ≥ 24 × 24 (we use 36–56 px for controls; 44 px on touch screens, section 12.23).
 - Keyboard: skip link; graph is one tab stop with arrow keys; trace rows are native `<summary>` with arrow-key
   movement; chat fully operable (Enter sends, Shift+Enter newline, Escape closes, focus returns); "/" opens the chat.
 - Structure: one H1 per page; landmark regions (`header`, `nav` with labels, `main`, `footer`); sections labelled by

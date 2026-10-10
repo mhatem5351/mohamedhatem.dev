@@ -1,6 +1,6 @@
 /**
  * Architecture diagrams from the design track (design/assets/diagrams → src/assets/diagrams): six systems, each in
- * a wide (≈1120), compact (352, phones) and thumbnail (400×250, cards) variant, plus diagrams.json with the EN/AR
+ * a wide (≈1120), compact (320, phones: every label ≥ 11 px on a 375 px phone) and thumbnail (400×250, cards) variant, plus diagrams.json with the EN/AR
  * titles, captions, text descriptions and numbered callouts.
  *
  * SVGs are inlined (so they follow the site's theme tokens) after two clean-ups required by the hash-only CSP:

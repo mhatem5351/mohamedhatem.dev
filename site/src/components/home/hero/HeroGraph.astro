@@ -1,7 +1,7 @@
 ---
 /**
  * The live agent graph (DESIGN.md 10.1; design/assets/hero-graph). Server-rendered SVG (visible without JS, zero CLS:
- * fixed 600 × 520 aspect ratio, no inline styles), enhanced by the runtime module on idle: request pulses, pause
+ * fixed 600 × 520 aspect ratio, no inline styles), enhanced by the runtime module, loaded after load on idle: request pulses, pause
  * button (persisted), hover/focus highlight, one tab stop with arrow keys, toggletips. Static frame under
  * prefers-reduced-motion. The graph renders its own accessible description and flow caption; the visible caption
  * below invites interaction.
@@ -21,5 +21,11 @@ const m = messages(locale);
   <p class="hero__caption"><span class="dot dot--live" aria-hidden="true"></span>{m.hero.graphCaption}</p>
 </div>
 <script>
-  import "~/components/hero-graph/hero-graph.ts";
+  // The runtime (8 KB gzip) loads once the page has loaded and the browser is idle: the server markup is the still
+  // frame until then (the graph starts on idle anyway), so its bytes never compete with the first paint on a slow
+  // phone connection, where the graph sits below the proof row anyway.
+  const start = () => void import("~/components/hero-graph/hero-graph.ts");
+  const idle = () => ("requestIdleCallback" in window ? requestIdleCallback(start, { timeout: 2000 }) : setTimeout(start, 300));
+  if (document.readyState === "complete") idle();
+  else addEventListener("load", idle, { once: true });
 </script>

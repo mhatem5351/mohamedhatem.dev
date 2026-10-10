@@ -46,6 +46,9 @@ const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, loc
   <CvSheet locale={locale} />
   <p class="cv-after">
     <span>{updated}{fileInfo && <> · <Ltr>{fileInfo}</Ltr></>}</span>
-    <a href={CV_PDF[other]} download={profile.cv.fileName[other]} hreflang={other} type="application/pdf">{m.cv.otherLanguagePdf}</a>
+    {/* Touch screens open the PDF from the toolbar; this saves the file instead (cv.css shows it on touch only). */}
+    <a class="cv-after__save" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf">{m.cv.savePdf}</a>
+    {/* The other language's PDF opens in the viewer on touch screens (site.ts drops `download` there). */}
+    <a href={CV_PDF[other]} download={profile.cv.fileName[other]} hreflang={other} type="application/pdf" data-open-on-touch>{m.cv.otherLanguagePdf}</a>
   </p>
 </Document>

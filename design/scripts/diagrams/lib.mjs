@@ -61,8 +61,25 @@ const SANS = `"Inter Variable",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 const MONO = `"JetBrains Mono Variable","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace`;
 export const FONT = { SANS, MONO };
 
-// The full stylesheet. `cats` limits the per-category rules to the ones a diagram uses (keeps files small).
-export function css(cats = CATS, { full = false } = {}) {
+// Text sizes in drawing units. The compact variant (320 wide) is shown about 294-308 px wide on a 375 px phone
+// (scale 0.92-0.96), so its smallest text is 12 units: every label renders at 11 CSS px or more there. Titles stay 13
+// and callout numerals are 13. The compact sizes reach the page through .dg-compact rules (inlined diagrams lose their
+// own <style>).
+// tabH / elH: pill heights; tabY / elY / coY: baseline offsets that centre the text on its pill or disc.
+export const TEXT = {
+  base:    { t: 13, s: 11, tab: 10, el: 10.5, co: 11, lg: 11, subGap: 15, tabH: 16, tabY: 4, elH: 16, elY: 3.7, coY: 3.9 },
+  compact: { t: 13, s: 12, tab: 12, el: 12, co: 13, lg: 12, subGap: 16, tabH: 18, tabY: 4.9, elH: 18, elY: 4.2, coY: 4.6 },
+};
+const COMPACT_RULES = [["s", "dg-s"], ["tab", "dg-tab"], ["el", "dg-el"], ["co", "dg-co text"], ["lg", "dg-lg"]]
+  .filter(([k]) => TEXT.compact[k] !== TEXT.base[k])
+  .map(([k, sel]) => `.dg-compact .${sel}{font-size:${TEXT.compact[k]}px}`)
+  // a page that makes the canvas transparent (the site's figure panels) would also empty the tab and edge-label pills,
+  // letting group borders and edges run through the text: the pills take the page background there
+  .concat(`.dg-compact .dg-tabbg,.dg-compact .dg-elbg{fill:var(--color-bg,var(--_cv))}`);
+
+// The full stylesheet. `cats` limits the per-category rules to the ones a diagram uses (keeps files small);
+// `compact: false` leaves out the compact text sizes (wide and thumb files).
+export function css(cats = CATS, { compact = true } = {}) {
   const c = [...new Set(["teal", "saffron", ...cats])]; // teal: pulses/orchestrator ring; saffron: callouts
   const r = [];
   r.push(`.dg{${varDecl("light", c)};direction:ltr;unicode-bidi:isolate;font-family:${SANS};-webkit-font-smoothing:antialiased}`);
@@ -87,6 +104,7 @@ export function css(cats = CATS, { full = false } = {}) {
   r.push(`.dg-cap{font:500 12px/1 ${MONO};fill:var(--_ink2)}.dg-stk{opacity:.55}`);
   r.push(`.dg-lg{font:500 11px/1 ${MONO};fill:var(--_mut)}.dg-lsw{stroke:var(--nl);stroke-width:1}`);
   r.push(`.dg-dot{fill:var(--ni,var(--_mut))}.dg-mute{fill:var(--_mut)}.dg-ink2{fill:var(--_ink2)}`);
+  if (compact) r.push(...COMPACT_RULES);
   // Opt-in motion: add class "dg-play" to the <svg> (or any ancestor). Static and complete without it.
   // One loop = one request travelling the main path (--i: hop index, --L: path length), each hop lasting --dg-hop
   // (12% of the loop); the node it reaches lights up as it lands (.dg-hl, --at: arrival index, --k: wave order inside
@@ -134,12 +152,12 @@ export function shake(cssText, markup) {
 }
 
 // ---------------------------------------------------------------- text measurement
-export function textW(str, kind = "title") {
-  if (kind === "mono" || kind === "sub") return str.length * MONO_ADVANCE * 11;
-  if (kind === "el") return str.length * MONO_ADVANCE * 10.5;
-  if (kind === "tab") return str.length * (MONO_ADVANCE * 10 + 0.8) - 0.8;
-  if (kind === "lg") return str.length * MONO_ADVANCE * 11;
-  const [font, size] = Array.isArray(kind) ? kind : ["inter600", 13];
+export function textW(str, kind = "title", T = TEXT.base) {
+  if (kind === "mono" || kind === "sub") return str.length * MONO_ADVANCE * T.s;
+  if (kind === "el") return str.length * MONO_ADVANCE * T.el;
+  if (kind === "tab") return str.length * (MONO_ADVANCE * T.tab + T.tab * 0.08) - T.tab * 0.08; // letter-spacing .08em
+  if (kind === "lg") return str.length * MONO_ADVANCE * T.lg;
+  const [font, size] = Array.isArray(kind) ? kind : ["inter600", T.t];
   const t = METRICS[font];
   let w = 0;
   for (const ch of str) w += t[ch] ?? 0.62;
@@ -163,6 +181,7 @@ export class Diagram {
     this.s = spec; this.id = id; this.variant = variant; this.title = title; this.desc = desc;
     this.pid = `dg-${id}-${variant[0]}`; // unique per diagram+variant: wide and compact can share a page
     this.W = spec.w; this.H = spec.h;
+    this.T = variant === "compact" ? TEXT.compact : TEXT.base;
     this.boxes = new Map(); this.warn = []; this.used = new Set(); this.kindsUsed = new Set();
     this.hasAsync = false; this.hasSync = false; this.hasCallout = false; this.lateCallouts = [];
   }
@@ -262,11 +281,12 @@ export class Diagram {
     this.boxes.set(g.id, { x, y, w, h, stroke: 1, group: true });
     let s = `<rect class="dg-grp" x="${x + 0.5}" y="${y + 0.5}" width="${w - 1}" height="${h - 1}" rx="14"/>`;
     if (g.tab) {
+      const T = this.T;
       const label = g.tab.toUpperCase();
-      const tw = textW(label, "tab");
-      const tx = g.tabAlign === "center" ? x + w / 2 - tw / 2 : g.tabAlign === "right" ? x + w - 16 - tw : x + 16;
-      s += `<rect class="dg-tabbg" x="${n2(tx - 7)}" y="${y - 7.5}" width="${n2(tw + 14)}" height="16" rx="4"/>`;
-      s += `<text class="dg-tab" x="${n2(tx)}" y="${y + 4}">${esc(label)}</text>`;
+      const tw = textW(label, "tab", T);
+      const tx = g.tabX ?? (g.tabAlign === "center" ? x + w / 2 - tw / 2 : g.tabAlign === "right" ? x + w - 16 - tw : x + 16);
+      s += `<rect class="dg-tabbg" x="${n2(tx - 7)}" y="${y + 0.5 - T.tabH / 2}" width="${n2(tw + 14)}" height="${T.tabH}" rx="4"/>`;
+      s += `<text class="dg-tab" x="${n2(tx)}" y="${n2(y + T.tabY)}">${esc(label)}</text>`;
       if (tw + 30 > w) this.warn.push(`group tab overflows: ${g.tab}`);
     }
     if (g.co) this.lateCallouts.push(this.callout(g.co, g.coX ?? (g.tabAlign === "right" ? x + 20 : x + w - 16), y));
@@ -311,9 +331,10 @@ export class Diagram {
     const well = n.kind !== "ext" && n.kind !== "more" && n.well !== false;
     const tl = n.t ? String(n.t).split("\n") : [];
     const sl = n.s ? String(n.s).split("\n") : [];
-    const tw = Math.max(0, ...tl.map((t) => textW(t, n.font ?? "title")));
-    const sw = Math.max(0, ...sl.map((t) => textW(t, "sub")));
-    const D = 16 * Math.max(tl.length - 1, 0) + (sl.length ? (tl.length ? 16 : 0) + 15 * (sl.length - 1) : 0);
+    const T = this.T;
+    const tw = Math.max(0, ...tl.map((t) => textW(t, n.font ?? "title", T)));
+    const sw = Math.max(0, ...sl.map((t) => textW(t, "sub", T)));
+    const D = 16 * Math.max(tl.length - 1, 0) + (sl.length ? (tl.length ? 16 : 0) + T.subGap * (sl.length - 1) : 0);
     const drawWell = (wx, wy) => {
       if (!gName) return "";
       return (well ? `<rect class="dg-w" x="${n2(wx)}" y="${n2(wy)}" width="${WL}" height="${WL}" rx="${n2(WL * 0.29)}"/>` : "") +
@@ -324,7 +345,7 @@ export class Diagram {
       let o = ""; let b = b0;
       tl.forEach((t, i) => { o += `<text class="dg-t" x="${n2(tx)}" y="${n2(b)}"${a}>${esc(t)}</text>`; if (i < tl.length - 1) b += 16; });
       if (sl.length && tl.length) b += 16;
-      sl.forEach((t, i) => { o += `<text class="dg-s" x="${n2(tx)}" y="${n2(b)}"${a}>${esc(t)}</text>`; if (i < sl.length - 1) b += 15; });
+      sl.forEach((t, i) => { o += `<text class="dg-s" x="${n2(tx)}" y="${n2(b)}"${a}>${esc(t)}</text>`; if (i < sl.length - 1) b += T.subGap; });
       return o;
     };
     let need = 0;
@@ -383,7 +404,7 @@ export class Diagram {
 
   callout(num, cx, cy) {
     this.hasCallout = true;
-    return `<g class="dg-co"><circle cx="${n2(cx)}" cy="${n2(cy)}" r="10"/><text x="${n2(cx)}" y="${n2(cy + 3.9)}">${num}</text></g>`;
+    return `<g class="dg-co"><circle cx="${n2(cx)}" cy="${n2(cy)}" r="10"/><text x="${n2(cx)}" y="${n2(cy + this.T.coY)}">${num}</text></g>`;
   }
 
   edge(e) {
@@ -400,9 +421,10 @@ export class Diagram {
     if (e.label) {
       let [lx, ly] = e.lxy ?? this.pointAt(pts, e.lt ?? 0.5);
       if (e.lo) { lx += e.lo[0]; ly += e.lo[1]; }
-      const tw = textW(e.label, "el");
-      s += `<rect class="dg-elbg" x="${n2(lx - tw / 2 - 6)}" y="${n2(ly - 8)}" width="${n2(tw + 12)}" height="16" rx="4"/>`;
-      s += `<text class="dg-el" x="${n2(lx)}" y="${n2(ly + 3.7)}" text-anchor="middle">${esc(e.label)}</text>`;
+      const T = this.T;
+      const tw = textW(e.label, "el", T);
+      s += `<rect class="dg-elbg" x="${n2(lx - tw / 2 - 6)}" y="${n2(ly - T.elH / 2)}" width="${n2(tw + 12)}" height="${T.elH}" rx="4"/>`;
+      s += `<text class="dg-el" x="${n2(lx)}" y="${n2(ly + T.elY)}" text-anchor="middle">${esc(e.label)}</text>`;
     }
     this.checkEdge(e, pts);
     return { svg: s, d, L, to: e.to.split(":")[0] };
@@ -429,19 +451,39 @@ export class Diagram {
     if (this.hasCallout) links.push({ co: true, label: "note" });
     const rowH = lg.rowH ?? 24, gap = lg.gap ?? 24;
     const maxW = lg.w ?? this.W - lg.x * 2;
+    const T = this.T, compact = this.variant === "compact";
+    const itemW = (it) => (it.e ? 28 : 16) + 8 + textW(it.label, "lg", T);
+    const edge = this.W - 12; // legend text stays 12 units inside the canvas
+    // column starts: equal columns, or explicit offsets from lg.x (lg.colX) when one column needs more room
+    const colAt = (c) => lg.x + (lg.colX ? lg.colX[c] : c * (maxW / lg.cols));
+    // columns: each slot takes the first remaining item that fits before the canvas edge, so a long label never runs
+    // off a narrow canvas from a right-hand column (it waits for the next row's first column instead)
+    const slots = (row) => {
+      const rest = [...row], out = [];
+      for (let c = 0; rest.length; c = (c + 1) % lg.cols) {
+        const i = rest.findIndex((it) => c === 0 || colAt(c) + itemW(it) <= edge);
+        out.push(i < 0 ? null : rest.splice(i, 1)[0]);
+      }
+      return out;
+    };
     let s = `<g class="dg-legend">`;
     let y = lg.y;
     const rows = lg.oneRow ? [[...kinds, ...links]] : [kinds, links];
     for (const row of rows) {
       if (!row.length) continue;
       let x = lg.x, col = 0;
-      for (const it of row) {
-        const sw = it.e ? 28 : 16;
-        const iw = sw + 8 + textW(it.label, "lg");
+      const placed = lg.cols ? slots(row) : row;
+      for (const [k, it] of placed.entries()) {
         if (lg.cols) {
           if (col === lg.cols) { col = 0; y += rowH; }
-          x = lg.x + col * (maxW / lg.cols); col++;
-        } else if (x > lg.x && x + iw > lg.x + maxW + 0.5) { x = lg.x; y += rowH; }
+          x = colAt(col); col++;
+          if (!it) continue;
+          if (col < lg.cols && placed[k + 1] && x + itemW(it) > colAt(col) - 8) this.warn.push(`legend item "${it.label}" runs into the next column`);
+        }
+        const sw = it.e ? 28 : 16;
+        const iw = itemW(it);
+        if (!lg.cols && x > lg.x && x + iw > lg.x + maxW + 0.5) { x = lg.x; y += rowH; }
+        if (x + iw > edge + 0.5) this.warn.push(`legend item "${it.label}" runs past the canvas edge`);
         const cy = y - 4;
         if (it.k) {
           const [cat0, shape] = KINDS[it.k];
@@ -456,7 +498,10 @@ export class Diagram {
         } else if (it.e) {
           s += `<path class="dg-e${it.e === "async" ? " dg-a" : ""}" d="M${x} ${cy}H${x + 26}"/><path class="dg-ah" d="M${x + 22.5} ${cy - 4}L${x + 26.5} ${cy}L${x + 22.5} ${cy + 4}"/>`;
         } else if (it.co) {
-          s += `<g class="dg-co"><circle cx="${x + 8}" cy="${cy}" r="8"/><text x="${x + 8}" y="${cy + 3.4}" style="font-size:9.5px">1</text></g>`;
+          // compact: a full-size callout disc, its numeral at the compact callout size (no smaller inline size)
+          s += compact
+            ? `<g class="dg-co"><circle cx="${x + 8}" cy="${cy}" r="10"/><text x="${x + 8}" y="${n2(cy + T.coY)}">1</text></g>`
+            : `<g class="dg-co"><circle cx="${x + 8}" cy="${cy}" r="8"/><text x="${x + 8}" y="${cy + 3.4}" style="font-size:9.5px">1</text></g>`;
         }
         s += `<text class="dg-lg" x="${x + sw + 8}" y="${y}">${esc(it.label)}</text>`;
         if (!lg.cols) x += iw + gap;
@@ -503,7 +548,7 @@ export class Diagram {
     if (main.length > 8) this.warn.push("main path longer than 8 hops: pulses overlap");
     const dots = S.grid === false ? "" : `<defs><pattern id="${this.pid}-dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle class="dg-dots" cx="12" cy="12" r="1"/></pattern></defs>`;
     const bg = `<rect class="dg-cv" width="${this.W}" height="${this.H}" rx="16"/>` + (S.grid === false ? "" : `<rect width="${this.W}" height="${this.H}" rx="16" fill="url(#${this.pid}-dots)" opacity="${S.gridOpacity ?? 0.55}"/>`);
-    const style = shake(css([...this.used]), `${dots}${bg}${groups}${edges}${pulses}${nodes}${extra}${legend}`);
+    const style = shake(css([...this.used], { compact: this.variant === "compact" }), `${dots}${bg}${groups}${edges}${pulses}${nodes}${extra}${legend}`);
     const vars = "";
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${this.W} ${this.H}" width="${this.W}" height="${this.H}" class="dg dg-${this.variant}" role="img" aria-labelledby="${this.pid}-title" aria-describedby="${this.pid}-desc" lang="en" direction="ltr" fill="none"${vars}>` +
       `<title id="${this.pid}-title">${esc(this.title)}</title><desc id="${this.pid}-desc">${esc(this.desc)}</desc>` +

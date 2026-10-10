@@ -1,0 +1,36 @@
+---
+/**
+ * The phone action dock (DESIGN.md 12.23, audit ERGO-01): the three things a recruiter does from any section, the CV
+ * (the responsive /cv/ page, which opens or shares the PDF), WhatsApp and email, in a pill at the bottom of the
+ * screen, where a thumb reaches. Phones only (< 40rem, components.css 21g). It sits beside the chat launcher, which
+ * keeps its corner (the dock ends 0.5rem before it), and the launcher's greeting steps aside from it ([data-chat-hush]).
+ *
+ * Behaviour (src/scripts/dock.ts): hidden until the hero's buttons ([data-dock-after]) have scrolled away; away while
+ * the contact section or the footer is on screen (they offer the same actions), while the menu, the chat or a dialog
+ * is open, and while a text field has focus (the keyboard is up). Without JavaScript it never shows: the footer and
+ * the contact section carry the same links.
+ */
+import Icon from "~/components/ui/Icon.astro";
+import { localePath, messages, type Locale } from "~/lib/i18n";
+import { PATHS, mailtoHref, whatsappHref } from "~/lib/site";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = messages(locale);
+---
+<nav class="dock" aria-label={m.a11y.quickActions} hidden data-dock data-chat-hush>
+  <a class="dock__btn dock__btn--cv" href={localePath(PATHS.cv, locale)}>
+    <Icon name="file-text" />
+    <span>{m.dock.cv}</span>
+  </a>
+  <a class="dock__btn" href={whatsappHref(locale)}>
+    <Icon name="whatsapp" />
+    <span lang={locale === "ar" ? "en" : undefined}>{m.dock.whatsapp}</span>
+  </a>
+  <a class="dock__btn" href={mailtoHref(locale)}>
+    <Icon name="mail" />
+    <span>{m.dock.email}</span>
+  </a>
+</nav>
