@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 /**
- * Minimal static server for a build directory, close to how Cloudflare Workers static assets serve ../dist
- * (html_handling auto-trailing-slash, not_found_handling 404-page): "/x" → 301 "/x/" when x/index.html exists,
- * "/x/" → x/index.html, unknown paths → the nearest 404.html (ar/404.html under /ar/), 404 status.
- * Also applies public/_headers rules for "/*" and "/_astro/*" so headers can be checked locally.
+ * Minimal static server for a build directory, close to how Cloudflare Workers static assets serve ../dist:
+ *   1. dist/_redirects (exact-path static rules, as scripts/postbuild/redirects.mjs writes them) run first, keeping
+ *      the query string;
+ *   2. html_handling auto-trailing-slash: "/x" → 307 "/x/" when x/index.html exists (the platform's code is 307;
+ *      the 301s come from _redirects), "/x/" → x/index.html;
+ *   3. not_found_handling 404-page: unknown paths → the nearest 404.html (ar/404.html under /ar/), 404 status.
+ * dist/_headers rules are applied to every response (redirects included), so headers can be checked locally.
  * /api/* is not served (the Worker owns it); tests mock it.
  *
  *   node scripts/serve.mjs                          serve ../dist on http://localhost:4321
@@ -35,6 +38,18 @@ const TYPES = {
   ".webmanifest": "application/manifest+json",
 };
 
+/** Parses dist/_redirects into Map(from → { to, status }) (static rules only: exact paths). */
+function parseRedirects(dir) {
+  const file = join(dir, "_redirects");
+  const rules = new Map();
+  if (!existsSync(file)) return rules;
+  for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
+    const [from, to, status] = line.replace(/^\s*#.*$/, "").trim().split(/\s+/);
+    if (from && to && !rules.has(from)) rules.set(from, { to, status: Number(status) || 302 });
+  }
+  return rules;
+}
+
 /** Parses public/_headers into [{ pattern: RegExp, headers: [name, value][] }]. */
 function parseHeaders(dir) {
   const file = join(dir, "_headers");
@@ -58,6 +73,7 @@ function parseHeaders(dir) {
 export function startServer({ dir = fileURLToPath(new URL("../../dist", import.meta.url)), port = 4321, quiet = false } = {}) {
   const root = resolve(dir);
   const rules = parseHeaders(root);
+  const redirects = parseRedirects(root);
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
     let path = decodeURIComponent(url.pathname);
@@ -65,21 +81,27 @@ export function startServer({ dir = fileURLToPath(new URL("../../dist", import.m
       res.writeHead(404, { "content-type": "application/json" }).end('{"ok":false,"error":"no_worker"}');
       return;
     }
-    const send = (file, status = 200) => {
-      const headers = { "content-type": TYPES[extname(file)] ?? "application/octet-stream" };
+    const custom = (headers) => {
       for (const r of rules) if (r.pattern.test(path)) for (const [k, v] of r.headers) headers[k.toLowerCase()] = v;
-      res.writeHead(status, headers);
+      return headers;
+    };
+    const send = (file, status = 200) => {
+      res.writeHead(status, custom({ "content-type": TYPES[extname(file)] ?? "application/octet-stream" }));
       if (req.method === "HEAD") res.end();
       else createReadStream(file).pipe(res);
     };
+    const redirect = (to, status) => {
+      const target = new URL(to, "http://localhost");
+      const location = `${target.pathname}${target.search || url.search}${target.hash}`;
+      res.writeHead(status, custom({ location })).end();
+    };
+    const rule = redirects.get(url.pathname);
+    if (rule) return redirect(rule.to, rule.status);
     const safe = normalize(join(root, path));
     if (!safe.startsWith(root)) return void res.writeHead(400).end();
     if (existsSync(safe) && statSync(safe).isFile()) return send(safe);
     if (existsSync(safe) && statSync(safe).isDirectory()) {
-      if (!path.endsWith("/")) {
-        res.writeHead(301, { location: `${path}/${url.search}` }).end();
-        return;
-      }
+      if (!path.endsWith("/")) return redirect(`${path}/`, 307);
       const index = join(safe, "index.html");
       if (existsSync(index)) return send(index);
     }

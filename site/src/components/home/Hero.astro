@@ -1,6 +1,6 @@
 ---
 /**
- * Home hero (DESIGN.md 12.5, prototype .hero): person chip, H1 (the LCP element), lede, the working "Ask my AI"
+ * Home hero (DESIGN.md 12.5, prototype .hero): H1 (person chip with name and role, then the tagline: the LCP element), lede, the working "Ask my AI"
  * input, actions, availability + live Cairo time, and the live agent graph; the metric strip and the logo row close
  * the section so they peek above the fold at 1440 × 900.
  */
@@ -27,11 +27,20 @@ const [before, after] = m.hero.localTime.split("{time}");
   <div class="hero__bg" aria-hidden="true"></div>
   <div class="container hero__grid">
     <div class="hero__copy">
-      <p class="person-chip">
-        <Picture src={square} formats={["avif", "webp"]} widths={[64, 96]} sizes="32px" width={32} height={32} alt="" loading="eager" decoding="async" />
-        <b>{b.name[locale]}</b><i class="div" aria-hidden="true"></i><span>{b.headline[locale]}</span>
-      </p>
-      <h1 class="hero__title" id="hero-title" set:html={taglineHtml(b.tagline[locale], locale)} />
+      {
+        /*
+         * The H1 carries who and what (name, role) as its first line, the person chip, and the tagline as its main
+         * text, so the page's main heading names him for search and for heading navigation (audit SEO-2). The
+         * visually hidden punctuation makes the heading read "Mohamed Hatem, AI Team Lead at Globant. I build…".
+         */
+      }
+      <h1 class="hero__h1" id="hero-title">
+        <span class="person-chip">
+          <Picture src={square} formats={["avif", "webp"]} widths={[64, 96]} sizes="32px" width={32} height={32} alt="" loading="eager" decoding="async" />
+          <b>{b.name[locale]}</b><i class="div" aria-hidden="true"></i><span class="person-chip__role"><span class="sr-only">{locale === "ar" ? "، " : ", "}</span>{b.headline[locale]}<span class="sr-only">. </span></span>
+        </span>
+        <span class="hero__title" set:html={taglineHtml(b.tagline[locale], locale)} />
+      </h1>
       <p class="hero__lede" set:html={introHtml(b.intro[locale], locale, b.yearsOfExperience)} />
       <AskBar locale={locale} />
       <div class="hero__actions">

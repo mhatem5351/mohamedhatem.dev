@@ -58,11 +58,13 @@ describe("ConfidentialMatcher", () => {
     expect(new ConfidentialMatcher([]).mentions("zebracorp")).toBe(false);
   });
 
-  it("the shipped list holds the repository check's hashes (one source of truth) and only hashes", () => {
+  it("the shipped list is the repository check's list (one source of truth) and only hashes", () => {
+    // content/scripts/check-content.mjs reads this same JSON instead of keeping its own copy.
     const checkContent = readFileSync(fileURLToPath(new URL("../../content/scripts/check-content.mjs", import.meta.url).href), "utf8");
-    const repoHashes = [.../FORBIDDEN_SHA256\s*=\s*new Set\(\[([\s\S]*?)\]\)/.exec(checkContent)![1]!.matchAll(/[0-9a-f]{64}/g)].map((m) => m[0]);
-    expect(repoHashes.length).toBeGreaterThan(0);
-    expect(new Set(HASHES.canonical)).toEqual(new Set(repoHashes));
+    expect(checkContent).toContain('"confidential-hashes.json"');
+    expect(checkContent).not.toMatch(/FORBIDDEN_SHA256\s*=\s*new Set\(\[\s*"[0-9a-f]{64}/);
+    expect(HASHES.canonical.length).toBeGreaterThanOrEqual(7);
+    for (const h of HASHES.canonical) expect(CONFIDENTIAL_SHA256).toContain(h);
     for (const h of CONFIDENTIAL_SHA256) expect(h).toMatch(/^[0-9a-f]{64}$/);
     expect(new ConfidentialMatcher().size).toBe(new Set(CONFIDENTIAL_SHA256).size);
   });

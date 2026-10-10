@@ -10,8 +10,8 @@
 import Monogram from "~/components/brand/Monogram.astro";
 import Icon from "~/components/ui/Icon.astro";
 import Ltr from "~/components/ui/Ltr.astro";
-import { format, formatMonth, formatPeriod, messages, parseIso, type Locale } from "~/lib/i18n";
-import { contact, link, mailtoHref, profile, whatsappHref } from "~/lib/site";
+import { format, formatMonth, formatPeriod, localePath, messages, parseIso, type Locale } from "~/lib/i18n";
+import { absolute, contact, link, mailtoHref, profile, whatsappHref } from "~/lib/site";
 import type { Role } from "@content/profile.ts";
 
 interface Props {
@@ -35,8 +35,10 @@ const earlier = profile.experience.filter(isEarlier);
 const honorsOf = (r: Role) => profile.honors.filter((h) => r.honors.includes(h.id));
 const where = (r: Role) => `${m.experience.employmentType[r.employmentType]} · ${t(r.location)}`;
 
+/** The site in the CV's own language (the Arabic CV links to /ar/, the English one to /). */
+const home = absolute(localePath("/", locale));
 const contacts = [
-  { icon: "globe", href: link("website").href, text: link("website").display },
+  { icon: "globe", href: home, text: link("website").display },
   { icon: "mail", href: mailtoHref(locale), text: contact("email").display },
   { icon: "whatsapp", href: whatsappHref(locale), text: contact("whatsapp").display },
   { icon: "linkedin", href: link("linkedin").href, text: link("linkedin").display.replace(/^linkedin\.com\//, "") },
@@ -47,6 +49,8 @@ const place = `${t(b.location.city)}${sep}${t(b.location.country)} · ${m.experi
 const projects = profile.cv.projects.map((id) => profile.projects.find((p) => p.id === id)!);
 const expectedSuffix = m.education.expected.replace("{year}", "").trim();
 const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, locale, "long") });
+/** The footer sentence with its domain as a link (the PDF keeps it clickable). */
+const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
 ---
 <article class="sheet" aria-labelledby="cv-name" lang={locale}>
   <header class="cv-head">
@@ -131,12 +135,7 @@ const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, loc
           {
             projects.map((p) => (
               <li>
-                <b>
-                  <a href={p.live ?? p.repo} dir="ltr">
-                    {p.name}
-                  </a>
-                </b>{" "}
-                · {t(p.description)}
+                <b><a href={p.repo} dir="ltr">{p.name}</a></b> · {t(p.description)}
               </li>
             ))
           }
@@ -151,7 +150,7 @@ const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, loc
           profile.cv.skills.map((g) => (
             <div class="skill-g">
               <b>{t(g.label)}</b>
-              <p>{g.items.map(t).join(sep)}</p>
+              <p>{g.items.flatMap((item, i) => [...(i > 0 ? [sep] : []), <bdi>{t(item)}</bdi>])}</p>
             </div>
           ))
         }
@@ -172,8 +171,9 @@ const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, loc
                     <Ltr>
                       {s} – {end}
                     </Ltr>
-                    {e.status === "in-progress" && ` ${expectedSuffix}`}
                   </em>
+                  {/* "(expected)" on its own line, so the date run reads exactly like the other degrees in Arabic. */}
+                  {e.status === "in-progress" && <em>{expectedSuffix}</em>}
                 </li>
               );
             })
@@ -240,6 +240,6 @@ const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, loc
 
   <footer class="cv-foot">
     <span>{t(b.name)} · {m.cv.title} · {updated}</span>
-    <span>{m.cv.footer}</span>
+    <span>{footBefore}<a href={home} dir="ltr">{link("website").display}</a>{footAfter}</span>
   </footer>
 </article>

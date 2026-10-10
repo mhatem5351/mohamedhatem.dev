@@ -45,6 +45,16 @@
   Cache-Control: public, max-age=3600, must-revalidate
   X-Robots-Tag: noindex
 
+# Text files for crawlers and AI assistants: Workers static assets send "text/plain" without a charset, and these
+# contain non-ASCII characters ("–", "·"). One rule per file sets the full value (it replaces the default; never set
+# Content-Type in a second matching rule, or the values are joined).
+/robots.txt
+  Content-Type: text/plain; charset=utf-8
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+/llms-full.txt
+  Content-Type: text/plain; charset=utf-8
+
 # Icons, the logo masks and the profile photo used in structured data: stable, unversioned file names.
 /favicon.ico
   Cache-Control: public, max-age=604800

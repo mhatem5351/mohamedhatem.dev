@@ -11,6 +11,7 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
 import cspHashes from "./integrations/csp-hashes.mjs";
+import { lastModified } from "./src/lib/dates.ts";
 
 const repo = fileURLToPath(new URL("..", import.meta.url));
 const SITE = "https://mohamedhatem.dev";
@@ -51,7 +52,10 @@ export default defineConfig({
         const url = new URL(item.url);
         const en = url.pathname.startsWith("/ar/") ? new URL(url.pathname.slice(3), SITE).href : item.url;
         const links = item.links?.length ? [...item.links, { url: en, lang: "x-default" }] : item.links;
-        return { ...item, ...(links ? { links } : {}) };
+        // <lastmod>: the page's real last content change (src/lib/dates.ts, from content/profile.ts), never the
+        // build time, so it stays a trustworthy re-crawl hint.
+        const lastmod = lastModified(url.pathname);
+        return { ...item, ...(links ? { links } : {}), ...(lastmod ? { lastmod } : {}) };
       },
     }),
     // Last: rewrites each page's CSP <meta> with the hashes of exactly the inline scripts and styles it contains.
@@ -108,10 +112,12 @@ export default defineConfig({
         "default-src 'self'",
         "img-src 'self' data:",
         "font-src 'self'",
-        "connect-src 'self' https://cloudflareinsights.com https://static.cloudflareinsights.com https://challenges.cloudflare.com",
+        // Turnstile needs only script-src + frame-src (its iframe talks to its own origin); the analytics beacon posts
+        // to cloudflareinsights.com. Nothing here creates workers (no blob: needed), and frame-src + worker-src make
+        // child-src redundant. tests/e2e/csp.spec.ts fails on any violation in Chromium and WebKit.
+        "connect-src 'self' https://cloudflareinsights.com",
         "frame-src https://challenges.cloudflare.com",
-        "child-src https://challenges.cloudflare.com",
-        "worker-src 'self' blob:",
+        "worker-src 'self'",
         "manifest-src 'self'",
         "form-action 'self'",
         "base-uri 'self'",

@@ -22,7 +22,11 @@ export interface HeadProps {
   indexable?: boolean;
   /** OG image key ("home", "cv", "privacy", "work-<slug>"). */
   ogKey?: string;
+  /** og:image:alt / twitter:image:alt: a description of this page's sharing card (default: the home card's). */
+  ogImageAlt?: string;
   ogType?: "website" | "article" | "profile";
+  /** For ogType "article": publication and last-change dates (YYYY-MM-DD) for the article:* tags. */
+  article?: { published: string; modified: string };
   jsonLd?: readonly object[];
   /** Browser-chrome colours (default: the page background in each theme). */
   themeColor?: { light: string; dark: string };
@@ -43,7 +47,9 @@ const {
   path,
   indexable = true,
   ogKey = "home",
+  ogImageAlt,
   ogType = "website",
+  article,
   jsonLd = [],
   themeColor = { light: "#FBF8F3", dark: "#0C151D" },
   preloadFonts = {},
@@ -54,6 +60,7 @@ const m = messages(locale);
 const other = otherLocale(locale);
 const canonical = absolute(localePath(path, locale));
 const og = absolute(ogPath(ogKey, locale));
+const ogAlt = ogImageAlt ?? m.meta.ogImageAlt;
 const token = import.meta.env.PROD ? analyticsToken() : undefined;
 const arabicPreload = (preloadFonts.arabicWeights ?? [400, 600, 700]).map((weight) => ({ weight }));
 /**
@@ -109,12 +116,21 @@ const alternates = indexable
 <meta property="og:image:type" content="image/png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:image:alt" content={m.meta.ogImageAlt} />
+<meta property="og:image:alt" content={ogAlt} />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={og} />
-<meta name="twitter:image:alt" content={m.meta.ogImageAlt} />
+<meta name="twitter:image:alt" content={ogAlt} />
+{
+  ogType === "article" && article && (
+    <>
+      <meta property="article:published_time" content={article.published} />
+      <meta property="article:modified_time" content={article.modified} />
+      <meta property="article:author" content={absolute("/")} />
+    </>
+  )
+}
 <meta name="author" content={m.meta.siteName} />
 <meta name="format-detection" content="telephone=no" />
 {jsonLd.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data).replace(/</g, "\\u003c")} />)}

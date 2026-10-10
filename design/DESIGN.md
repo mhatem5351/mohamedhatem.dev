@@ -14,8 +14,10 @@ Mohamed builds multi-agent LLM systems that run in production. Most AI portfolio
 purple gradients and stock "neural" imagery. This one **shows the system**:
 
 - The hero is a live multi-agent graph: a request enters, the orchestrator dispatches it through `guard`,
-  `retrieve`, `rerank`, `generate`, `evaluate` (and sometimes `tools · mcp`), and an answer leaves. Every node can be
-  opened to read what that agent does in his systems.
+  `retrieve`, `rerank`, `generate`, `evaluate` (and sometimes `tools · mcp`), and an answer leaves. It illustrates the
+  pattern behind his agent systems, not one system (its caption says so: not every system uses every step), and every
+  node can be opened to read where he has used that step: the Wakeb Data chatbot, the Arabsstock Assistant or one of
+  his open-source tools, each as the sources state it.
 - The "Ask my AI" assistant is a working product, one click from anywhere. It is the portfolio's strongest proof.
 - Experience is drawn like a **trace view** (the spans-on-a-timeline screen he reads every day in observability tools):
   overlapping roles, part-time work and study are honest and readable at a glance.
@@ -40,7 +42,7 @@ stripe), elevated to a product-grade site.
 
 | # | Section | Job | Hook | Proof | Exit |
 |---|---|---|---|---|---|
-| 0 | Hero | Who, what, why believe | H1 (content tagline) "I build multi-agent LLM systems that hold up in **production**, in Arabic and English." + the live graph | person chip with photo, the 7-year intro, the assistant is *right there* (ask bar), "Open to new roles · 14:32 in Cairo" | ask bar, "See the work", CV |
+| 0 | Hero | Who, what, why believe | H1 = person chip (name · role) + the content tagline "I build multi-agent LLM systems that hold up in **production**, in Arabic and English." (one heading, so search and heading navigation get his name and role; the chip and the tagline keep their looks) + the live graph | person chip with photo, the 7-year intro, the assistant is *right there* (ask bar), "Open to new roles · 14:32 in Cairo" | ask bar, "See the work", CV |
 | 0b | Metric strip + logo row | Scan in 5 seconds | five hard facts in display numerals (7 · 14 · 6 · Millions · A100) | every fact is in `content/profile.ts` metrics; employer marks | (scroll) |
 | 01 | What I build | Map his skills to a stack | "from the agent graph down to the GPU" | bento with a real diagram in the feature card | Front-end card → showcase |
 | 02 | Selected work | Depth | 4 case studies, feature card first | architecture thumbnails, factual bullets, stack chips | case-study pages |
@@ -376,8 +378,8 @@ SVG rendered at build time (visible with JS off, zero CLS via fixed viewBox 600 
 a tiny dependency-free module. Nodes: `orchestrator` (teal, centre), `guard` (sage), `retrieve` and `rerank`
 (saffron), `generate` (coral), `evaluate` (sky), `tools · mcp` (slate), plus `query` and `answer` ports. Mono labels,
 dotted spokes, solid curved pipeline edges, comet pulses. Interaction: hover/focus highlights a node's edges and dims
-the rest; Enter/Space/click opens a one-line toggletip explaining what that agent does in his systems (EN and AR copy
-in `graph-data.ts`); the graph is one tab stop with arrow-key navigation; a pause button sits in its corner. RTL
+the rest; Enter/Space/click opens a short toggletip naming where he has used that step, with the source-backed
+example (EN and AR copy in `graph-data.ts`; never a step claimed for every production system); the graph is one tab stop with arrow-key navigation; a pause button sits in its corner. RTL
 mirrors the flow (query enters from the right). Budget ≤ 15 KB gzip JS + CSS (see `HANDOFF.md` for measured sizes).
 
 ### 10.2 Tri-colour stripe

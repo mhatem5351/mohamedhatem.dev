@@ -20,7 +20,8 @@
   .repos__archive { display: grid; gap: .5rem; max-width: 46rem; }
   .repos__archive-title { color: var(--color-ink-2); font-weight: 600; }
   .repos__archive-list { display: flex; flex-wrap: wrap; gap: .25rem .875rem; list-style: none; font-family: var(--font-mono); font-size: var(--text-2xs); }
-  .repos__archive-list a { color: var(--color-ink-2); text-decoration: underline; text-decoration-color: var(--color-line-strong); text-underline-offset: .25em; }
+  /* 24 px tall targets even at 320 px (WCAG 2.5.8): the padding grows the hit area, not the line. */
+  .repos__archive-list a { display: inline-block; padding-block: .3125rem; color: var(--color-ink-2); text-decoration: underline; text-decoration-color: var(--color-line-strong); text-underline-offset: .25em; }
   .repos__archive-list a:hover { color: var(--color-accent); text-decoration-color: currentColor; }
 
   /* ---------- 05 Assistant ---------- */
@@ -180,6 +181,7 @@
     .edu__item > :first-child { grid-row: 1 / span 2; }
     .edu__item > .edu__when { grid-column: 2; grid-row: 1; justify-self: start; text-align: start; padding-block-start: 0; }
     .edu__item > div:not(.edu__when) { grid-column: 2; grid-row: 2; }
+    .edu__item--undated > div:not(.edu__when) { grid-row: 1 / span 2; }
     .edu__expected { display: inline; }
   }
 }
@@ -188,4 +190,17 @@
   /* The Worker's reference for a sent message (MH-YYMMDD-XXXXX), quotable in a follow-up. */
   .form-success__ref { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); }
   .form-success__ref[hidden] { display: none; }
+}
+
+@layer components {
+  /* Toolbox: skills listed without a project on this site, apart from the evidenced chips (audit FC-8). */
+  .toolbox__also { font-size: var(--text-xs); line-height: 1.6; color: var(--color-muted); }
+  .toolbox__also-label { font-weight: 600; color: var(--color-ink-2); }
+  .toolbox__also .tool__count { margin-inline-start: .25rem; }
+
+  /* Contact form: the "unavailable" / server-error status offers the direct channels as links. */
+  .form__status-body { display: grid; gap: .375rem; }
+  .form__status-links { display: flex; flex-wrap: wrap; gap: .25rem 1rem; }
+  .form__status-links[hidden] { display: none; }
+  .form__status-links a { display: inline-block; padding-block: .125rem; color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: .2em; }
 }

@@ -181,44 +181,47 @@ export interface Copy {
 }
 
 export const COPY: Record<Lang, Copy> = {
+  // An illustration of the pattern, not one system: each node's text names where the step is sourced (CV, LinkedIn,
+  // GitHub README). No step is claimed for every system, and none is placed "before the answer is returned" in
+  // production (content/README.md honesty rules; audit FC-2).
   en: {
     caption:
-      "How a request flows through the agent systems I build: the query passes guard, which screens the input; " +
-      "the orchestrator then routes it to retrieve for hybrid search, to rerank to keep only the best context, " +
-      "to generate to write the answer with a self-hosted model, and to evaluate to grade it before the answer is returned. " +
-      "When live data is needed, the orchestrator also calls tools over MCP.",
+      "An illustration of the pattern behind the agent systems I build. guard screens the input; the orchestrator " +
+      "routes the request to retrieve for hybrid search and to rerank to keep the best context; generate writes the " +
+      "answer; evaluate checks its quality. When live data is needed, the orchestrator calls tools over MCP. " +
+      "Not every system uses every step.",
     group: "Agent graph",
     hint: "Use the arrow keys to move between agents. Press Enter for details.",
     pause: "Pause animation",
     play: "Play animation",
     nodes: {
-      orchestrator: { title: "orchestrator", text: "Routes every turn to the right agent: LangGraph with command-based routing across specialised agents." },
-      guard: { title: "guard", text: "Screens the input first: prompt-injection and off-topic checks before anything reaches a model." },
-      retrieve: { title: "retrieve", text: "Hybrid retrieval: dense vectors plus BM25 keyword search over the knowledge base." },
-      rerank: { title: "rerank", text: "An LLM reranks the candidates, so only the best context reaches the prompt." },
-      generate: { title: "generate", text: "Writes the answer with a self-hosted model: Qwen served by vLLM on A100 GPUs." },
-      evaluate: { title: "evaluate", text: "Grades answers for quality and safety; the final verdict is computed in code, not by the model." },
-      tools: { title: "tools · mcp", text: "Calls external tools over MCP, such as live web search." },
+      orchestrator: { title: "orchestrator", text: "Routes each turn to the right agent: LangGraph Command routing across 6 agents at Wakeb Data, and 14 agents in the Arabsstock Assistant." },
+      guard: { title: "guard", text: "Screens the input before a model sees it, like the prompt-injection guardrail in my open-source rag-answering-service." },
+      retrieve: { title: "retrieve", text: "Hybrid retrieval: dense vectors plus BM25 keyword search, as in the RAG behind the Wakeb Data chatbot." },
+      rerank: { title: "rerank", text: "An LLM reranks the candidates, so only the best context reaches the prompt (the Wakeb Data chatbot's hybrid RAG)." },
+      generate: { title: "generate", text: "Writes the answer. At Wakeb Data: a self-hosted Qwen model served by vLLM on A100 GPUs." },
+      evaluate: { title: "evaluate", text: "Checks answer quality: agent evaluation in production at ArabsStock, quality monitoring at Wakeb Data, and my staged-llm-evaluator (verdict computed in code)." },
+      tools: { title: "tools · mcp", text: "Calls external tools over MCP, such as Brave Search for live web results at Wakeb Data." },
     },
   },
   ar: {
     caption:
-      "كيف يمرّ الطلب عبر أنظمة الوكلاء التي أبنيها: يبدأ الاستعلام بالحارس (guard) الذي يفحص المدخلات، " +
-      "ثم يوجّهه المنسِّق (orchestrator) إلى الاسترجاع (retrieve) للبحث الهجين، فإعادة الترتيب (rerank) لإبقاء أنسب سياق، " +
-      "ثم التوليد (generate) لكتابة الإجابة بنموذج مستضاف ذاتيًا، فالتقييم (evaluate) قبل إرجاع الإجابة. " +
-      "وعند الحاجة إلى بيانات مباشرة يستدعي المنسِّق الأدوات (tools) عبر MCP.",
+      "توضيح للنمط الذي تقوم عليه أنظمة الوكلاء التي أبنيها: يفحص الحارس (guard) المدخلات، ثم يوجّه المنسِّق (orchestrator) " +
+      "الطلب إلى الاسترجاع (retrieve) للبحث الهجين، وإلى إعادة الترتيب (rerank) لإبقاء أنسب سياق، ثم يكتب التوليد (generate) " +
+      "الإجابة، ويتحقق التقييم (evaluate) من جودتها. وعند الحاجة إلى بيانات مباشرة يستدعي المنسِّق الأدوات (tools) عبر MCP. " +
+      "ولا يستخدم كل نظام جميع هذه الخطوات.",
     group: "مخطط الوكلاء",
     hint: "استخدم مفاتيح الأسهم للتنقل بين الوكلاء، واضغط Enter لعرض التفاصيل.",
     pause: "إيقاف الحركة مؤقتًا",
     play: "تشغيل الحركة",
     nodes: {
-      orchestrator: { title: "المنسِّق", text: "يوجّه كل رسالة إلى الوكيل المناسب، عبر LangGraph وتوجيه قائم على الأوامر بين وكلاء متخصصين." },
-      guard: { title: "الحارس", text: "يفحص المدخلات أولًا: محاولات حقن الأوامر والأسئلة الخارجة عن النطاق، قبل أن تصل إلى أي نموذج." },
-      retrieve: { title: "الاسترجاع", text: "استرجاع هجين: متجهات دلالية مع بحث BM25 بالكلمات المفتاحية في قاعدة المعرفة." },
-      rerank: { title: "إعادة الترتيب", text: "نموذج لغوي يعيد ترتيب النتائج، فلا يصل إلى السياق إلا الأنسب." },
-      generate: { title: "التوليد", text: "يكتب الإجابة نموذج مستضاف ذاتيًا: Qwen عبر vLLM على وحدات A100." },
-      evaluate: { title: "التقييم", text: "يقيّم الإجابات من حيث الجودة والأمان، والحكم النهائي يُحسب في الكود لا في النموذج." },
-      tools: { title: "الأدوات", text: "يستدعي أدوات خارجية عبر MCP، مثل البحث المباشر على الويب." },
+      orchestrator: { title: "المنسِّق", text: "يوجّه كل رسالة إلى الوكيل المناسب: توجيه عبر Command في LangGraph بين 6 وكلاء في Wakeb Data، و14 وكيلًا في مساعد ArabsStock." },
+      guard: { title: "الحارس", text: "يفحص المدخلات قبل أن تصل إلى النموذج، مثل حاجز الحماية من حقن الموجّهات في مشروعي مفتوح المصدر rag-answering-service." },
+      retrieve: { title: "الاسترجاع", text: "استرجاع هجين: متجهات دلالية مع بحث BM25 بالكلمات المفتاحية، كما في خط RAG وراء روبوت المحادثة في Wakeb Data." },
+      rerank: { title: "إعادة الترتيب", text: "نموذج لغوي يعيد ترتيب النتائج، فلا يصل إلى الموجّه إلا أنسب سياق (البحث الهجين لروبوت المحادثة في Wakeb Data)." },
+      generate: { title: "التوليد", text: "يكتب الإجابة. في Wakeb Data: نموذج Qwen مستضاف ذاتيًا يخدّمه vLLM على وحدات A100." },
+      evaluate: { title: "التقييم", text: "يتحقق من جودة الإجابات: تقييم الوكلاء في بيئة الإنتاج في ArabsStock، ومراقبة الجودة في Wakeb Data، ومشروعي staged-llm-evaluator الذي يحسب الحكم في الكود." },
+      tools: { title: "الأدوات", text: "يستدعي أدوات خارجية عبر MCP، مثل Brave Search لنتائج الويب الحية في Wakeb Data." },
     },
   },
 };

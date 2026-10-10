@@ -50,7 +50,11 @@ export const en = {
       description:
         "What mohamedhatem.dev collects and what it doesn't: the AI assistant, the contact form, cookieless analytics and the one optional session cookie.",
     },
+    /** og:image:alt of each sharing card: it describes the card in the link preview (scripts/og.mjs draws them). */
     ogImageAlt: "Mohamed Hatem, AI Team Lead at Globant, builds multi-agent LLM systems for production",
+    ogImageAltCase: "Case study card: {title}. {role}, {company}, {years}.",
+    ogImageAltCv: "CV card: Mohamed Hatem, AI Team Lead at Globant, Cairo. {summary}",
+    ogImageAltPrivacy: "Privacy card: what mohamedhatem.dev collects, what it doesn't, and where your messages go.",
   },
 
   a11y: {
@@ -121,7 +125,7 @@ export const en = {
       otherLanguage: "اسأل بالعربية",
     },
     /** Caption under the live agent graph. */
-    graphCaption: "A request flowing through the agents I build. Select a node.",
+    graphCaption: "The pattern behind the agent systems I build. Select a node.",
     graph: {
       orchestrator: "orchestrator",
       retrieve: "retrieve",
@@ -148,22 +152,22 @@ export const en = {
     agents: {
       title: "Multi-agent LLM systems",
       body: "LangGraph orchestration with command-based routing and modular subgraphs: from a 6-agent bilingual chatbot to a 14-agent assistant for a stock-media platform.",
-      stack: "LangGraph · LangChain · MCP · OpenAI API · Qwen · async Python",
+      stack: "LangGraph · MCP · OpenAI API · Qwen · async Python",
     },
     retrieval: {
       title: "Retrieval and search",
       body: "Hybrid vector + BM25 retrieval with LLM reranking, and semantic and visual search over millions of media assets.",
-      stack: "Pinecone · Qdrant · pgvector · OpenAI embeddings",
+      stack: "Pinecone · OpenAI embeddings · BM25 · LLM reranking",
     },
     serving: {
       title: "LLM serving and MLOps",
       body: "Qwen on A100 GPUs with vLLM: model versions, GPU allocation, health checks and automated restarts. Dockerised FastAPI and gRPC services, CI/CD.",
-      stack: "vLLM · Docker · Kubernetes (EKS) · Nginx · gRPC",
+      stack: "vLLM · Docker · Nginx · gRPC · CI/CD",
     },
     evaluation: {
       title: "Evaluation and observability",
       body: "LLM evaluation, tracing and monitoring, so we know a model is right before users find out it isn't.",
-      stack: "Langfuse · staged evaluators · reliability harnesses",
+      stack: "staged-llm-evaluator · prompt-reliability-harness · observability",
     },
     bilingual: {
       title: "Arabic and English",
@@ -271,6 +275,8 @@ export const en = {
       ctaContact: "Contact me",
       ctaWrite: "or write to",
       duringRole: "During the {company} role",
+      /** Card eyebrow of work dated only by its role (several case studies from one role): "At Wakeb Data, 2024–2026". */
+      atRole: "At {company}, {years}",
     },
   },
 
@@ -343,6 +349,8 @@ export const en = {
     endorsements: plural({ one: "{count} endorsement on LinkedIn", other: "{count} endorsements on LinkedIn" }),
     assessmentPassed: "Passed the LinkedIn skill assessment",
     usedIn: "Used in",
+    /** Under each toolbox group: skills listed on my CV or profiles without a project on this site to show for them. */
+    alsoWorkedWith: "Also worked with",
     /** The "skills with receipts" matrix: rows are skills, columns are where they were used. */
     matrix: {
       title: "Skills, with receipts",
@@ -350,6 +358,7 @@ export const en = {
       caption: "Skills by where they were used. A filled dot means the skill was used in that role or project.",
       skill: "Skill",
       yes: "yes",
+      no: "no",
       columns: {
         globant: "Globant",
         wakeb: "Wakeb",
@@ -572,6 +581,8 @@ export const en = {
       turnstile: "The spam check didn't finish. Please let it complete, then send again.",
       rateLimited: "Too many messages in a short time. Please try again in a few minutes.",
       server: "Something went wrong and your message wasn't sent. Please email {email} or message me on WhatsApp.",
+      /** The form can't be reached at all (a non-JSON 429 or 5xx, e.g. the site's daily request limit): use the channels. */
+      unavailable: "The form isn't available right now, so your message wasn't sent. Please email or WhatsApp me instead:",
       network: "You seem to be offline. Your message wasn't sent; please try again.",
     },
     success: {
@@ -639,7 +650,8 @@ export const en = {
       cookies: {
         title: "Cookies and storage",
         body: [
-          "There are no tracking or advertising cookies. The site sets one cookie, and only if you use the assistant: after the spam check, a short-lived session token (it lasts 30 minutes, two hours at most, and is sent only to the chat endpoint) so you aren't checked again for every question.",
+          "There are no tracking or advertising cookies. The site sets one cookie, and only if you use the assistant: after the spam check, a short-lived session token (it lasts 30 minutes, an hour at most, and is sent only to the chat endpoint) so you aren't checked again for every question.",
+          "That cookie holds a keyed hash of your network prefix and your browser, never your IP address itself: it ties the session to this browser, and it expires within an hour.",
           "Your browser also remembers your theme, whether you paused the animation, and whether you've seen the assistant's label, in local storage on your device.",
         ],
       },
@@ -670,6 +682,8 @@ export const en = {
   seo: {
     /** Focus areas on the home sharing image, shown as "A · B · C". */
     ogFocus: ["Multi-agent LLM systems", "RAG", "LLM serving"],
+    /** The CV's sharing card (the meta description reads as a page summary, not as text on an image). */
+    ogCvSummary: "7\u00a0years in data and AI: multi-agent LLM systems, RAG and vLLM serving on A100 GPUs.",
   },
 } as const;
 

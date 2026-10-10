@@ -57,7 +57,9 @@
   .cv-contact { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2.2mm 4.5mm; margin-block-start: 3.2mm; font-family: var(--font-mono); font-size: 7.4pt; line-height: 1.6; color: var(--ink-2); list-style: none; padding: 0; }
   .cv-contact li { display: inline-flex; align-items: center; gap: 1.3mm; }
   .cv-contact li > span:lang(ar) { font-family: var(--font-sans); font-size: 8pt; }
-  .cv-contact a { position: relative; display: inline-block; padding-block: 4px; margin-block: -4px; direction: ltr; unicode-bidi: isolate; } /* 24 px targets (WCAG 2.5.8) without changing the line */
+  /* 24 px targets (WCAG 2.5.8) without changing the line. No `position`: positioned boxes are painted (and written to
+     the PDF's text stream) after everything else, which put the contact links after Education in extracted text. */
+  .cv-contact a { display: inline-block; padding-block: 4px; margin-block: -4px; direction: ltr; unicode-bidi: isolate; }
   .cv-contact .icon { width: 3.2mm; height: 3.2mm; color: var(--accent); }
   .cv-stripe { display: inline-flex; gap: 1.2mm; margin-block-start: 3.5mm; grid-column: 1 / -1; }
   .cv-stripe i { height: 1.1mm; border-radius: 1mm; }
@@ -69,7 +71,10 @@
   .cv-summary:lang(ar) { line-height: 1.7; }
 
   .cv-grid { display: grid; grid-template-columns: minmax(0, 1fr) 54mm; gap: 0 7mm; margin-block-start: 5mm; }
-  @media (max-width: 40rem) { .cv-grid { grid-template-columns: 1fr; } .cv-side { margin-block-start: 5mm; } }
+  @media (max-width: 40rem) {
+    .cv-grid { grid-template-columns: minmax(0, 1fr); } .cv-side { margin-block-start: 5mm; }
+    .cv-grid .job__head, .cv-grid .earlier__row { grid-template-columns: minmax(0, 1fr) auto; }
+  }
   .cv-h { display: flex; align-items: center; gap: 2.5mm; margin: 0 0 2.6mm; font-family: var(--font-mono); font-size: 7.2pt; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
   .cv-h::after { content: ""; flex: 1; height: 1px; background: var(--line); }
   .cv-h:lang(ar) { font-family: var(--font-sans); font-size: 8.6pt; font-weight: 700; letter-spacing: 0; text-transform: none; }
@@ -90,9 +95,13 @@
   .job__award { display: inline-flex; align-items: center; gap: 1mm; margin-inline-start: 2mm; font-size: 7.4pt; font-weight: 600; color: var(--saffron); white-space: nowrap; }
   .job__award .icon { width: 3mm; height: 3mm; }
   .job ul { list-style: none; margin: 1.6mm 0 0; padding: 0; display: grid; gap: 1.1mm; color: var(--ink-2); }
-  .job li { position: relative; padding-inline-start: 3.6mm; }
-  .job li::before { content: ""; position: absolute; inset-inline-start: .5mm; inset-block-start: .58em; width: 1.3mm; height: 1.3mm; border-radius: 50%; border: .3mm solid var(--accent-fill); }
-  :lang(ar) .job li::before { inset-block-start: .72em; }
+  /* The ring bullet is a background image, not a positioned ::before: positioned boxes are written to the PDF's text
+     stream after the rest, which separated every bullet from its role in extracted text (ATS parsers, copy-paste). */
+  .job li {
+    padding-inline-start: 3.6mm;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Ccircle cx='5' cy='5' r='3.85' fill='none' stroke='%2316A394' stroke-width='2.3'/%3E%3C/svg%3E") no-repeat left .5mm top .58em / 1.3mm 1.3mm;
+  }
+  [dir="rtl"] .job li { background-position: right .5mm top .72em; }
   .earlier { display: grid; gap: 2mm; margin-block-start: 1.6mm; }
   .earlier__row { display: grid; grid-template-columns: 1fr auto; gap: .3mm 3mm; break-inside: avoid; color: var(--ink-2); }
   .earlier__row b { font-weight: 600; color: var(--ink); }
@@ -129,6 +138,21 @@
   .cv-after { width: min(210mm, 100% - 2 * var(--space-gutter)); margin: 1rem auto 0; display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; justify-content: space-between; font-size: var(--text-sm); color: var(--color-muted); }
   .cv-after a { color: var(--color-accent); text-decoration: underline; text-underline-offset: .2em; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
   .cv-after a:hover { text-decoration-color: currentColor; }
+
+  /*
+   * Screen reading size: the sheet is set in print units (8.6 pt body, A4 proportions), which is small to read on a
+   * screen. On screens only, the whole sheet is scaled with `zoom` (type, spacing and widths together, so the layout
+   * stays the printed one): about 14 px body text on laptops and desktops, and at least 14 px on phones. Print and
+   * the generated PDF are untouched (@media screen).
+   */
+  @media screen and (min-width: 75rem) {
+    .sheet { zoom: 1.22; }
+    .cv-after { width: min(210mm * 1.22, 100% - 2 * var(--space-gutter)); }
+  }
+  @media screen and (max-width: 39.99rem) {
+    .sheet { zoom: 1.12; }
+    .sheet:lang(ar) { font-size: 9.5pt; }
+  }
 }
 
 /* ------------------------------------------------------------- print + PDF */

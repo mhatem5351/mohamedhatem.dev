@@ -76,7 +76,7 @@ const issuedText = (issued: string | null) => (issued ? format(m.education.earne
                   <bdi>{c.name[locale]}</bdi>
                 </div>
                 <div class="edu__sub">
-                  {c.issuer[locale]}
+                  <bdi>{c.issuer[locale]}</bdi>
                   {c.issued && (
                     <>
                       {" · "}
@@ -103,7 +103,9 @@ const issuedText = (issued: string | null) => (issued ? format(m.education.earne
                   <div class="edu__title">
                     <bdi>{c.name[locale]}</bdi>
                   </div>
-                  <div class="edu__sub">{c.issuer[locale]}</div>
+                  <div class="edu__sub">
+                    <bdi>{c.issuer[locale]}</bdi>
+                  </div>
                 </div>
                 <div class="edu__when">{c.issued ? formatMonth(c.issued, locale) : ""}</div>
               </li>
@@ -115,18 +117,25 @@ const issuedText = (issued: string | null) => (issued ? format(m.education.earne
         <ul class="edu__list" role="list">
           {
             profile.honors.map((h) => (
-              <li class="edu__item">
+              <li class:list={["edu__item", !h.period && "edu__item--undated"]}>
                 <span class="icon-tile icon-tile--saffron edu__tile">
                   <Icon name="award" />
                 </span>
                 <div>
                   <div class="edu__title">{h.title[locale]}</div>
-                  <div class="edu__sub">{h.issuer[locale]}</div>
+                  <div class="edu__sub">
+                    <bdi>{h.issuer[locale]}</bdi>
+                  </div>
                   <p class="edu__notes">{h.description[locale]}</p>
                 </div>
-                <div class="edu__when">
-                  <Ltr>{formatYears(h.period)}</Ltr>
-                </div>
+                {/* The award's date isn't in the sources: no date rather than the role's (audit FC-7). */}
+                {
+                  h.period && (
+                    <div class="edu__when">
+                      <Ltr>{formatYears(h.period)}</Ltr>
+                    </div>
+                  )
+                }
               </li>
             ))
           }

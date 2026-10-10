@@ -57,6 +57,9 @@ const examples = [
   .ask-bar:focus-within {
     border-color: var(--color-focus);
     box-shadow: var(--shadow-md), 0 0 0 3px var(--color-focus-halo);
+    /* Invisible normally; drawn in the system colour under forced colors, where box-shadow rings are dropped. */
+    outline: 2px solid transparent;
+    outline-offset: 2px;
   }
   .ask-bar__field {
     position: relative;

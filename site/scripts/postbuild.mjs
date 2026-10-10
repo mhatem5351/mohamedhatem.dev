@@ -3,6 +3,8 @@
  * Runs after `astro build` (npm run build). Each step is a module in scripts/postbuild/ with a default export
  * `async (ctx) => void`, run in this order when present:
  *   relocate-404.mjs  dist/ar/404/index.html → dist/ar/404.html (Workers assets serve the nearest 404.html)
+ *   redirects.mjs     dist/_redirects: 301s for slash-less and index.html URLs and the /work/ parents
+ *   early-hints.mjs   per-page Link preload headers (CSS + preloaded fonts) appended to dist/_headers
  *   cv-pdf.mjs        renders /cv/ and /ar/cv/ to PDF (public/cv/ + dist/cv/) and copies the EN PDF for the owner
  * ctx: { dist, site } absolute paths.
  */
@@ -11,7 +13,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const dist = fileURLToPath(new URL("../../dist/", import.meta.url));
 const site = fileURLToPath(new URL("../", import.meta.url));
-const STEPS = ["relocate-404.mjs", "cv-pdf.mjs"];
+const STEPS = ["relocate-404.mjs", "redirects.mjs", "early-hints.mjs", "cv-pdf.mjs"];
 
 for (const step of STEPS) {
   const file = fileURLToPath(new URL(`./postbuild/${step}`, import.meta.url));

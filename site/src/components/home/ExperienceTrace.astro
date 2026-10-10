@@ -30,7 +30,13 @@ const typeLine = (r: Role) => [m.experience.employmentType[r.employmentType], r.
 const firstPart = (s: string) => s.split(locale === "ar" ? "،" : ",")[0]!.trim();
 const isLatin = (s: string) => !/[؀-ۿ]/.test(s);
 
-type Attr = { k: string; v: string; ltr?: boolean };
+type Attr = { k: string; v: string; ltr?: boolean; items?: { text: string; latin: boolean }[] };
+/** Tech tags: tool names stay Latin (isolated on Arabic pages); descriptive phrases are translated (profile.ts). */
+const techItems = (r: Role) =>
+  r.tech.map((x) => {
+    const text = typeof x === "string" ? x : x[locale];
+    return { text, latin: isLatin(text) };
+  });
 function view(row: TraceRow): { title: string; org: string; dates: string; logo: { file: string | null; monogram: string }; srType: string | null; honors: typeof profile.honors[number][]; attrs: Attr[]; cases: NonNullable<ReturnType<typeof caseStudyBySlug>>[]; bullets: string[] } {
   if (row.role) {
     const r = row.role;
@@ -45,7 +51,7 @@ function view(row: TraceRow): { title: string; org: string; dates: string; logo:
       attrs: [
         { k: t.type, v: typeLine(r) },
         { k: t.location, v: r.location[locale] },
-        { k: m.experience.tech, v: r.tech.join(", "), ltr: true },
+        { k: m.experience.tech, v: "", items: techItems(r) },
         ...honors.map((h) => ({ k: m.experience.award, v: h.title[locale] })),
       ],
       cases: r.caseStudies.map((s) => caseStudyBySlug(s)).filter((c): c is NonNullable<typeof c> => c !== undefined),
@@ -95,7 +101,8 @@ function view(row: TraceRow): { title: string; org: string; dates: string; logo:
             return (
               <details class={`span span--${row.id} accent-${row.accent} ${row.classes}`} open={row.role?.period.end === null ? true : undefined}>
                 <summary>
-                  <span class="span__who">
+                  {/* One heading per role (h3 under the section's h2), so heading navigation lists the career. */}
+                  <h3 class="span__who">
                     <LogoTile file={v.logo.file} monogram={v.logo.monogram} size={36} class="span__logo" />
                     <span class="span__text">
                       <span class="span__role">
@@ -114,7 +121,7 @@ function view(row: TraceRow): { title: string; org: string; dates: string; logo:
                       </span>
                     </span>
                     <Icon name="chevron-down" size="sm" class="span__chev" />
-                  </span>
+                  </h3>
                   <span class="span__lane" aria-hidden="true">
                     <i
                       class:list={[
@@ -134,7 +141,16 @@ function view(row: TraceRow): { title: string; org: string; dates: string; logo:
                     {v.attrs.map((a) => (
                       <div>
                         <dt>{a.k}</dt>
-                        <dd>{a.ltr ? <bdi dir="ltr" lang="en">{a.v}</bdi> : a.v}</dd>
+                        <dd>
+                          {a.items
+                            ? a.items.flatMap((it, i) => [
+                                ...(i > 0 ? [locale === "ar" ? "، " : ", "] : []),
+                                it.latin ? <bdi dir="ltr" lang="en">{it.text}</bdi> : it.text,
+                              ])
+                            : a.ltr
+                              ? <bdi dir="ltr" lang="en">{a.v}</bdi>
+                              : a.v}
+                        </dd>
                       </div>
                     ))}
                     {v.cases.length > 0 && (

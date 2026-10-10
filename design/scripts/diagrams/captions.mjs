@@ -106,17 +106,17 @@ export const CAPTIONS = {
     context: { en: ["Retrieval pattern", "RAG systems"], ar: ["نمط استرجاع", "أنظمة RAG"] },
     title: { en: "Hybrid retrieval with LLM reranking", ar: "استرجاع هجين مع إعادة ترتيب بواسطة LLM" },
     caption: {
-      en: "The retrieval pattern behind his RAG work: keyword (BM25) and dense vector search run in parallel, results are merged and reranked by an LLM, and the answer is generated from that context and evaluated.",
-      ar: "نمط الاسترجاع وراء أعماله في RAG: بحث بالكلمات المفتاحية (BM25) وبحث بالمتجهات الكثيفة بالتوازي، ثم دمج النتائج وإعادة ترتيبها بواسطة LLM، وتوليد الإجابة من هذا السياق ثم تقييمها.",
+      en: "The retrieval pattern behind my RAG work: keyword (BM25) and dense vector search run in parallel, results are merged and reranked by an LLM, and the answer is generated from that context.",
+      ar: "نمط الاسترجاع وراء أعمالي في RAG: بحث بالكلمات المفتاحية (BM25) وبحث بالمتجهات الكثيفة بالتوازي، ثم دمج النتائج وإعادة ترتيبها بواسطة LLM، وتوليد الإجابة من هذا السياق.",
     },
     desc: {
       long: {
-        en: "Flow diagram. A query is sent in parallel to BM25 keyword search and to dense vector search over embeddings. Their results are merged, reranked by an LLM, and passed as context to an LLM that generates the answer, which is then evaluated.",
-        ar: "مخطط تدفق. يُرسَل الاستعلام بالتوازي إلى بحث BM25 بالكلمات المفتاحية وإلى بحث بالمتجهات الكثيفة عبر التضمينات. تُدمج النتائج ثم يعيد LLM ترتيبها، وتُمرَّر سياقًا إلى LLM يولّد الإجابة، ثم تُقيَّم الإجابة.",
+        en: "Flow diagram. A query is sent in parallel to BM25 keyword search and to dense vector search over embeddings. Their results are merged, reranked by an LLM, and passed as context to an LLM that generates the answer.",
+        ar: "مخطط تدفق. يُرسَل الاستعلام بالتوازي إلى بحث BM25 بالكلمات المفتاحية وإلى بحث بالمتجهات الكثيفة عبر التضمينات. تُدمج النتائج ثم يعيد LLM ترتيبها، وتُمرَّر سياقًا إلى LLM يولّد الإجابة.",
       },
       short: {
-        en: "Simplified diagram: BM25 and dense retrieval in parallel, LLM rerank, generate, evaluate.",
-        ar: "مخطط مبسّط: استرجاع BM25 واسترجاع بالمتجهات بالتوازي، ثم إعادة ترتيب بواسطة LLM، ثم التوليد والتقييم.",
+        en: "Simplified diagram: BM25 and dense retrieval in parallel, LLM rerank, then generate.",
+        ar: "مخطط مبسّط: استرجاع BM25 واسترجاع بالمتجهات بالتوازي، ثم إعادة ترتيب بواسطة LLM، ثم التوليد.",
       },
     },
     callouts: [
@@ -124,7 +124,6 @@ export const CAPTIONS = {
       { n: 2, en: "Both result lists are merged into one candidate set.", ar: "تُدمج قائمتا النتائج في مجموعة مرشحين واحدة." },
       { n: 3, en: "An LLM reranks the candidates before they reach the prompt.", ar: "يعيد LLM ترتيب المرشحين قبل وصولهم إلى الموجِّه (prompt)." },
       { n: 4, en: "The LLM generates the answer from the reranked context.", ar: "يولّد LLM الإجابة من السياق بعد إعادة ترتيبه." },
-      { n: 5, en: "The answer is evaluated before it is trusted.", ar: "تُقيَّم الإجابة قبل الاعتماد عليها." },
     ],
   },
 

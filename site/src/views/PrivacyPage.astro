@@ -2,7 +2,7 @@
 /**
  * /privacy/ and /ar/privacy/: what the assistant, the contact form, Turnstile, analytics and browser storage process.
  * Copy: content/i18n privacy.* (facts mirror worker/README.md "Security model", worker/src/session.ts and
- * chat-widget/src/store.ts). PRIVACY_UPDATED is the month this page's facts were last checked against that code.
+ * chat-widget/src/store.ts). PRIVACY_UPDATED (src/lib/dates.ts) is the day this page's facts were last checked against that code.
  */
 import Base from "~/layouts/Base.astro";
 import Icon from "~/components/ui/Icon.astro";
@@ -11,8 +11,8 @@ import "~/styles/privacy.css";
 import { format, formatMonth, localePath, messages, type Locale } from "~/lib/i18n";
 import { PATHS, contact, mailtoHref } from "~/lib/site";
 import { privacyJsonLd } from "~/lib/jsonld";
+import { PRIVACY_UPDATED } from "~/lib/dates";
 
-const PRIVACY_UPDATED = "2026-10";
 
 interface Props {
   locale: Locale;
@@ -31,6 +31,7 @@ const parts = (text: string) => text.split("{email}");
   description={m.meta.privacy.description}
   path={PATHS.privacy}
   ogKey="privacy"
+  ogImageAlt={m.meta.ogImageAltPrivacy}
   jsonLd={privacyJsonLd(locale)}
 >
   <article class="container doc" aria-labelledby="privacy-title">

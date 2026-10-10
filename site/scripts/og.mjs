@@ -126,7 +126,8 @@ function cards(locale) {
       kind: "case",
       eyebrow: m.cv.title,
       title: b.name[locale],
-      summary: m.meta.cv.description,
+      // The meta description is a page summary ("Read it here or download the PDF"); the card has its own line.
+      summary: m.seo.ogCvSummary,
       chips: ["LangGraph", "RAG", "vLLM", "Python", "AWS ML Specialty"].map((s) => [s, chipCategory(s)]),
       meta: [b.title[locale], b.employer, b.location.city[locale]],
     },
@@ -179,7 +180,7 @@ body{-webkit-font-smoothing:antialiased;font-kerning:normal;text-rendering:geome
 .role{margin-top:26px;display:flex;gap:12px;align-items:baseline;font:500 40px/1.2 "OG Display","OG Arabic",sans-serif;letter-spacing:-.01em;color:#C9D3DA;white-space:nowrap}
 [lang=ar] .role{font-size:38px;letter-spacing:0}
 .role .sep{color:#F4B95A}.role .org{color:#3DD6C3}
-.focus{margin-top:40px;max-width:720px;font:500 28px/1.5 "OG Mono","OG Arabic",monospace;color:#C9D3DA}
+.focus{margin-top:40px;max-width:720px;font:500 26px/1.5 "OG Mono","OG Arabic",monospace;color:#C9D3DA}
 [lang=ar] .focus{font:500 30px/1.6 "OG Arabic","OG Sans",sans-serif}
 .focus .sep{color:#FF916E}
 .home .stripe{position:static;margin-top:40px}
@@ -199,7 +200,9 @@ function cardHtml(card, locale) {
     flow = `<div class="flow" data-settle>
       <h1 class="name">${esc(card.name)}</h1>
       <p class="role"><span>${isolate(card.role[0], locale)}</span>${sep}<span class="org" dir="ltr">${esc(card.role[1])}</span></p>
-      <p class="focus">${card.focus.map((f) => `<span class="nw">${isolate(f, locale)}</span>`).join(` <span class="sep">·</span> `)}</p>
+      <p class="focus">${card.focus
+        .map((f, i) => `<span class="nw">${i ? '<span class="sep">·</span> ' : ""}${isolate(f, locale)}</span>`)
+        .join(" ")}</p>
       <div class="stripe"><i></i><i></i><i></i></div>
     </div>`;
   } else {

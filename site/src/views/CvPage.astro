@@ -37,6 +37,7 @@ const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, loc
   description={m.meta.cv.description}
   path={PATHS.cv}
   ogKey="cv"
+  ogImageAlt={format(m.meta.ogImageAltCv, { summary: m.seo.ogCvSummary })}
   ogType="profile"
   jsonLd={cvJsonLd(locale)}
   bodyClass="cv-page"

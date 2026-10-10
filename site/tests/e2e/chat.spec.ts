@@ -57,6 +57,44 @@ test.describe("Ask my AI", () => {
     await expect.poll(() => opens(page)).toContainEqual(expect.objectContaining({ question: expect.stringContaining("Arabsstock") }));
   });
 
+  test("the page tells the panel where its sticky header ends (--mh-chat-top)", async ({ page }) => {
+    await page.goto("/");
+    const { top, header } = await page.evaluate(() => ({
+      top: getComputedStyle(document.documentElement).getPropertyValue("--mh-chat-top").trim(),
+      header: Math.round(document.querySelector("[data-nav]")!.getBoundingClientRect().height),
+    }));
+    expect(top).toBe(`${header + 12}px`);
+  });
+
+  test("the bubble never covers the contact form's Send button @desktop-only", async ({ page }) => {
+    for (const [w, h] of [[1280, 900], [1440, 900]] as const) {
+      await page.setViewportSize({ width: w, height: h });
+      await page.goto("/", { waitUntil: "networkidle" });
+      const send = page.locator("#contact [data-submit]");
+      const host = page.locator("[data-mh-chat]");
+      await expect(host).toBeAttached();
+      // Scroll so the button sits where the bubble is (bottom inline-end corner).
+      await send.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        scrollBy(0, r.bottom - (innerHeight - 24));
+      });
+      const overlap = async () =>
+        page.evaluate(() => {
+          const b = document.querySelector("[data-mh-chat]")!.shadowRoot!.querySelector("button")!;
+          const visible = getComputedStyle(b).visibility !== "hidden" && Number(getComputedStyle(document.querySelector("[data-mh-chat]")!).opacity) > 0;
+          const r1 = b.getBoundingClientRect();
+          const r2 = document.querySelector("#contact [data-submit]")!.getBoundingClientRect();
+          const hit = r1.left < r2.right && r1.right > r2.left && r1.top < r2.bottom && r1.bottom > r2.top;
+          return visible && hit;
+        });
+      await expect.poll(overlap).toBe(false);
+      await expect(host).toHaveAttribute("data-dodge", "");
+      // Scrolled away from the form, the bubble is back.
+      await page.evaluate(() => scrollTo(0, 0));
+      await expect(host).not.toHaveAttribute("data-dodge", "");
+    }
+  });
+
   test("without JavaScript a contact fallback is offered", async ({ browser }) => {
     const ctx = await browser.newContext({ javaScriptEnabled: false });
     const page = await ctx.newPage();

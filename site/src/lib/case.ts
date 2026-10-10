@@ -58,15 +58,25 @@ export function eyebrowParts(cs: CaseStudy, locale: Locale): { company: string; 
   };
 }
 
-/** Period line and its small print (duration, or the role period for brief case studies dated by their role). */
+/** The case study carries its role's period because the sources don't date the project itself. */
+export function datedByRole(cs: CaseStudy): boolean {
+  const role = roleOf(cs);
+  return !!role && role.period.start === cs.period.start && role.period.end === cs.period.end;
+}
+
+/**
+ * Work dated only by a role that has several case studies (the chatbot, the government assistant and AIP at Wakeb
+ * Data): pages and cards say "during the role" / "At Wakeb Data, 2024–2026" instead of presenting the role's dates
+ * as each project's own (audit FC-7). A role with one case study is that case study's period.
+ */
+export const sharesRolePeriod = (cs: CaseStudy): boolean => datedByRole(cs) && (roleOf(cs)?.caseStudies.length ?? 0) > 1;
+
+/** Period line and its small print (duration, or the role period for work dated by a shared role). */
 export function periodInfo(cs: CaseStudy, locale: Locale): { main: string; small?: string; isRolePeriod: boolean } {
   const m = messages(locale);
   const role = roleOf(cs);
-  // Brief entries dated only by a role that has several case studies (government assistant, AIP at Wakeb Data):
-  // say so instead of presenting the role's dates as the project's.
-  const isRolePeriod =
-    cs.depth === "brief" && !!role && role.caseStudies.length > 1 && role.period.start === cs.period.start && role.period.end === cs.period.end;
-  if (isRolePeriod) return { main: format(m.work.page.duringRole, { company: tr(role.company, locale) }), small: formatPeriod(cs.period, locale), isRolePeriod };
+  const isRolePeriod = sharesRolePeriod(cs);
+  if (isRolePeriod && role) return { main: format(m.work.page.duringRole, { company: tr(role.company, locale) }), small: formatPeriod(cs.period, locale), isRolePeriod };
   const main = formatPeriod(cs.period, locale);
   const hasMonths = /-/.test(cs.period.start);
   const small = hasMonths ? formatDuration(monthsInclusive(cs.period), locale) : undefined;

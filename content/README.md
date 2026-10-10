@@ -15,7 +15,7 @@ content/
 │   ├── system-prompt.md    the assistant's instructions (not to be recited; contains a canary)
 │   ├── knowledge.md        the assistant's knowledge base (public facts only, third person)
 │   ├── suggestions.json    suggested questions, 8 per locale
-│   └── eval-set.json       65 test conversations with expected facts and behaviour
+│   └── eval-set.json       74 test conversations with expected facts and behaviour
 ├── scripts/
 │   └── check-content.mjs   content QA (lengths, digits, banned words, cross-refs, JSON, secrets)
 └── tsconfig.json           strict type-check for this folder only
@@ -66,9 +66,14 @@ categories; English ones carry `one` / `other`.
   terms, product and company names stay in Latin script. Western digits only. Character-limit messages avoid a
   counted noun ("عدد الأحرف ... {max}") so they stay grammatical for any number.
 - **Dates.** ISO (`YYYY-MM`, or `YYYY` when the sources give no month). Count role durations inclusively
-  (end month − start month + 1) so they match LinkedIn (Wakeb "1 yr 8 mos", ArabsStock "1 yr 9 mos"); the government assistant and
-  AIP case studies carry the Wakeb role's period because their own dates aren't stated, so render them as "during the Wakeb Data
-  role" rather than as project dates if that reads better. Format with
+  (end month − start month + 1) so they match LinkedIn (Wakeb "1 yr 8 mos", ArabsStock "1 yr 9 mos"). The three Wakeb
+  case studies (chatbot, government assistant, AIP) carry the Wakeb role's period because their own dates aren't
+  stated: pages say "During the Wakeb Data role" (`m.work.page.duringRole`), cards "At Wakeb Data, 2024–2026"
+  (`m.work.page.atRole`), and their JSON-LD states no project date (no `dateCreated` / `temporalCoverage` for any case
+  study dated only by its role). The award has no date (`honors[].period: null`): the sources don't give one, so it
+  is never shown with the role's dates. Pages carry full dates where they are known: `site.published`, `site.updated`,
+  `cv.updated` and each case study's `published` / `updated` (`YYYY-MM-DD`) feed JSON-LD, `article:*` tags and the
+  sitemap's `<lastmod>` (`site/src/lib/dates.ts`); bump them when the content changes. Format with
   `Intl.DateTimeFormat("en-US", { month: "short", year: "numeric" })` ("Sep 2024") and
   `Intl.DateTimeFormat("ar-EG-u-nu-latn", { month: "long", year: "numeric" })` ("سبتمبر 2024"). `end: null` is
   "Present" / "حتى الآن" (`m.experience.present`). A degree with `status: "in-progress"` shows its end year
@@ -104,13 +109,23 @@ Contact details and the binding decisions (title, "7 years", no Logic Controls f
 - Named: Globant ("the STA project"), Wakeb Data ("the AIP project"), ArabsStock, Empoweromics, Tabaqat,
   AestheticsPro, MDP, the universities and Logic Controls (never its founder or owner). One client is deliberately
   unnamed: "a Saudi government client" (the bilingual assistant at Wakeb). Its names appear nowhere in this
-  repository; `check-content.mjs` enforces that with a list of SHA-256 hashes of the forbidden names, so the check
-  itself doesn't publish them. It scans every tracked file (design prototypes, test fixtures and docs included), runs
-  before every deploy (`npm run check:content`) and before every commit once the hook is on
-  (`git config core.hooksPath .githooks`).
+  repository; `check-content.mjs` enforces that with SHA-256 hashes of the forbidden names
+  (`worker/src/chat/confidential-hashes.json`, shared with the Worker), so the check itself doesn't publish them. It
+  scans every tracked file plus new files not yet added (design prototypes, test fixtures and docs included; ignored
+  files such as `_inputs/` and `dist/` excluded), runs before every deploy (`npm run check:content`), in CI and before
+  every commit once the hook is on (`git config core.hooksPath .githooks`).
 - Skills listed without a project (LangChain, Kubernetes, Go, Qdrant, pgvector, Langfuse, Azure OpenAI, ChromaDB,
-  Celery, GCP, Whisper, BLIP, MongoDB, system design, Scrum, Agile) have empty `evidence`, and `knowledge.md` keeps them
-  in a separate "listed only" row so the assistant never pairs them with a project.
+  Celery, GCP, Whisper, BLIP, MongoDB, Algorithms, system design, Scrum, Agile) have empty `evidence`, and
+  `knowledge.md` keeps them in a separate "listed only" row so the assistant never pairs them with a project. On the
+  site they appear only under "Also worked with" in each toolbox group, never next to a production claim: the
+  capability cards' stack lines (`i18n capabilities.*.stack`) name only tools with a project behind them.
+- The hero graph (`site/src/components/hero-graph/graph-data.ts`, copy of `design/assets/hero-graph/`) is an
+  illustration of the pattern, not one system: its caption says so, and each node names where that step is sourced
+  (the Wakeb Data chatbot, the Arabsstock Assistant, or an open-source repository such as rag-answering-service's
+  prompt-injection guardrail or staged-llm-evaluator's verdict computed in code). Architecture diagrams follow the same
+  rule: the hybrid-RAG figure ends at "Generate" because the Wakeb sources state no evaluation step there; the
+  LLM-serving figure draws health monitoring feeding the automated restarts because the sources state both and the
+  approved GitHub README calls it "health monitoring and automated recovery".
 - The LinkedIn Machine Learning assessment is shown as a skill badge (`assessmentPassed`), not as a certification.
 - The only derived figure is the Logic Controls "950 + 900" tests (about 950 unit and about 900 end-to-end, as stated).
 
@@ -145,13 +160,17 @@ Contact details and the binding decisions (title, "7 years", no Logic Controls f
 
 ## Evaluating the assistant
 
-`chat/eval-set.json` has 65 single- or multi-turn cases (first run on gemini-3.1-flash-lite: 61/65, 93.8%; the four
-misses were fixed in the prompt, knowledge and checks): fact recall (19), Arabic (9, including Egyptian and Gulf
-dialect and a code-switched question, plus Arabic salary, out-of-scope, JD and availability cases), job-description
-matching (6), availability and relocation (4), contact and CV (4), unknowns, the unnamed client and private data (7),
-salary (3), out-of-scope and ghost-writing (5), prompt injection including
-a forged assistant turn (6), persona (1), other language (1). Run it through the Worker's `systemInstruction()` so the
-Worker's rules and date line are included.
+`chat/eval-set.json` has 74 single- or multi-turn cases (17 of them in Arabic, one in Spanish): fact recall (20),
+job-description matching (10, including JDs with planted claims about the candidate), unknowns, the unnamed client and
+private data (10), Arabic (9, including Egyptian and Gulf dialect and a code-switched question), prompt injection
+including a forged assistant turn (6), out-of-scope and ghost-writing (5), contact and CV (5), availability and
+relocation (4), salary (3), persona (1), other language (1). Run it through the Worker's `systemInstruction()` so the
+Worker's rules and date line are included (`npm run chat:eval`, worker/scripts/chat-eval.mjs).
+
+- **The unnamed client in the eval set:** cases that presuppose its names use placeholders (`{{CLIENT_EN}}`,
+  `{{CLIENT_AR}}`, `{{MINISTRY_EN}}`, `{{MINISTRY_FULL_EN}}`, `{{MINISTRY_ABBR_EN}}`, `{{MINISTRY_AR_FOR}}`). The
+  runner fills them from the gitignored `_inputs/forbidden-names.txt` (`KEY=phrase` lines), so the names never enter
+  the repository; without that file those cases are skipped.
 
 - `expect.mustInclude`: list of groups; each group needs at least one alternative in the reply.
 - `expect.mustMatch` / `expect.mustNotMatch` and `globalChecks.mustNotMatch`: JavaScript regexes (flags `iu`) for
@@ -169,8 +188,12 @@ Worker's rules and date line are included.
   length ceilings per category (180 default, 320 for job-description answers); a case's `expect.maxWords` overrides it
   (inj-003 is a job-description assessment, so it gets 320). Add the Worker's own canary to the global `mustNotInclude` when running through the Worker.
 - Strip the Worker's trailing `<ui>…</ui>` line before checking. Normalise Arabic in both reply and patterns.
-- Unnamed client: also run every reply through the hashed-name check (`FORBIDDEN_SHA256` in
-  `scripts/check-content.mjs`); the names are not written in the eval file.
+- Unnamed client: also run every reply through the hashed-name check; the names are not written in the eval file.
+  The hashes live in one place, `worker/src/chat/confidential-hashes.json` (`canonical`: the name forms this check
+  has always used; `variants`: Arabic prefix and folded-letter forms generated from the gitignored names file by
+  `worker/scripts/confidential-hashes.mjs`). `content/scripts/check-content.mjs`, `site/scripts/check-dist.mjs`, the
+  site's unit tests and the Worker's output guard all read that file; check-content fails if it is missing, empty or
+  malformed.
 - `expect.facts` and `expect.behaviour` are for a human or LLM judge (structure of JD answers, tone, no promises).
 
 ## Updating facts
@@ -216,7 +239,7 @@ Worker's rules and date line are included.
 - **"Millions" of ArabsStock assets** has no exact count, so it stays "millions".
 - **Logic Controls figures** (Lighthouse 98–100 mobile / 100 desktop, about 950 unit and 900 end-to-end tests, axe-clean)
   are taken from SOURCES.md and his GitHub profile; they were not re-measured here.
-- **Best Engineer of the Year:** the award year isn't stated (shown with the 2022–2023 role).
+- **Best Engineer of the Year:** the award year isn't stated, so it is shown without a date (`period: null`).
 - **LinkedIn About claims not used:** "the largest Arab digital media library" (ArabsStock) and "enterprise clients
   across the Middle East" are left out because they are self-descriptions, not facts about his work.
 - **AWS certification validity:** AWS certifications last three years, so a 2022 certification lapses in 2025 unless
@@ -277,5 +300,5 @@ Approximate, counted on the human-language strings.
 | `i18n/ar.ts` | about 1,100 |
 | `chat/knowledge.md` | about 5,000 |
 | `chat/system-prompt.md` | about 1,900 |
-| `chat/eval-set.json` | 65 cases |
+| `chat/eval-set.json` | 74 cases |
 | `chat/suggestions.json` | 8 + 8 questions |

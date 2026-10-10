@@ -10,12 +10,13 @@ This folder has its own `package.json` and `node_modules`. Run every command bel
 cd site
 npm install
 npm run dev          # http://localhost:4321 (Turnstile test key; no CSP in dev)
-npm run build        # content:gen → OG images → astro build → ../dist → 404 relocation → CV PDFs
+npm run build        # content:gen → OG images → astro build → ../dist → 404 relocation, _redirects, early hints, CV PDFs
 npm run serve        # serve ../dist like Workers static assets (404 pages, _headers) on :4321
 npm test             # unit tests + static checks of ../dist (secrets, CSP, links, budgets, HTML validity)
 npm run test:e2e     # Playwright: Chromium desktop, Pixel 7, iPhone 15 (WebKit) against ../dist
 npm run lighthouse   # Lighthouse mobile + desktop on key pages → lighthouse/
 npm run screenshots  # every page × 1440/768/390 × light/dark → screenshots/ (needs `npm run serve -- --port 4380`)
+node scripts/verify-csp.mjs   # the CSP against the real Turnstile and analytics scripts (network), Chromium + WebKit
 ```
 
 To test against the real Worker, build with the Turnstile test key and run `npm run dev:worker` from the repo root
@@ -34,6 +35,7 @@ Nothing user-facing is written in a component. All of it comes from `../content`
 | Source | What | Read through |
 |---|---|---|
 | `content/profile.ts` | facts: roles, case studies, projects, skills, education, CV data (EN + AR in one object) | `~/lib/site.ts` (`profile`, `caseStudies`, links), `tr(text, locale)` |
+| `content/profile.ts` dates | `site.published` / `site.updated`, `cv.updated`, each case study's `published` / `updated` (YYYY-MM-DD) | `~/lib/dates.ts`: JSON-LD dates, `article:*` tags, sitemap `<lastmod>` (also read by astro.config.mjs) |
 | `content/i18n/{en,ar}.ts` | every UI string (`ar.ts` is typed as `Messages`, so keys can't drift) | `messages(locale)`, `format()`, `pluralize()` in `~/lib/i18n.ts` |
 | `content/chat/suggestions.json` | starter questions (hero examples, chat preview, widget) | imported directly |
 | `design/assets/diagrams/diagrams.json` (copied to `src/assets/diagrams/`) | diagram titles, captions, callouts, text descriptions (EN + AR) | `~/lib/diagrams.ts` |
@@ -58,12 +60,14 @@ site/
 │   └── cv/                 (generated) Mohamed-Hatem-CV.pdf, Mohamed-Hatem-CV-ar.pdf
 ├── scripts/
 │   ├── og.mjs              renders OG PNGs from the design's templates (Playwright), skips unchanged inputs
-│   ├── postbuild.mjs       runs postbuild/relocate-404.mjs (ar/404.html) then postbuild/cv-pdf.mjs
+│   ├── postbuild.mjs       runs postbuild/: relocate-404.mjs (ar/404.html), redirects.mjs (_redirects),
+│   │                       early-hints.mjs (Link headers), cv-pdf.mjs
 │   ├── subset-fonts.mjs    builds src/assets/fonts from design/assets/fonts (see "Fonts")
 │   ├── check-dist.mjs      static checks of the build (see "Tests")
 │   ├── check-budgets.mjs   performance budgets
 │   ├── lighthouse.mjs      Lighthouse runner (serve + Brotli proxy like Cloudflare)
-│   ├── serve.mjs           static server that behaves like Workers static assets
+│   ├── serve.mjs           static server that behaves like Workers static assets (_redirects, html_handling, _headers)
+│   ├── verify-csp.mjs      CSP check with the real third-party scripts
 │   └── screenshots.mjs     visual review renders
 ├── src/
 │   ├── pages/              thin routes: index, ar/index, work/[slug], ar/work/[slug], cv, privacy, 404 (+ ar/),
@@ -114,13 +118,26 @@ site/
     on that page, and moves it right after `<meta charset>`.
   - The build fails if any element has a `style="…"` attribute. Per-element values use classes; the trace bars use
     digit classes, see `src/lib/trace.ts`.
-  - Allowed origins: self, `challenges.cloudflare.com` (Turnstile: script and frame) and
-    `static.cloudflareinsights.com` / `cloudflareinsights.com` (Web Analytics).
+  - Allowed origins, each only where needed: `script-src` self, `challenges.cloudflare.com` (Turnstile) and
+    `static.cloudflareinsights.com` (the analytics beacon); `frame-src` `challenges.cloudflare.com`; `connect-src` self
+    and `cloudflareinsights.com` (the beacon's reports); `worker-src` self (no `blob:`); no `child-src` (frame-src and
+    worker-src cover it). `tests/e2e/csp.spec.ts` fails on any `securitypolicyviolation` in Chromium and WebKit, with
+    the chat panel open and after scrolling every page; `scripts/verify-csp.mjs` runs the same check with the real
+    Turnstile (test key, solved) and beacon scripts.
+- **Redirects (`postbuild/redirects.mjs` → `dist/_redirects`):** permanent 301s for every page's slash-less URL and
+  its `index.html` form, and `/work/`, `/ar/work/` → the home page's `#work` section. Workers static assets apply
+  `_redirects` before `html_handling` (whose own redirects are 307s) and before asset lookup; matching is exact, so
+  `/cv/` never matches `/cv` (no loop), and the query string is kept. Generated from the built pages, so new pages are
+  covered; `check-dist.mjs` and `tests/e2e/seo.spec.ts` check them, and `scripts/serve.mjs` applies them locally.
+- **Early hints (`postbuild/early-hints.mjs`):** each page's stylesheets and preloaded fonts as a `Link` header in
+  `dist/_headers`, so Cloudflare can send a 103 Early Hints response when the zone's (free) Early Hints setting is on.
 - **`public/_headers`:**
   - A header CSP with `frame-ancestors 'none'`, `object-src`, `base-uri` and `form-action`. Script and style rules
     stay in the per-page meta, so the header can't weaken them.
   - HSTS, Referrer-Policy, Permissions-Policy, `nosniff`, `X-Frame-Options: DENY` and COOP.
   - Immutable caching for `/_astro/*`.
+  - `Content-Type: text/plain; charset=utf-8` for `robots.txt`, `llms.txt` and `llms-full.txt` (Workers send `.txt`
+    without a charset; one rule each, so the value replaces the default).
 - **Secrets:** the analytics token (public by design) is read from `../.env` at build time. Only that one key is read
   (`src/lib/env.ts`). `scripts/check-dist.mjs` fails if anything secret-looking ends up in `../dist`.
 - **Turnstile site key:** `0x4AAAAAAFSgKXNi27pxPG5n` in production builds, and Cloudflare's test key in `astro dev`.
@@ -154,6 +171,13 @@ All fonts are self-hosted through Astro's Fonts API (metric-matched Latin fallba
 
 Before the cut these were 22, 47, 31 and 34 KB.
 
+The same script writes static single-weight instances of the three Latin faces to `src/assets/fonts/print/`, for the
+CV PDF only (nothing on the site imports them). `postbuild/cv-pdf.mjs` swaps them in just before printing: Chromium
+embeds variable fonts in a PDF as Type 3 fonts, which split words in copied text and break search in Preview, Quick
+Look and some ATS parsers; static ones embed as TrueType (and the PDFs dropped from 397 / 353 KB to 110 / 155 KB). The
+build fails if a Type 3 font is left. The CV sheet also avoids positioned elements (they are written to the PDF's text
+stream last, which separated bullets from their roles in extracted text).
+
 Preloads:
 - **English pages:** Space Grotesk (the H1 face).
 - **Arabic pages:** the three Plex Arabic weights. Preloading only 700 let 400/600 swap in late: the lede is the LCP
@@ -164,8 +188,8 @@ Preloads:
 ## Budgets (`scripts/check-budgets.mjs`, part of `npm test`)
 
 - **JS:** ≤ 60 KB gzip loaded on first view of each page. The lazy chat panel is excluded; the loader counts.
-  Today: home 15.5 KB, other pages 5–6 KB, hero graph 6.8 KB.
-- **CSS:** ≤ 40 KB gzip per page. Today: 18–24 KB.
+  Today: home 16.3 KB, other pages 5.9–6.7 KB, hero graph 6.9 KB.
+- **CSS:** ≤ 40 KB gzip per page. Today: 18.5–24.5 KB.
 - **Fonts:** self-hosted woff2 only, with exactly the preloads listed under "Fonts".
 - **Images:** any high-priority image must be preloaded. The LCP element is text (the H1, or the lede on Arabic
   phones), so there are none today.
@@ -179,7 +203,7 @@ Lighthouse (`npm run lighthouse`; mobile = simulated slow 4G, desktop preset):
 | ArabsStock case study, EN and AR | 99 | 100 |
 | CV, EN and AR | 99 | 100 |
 
-Accessibility, best practices and SEO are 100 on every run. CLS ≤ 0.008, TBT is 0 ms, and mobile LCP is 1.8–2.3 s.
+Accessibility, best practices and SEO are 100 on every run (measured 2026-10-10, after the audit fixes). CLS ≤ 0.012, TBT ≤ 10 ms, and mobile LCP is 1.8–2.3 s.
 
 The runner blocks the Cloudflare analytics beacon (`--with-analytics` keeps it). From localhost, CORS refuses the
 beacon's report, which logs a console error the live site doesn't have.
@@ -187,6 +211,8 @@ beacon's report, which logs a console error the live site doesn't have.
 ## Tests
 
 **Unit (`npm run test:unit`, Vitest):**
+- **Postbuild:** the `_redirects` rules (every page, the /work/ parents, no loops), the early-hints `Link` header,
+  and the page dates.
 - **i18n:** parity, placeholders, digits, and the date and duration helpers.
 - **Trace geometry:** checked against the prototype's numbers.
 - **Skills matrix:** every dot must have a receipt in `profile.ts`, in the right column.
@@ -199,7 +225,13 @@ beacon's report, which logs a console error the live site doesn't have.
 - `check-dist.mjs`:
   - **Secrets:** `AIza…`, `TURNSTILE_SECRET`, `SESSION_SECRET` and the real `.env` values, compared by containment
     and never printed.
-  - **Honesty:** the unnamed client (hashed check) and "holds an M.Sc." wording.
+  - **Honesty:** the unnamed client (hashed check against `worker/src/chat/confidential-hashes.json`, the repository's one
+    list) and "holds an M.Sc." wording.
+  - **Redirects, headers, sitemap:** a 301 for every page's slash-less and `index.html` URL and for `/work/`; UTF-8
+    text files; a `<lastmod>` on every sitemap URL.
+  - **Structured data:** the Person and WebSite are identical on every page; a WebSite node wherever `#website` is
+    referenced; Articles have full ISO `datePublished` / `dateModified`; `codeRepository` only on `SoftwareSourceCode`;
+    each page's `og:image:alt` is its own.
   - **CSP:** the per-page policy contract, and no `style` attributes.
   - **Per page:** `lang`/`dir`, title, description, canonical and hreflang, the OG image exists, one H1, JSON-LD
     parses, and internal links and anchors resolve.
@@ -227,17 +259,33 @@ running server such as `wrangler dev`.
   - Its pause button works and the choice persists.
 - **Preferences:** the language switch keeps the page; the theme cycles system → light → dark and persists across
   pages; the mobile menu closes on Escape and returns focus.
-- **CV:** `/cv/` and `/ar/cv/` print to ≤ 2 A4 pages, the generated PDFs are served, and print hides the site chrome.
+- **CV:** `/cv/` and `/ar/cv/` print to ≤ 2 A4 pages, the generated PDFs are served with title, author, subject,
+  keywords and language, the Arabic CV links to `/ar/`, its degree years read in the same order on every row, and print
+  hides the site chrome.
 - **Contact form** (API mocked, Turnstile stubbed):
   - Client-side validation, with errors linked to their fields and focus on the error summary.
   - The Worker contract: subject mapping, `mh_hp` honeypot, language, token.
   - The success state with its reference.
   - The 429, 502 and offline messages, and the Arabic messages.
+  - A non-JSON 429 or 5xx (Cloudflare answering instead of the Worker, e.g. once the daily request limit is reached)
+    shows "the form isn't available" with email and WhatsApp links, never "wait a minute".
+  - The error summary is an alert named by its heading.
 - **Ask my AI:**
   - The hero input opens the widget with the question.
   - `data-open-chat` buttons, the `/` key, and the case-study "ask about this project" button all open it.
   - The no-JS fallback is present.
+  - The page sets `--mh-chat-top` from the sticky header's height (the panel's top edge sits below it).
+  - The floating bubble steps aside (fades out) while the contact form's Send button is under it, at 1280 and 1440.
+- **SEO (`seo.spec.ts`):** the 301 redirects and their targets, UTF-8 text files, sitemap `<lastmod>`, the home H1
+  (name and role, then the tagline), per-page `og:image:alt`, `article:*` dates on case studies.
+- **CSP (`csp.spec.ts`):** see "Security".
+- **Accessibility details (`a11y-details.spec.ts`):** axe at 320 px (every page light, key pages dark); the home link's
+  name below 360 px; user text spacing (WCAG 1.4.12) clips nothing in the work cards or the trace at 1440, 390 and
+  320; focus outlines under forced colors; each role in the trace is an h3; the skills table is a focusable region
+  only while it scrolls; the mobile menu's language and theme controls sit in the nav landmark and the sheet closes
+  when focus leaves it; Latin and number runs keep their order on Arabic pages.
 
-One WebKit quirk is filtered in `tests/e2e/fixtures.ts`. WebKit logs a CSP message for every `<select>` under a
-hash-only `style-src`: it checks its own user-agent stylesheet against the page policy. The select renders and works;
-the stylesheet isn't ours.
+One WebKit quirk is filtered in `tests/e2e/fixtures.ts` and `csp.spec.ts`. WebKit logs a CSP message (and fires a
+`style-src-attr` violation with no source file) for every `<select>` under a hash-only `style-src`: it checks its own
+user-agent styles against the page policy. A bare `<select>` added to a page without one reproduces it; the select
+renders and works, and the styles aren't ours.

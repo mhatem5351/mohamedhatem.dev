@@ -1,6 +1,9 @@
 /**
  * Contact form behaviour (ContactForm.astro): lazy Turnstile, validation with an error summary, POST /api/contact,
  * the server's answers (200, 422, 403 turnstile_failed, 429, 5xx, network) and the success state.
+ * A 429 or 5xx that isn't the Worker's JSON (Cloudflare answering for it, e.g. once the free plan's daily request
+ * limit is reached, or an edge rule) means the form can't work right now: the status says so and offers email and
+ * WhatsApp, instead of a misleading "wait a minute".
  */
 import { contactPayload, serverFieldErrors, validateContact, type ContactValues, type Field, type FieldError } from "~/lib/contact-form";
 
@@ -16,6 +19,7 @@ interface Strings {
   turnstile: string;
   rateLimited: string;
   server: string;
+  unavailable: string;
   network: string;
   sending: string;
   submit: string;
@@ -39,6 +43,7 @@ export function initContactForm(): void {
   const slot = form.querySelector<HTMLElement>("[data-turnstile-slot]")!;
   const summary = form.querySelector<HTMLElement>("[data-summary]")!;
   const status = form.querySelector<HTMLElement>("[data-status]")!;
+  const statusLinks = status.querySelector<HTMLElement>("[data-status-links]")!;
   const submit = form.querySelector<HTMLButtonElement>("[data-submit]")!;
   const success = card.querySelector<HTMLElement>("[data-success]")!;
   const input = (f: Field) => form.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(`#cf-${f}`)!;
@@ -167,8 +172,10 @@ export function initContactForm(): void {
     if (focusSummary) summary.focus();
   }
 
-  function setStatus(text: string): void {
+  /** Shows (or clears) the status message; `channels` adds the email and WhatsApp links under it. */
+  function setStatus(text: string, channels = false): void {
     status.querySelector<HTMLElement>("[data-status-text]")!.textContent = text;
+    statusLinks.hidden = !(text && channels);
     status.classList.toggle("is-on", !!text);
   }
 
@@ -231,11 +238,14 @@ export function initContactForm(): void {
         showSuccess(v, typeof ok.ref === "string" ? ok.ref : "");
         return;
       }
-      const body = (await res.json().catch(() => ({}))) as { error?: string; fields?: string[] };
-      if (res.status === 422 && Array.isArray(body.fields) && body.fields.length) showErrors(serverFieldErrors(body.fields), true);
-      else if (res.status === 403 && body.error === "turnstile_failed") setStatus(t.turnstile);
+      const isJson = /\bjson\b/i.test(res.headers.get("content-type") ?? "");
+      const body = (isJson ? await res.json().catch(() => null) : null) as { error?: string; fields?: string[] } | null;
+      const fields = Array.isArray(body?.fields) ? body.fields : undefined;
+      if (!body && (res.status === 429 || res.status >= 500)) setStatus(t.unavailable, true);
+      else if (res.status === 422 && fields?.length) showErrors(serverFieldErrors(fields), true);
+      else if (res.status === 403 && body?.error === "turnstile_failed") setStatus(t.turnstile);
       else if (res.status === 429) setStatus(t.rateLimited);
-      else setStatus(t.server);
+      else setStatus(t.server, true);
     } finally {
       setBusy(false);
     }

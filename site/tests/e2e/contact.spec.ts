@@ -83,9 +83,37 @@ test.describe("contact form", () => {
     status = 502;
     await submit.click();
     await expect(page.getByText(/Something went wrong and your message wasn't sent/).first()).toBeVisible();
+    // The direct channels are one tap away from the error.
+    await expect(form(page).locator("[data-status-links]")).toBeVisible();
     status = 0;
     await submit.click();
     await expect(page.getByText(en.contact.errors.network).first()).toBeVisible();
+  });
+
+  test("a non-JSON 429 or 5xx (Cloudflare answering, not the Worker) shows the form as unavailable, with the channels", async ({ page }) => {
+    let status = 429;
+    await page.route("**/api/contact", (r) => r.fulfill({ status, contentType: "text/plain", body: "error code: 1027" }));
+    await page.goto("/#contact");
+    await fill(page, en, { name: "Sara", email: "sara@example.com", topic: "project", message: "A project I would like to discuss with you." });
+    const submit = form(page).getByRole("button", { name: en.contact.form.submit });
+    for (status of [429, 503]) {
+      await submit.click();
+      const alert = form(page).locator("[data-status]");
+      await expect(alert).toContainText(en.contact.errors.unavailable);
+      await expect(alert).not.toContainText(en.contact.errors.rateLimited);
+      const links = alert.locator("[data-status-links] a");
+      await expect(links).toHaveCount(2);
+      await expect(links.nth(0)).toHaveAttribute("href", /^mailto:hatem@mohamedhatem\.dev/);
+      await expect(links.nth(1)).toHaveAttribute("href", /^https:\/\/wa\.me\/201142070946/);
+    }
+  });
+
+  test("the error summary is an alert, named by its heading", async ({ page }) => {
+    await page.goto("/#contact");
+    await form(page).getByRole("button", { name: en.contact.form.submit }).click();
+    const summary = form(page).locator("[data-summary]");
+    await expect(summary).toHaveAttribute("role", "alert");
+    await expect(page.getByRole("alert", { name: /Please fix \d+ fields? below\./ })).toBeVisible();
   });
 
   test("works in Arabic with Arabic messages", async ({ page }) => {

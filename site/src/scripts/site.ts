@@ -137,6 +137,12 @@ if (nav) {
   const onScroll = () => (nav.dataset.scrolled = String(scrollY > 8));
   onScroll();
   addEventListener("scroll", onScroll, { passive: true });
+  // The chat panel's top edge sits below the sticky header (chat-widget README: --mh-chat-top). The widget measures it
+  // too when it opens; this keeps the page-level value right from the start and whenever the header's height changes
+  // (zoom, text size, a wrapped nav). The header is sticky at the top, so its height is its bottom edge.
+  const setChatTop = () => root.style.setProperty("--mh-chat-top", `${Math.round(nav.getBoundingClientRect().height) + 12}px`);
+  setChatTop();
+  if ("ResizeObserver" in window) new ResizeObserver(setChatTop).observe(nav);
 }
 
 const menuBtn = document.querySelector<HTMLButtonElement>("[data-menu-button]");
@@ -160,8 +166,63 @@ if (menuBtn && sheet) {
     const t = e.target as Node;
     if (!sheet.hidden && !sheet.contains(t) && !menuBtn.contains(t)) set(false, false);
   });
+  // Tabbing out of the open sheet (past its last control, or back past the menu button) closes it, leaving focus
+  // where it went, so the sheet never lingers over the element that has focus.
+  for (const el of [sheet, menuBtn])
+    el.addEventListener("focusout", (e) => {
+      const next = (e as FocusEvent).relatedTarget as Node | null;
+      if (!sheet.hidden && next && !sheet.contains(next) && !menuBtn.contains(next)) set(false, false);
+    });
   // Closing the sheet when the layout grows past the breakpoint keeps aria-expanded truthful.
   matchMedia("(min-width: 64rem)").addEventListener("change", (e) => e.matches && !sheet.hidden && set(false, false));
+}
+
+/* ------------------------------------------------------------------ scroll regions (skills table) */
+// A wide table is a keyboard-focusable, labelled region only while it actually scrolls sideways; when it fits, the
+// tab stop and the "scrolls sideways" label would only mislead. Without JS the markup keeps the region (safe default).
+for (const wrap of document.querySelectorAll<HTMLElement>("[data-scroll-region]")) {
+  const label = wrap.getAttribute("aria-label") ?? "";
+  const update = () => {
+    if (wrap.scrollWidth > wrap.clientWidth + 1) {
+      wrap.tabIndex = 0;
+      wrap.setAttribute("role", "region");
+      wrap.setAttribute("aria-label", label);
+    } else {
+      wrap.removeAttribute("tabindex");
+      wrap.removeAttribute("role");
+      wrap.removeAttribute("aria-label");
+    }
+  };
+  update();
+  if ("ResizeObserver" in window) new ResizeObserver(update).observe(wrap);
+  void document.fonts?.ready.then(update);
+}
+
+/* ------------------------------------------------------------------ chat bubble vs the contact form's Send button */
+// The floating "Ask my AI" bubble (chat-widget, fixed at the bottom inline-end corner) must never cover the contact
+// form's Send button: while the button is under the bubble (and the chat is closed), the bubble steps aside.
+const dodge = document.querySelector<HTMLElement>("[data-chat-dodge]");
+if (dodge) {
+  let chatOpen = false;
+  let frame = 0;
+  const check = () => {
+    frame = 0;
+    const host = document.querySelector<HTMLElement>("[data-mh-chat]");
+    const bubble = host?.shadowRoot?.querySelector("button")?.getBoundingClientRect();
+    if (!host || !bubble || !bubble.width) return;
+    const r = dodge.getBoundingClientRect();
+    const pad = 12;
+    const overlaps = r.width > 0 && r.right + pad > bubble.left && r.left - pad < bubble.right && r.bottom + pad > bubble.top && r.top - pad < bubble.bottom;
+    host.toggleAttribute("data-dodge", overlaps && !chatOpen && !host.matches(":focus-within"));
+  };
+  const schedule = () => void (frame ||= requestAnimationFrame(check));
+  addEventListener("scroll", schedule, { passive: true });
+  addEventListener("resize", schedule);
+  document.addEventListener("mh:chat-state", (e) => {
+    chatOpen = !!(e as CustomEvent<{ open?: boolean }>).detail?.open;
+    schedule();
+  });
+  schedule();
 }
 
 /* ------------------------------------------------------------------ home: section scroll-spy */

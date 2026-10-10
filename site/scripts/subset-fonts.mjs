@@ -11,6 +11,11 @@
  *   "MH Arabic Label": a few-KB Plex Arabic 600 cut to the Arabic words English pages show (language switch, footer
  *     link, one example question), so EN pages don't download an Arabic weight for them (DESIGN.md 4.4).
  *
+ *   Print instances (src/assets/fonts/print/): static, single-weight cuts of the three Latin faces for the generated CV
+ *     PDF only (scripts/postbuild/cv-pdf.mjs). Chromium embeds variable fonts in a PDF as Type 3 fonts, which breaks
+ *     words in copied text and defeats search in Preview, Quick Look and some ATS parsers; static instances embed as
+ *     TrueType. Never served to the site (nothing imports them).
+ *
  * Output: src/assets/fonts/*.woff2 (committed). The unicode ranges in astro.config.mjs must match LATIN / ARABIC.
  * Run after changing the design fonts, the weights in use, or the Arabic label strings:
  *   node scripts/subset-fonts.mjs
@@ -49,6 +54,14 @@ const jobs = [
     text: `${en.language.switchTo}${en.language.otherVersion}${en.hero.ask.otherLanguage}${suggestions.ar[0].label}ع: `,
   },
 ];
+
+/** Weights the CV sheet uses (src/styles/cv.css): text 400/500/600/700, display 500/600/700, mono 400/500/600/700. */
+export const PRINT = [
+  ...[400, 500, 600, 700].map((w) => ({ src: "inter-latin-wght.woff2", out: `print/inter-${w}.woff2`, text: chars(LATIN), axes: { wght: w } })),
+  ...[500, 600, 700].map((w) => ({ src: "space-grotesk-latin-wght.woff2", out: `print/space-grotesk-${w}.woff2`, text: chars(LATIN), axes: { wght: w } })),
+  ...[400, 500, 600, 700].map((w) => ({ src: "jetbrains-mono-ascii-wght.woff2", out: `print/jetbrains-mono-${w}.woff2`, text: chars(LATIN), axes: { wght: w } })),
+];
+jobs.push(...PRINT);
 
 let before = 0;
 let after = 0;

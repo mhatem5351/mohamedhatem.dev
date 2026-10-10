@@ -12,7 +12,7 @@
 import Icon from "~/components/ui/Icon.astro";
 import { format, messages, type Locale } from "~/lib/i18n";
 import { LIMITS, TOPICS, topicToSubject } from "~/lib/contact-form";
-import { TURNSTILE_SITE_KEY, contact } from "~/lib/site";
+import { TURNSTILE_SITE_KEY, contact, mailtoHref, whatsappHref } from "~/lib/site";
 
 interface Props {
   locale: Locale;
@@ -40,6 +40,7 @@ const i18n = {
   turnstile: m.contact.errors.turnstile,
   rateLimited: m.contact.errors.rateLimited,
   server: format(m.contact.errors.server, { email }),
+  unavailable: m.contact.errors.unavailable,
   network: m.contact.errors.network,
   sending: f.sending,
   submit: f.submit,
@@ -64,7 +65,7 @@ const json = JSON.stringify(i18n).replace(/</g, "\\u003c");
       <p class="muted t-sm">{leadBefore}<bdi dir="ltr">{email}</bdi>{leadAfter}</p>
     </div>
 
-    <div class="form__summary" tabindex="-1" hidden data-summary aria-labelledby="cf-summary-title">
+    <div class="form__summary" tabindex="-1" hidden data-summary role="alert" aria-labelledby="cf-summary-title">
       <p id="cf-summary-title" data-summary-title></p>
       <ul role="list" data-summary-list></ul>
     </div>
@@ -135,11 +136,20 @@ const json = JSON.stringify(i18n).replace(/</g, "\\u003c");
 
     <div class="turnstile-slot" data-turnstile-slot></div>
 
-    <p class="form__status" role="alert" data-status><Icon name="alert" size="sm" /><span data-status-text></span></p>
+    <div class="form__status" role="alert" data-status>
+      <Icon name="alert" size="sm" />
+      <div class="form__status-body">
+        <p data-status-text></p>
+        <p class="form__status-links" hidden data-status-links>
+          <a href={mailtoHref(locale)}>{m.contact.channels.email.title}: <bdi dir="ltr">{email}</bdi></a>
+          <a href={whatsappHref(locale)} rel="noopener">{m.contact.channels.whatsapp.title}: <bdi dir="ltr">{contact("whatsapp").display}</bdi></a>
+        </p>
+      </div>
+    </div>
 
     <div class="form__foot">
       <p class="field__hint">{f.turnstile}</p>
-      <button class="btn btn--primary" type="submit" data-submit>
+      <button class="btn btn--primary" type="submit" data-submit data-chat-dodge>
         <span data-submit-label>{f.submit}</span>
         <Icon name="arrow-right" class="arrow" />
       </button>

@@ -42,7 +42,7 @@ const GROUP_COLOR: Record<string, string> = {
         <h3 class="matrix-card__title" id="matrix-title">{mx.title}</h3>
         <p class="matrix-card__lead">{mx.lead}</p>
       </div>
-      <div class="matrix-wrap" tabindex="0" role="region" aria-label={m.a11y.skillsTable}>
+      <div class="matrix-wrap" tabindex="0" role="region" aria-label={m.a11y.skillsTable} data-scroll-region>
         <table class="matrix" aria-describedby="matrix-title">
           <caption class="sr-only">{mx.caption}</caption>
           <thead>
@@ -79,6 +79,7 @@ const GROUP_COLOR: Record<string, string> = {
                       ) : (
                         <td>
                           <i class="n" />
+                          <span class="sr-only">{mx.no}</span>
                         </td>
                       ),
                     )}
@@ -101,7 +102,7 @@ const GROUP_COLOR: Record<string, string> = {
               <h4>{g.title[locale]}</h4>
               <p class="toolbox__summary">{g.summary[locale]}</p>
               <ul class="toolbox__list" role="list">
-                {g.skills.map((s) => (
+                {g.skills.filter((s) => s.evidence.length > 0).map((s) => (
                   <li class="tool">
                     <span dir="auto">{s.name[locale]}</span>
                     {s.endorsements !== undefined && (
@@ -116,6 +117,23 @@ const GROUP_COLOR: Record<string, string> = {
                   </li>
                 ))}
               </ul>
+              {/* Listed on my CV or profiles, but with no project on this site to show for them: kept apart from the
+                  production claims above (content/README.md, audit FC-8). */}
+              {g.skills.some((s) => s.evidence.length === 0) && (
+                <p class="toolbox__also">
+                  <span class="toolbox__also-label">{m.skills.alsoWorkedWith}:</span>{" "}
+                  {/* One flat array: no JSX whitespace may land before a comma. */}
+                  {g.skills
+                    .filter((s) => s.evidence.length === 0)
+                    .flatMap((s, i) => [
+                      ...(i > 0 ? [locale === "ar" ? "، " : ", "] : []),
+                      <bdi>{s.name[locale]}</bdi>,
+                      ...(s.endorsements !== undefined
+                        ? [<span class="tool__count" aria-hidden="true">{s.endorsements}</span>, <span class="sr-only">({pluralize(m.skills.endorsements, s.endorsements, locale)})</span>]
+                        : []),
+                    ])}
+                </p>
+              )}
             </li>
           ))
         }

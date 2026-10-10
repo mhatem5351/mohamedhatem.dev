@@ -115,8 +115,8 @@ const themeLabel = (mode: string) => `${m.theme.label}: ${mode}`;
             </li>
           ))}
         </ul>
-      </nav>
-      <div class="menu-sheet__row">
+        {/* Inside the nav landmark, so screen-reader landmark navigation reaches the language and theme controls. */}
+        <div class="menu-sheet__row">
         <a class="lang-switch lang-switch--flush" href={otherHref} hreflang={other} lang={other}>
           <Icon name="globe" size="sm" />
           <span>{m.language.switchTo}</span>
@@ -138,7 +138,8 @@ const themeLabel = (mode: string) => `${m.theme.label}: ${mode}`;
             {m.theme.dark}
           </button>
         </div>
-      </div>
+        </div>
+      </nav>
     </div>
   )
 }

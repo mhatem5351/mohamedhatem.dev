@@ -58,6 +58,12 @@ export type IsoYear = `${number}`;
 /** ISO 8601 calendar month, e.g. `"2024-09"`. */
 export type IsoMonth = `${number}-${MM}`;
 
+/** Two-digit day of the month. */
+type DD = `0${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}` | `${1 | 2}${0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}` | "30" | "31";
+
+/** ISO 8601 calendar date, e.g. `"2026-10-10"`. Used where the exact day is known (publication and review dates). */
+export type IsoDate = `${number}-${MM}-${DD}`;
+
 /** A date range. `end: null` means ongoing. Month precision when the sources give it, otherwise year. */
 export interface Period {
   /** First month (or year) of the period. */
@@ -309,8 +315,11 @@ export interface Role {
   readonly bullets: readonly Fact[];
   /** Concise bullets for the generated CV (PDF and /cv page): 1 to 4, strongest first. */
   readonly cvBullets: UpTo4<Fact>;
-  /** Technology tags (Latin script in both locales). */
-  readonly tech: readonly string[];
+  /**
+   * Technology tags. Tool and product names are plain strings (Latin script in both locales); descriptive phrases
+   * ("Machine learning") are `L10n`, so Arabic pages don't show English phrases as tags.
+   */
+  readonly tech: readonly (string | L10n)[];
   /** Case studies drawn from this role. */
   readonly caseStudies: readonly CaseStudySlug[];
   /** Awards received in this role (ids of `honors`). */
@@ -399,8 +408,15 @@ export interface CaseStudy {
   readonly roleId: RoleId | null;
   /** His part in it. */
   readonly contribution: L10n;
-  /** When. */
+  /**
+   * When the work happened. For work dated only by its role (several case studies from one role), this is the
+   * role's period and pages say "during the role" instead of presenting it as the project's own dates.
+   */
   readonly period: Period;
+  /** First publication of the case-study page (JSON-LD `datePublished`, `article:published_time`). */
+  readonly published: IsoDate;
+  /** Last content change of the case-study page (JSON-LD `dateModified`, sitemap `<lastmod>`). */
+  readonly updated: IsoDate;
   /** One sentence (<= 155 characters in each locale, so it doubles as the meta description). */
   readonly summary: L10n;
   /** What had to be solved. */
@@ -529,8 +545,8 @@ export interface Honor {
   readonly issuer: L10n;
   /** The role it belongs to. */
   readonly roleId: RoleId;
-  /** When, at the precision known (the award year is not stated, so this is the role's period). */
-  readonly period: Period;
+  /** When it was awarded, or `null` when the sources don't say (shown without a date, never with the role's dates). */
+  readonly period: Period | null;
   /** One line from the source. */
   readonly description: L10n;
   /** Provenance. */
@@ -563,6 +579,10 @@ export interface Profile {
   readonly site: {
     /** Canonical origin, no trailing slash. */
     readonly url: "https://mohamedhatem.dev";
+    /** Day the site went live (first publication of the home, CV and case-study pages). */
+    readonly published: IsoDate;
+    /** Last content change of the home page (JSON-LD `dateModified`, sitemap `<lastmod>`). */
+    readonly updated: IsoDate;
     /** Public source repository of this site. */
     readonly repo: string;
     /** Default locale (served at `/`). */
@@ -597,8 +617,8 @@ export interface Cv {
   readonly projects: readonly ProjectId[];
   /** Suggested PDF file names. */
   readonly fileName: L10n;
-  /** Month the CV content was last reviewed. */
-  readonly updated: IsoMonth;
+  /** Day the CV content was last reviewed (shown as month and year). */
+  readonly updated: IsoDate;
 }
 
 /** Home-page section anchors (`#work`, `#experience`, ...). */
@@ -887,7 +907,7 @@ const experience: readonly Role[] = [
         "github", "linkedin", "cv",
       ),
     ],
-    tech: ["Multi-agent orchestration", "LLM serving", "RAG"],
+    tech: [l("Multi-agent orchestration", "تنسيق الوكلاء المتعددين"), l("LLM serving", "خدمة النماذج اللغوية"), "RAG"],
     caseStudies: [],
     honors: [],
     primary: true,
@@ -992,7 +1012,7 @@ const experience: readonly Role[] = [
       "NVIDIA A100",
       "RAG",
       "BM25",
-      "LLM reranking",
+      l("LLM reranking", "إعادة الترتيب بنموذج لغوي"),
       "MCP",
       "FastAPI",
       "gRPC",
@@ -1194,7 +1214,8 @@ const experience: readonly Role[] = [
     cvBullets: [
       fact(
         "Unified data from 3,008+ real-estate developers, each with its own schema, to scale the company's real-time e-map.",
-        "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، لكلٍّ منهم مخطط بيانات مختلف، لدعم توسّع الخريطة الإلكترونية الفورية للشركة.",
+        // "لكل" without shadda and tanween here: the PDF's text layer copied the marks as U+0000 (audit cvpdf-13).
+        "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، لكل منهم مخطط بيانات مختلف، لدعم توسّع الخريطة الإلكترونية الفورية للشركة.",
         "linkedin", "github",
       ),
       fact(
@@ -1208,12 +1229,12 @@ const experience: readonly Role[] = [
         "cv", "linkedin",
       ),
       fact(
-        "Designed ETL from Cosmos DB to SQL Server, scheduled with Azure Functions. Named Best Engineer of the Year.",
-        "تصميم عمليات ETL من Cosmos DB إلى SQL Server مجدولة عبر Azure Functions، ونيل جائزة أفضل مهندس للعام.",
+        "Designed ETL from Cosmos DB to SQL Server, scheduled with Azure Functions.",
+        "تصميم عمليات ETL من Cosmos DB إلى SQL Server مجدولة عبر Azure Functions.",
         "cv", "linkedin",
       ),
     ],
-    tech: ["Python", "PyTorch", "NLP", "Computer vision", "Azure Functions", "Cosmos DB", "SQL Server", "Firebase", "Flutter"],
+    tech: ["Python", "PyTorch", "NLP", l("Computer vision", "الرؤية الحاسوبية"), "Azure Functions", "Cosmos DB", "SQL Server", "Firebase", "Flutter"],
     caseStudies: ["empoweromics-ml"],
     honors: ["best-engineer-empoweromics"],
     primary: true,
@@ -1261,7 +1282,7 @@ const experience: readonly Role[] = [
         "linkedin", "cv",
       ),
     ],
-    tech: ["Machine learning", "Deep learning", "NLP", "Recommender systems"],
+    tech: [l("Machine learning", "تعلّم الآلة"), l("Deep learning", "التعلّم العميق"), "NLP", l("Recommender systems", "نظم التوصية")],
     caseStudies: [],
     honors: [],
     primary: false,
@@ -1295,7 +1316,7 @@ const experience: readonly Role[] = [
         "cv", "linkedin",
       ),
     ],
-    tech: ["Machine learning", "Deep learning"],
+    tech: [l("Machine learning", "تعلّم الآلة"), l("Deep learning", "التعلّم العميق")],
     caseStudies: [],
     honors: [],
     primary: false,
@@ -1343,7 +1364,7 @@ const experience: readonly Role[] = [
         "linkedin",
       ),
     ],
-    tech: ["Web scraping", "SQL Server", "EDA", "Dashboards", "Machine learning"],
+    tech: [l("Web scraping", "جمع البيانات من الويب"), "SQL Server", l("Exploratory data analysis", "التحليل الاستكشافي للبيانات"), l("Dashboards", "لوحات المعلومات"), l("Machine learning", "تعلّم الآلة")],
     caseStudies: [],
     honors: [],
     primary: false,
@@ -1383,7 +1404,7 @@ const experience: readonly Role[] = [
         "cv", "linkedin",
       ),
     ],
-    tech: ["SQL", "Stored procedures", "Query tuning", "RDBMS"],
+    tech: ["SQL", l("Stored procedures", "الإجراءات المخزّنة"), l("Query tuning", "ضبط الاستعلامات"), "RDBMS"],
     caseStudies: [],
     honors: [],
     primary: false,
@@ -1406,6 +1427,8 @@ const caseStudies: readonly CaseStudy[] = [
     roleId: "arabsstock",
     contribution: l("Architecture and build (AI Engineer)", "التصميم المعماري والبناء (مهندس ذكاء اصطناعي)"),
     period: { start: "2023-04", end: "2024-12" },
+    published: "2026-10-10",
+    updated: "2026-10-10",
     summary: l(
       "Architected a 14-agent LangGraph assistant for ArabsStock and the semantic and visual search over millions of its photos, videos and vector graphics.",
       "تصميم مساعد من 14 وكيلًا على LangGraph لمنصة ArabsStock، وبحث دلالي وبصري في ملايين الصور ومقاطع الفيديو والرسومات المتجهة.",
@@ -1537,6 +1560,8 @@ const caseStudies: readonly CaseStudy[] = [
       "التصميم المعماري والبناء وخدمة النماذج (مهندس أول للذكاء الاصطناعي وMLOps)",
     ),
     period: { start: "2024-09", end: "2026-04" },
+    published: "2026-10-10",
+    updated: "2026-10-10",
     summary: l(
       "Architected a fully async 6-agent LangGraph chatbot in Arabic and English, and ran its Qwen models on vLLM across production A100 servers.",
       "تصميم روبوت محادثة غير متزامن من 6 وكلاء على LangGraph بالعربية والإنجليزية، وتشغيل نماذج Qwen عبر vLLM على خوادم A100 في بيئة الإنتاج.",
@@ -1661,18 +1686,20 @@ const caseStudies: readonly CaseStudy[] = [
     roleId: "wakeb",
     contribution: l("Built the assistant", "بناء المساعد"),
     period: { start: "2024-09", end: "2026-04" },
+    published: "2026-10-10",
+    updated: "2026-10-10",
     summary: l(
       "Built a bilingual enterprise assistant (Arabic/English) for a Saudi government client, with LLM evaluation and observability on answer quality.",
       "بناء مساعد مؤسسي ثنائي اللغة (عربي/إنجليزي) لجهة حكومية سعودية، مع تقييم للنماذج اللغوية ومراقبة لجودة الإجابات.",
     ),
     problem: l(
-      "A Saudi government client needed an enterprise-grade bilingual assistant for Arabic and English speakers, with evaluation and monitoring of answer quality.",
-      "احتاجت جهة حكومية سعودية إلى مساعد مؤسسي ثنائي اللغة يخدم المتحدثين بالعربية والإنجليزية، مع تقييم جودة الإجابات ومراقبتها.",
+      "A Saudi government client needed an enterprise-grade bilingual (Arabic/English) assistant, with evaluation and monitoring of answer quality.",
+      "احتاجت جهة حكومية سعودية إلى مساعد مؤسسي ثنائي اللغة (عربي/إنجليزي)، مع تقييم جودة الإجابات ومراقبتها.",
     ),
     approach: [
       fact(
-        "Built an enterprise-grade bilingual assistant for Arabic speakers.",
-        "بناء مساعد مؤسسي ثنائي اللغة موجّه للمتحدثين بالعربية.",
+        "Built the enterprise-grade bilingual (Arabic/English) assistant.",
+        "بناء المساعد المؤسسي ثنائي اللغة (عربي/إنجليزي).",
         "cv",
         "linkedin",
       ),
@@ -1729,6 +1756,8 @@ const caseStudies: readonly CaseStudy[] = [
     roleId: "empoweromics",
     contribution: l("Data integration and ML models (Data Scientist)", "تكامل البيانات ونماذج تعلّم الآلة (عالم بيانات)"),
     period: { start: "2022-01", end: "2023-03" },
+    published: "2026-10-10",
+    updated: "2026-10-10",
     summary: l(
       "Unified data from 3,008+ real-estate developers, built lead-prioritisation and WhatsApp-routing models, and shipped typo-tolerant client search.",
       "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، وبناء نماذج لترتيب أولويات العملاء وتوجيه رسائل WhatsApp وبحث يتسامح مع الأخطاء الإملائية.",
@@ -1845,6 +1874,8 @@ const caseStudies: readonly CaseStudy[] = [
     roleId: null,
     contribution: l("Build and delivery, freelance", "البناء والتسليم، عمل حر"),
     period: { start: "2026", end: "2026" },
+    published: "2026-10-10",
+    updated: "2026-10-10",
     summary: l(
       "Freelance build of logic-controls.com in English, Arabic (RTL), Chinese and Turkish: Astro on Cloudflare Workers, WCAG 2.2 AA, Lighthouse 98–100 mobile.",
       "بناء موقع logic-controls.com بأربع لغات (عمل حر) بـAstro على Cloudflare Workers، متوافقًا مع WCAG 2.2 AA، وبنتيجة Lighthouse بين 98 و100 على الجوال.",
@@ -1942,6 +1973,8 @@ const caseStudies: readonly CaseStudy[] = [
     roleId: "wakeb",
     contribution: l("Design of version 2", "تصميم الإصدار الثاني"),
     period: { start: "2024-09", end: "2026-04" },
+    published: "2026-10-10",
+    updated: "2026-10-10",
     summary: l(
       "Designed the second version of the AI semantic search for the flagship AIP project: more accurate retrieval, faster search, better image search.",
       "تصميم الإصدار الثاني من البحث الدلالي لمشروع AIP الرئيسي: استرجاع أدق، وبحث أسرع، وبحث أفضل بالصور.",
@@ -2002,6 +2035,8 @@ const caseStudies: readonly CaseStudy[] = [
     roleId: "tabaqat",
     contribution: l("All data pipelines, plus map deployment", "جميع خطوط البيانات، إلى جانب نشر الخرائط"),
     period: { start: "2023-02", end: "2024-05" },
+    published: "2026-10-10",
+    updated: "2026-10-10",
     summary: l(
       "Designed and ran all data pipelines in Prefect (ETL for Saudi government GIS data), queried Overture Maps with Athena and DuckDB, and deployed map serving.",
       "تصميم جميع خطوط البيانات وإدارتها عبر Prefect (ETL لبيانات GIS حكومية سعودية)، والاستعلام في Overture Maps عبر Athena وDuckDB، ونشر حلول خدمة الخرائط.",
@@ -2430,8 +2465,8 @@ const skills: readonly SkillGroup[] = [
     title: l("Cloud", "الحوسبة السحابية"),
     summary: l("AWS Certified ML – Specialty (2022); Athena on AWS at Tabaqat; Functions and Cosmos DB on Azure at Empoweromics.", "شهادة AWS Certified ML – Specialty عام 2022، وAthena على AWS في Tabaqat، وFunctions وCosmos DB على Azure في Empoweromics."),
     skills: [
-      { name: l("AWS (SageMaker, EC2, S3, Athena, EKS)", "AWS: SageMaker وEC2 وS3 وAthena وEKS"), evidence: ["case:tabaqat-gis"], source: ["cv", "linkedin"] },
-      { name: l("Azure (Functions, Cosmos DB, DevOps)", "Azure: Functions وCosmos DB وDevOps"), evidence: ["role:empoweromics"], source: ["cv", "linkedin"] },
+      { name: same("AWS (SageMaker, EC2, S3, Athena, EKS)"), evidence: ["case:tabaqat-gis"], source: ["cv", "linkedin"] },
+      { name: same("Azure (Functions, Cosmos DB, DevOps)"), evidence: ["role:empoweromics"], source: ["cv", "linkedin"] },
       { name: same("GCP"), evidence: [], source: ["cv"] },
       { name: same("Cloudflare Workers"), evidence: ["case:logic-controls-website"], source: ["logic-controls", "github"] },
     ],
@@ -2572,7 +2607,8 @@ const honors: readonly Honor[] = [
     title: l("Best Engineer of the Year", "جائزة أفضل مهندس للعام"),
     issuer: same("Empoweromics"),
     roleId: "empoweromics",
-    period: { start: "2022-01", end: "2023-03" },
+    // The sources don't date the award (LinkedIn shows it under the 2022–2023 role without a year).
+    period: null,
     description: l(
       "Awarded at Empoweromics for innovation and excellence in AI engineering.",
       "مُنحت في Empoweromics تقديرًا للابتكار والتميّز في هندسة الذكاء الاصطناعي.",
@@ -2619,7 +2655,7 @@ const cvData: Cv = {
     },
     {
       label: l("Cloud", "الحوسبة السحابية"),
-      items: [l("AWS (SageMaker, EC2, S3, Athena, EKS)", "AWS: SageMaker وEC2 وS3 وAthena وEKS"), l("Azure (Functions, Cosmos DB)", "Azure: Functions وCosmos DB"), same("Cloudflare Workers")],
+      items: [same("AWS (SageMaker, EC2, S3, Athena, EKS)"), same("Azure (Functions, Cosmos DB)"), same("Cloudflare Workers")],
       source: ["cv", "linkedin", "logic-controls"],
     },
     {
@@ -2630,7 +2666,7 @@ const cvData: Cv = {
   ],
   projects: ["staged-llm-evaluator", "prompt-reliability-harness", "rag-answering-service", "logic-controls-website"],
   fileName: l("Mohamed-Hatem-CV.pdf", "Mohamed-Hatem-CV-Arabic.pdf"),
-  updated: "2026-10",
+  updated: "2026-10-10",
 };
 
 /** The profile the whole site renders from. */
@@ -2647,6 +2683,8 @@ export const profile: Profile = {
   cv: cvData,
   site: {
     url: "https://mohamedhatem.dev",
+    published: "2026-10-10",
+    updated: "2026-10-10",
     repo: "https://github.com/mhatem5351/mohamedhatem.dev",
     defaultLocale: "en",
     sections: ["work", "experience", "projects", "skills", "education", "about", "assistant", "contact"],

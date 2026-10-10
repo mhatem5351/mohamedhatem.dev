@@ -178,15 +178,24 @@ for (const rx of evalSet.globalChecks?.mustNotMatch ?? [])
 // ---------- M.Sc. is never "held"; the unnamed client is never named ----------
 // The unnamed client's names (the Saudi government client of the Wakeb assistant) must not appear in this repository,
 // so they are checked by hash: every word and every 2- and 3-word sequence of each file is hashed and compared.
-const FORBIDDEN_SHA256 = new Set([
-  "REMOVED",
-  "REMOVED",
-  "REMOVED",
-  "REMOVED",
-  "REMOVED",
-  "REMOVED",
-  "REMOVED",
-]);
+// One list for the whole repository: worker/src/chat/confidential-hashes.json, which the Worker's output guard, the
+// site's build check (site/scripts/check-dist.mjs) and this script all read. `canonical` are the name forms this
+// check has always used; `variants` are generated from the gitignored _inputs/forbidden-names.txt (Arabic prefixes,
+// folded letters) by worker/scripts/confidential-hashes.mjs. Both are checked here.
+const CONFIDENTIAL_FILE = join(root, "..", "worker", "src", "chat", "confidential-hashes.json");
+let confidential = { canonical: [], variants: [] };
+try {
+  confidential = JSON.parse(readFileSync(CONFIDENTIAL_FILE, "utf8"));
+} catch (e) {
+  fail(`worker/src/chat/confidential-hashes.json can't be read (${e.message}): the unnamed-client check has no hashes`);
+}
+const SHA256 = /^[0-9a-f]{64}$/;
+const canonical = Array.isArray(confidential.canonical) ? confidential.canonical : [];
+const variants = Array.isArray(confidential.variants) ? confidential.variants : [];
+// Fail closed: an empty or malformed list would let every file pass.
+if (canonical.length < 7) fail(`confidential-hashes.json has ${canonical.length} canonical hashes (expected at least 7): the unnamed-client check would be weakened`);
+for (const h of [...canonical, ...variants]) if (!SHA256.test(h)) fail(`confidential-hashes.json: not a SHA-256 hex digest: ${String(h).slice(0, 12)}…`);
+const FORBIDDEN_SHA256 = new Set([...canonical, ...variants]);
 /** True when `text` names the unnamed client (same logic can be reused on chatbot replies). */
 function mentionsUnnamedClient(text) {
   const words = text.normalize("NFKC").toLowerCase().replace(/\p{M}/gu, "").split(/[^\p{L}\p{N}]+/u).filter(Boolean);
@@ -225,7 +234,9 @@ scan(root);
 const REPO_SECRET = /(AIza[0-9A-Za-z_-]{20,}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_\w{20,}|cfut_\w+|cfat_\w+|xox[bp]-\w+|^(GEMINI_API_KEY|TURNSTILE_SECRET|SESSION_SECRET|CLOUDFLARE_API_TOKEN|GITHUB_TOKEN\w*)=(?!1x0{20,}AA)[A-Za-z0-9_\-.]{16,})/m;
 const repo = join(root, "..");
 const BINARY = /\.(png|jpe?g|webp|avif|gif|ico|pdf|woff2?|ttf|otf|zip|gz)$/i;
-const tracked = execFileSync("git", ["ls-files", "-z"], { cwd: repo, encoding: "utf8" }).split("\0").filter(Boolean);
+// Tracked files plus new ones not yet added (but not ignored ones such as _inputs/, .env or dist/), so a new file is
+// checked before its first commit too.
+const tracked = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { cwd: repo, encoding: "utf8" }).split("\0").filter(Boolean);
 for (const rel of tracked) {
   if (BINARY.test(rel) || rel.startsWith("content/")) continue;
   let text;

@@ -18,12 +18,14 @@ interface Props {
   /** English path of this page (with trailing slash). */
   path: string;
   ogKey?: string;
+  /** Description of this page's sharing card (Head.astro). */
+  ogImageAlt?: string;
   ogType?: "website" | "article" | "profile";
   jsonLd?: readonly object[];
   bodyClass?: string;
 }
 
-const { locale, title, description, path, ogKey = "home", ogType = "website", jsonLd = [], bodyClass } = Astro.props;
+const { locale, title, description, path, ogKey = "home", ogImageAlt, ogType = "website", jsonLd = [], bodyClass } = Astro.props;
 
 const m = messages(locale);
 ---
@@ -36,6 +38,7 @@ const m = messages(locale);
       description={description}
       path={path}
       ogKey={ogKey}
+      ogImageAlt={ogImageAlt}
       ogType={ogType}
       jsonLd={jsonLd}
       themeColor={{ light: "#F4EFE6", dark: "#0F1A23" }}

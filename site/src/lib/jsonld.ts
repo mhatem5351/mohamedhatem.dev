@@ -1,16 +1,28 @@
 /**
  * JSON-LD (schema.org) for every page, built only from content/profile.ts and content/i18n:
  *   home:        Person + WebSite + ProfilePage
- *   case study:  Article (genre "case study", about the system) + BreadcrumbList
- *   cv:          Person + ProfilePage + BreadcrumbList
- *   privacy:     WebPage + BreadcrumbList
+ *   case study:  WebSite + Article (genre "case study", about the system) + BreadcrumbList
+ *   cv:          Person + WebSite + ProfilePage + BreadcrumbList
+ *   privacy:     WebSite + WebPage + BreadcrumbList
+ *
+ * One entity, one description: the Person (#person) and the WebSite (#website) have the same content on every page
+ * and in both languages (English values; the Arabic names are `alternateName`), so the same @id never carries two
+ * different names or URLs. Page-level nodes (ProfilePage, Article, WebPage) are per locale, with their own URL.
+ * Every node that points at #website has the WebSite node on the same page.
+ *
+ * Dates are full ISO dates (src/lib/dates.ts). A case study dated only by its role (the sources don't date the
+ * project itself) gets no dateCreated / temporalCoverage: the role's dates aren't presented as the project's.
  *
  * Honesty rules applied here (content/README.md): alumniOf lists only completed programmes (the M.Sc. is in
  * progress, so it is not claimed); the AWS certification is a credential "earned 2022" with no validity claim; the
- * unnamed client is never named (case studies only carry the employer / context the content discloses).
+ * unnamed client is never named (case studies only carry the employer / context the content discloses). No
+ * givenName / familyName: the sources give the full name (Mohamed Hatem Radwan) but not which part is the family
+ * name, so only `name` and `alternateName` are stated.
  * Pure functions (no I/O), so tests can call them directly.
  */
-import type { CaseStudy, Locale } from "@content/profile.ts";
+import type { CaseStudy, Locale, Period } from "@content/profile.ts";
+import { datedByRole } from "./case";
+import { PRIVACY_UPDATED, SITE_PUBLISHED, HOME_UPDATED } from "./dates";
 import { format, localePath, messages, parseIso } from "./i18n";
 import { PATHS, absolute, caseStudyBySlug, contact, link, ogImage, profile } from "./site";
 
@@ -18,93 +30,87 @@ export const PERSON_ID = `${profile.site.url}/#person`;
 export const WEBSITE_ID = `${profile.site.url}/#website`;
 /** Stable photo URL for structured data (public/mohamed-hatem.jpg, the square crop at 480 px). */
 export const PERSON_IMAGE = absolute("/mohamed-hatem.jpg");
+const HOME = absolute("/");
 
 const CONTEXT = "https://schema.org";
 const LANG = { en: "en", ar: "ar" } as const;
 
-/** "2024-09" → "2024-09"; "2027" → "2027" (ISO 8601 as schema.org accepts). */
-const isoDate = (v: string): string => v;
-
-/** schema.org temporalCoverage interval for a period ("2023-04/2024-12", open end "2026-04/.."). */
-export function temporalCoverage(period: CaseStudy["period"]): string {
-  return `${isoDate(period.start)}/${period.end === null ? ".." : isoDate(period.end)}`;
+/** schema.org temporalCoverage for a period: "2023-04/2024-12", an open end "2026-04/..", one value "2026". */
+export function temporalCoverage(period: Period): string {
+  if (period.end === period.start) return period.start;
+  return `${period.start}/${period.end === null ? ".." : period.end}`;
 }
 
 function organization(name: string, url?: string): Record<string, unknown> {
   return { "@type": "Organization", name, ...(url ? { url } : {}) };
 }
 
-/** Topics he works on, from the CV's skills summary (first items of each line, in the page's language). */
-export function knowsAbout(locale: Locale): string[] {
+/** Topics he works on, from the CV's skills summary (the first items of each line). */
+export function knowsAbout(): string[] {
   const seen = new Set<string>();
-  for (const line of profile.cv.skills) for (const item of line.items.slice(0, 3)) seen.add(item[locale]);
+  for (const line of profile.cv.skills) for (const item of line.items.slice(0, 3)) seen.add(item.en);
   return [...seen];
 }
 
-/** The Person, in the page's language. */
-export function person(locale: Locale): Record<string, unknown> {
+/** The Person: identical on every page and in both languages (see the header). */
+export function person(): Record<string, unknown> {
   const b = profile.basics;
-  const other: Locale = locale === "en" ? "ar" : "en";
   const completed = profile.education.filter((e) => e.status === "completed");
   return {
     "@context": CONTEXT,
     "@type": "Person",
     "@id": PERSON_ID,
-    name: b.name[locale],
-    alternateName: [...new Set([b.fullName[locale], b.name[other], b.fullName[other]])],
-    givenName: locale === "en" ? "Mohamed" : "محمد",
-    familyName: locale === "en" ? "Hatem" : "حاتم",
-    jobTitle: b.title[locale],
-    description: b.headline[locale],
-    url: absolute(localePath("/", locale)),
+    name: b.name.en,
+    alternateName: [...new Set([b.fullName.en, b.name.ar, b.fullName.ar])],
+    jobTitle: b.title.en,
+    description: b.headline.en,
+    url: HOME,
     image: PERSON_IMAGE,
     email: `mailto:${contact("email").display}`,
     worksFor: organization(b.employer, b.employerUrl),
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: b.location.city[locale],
-      addressCountry: "EG",
-    },
-    alumniOf: completed.map((e) => ({
-      "@type": "EducationalOrganization",
-      name: e.institution[locale],
-    })),
-    knowsAbout: knowsAbout(locale),
+    address: { "@type": "PostalAddress", addressLocality: b.location.city.en, addressCountry: "EG" },
+    alumniOf: completed.map((e) => ({ "@type": "EducationalOrganization", name: e.institution.en })),
+    knowsAbout: knowsAbout(),
     knowsLanguage: b.languages.map((l) => ({
       "@type": "Language",
-      name: l.name[locale],
+      name: l.name.en,
       alternateName: l.name.en === "Arabic" ? "ar" : "en",
     })),
     hasCredential: profile.certifications
       .filter((c) => c.featured)
       .map((c) => ({
         "@type": "EducationalOccupationalCredential",
-        name: c.name[locale],
+        name: c.name.en,
         credentialCategory: "certification",
-        recognizedBy: organization(c.issuer[locale]),
+        recognizedBy: organization(c.issuer.en),
         ...(c.issued ? { dateCreated: c.issued } : {}),
       })),
-    award: profile.honors.map((h) => `${h.title[locale]}, ${h.issuer[locale]}`),
+    award: profile.honors.map((h) => `${h.title.en}, ${h.issuer.en}`),
     sameAs: [link("linkedin").href, link("github").href],
   };
 }
 
-export function website(locale: Locale): Record<string, unknown> {
-  const m = messages(locale);
+/** The WebSite: identical on every page and in both languages; its languages are listed in inLanguage. */
+export function website(): Record<string, unknown> {
+  const en = messages("en");
   return {
     "@context": CONTEXT,
     "@type": "WebSite",
     "@id": WEBSITE_ID,
-    url: absolute("/"),
-    name: m.meta.siteName,
-    description: m.meta.home.description,
+    url: HOME,
+    name: en.meta.siteName,
+    alternateName: [messages("ar").meta.siteName, new URL(HOME).hostname],
+    description: en.meta.home.description,
     inLanguage: [LANG.en, LANG.ar],
     author: { "@id": PERSON_ID },
     publisher: { "@id": PERSON_ID },
   };
 }
 
-function profilePage(locale: Locale, path: string, title: string, description: string): Record<string, unknown> {
+/** The author reference used by page-level nodes (the same name and URL as the Person node). */
+const author = (): Record<string, unknown> => ({ "@id": PERSON_ID, "@type": "Person", name: profile.basics.name.en, url: HOME });
+
+function profilePage(locale: Locale, path: string, title: string, description: string, modified: string): Record<string, unknown> {
   const url = absolute(localePath(path, locale));
   return {
     "@context": CONTEXT,
@@ -117,7 +123,8 @@ function profilePage(locale: Locale, path: string, title: string, description: s
     isPartOf: { "@id": WEBSITE_ID },
     mainEntity: { "@id": PERSON_ID },
     about: { "@id": PERSON_ID },
-    dateModified: profile.cv.updated,
+    datePublished: SITE_PUBLISHED,
+    dateModified: modified,
     primaryImageOfPage: { "@type": "ImageObject", url: PERSON_IMAGE },
   };
 }
@@ -145,7 +152,7 @@ const at = (path: string, locale: Locale): string => absolute(localePath(path, l
 
 export function homeJsonLd(locale: Locale): object[] {
   const m = messages(locale);
-  return [person(locale), website(locale), profilePage(locale, PATHS.home, m.meta.home.title, m.meta.home.description)];
+  return [person(), website(), profilePage(locale, PATHS.home, m.meta.home.title, m.meta.home.description, HOME_UPDATED)];
 }
 
 /** Organisation a case study belongs to, at the level the content discloses (employer or freelance client). */
@@ -175,10 +182,11 @@ export function caseStudyJsonLd(slug: string, locale: Locale): object[] {
     genre: m.experience.caseStudy,
     inLanguage: LANG[locale],
     image: absolute(ogImage(`work-${cs.slug}`, locale)),
-    author: { "@id": PERSON_ID, "@type": "Person", name: profile.basics.name[locale], url: absolute(localePath("/", locale)) },
+    author: author(),
     publisher: { "@id": PERSON_ID },
     isPartOf: { "@id": WEBSITE_ID },
-    dateModified: profile.cv.updated,
+    datePublished: cs.published,
+    dateModified: cs.updated,
     keywords: cs.stack.join(", "),
     about: {
       "@type": "CreativeWork",
@@ -186,13 +194,14 @@ export function caseStudyJsonLd(slug: string, locale: Locale): object[] {
       description: cs.problem[locale],
       creator: { "@id": PERSON_ID },
       producer: organization(caseOrganisation(cs, locale)),
-      temporalCoverage: temporalCoverage(cs.period),
-      dateCreated: String(parseIso(cs.period.start).y),
+      // Dated only by its role: no project dates are claimed (audit FC-7).
+      ...(datedByRole(cs) ? {} : { temporalCoverage: temporalCoverage(cs.period), dateCreated: String(parseIso(cs.period.start).y) }),
       ...(live ? { url: live.href } : {}),
-      ...(code ? { codeRepository: code.href } : {}),
+      ...(code ? { hasPart: { "@type": "SoftwareSourceCode", name: new URL(code.href).pathname.split("/").filter(Boolean).at(-1), codeRepository: code.href } } : {}),
     },
   };
   return [
+    website(),
     article,
     breadcrumbs([
       { name: m.nav.home, url: at("/", locale) },
@@ -205,8 +214,9 @@ export function caseStudyJsonLd(slug: string, locale: Locale): object[] {
 export function cvJsonLd(locale: Locale): object[] {
   const m = messages(locale);
   return [
-    person(locale),
-    profilePage(locale, PATHS.cv, m.meta.cv.title, m.meta.cv.description),
+    person(),
+    website(),
+    profilePage(locale, PATHS.cv, m.meta.cv.title, m.meta.cv.description, profile.cv.updated),
     breadcrumbs([
       { name: m.nav.home, url: at("/", locale) },
       { name: m.nav.cv, url: at(PATHS.cv, locale) },
@@ -218,6 +228,7 @@ export function privacyJsonLd(locale: Locale): object[] {
   const m = messages(locale);
   const url = absolute(localePath(PATHS.privacy, locale));
   return [
+    website(),
     {
       "@context": CONTEXT,
       "@type": "WebPage",
@@ -227,8 +238,9 @@ export function privacyJsonLd(locale: Locale): object[] {
       description: m.meta.privacy.description,
       inLanguage: LANG[locale],
       isPartOf: { "@id": WEBSITE_ID },
-      author: { "@id": PERSON_ID },
-      dateModified: profile.cv.updated,
+      author: author(),
+      datePublished: SITE_PUBLISHED,
+      dateModified: PRIVACY_UPDATED,
     },
     breadcrumbs([
       { name: m.nav.home, url: at("/", locale) },

@@ -7,17 +7,25 @@
  *
  * 1. Serves <dist> with scripts/serve.mjs on a free port and opens /cv/ and /ar/cv/ in headless Chromium (light
  *    theme, print media), waits for the fonts, prints A4 with the page's own @page rules (12 mm × 13 mm margins).
- * 2. Checks each PDF: at most 2 pages (fails the build otherwise) and real text (Chromium embeds fonts as text, so it
- *    stays selectable and searchable; a PDF with no text objects fails).
- * 3. Writes site/public/cv/Mohamed-Hatem-CV.pdf and Mohamed-Hatem-CV-ar.pdf (next build's /cv/ shows their size)
+ *    The Latin text is set in static font instances (src/assets/fonts/print/, scripts/subset-fonts.mjs) swapped in
+ *    for the page's variable fonts just before printing: Chromium embeds variable fonts as Type 3 fonts, which split
+ *    words in copied text and defeat search in Preview and Quick Look; static ones embed as TrueType. The build fails
+ *    if a Type 3 font is left.
+ * 2. Sets the document metadata Chromium leaves empty (pdf-lib): Author, Subject, Keywords and Creator, keeping the
+ *    title, the language and the tag tree. Applicant-tracking systems and document managers show these fields.
+ * 3. Checks each PDF: at most 2 pages (fails the build otherwise), real text (Chromium embeds fonts as text, so it
+ *    stays selectable and searchable; a PDF with no text objects fails), still tagged, with its language and author.
+ * 4. Writes site/public/cv/Mohamed-Hatem-CV.pdf and Mohamed-Hatem-CV-ar.pdf (next build's /cv/ shows their size)
  *    and the same files into <dist>/cv/, then copies the English one to the owner's Downloads folder.
  */
-import { copyFileSync, existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { PDFDocument } from "pdf-lib";
 import { chromium } from "playwright";
 import { startServer } from "../serve.mjs";
+import { loadContent } from "../lib/content.mjs";
 
 const SITE = fileURLToPath(new URL("../../", import.meta.url));
 const MAX_PAGES = 2;
@@ -32,9 +40,51 @@ export function countPages(buf) {
   return (buf.toString("latin1").match(/\/Type\s*\/Page(?![a-z])/g) ?? []).length;
 }
 
+/** @font-face rules for the static print instances (data: URLs) and the sheet's font stacks pointed at them. */
+function printFontCss() {
+  const dir = join(SITE, "src", "assets", "fonts", "print");
+  const faces = [
+    ["MH Print Text", "inter", [400, 500, 600, 700]],
+    ["MH Print Display", "space-grotesk", [500, 600, 700]],
+    ["MH Print Mono", "jetbrains-mono", [400, 500, 600, 700]],
+  ];
+  const rules = faces.flatMap(([family, file, weights]) =>
+    weights.map((w) => {
+      const data = readFileSync(join(dir, `${file}-${w}.woff2`)).toString("base64");
+      return `@font-face{font-family:"${family}";src:url(data:font/woff2;base64,${data}) format("woff2");font-weight:${w};font-style:normal}`;
+    }),
+  );
+  // Latin runs (the whole English sheet, and lang="en" runs on the Arabic one) use the static faces; Arabic keeps
+  // IBM Plex Sans Arabic (already static) first, with the static Latin faces after it for mixed text.
+  return `${rules.join("")}
+.sheet, .sheet [lang="en"] { --font-sans: "MH Print Text"; --font-display: "MH Print Display"; --font-mono: "MH Print Mono"; }
+.sheet:lang(ar), .sheet [lang="ar"] { --font-sans: var(--font-face-arabic), "MH Print Text"; --font-display: var(--font-face-arabic), "MH Print Display"; }`;
+}
+
+/** Type 3 fonts left in a PDF (variable fonts that weren't swapped for static ones). */
+const type3Count = (buf) => (buf.toString("latin1").match(/\/Subtype\s*\/Type3\b/g) ?? []).length;
+
 /** True when the PDF contains text-showing operators inside its (possibly compressed) content: font resources present. */
 function hasText(buf) {
   return /\/Font\b/.test(buf.toString("latin1"));
+}
+
+/**
+ * Adds Author, Subject, Keywords and Creator (Chromium writes only Title, Creator "Chromium" and Producer "Skia/PDF").
+ * `updateMetadata: false` keeps the original Producer and dates; the catalog (Lang, StructTreeRoot, MarkInfo) is kept.
+ */
+export async function withMetadata(buf, lang) {
+  const { profile, messages } = await loadContent();
+  const m = messages(lang);
+  const b = profile.basics;
+  const doc = await PDFDocument.load(buf, { updateMetadata: false });
+  doc.setAuthor(b.name[lang]);
+  doc.setSubject(`${b.headline[lang]} · ${m.cv.focus}`);
+  // pdf-lib joins keywords with spaces; one comma-separated string keeps multi-word keywords readable.
+  doc.setKeywords([[b.name.en, b.name.ar, b.title.en, "CV", "LLM", "multi-agent systems", "LangGraph", "RAG", "vLLM", "MLOps"].join(", ")]);
+  doc.setCreator("mohamedhatem.dev");
+  // No object streams: every object stays readable in the file (page objects, /Lang, the tag tree), as Chromium wrote it.
+  return Buffer.from(await doc.save({ useObjectStreams: false }));
 }
 
 export default async function cvPdf({ dist, site = SITE, downloads = true } = {}) {
@@ -44,7 +94,9 @@ export default async function cvPdf({ dist, site = SITE, downloads = true } = {}
   const browser = await chromium.launch();
   const results = [];
   try {
-    const context = await browser.newContext({ colorScheme: "light", reducedMotion: "reduce" });
+    // bypassCSP: the print fonts are added as an inline stylesheet, which the page's hash-only CSP would refuse.
+    const context = await browser.newContext({ colorScheme: "light", reducedMotion: "reduce", bypassCSP: true });
+    const fontCss = printFontCss();
     // Keep the chat bubble's first-visit state out of the render (it is hidden in print anyway).
     await context.addInitScript(() => {
       try {
@@ -60,15 +112,22 @@ export default async function cvPdf({ dist, site = SITE, downloads = true } = {}
       const res = await page.goto(`http://127.0.0.1:${port}${f.path}`, { waitUntil: "networkidle" });
       if (!res || !res.ok()) throw new Error(`cv-pdf: ${f.path} answered ${res?.status()}`);
       await page.emulateMedia({ media: "print" });
+      await page.addStyleTag({ content: fontCss });
       await page.evaluate(async () => {
         await document.fonts.ready;
         // Every face the sheet uses must be loaded, not just requested (Arabic weights load lazily).
         await Promise.all([...document.fonts].filter((ff) => ff.status !== "error").map((ff) => ff.load().catch(() => {})));
       });
-      const buf = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true, tagged: true, outline: false });
-      const pages = countPages(buf);
+      const raw = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true, tagged: true, outline: false });
+      const buf = await withMetadata(raw, f.lang);
+      const pages = (await PDFDocument.load(buf, { updateMetadata: false })).getPageCount();
       if (pages < 1 || pages > MAX_PAGES) throw new Error(`cv-pdf: ${f.path} prints to ${pages} pages (max ${MAX_PAGES})`);
       if (!hasText(buf)) throw new Error(`cv-pdf: ${f.path} has no text layer`);
+      if (type3Count(buf)) throw new Error(`cv-pdf: ${f.path} embeds ${type3Count(buf)} Type 3 font(s): text would not be searchable`);
+      const latin1 = buf.toString("latin1");
+      if (!/\/StructTreeRoot/.test(latin1) || !/\/MarkInfo/.test(latin1)) throw new Error(`cv-pdf: ${f.path} lost its tag tree`);
+      const meta = await PDFDocument.load(buf, { updateMetadata: false });
+      if (!meta.getAuthor() || !meta.getSubject() || !meta.getTitle()) throw new Error(`cv-pdf: ${f.path} is missing its title, author or subject`);
       writeFileSync(join(publicDir, f.file), buf);
       copyFileSync(join(publicDir, f.file), join(distDir, f.file));
       results.push({ ...f, pages, kb: Math.round(buf.length / 1024) });

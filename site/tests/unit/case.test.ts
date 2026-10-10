@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { profile } from "@content/profile.ts";
-import { askQuestion, decisionOf, edgesOf, eyebrowParts, nodesByKind, periodInfo, sourcesText, stackGroups, tocOf } from "~/lib/case";
+import { askQuestion, datedByRole, decisionOf, edgesOf, eyebrowParts, nodesByKind, periodInfo, sharesRolePeriod, sourcesText, stackGroups, tocOf } from "~/lib/case";
 
 describe("case-study helpers", () => {
   for (const cs of profile.caseStudies) {
@@ -33,8 +33,16 @@ describe("case-study helpers", () => {
     }
   });
 
-  it("dates brief case studies that share a role's period as 'during the role'", () => {
-    const gov = profile.caseStudies.find((c) => c.slug === "gov-bilingual-assistant")!;
-    expect(periodInfo(gov, "en").isRolePeriod).toBe(true);
+  it("dates work that shares a role's period as 'during the role', not as the project's own dates", () => {
+    for (const slug of ["gov-bilingual-assistant", "aip-semantic-search", "wakeb-bilingual-chatbot"] as const) {
+      const cs = profile.caseStudies.find((c) => c.slug === slug)!;
+      expect(periodInfo(cs, "en").isRolePeriod, slug).toBe(true);
+      expect(sharesRolePeriod(cs), slug).toBe(true);
+    }
+    // A role with one case study: that case study is the role's work, dated by it.
+    const arabsstock = profile.caseStudies.find((c) => c.slug === "arabsstock-assistant")!;
+    expect(sharesRolePeriod(arabsstock)).toBe(false);
+    expect(datedByRole(arabsstock)).toBe(true);
+    expect(datedByRole(profile.caseStudies.find((c) => c.slug === "logic-controls-website")!)).toBe(false);
   });
 });

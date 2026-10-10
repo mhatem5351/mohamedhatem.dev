@@ -24,7 +24,11 @@ interface Props {
   indexable?: boolean;
   /** OG image key ("home", "cv", "privacy", "work-<slug>"). */
   ogKey?: string;
+  /** Description of this page's sharing card (Head.astro). */
+  ogImageAlt?: string;
   ogType?: "website" | "article" | "profile";
+  /** article:* dates for ogType "article" (Head.astro). */
+  article?: { published: string; modified: string };
   jsonLd?: readonly object[];
   bodyClass?: string;
   variant?: "full" | "minimal";
@@ -40,7 +44,9 @@ const {
   alternatePath,
   indexable = true,
   ogKey = "home",
+  ogImageAlt,
   ogType = "website",
+  article,
   jsonLd = [],
   bodyClass,
   variant = "full",
@@ -60,7 +66,9 @@ const dir = dirOf(locale);
       path={path}
       indexable={indexable}
       ogKey={ogKey}
+      ogImageAlt={ogImageAlt}
       ogType={ogType}
+      article={article}
       jsonLd={jsonLd}
       preload={preload}
     />

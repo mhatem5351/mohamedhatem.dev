@@ -22,10 +22,10 @@ import NextCase from "~/components/case/NextCase.astro";
 import CaseCTA from "~/components/case/CaseCTA.astro";
 import Icon from "~/components/ui/Icon.astro";
 import type { CaseStudy } from "@content/profile.ts";
-import { format, messages, tr, type Locale } from "~/lib/i18n";
+import { format, formatYears, messages, tr, type Locale } from "~/lib/i18n";
 import { PATHS, homeAnchor, nextCaseStudy } from "~/lib/site";
 import { caseStudyJsonLd } from "~/lib/jsonld";
-import { KIND_ACCENT, askQuestion, decisionOf, diagramsOf, edgesOf, nodesByKind, sourcesText, stackGroups, techAccent, tocOf } from "~/lib/case";
+import { KIND_ACCENT, askQuestion, companyOf, decisionOf, diagramsOf, edgesOf, nodesByKind, roleOf, sourcesText, stackGroups, techAccent, tocOf } from "~/lib/case";
 
 interface Props {
   locale: Locale;
@@ -48,6 +48,14 @@ const siteShots = !mainDiagram && cs.slug === "logic-controls-website";
 const accent = (a: string) => (a === "neutral" ? undefined : `accent-${a}`);
 const num = (id: string) => String(toc.findIndex((t) => t.id === id) + 1).padStart(2, "0");
 const sources = format(m.work.page.sourcesBody, { sources: sourcesText(cs.source, locale) });
+/** Describes this page's sharing card (scripts/og.mjs caseCard: title, then role · organisation · years). */
+const role = roleOf(cs);
+const ogAlt = format(m.meta.ogImageAltCase, {
+  title: tr(cs.title, locale),
+  role: role ? tr(role.title, locale) : m.work.freelance,
+  company: companyOf(cs, locale),
+  years: formatYears(cs.period),
+});
 ---
 <Base
   locale={locale}
@@ -55,7 +63,9 @@ const sources = format(m.work.page.sourcesBody, { sources: sourcesText(cs.source
   description={tr(cs.summary, locale)}
   path={PATHS.work(cs.slug)}
   ogKey={`work-${cs.slug}`}
+  ogImageAlt={ogAlt}
   ogType="article"
+  article={{ published: cs.published, modified: cs.updated }}
   jsonLd={caseStudyJsonLd(cs.slug, locale)}
 >
   <ReadingProgress />

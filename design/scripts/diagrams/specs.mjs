@@ -10,28 +10,26 @@ export const SPECS = {};
 SPECS["hybrid-rag"] = {
   wide: {
     w: 1120, h: 296,
-    groups: [{ id: "par", x: 152, y: 48, w: 184, h: 168, tab: "parallel", co: 1 }],
+    groups: [{ id: "par", x: 184, y: 48, w: 184, h: 168, tab: "parallel", co: 1 }],
     nodes: [
       { id: "q", kind: "ext", x: 32, y: 104, w: 96, t: "Query", g: "user" },
-      { id: "bm25", kind: "data", x: 168, y: 72, w: 152, t: "BM25", s: "keyword", g: "keyword" },
-      { id: "vec", kind: "data", x: 168, y: 136, w: 152, t: "Dense vector", s: "embeddings", g: "embed" },
-      { id: "merge", kind: "data", x: 360, y: 104, w: 112, t: "Merge", g: "merge", co: 2 },
-      { id: "rr", kind: "data", x: 496, y: 104, w: 144, t: "LLM rerank", g: "rerank", co: 3 },
-      { id: "ctx", kind: "data", x: 664, y: 104, w: 120, t: "Context", g: "file-text" },
-      { id: "gen", kind: "model", x: 808, y: 104, w: 128, t: "Generate", s: "LLM", g: "generate", co: 4 },
-      { id: "ev", kind: "eval", x: 960, y: 104, w: 128, t: "Evaluate", g: "evaluate", co: 5 },
+      { id: "bm25", kind: "data", x: 200, y: 72, w: 152, t: "BM25", s: "keyword", g: "keyword" },
+      { id: "vec", kind: "data", x: 200, y: 136, w: 152, t: "Dense vector", s: "embeddings", g: "embed" },
+      { id: "merge", kind: "data", x: 424, y: 104, w: 112, t: "Merge", g: "merge", co: 2 },
+      { id: "rr", kind: "data", x: 592, y: 104, w: 144, t: "LLM rerank", g: "rerank", co: 3 },
+      { id: "ctx", kind: "data", x: 784, y: 104, w: 120, t: "Context", g: "file-text" },
+      { id: "gen", kind: "model", x: 960, y: 104, w: 128, t: "Generate", s: "LLM", g: "generate", co: 4 },
     ],
     edges: [
-      { id: "q1", from: "q:r", to: "bm25:l", via: { x: 140 } },
-      { id: "q2", from: "q:r", to: "vec:l", via: { x: 140 } },
-      { id: "m1", from: "bm25:r", to: "merge:l", via: { x: 348 } },
-      { id: "m2", from: "vec:r", to: "merge:l", via: { x: 348 } },
+      { id: "q1", from: "q:r", to: "bm25:l", via: { x: 156 } },
+      { id: "q2", from: "q:r", to: "vec:l", via: { x: 156 } },
+      { id: "m1", from: "bm25:r", to: "merge:l", via: { x: 396 } },
+      { id: "m2", from: "vec:r", to: "merge:l", via: { x: 396 } },
       { id: "r", from: "merge:r", to: "rr:l" },
       { id: "c", from: "rr:r", to: "ctx:l" },
       { id: "g", from: "ctx:r", to: "gen:l" },
-      { id: "e", from: "gen:r", to: "ev:l" },
     ],
-    main: [["q1", "q2"], ["m1", "m2"], "r", "c", "g", "e"],
+    main: [["q1", "q2"], ["m1", "m2"], "r", "c", "g"],
     legend: { x: 32, y: 268 },
   },
 };
@@ -211,7 +209,7 @@ SPECS["empoweromics-message-routing"] = {
 const CW = 352;
 
 SPECS["hybrid-rag"].compact = {
-  w: CW, h: 728,
+  w: CW, h: 648,
   groups: [{ id: "par", x: 12, y: 104, w: 328, h: 104, tab: "parallel", tabAlign: "center", co: 1 }],
   nodes: [
     { id: "q", kind: "ext", x: 72, y: 24, w: 208, h: 48, t: "Query", g: "user" },
@@ -221,7 +219,6 @@ SPECS["hybrid-rag"].compact = {
     { id: "rr", kind: "data", x: 72, y: 320, w: 208, h: 48, t: "LLM rerank", g: "rerank", co: 3 },
     { id: "ctx", kind: "data", x: 72, y: 400, w: 208, h: 48, t: "Context", g: "file-text" },
     { id: "gen", kind: "model", x: 72, y: 480, w: 208, t: "Generate", s: "LLM", g: "generate", co: 4 },
-    { id: "ev", kind: "eval", x: 72, y: 568, w: 208, h: 48, t: "Evaluate", g: "evaluate", co: 5 },
   ],
   edges: [
     { id: "q1", from: "q:b", to: "bm25:t", via: { y: 88 } },
@@ -231,10 +228,9 @@ SPECS["hybrid-rag"].compact = {
     { id: "r", from: "merge:b", to: "rr:t" },
     { id: "c", from: "rr:b", to: "ctx:t" },
     { id: "g", from: "ctx:b", to: "gen:t" },
-    { id: "e", from: "gen:b", to: "ev:t" },
   ],
-  main: [["q1", "q2"], ["m1", "m2"], "r", "c", "g", "e"],
-  legend: { x: 24, y: 656, w: 304, cols: 2 },
+  main: [["q1", "q2"], ["m1", "m2"], "r", "c", "g"],
+  legend: { x: 24, y: 576, w: 304, cols: 2 },
 };
 
 SPECS["wakeb-multi-agent-chatbot"].compact = {
@@ -386,22 +382,20 @@ const icon = (o) => ({ align: "center", wl: 32, gs: 18, offgrid: true, ...o });
 SPECS["hybrid-rag"].thumb = {
   w: TW, h: TH,
   nodes: [
-    icon({ id: "q", kind: "ext", x: 16, y: 100, w: 48, h: 48, g: "user", cap: "query" }),
-    icon({ id: "bm", kind: "data", x: 100, y: 56, w: 48, h: 48, g: "keyword", cap: "bm25", capPos: "above" }),
-    icon({ id: "vec", kind: "data", x: 100, y: 144, w: 48, h: 48, g: "embed", cap: "dense" }),
-    icon({ id: "rr", kind: "data", x: 184, y: 100, w: 48, h: 48, g: "rerank", cap: "rerank" }),
-    icon({ id: "gen", kind: "model", x: 260, y: 100, w: 48, h: 48, g: "generate", cap: "generate" }),
-    icon({ id: "ev", kind: "eval", x: 336, y: 100, w: 48, h: 48, g: "evaluate", cap: "evaluate" }),
+    icon({ id: "q", kind: "ext", x: 24, y: 100, w: 48, h: 48, g: "user", cap: "query" }),
+    icon({ id: "bm", kind: "data", x: 124, y: 56, w: 48, h: 48, g: "keyword", cap: "bm25", capPos: "above" }),
+    icon({ id: "vec", kind: "data", x: 124, y: 144, w: 48, h: 48, g: "embed", cap: "dense" }),
+    icon({ id: "rr", kind: "data", x: 226, y: 100, w: 48, h: 48, g: "rerank", cap: "rerank" }),
+    icon({ id: "gen", kind: "model", x: 328, y: 100, w: 48, h: 48, g: "generate", cap: "generate" }),
   ],
   edges: [
-    { id: "a", from: "q:r", to: "bm:l", via: { x: 82 } },
-    { id: "b", from: "q:r", to: "vec:l", via: { x: 82 } },
-    { id: "c", from: "bm:r", to: "rr:l", via: { x: 166 } },
-    { id: "d", from: "vec:r", to: "rr:l", via: { x: 166 } },
+    { id: "a", from: "q:r", to: "bm:l", via: { x: 98 } },
+    { id: "b", from: "q:r", to: "vec:l", via: { x: 98 } },
+    { id: "c", from: "bm:r", to: "rr:l", via: { x: 200 } },
+    { id: "d", from: "vec:r", to: "rr:l", via: { x: 200 } },
     { id: "e", from: "rr:r", to: "gen:l" },
-    { id: "f", from: "gen:r", to: "ev:l" },
   ],
-  main: [["a", "b"], ["c", "d"], "e", "f"],
+  main: [["a", "b"], ["c", "d"], "e"],
 };
 
 SPECS["arabsstock-assistant"].thumb = {

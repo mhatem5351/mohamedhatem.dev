@@ -15,7 +15,12 @@
  *   pages            <html lang/dir> (Arabic under /ar/), <title>, meta description, canonical + hreflang en/ar/
  *                    x-default (not on 404 pages, which must be noindex), og:image file present, JSON-LD parses,
  *                    exactly one <h1>, internal links / src / srcset / #anchors resolve, no insecure http:// URLs
- *   files            _headers, robots.txt, sitemap-index.xml, llms.txt, favicons and manifest are present
+ *   files            _headers, _redirects, robots.txt, sitemap-index.xml, llms.txt, favicons and manifest are present;
+ *                    _redirects has a 301 for every page's slash-less URL and for /work/; text files declare UTF-8;
+ *                    every sitemap URL has a <lastmod> date
+ *   structured data  one Person and one WebSite description on every page (same @id, same content); a WebSite node
+ *                    wherever #website is referenced; Articles with full ISO datePublished / dateModified;
+ *                    codeRepository only on SoftwareSourceCode; og:image:alt describes each page's own card
  * Warnings (no failure): long titles/descriptions, pages not in the expected list.
  */
 import { createHash } from "node:crypto";
@@ -71,12 +76,11 @@ const SECRETS = secretValues();
 const TEXT_FILE = /\.(html|js|mjs|css|txt|xml|json|webmanifest|svg|map)$|(^|\/)_headers$/;
 
 /* ------------------------------------------------------------------ honesty */
-// Hashes of the unnamed client's names (copied from content/scripts/check-content.mjs; the names are never written).
-const FORBIDDEN_SHA256 = new Set([
-  "REMOVED",
-  "REMOVED",
-  "REMOVED",
-]);
+// Hashes of the unnamed client's names: the repository's one list (worker/src/chat/confidential-hashes.json, shared
+// with content/scripts/check-content.mjs and the Worker's output guard); the names are never written.
+const CONFIDENTIAL = JSON.parse(readFileSync(fileURLToPath(new URL("../../worker/src/chat/confidential-hashes.json", import.meta.url)), "utf8"));
+const FORBIDDEN_SHA256 = new Set([...(CONFIDENTIAL.canonical ?? []), ...(CONFIDENTIAL.variants ?? [])]);
+if (!CONFIDENTIAL.canonical?.length) fail("confidential-hashes.json", "has no canonical hashes: the unnamed-client check would pass anything");
 export function mentionsUnnamedClient(text) {
   const words = text.normalize("NFKC").toLowerCase().replace(/\p{M}/gu, "").split(/[^\p{L}\p{N}]+/u).filter(Boolean);
   for (let i = 0; i < words.length; i++)
@@ -100,8 +104,41 @@ for (const f of files) {
 }
 
 /* ------------------------------------------------------------------ required files */
-for (const f of ["_headers", "robots.txt", "sitemap-index.xml", "llms.txt", "favicon.ico", "favicon.svg", "apple-touch-icon.png", "site.webmanifest", "404.html"])
+for (const f of ["_headers", "_redirects", "robots.txt", "sitemap-index.xml", "llms.txt", "favicon.ico", "favicon.svg", "apple-touch-icon.png", "site.webmanifest", "404.html"])
   if (!fileSet.has(f)) fail(f, "missing from the build");
+
+/* ------------------------------------------------------------------ redirects (Workers static assets _redirects) */
+// Slash-less URLs and the /work/ parent get permanent redirects (html_handling's own are 307); see
+// scripts/postbuild/redirects.mjs. Rules are exact paths: one per page, plus the index.html forms.
+if (fileSet.has("_redirects")) {
+  const rules = new Map(
+    read("_redirects")
+      .split(/\r?\n/)
+      .map((l) => l.replace(/^\s*#.*$/, "").trim())
+      .filter(Boolean)
+      .map((l) => l.split(/\s+/))
+      .map(([from, to, code]) => [from, { to, code }]),
+  );
+  const need = (from, to) => {
+    const r = rules.get(from);
+    if (!r) fail("_redirects", `no rule for ${from}`);
+    else if (r.to !== to || r.code !== "301") fail("_redirects", `${from} → ${r.to} ${r.code} (expected ${to} 301)`);
+  };
+  for (const f of files.filter((x) => x.endsWith("/index.html"))) {
+    const page = `/${f.replace(/index\.html$/, "")}`;
+    need(page.slice(0, -1), page);
+    need(`${page}index.html`, page);
+  }
+  need("/index.html", "/");
+  need("/work", "/#work");
+  need("/work/", "/#work");
+  need("/ar/work", "/ar/#work");
+  need("/ar/work/", "/ar/#work");
+  for (const [from, r] of rules) {
+    if (from.endsWith("/") && rules.get(r.to)?.to === from) fail("_redirects", `loop between ${from} and ${r.to}`);
+    if (rules.size > 2000) fail("_redirects", `${rules.size} rules (Workers static assets allow 2,000 static rules)`);
+  }
+}
 
 if (fileSet.has("_headers")) {
   const h = read("_headers");
@@ -117,6 +154,18 @@ if (fileSet.has("_headers")) {
   if (/unsafe-inline/.test(h.replace(/^#.*$/gm, "").replace(/\/\*\.svg[\s\S]*?\n\n/, ""))) fail("_headers", "a page-level policy allows 'unsafe-inline'");
 }
 if (fileSet.has("robots.txt") && !/Sitemap: https:\/\/mohamedhatem\.dev\/sitemap-index\.xml/.test(read("robots.txt"))) fail("robots.txt", "no Sitemap line");
+// Workers static assets serve .txt as "text/plain" without a charset; _headers sets UTF-8 explicitly (one rule each,
+// so the value replaces the default instead of being joined to another rule's).
+if (fileSet.has("_headers"))
+  for (const f of ["robots.txt", "llms.txt", "llms-full.txt"])
+    if (!new RegExp(`^/${f.replace(".", "\\.")}\\s*\\n\\s+Content-Type: text/plain; charset=utf-8`, "m").test(read("_headers"))) fail("_headers", `no UTF-8 Content-Type rule for /${f}`);
+
+/* ------------------------------------------------------------------ sitemap <lastmod> */
+for (const f of files.filter((x) => /^sitemap-\d+\.xml$/.test(x))) {
+  const urls = [...read(f).matchAll(/<url>([\s\S]*?)<\/url>/g)].map((m) => m[1]);
+  if (!urls.length) fail(f, "no <url> entries");
+  for (const u of urls) if (!/<lastmod>\d{4}-\d{2}-\d{2}(T[^<]*)?<\/lastmod>/.test(u)) fail(f, `no <lastmod> date for ${u.match(/<loc>([^<]*)/)?.[1]}`);
+}
 
 /* ------------------------------------------------------------------ pages */
 const htmlFiles = files.filter((f) => f.endsWith(".html"));
@@ -125,6 +174,8 @@ const ids = new Map(htmlFiles.map((f) => [f, new Set([...read(f).matchAll(/\sid=
 const expected = new Set(await allPages());
 
 let checkedLinks = 0;
+const entities = new Map();
+const ogAlts = new Map();
 for (const f of htmlFiles) {
   const html = read(f);
   const path = pagePath(f);
@@ -154,6 +205,10 @@ for (const f of htmlFiles) {
     if (scriptSrc?.includes("'unsafe-inline'")) fail(f, "script-src allows 'unsafe-inline'");
     if (styleSrc?.includes("'unsafe-inline'")) fail(f, "style-src allows 'unsafe-inline'");
     if (!policy.get("default-src")) fail(f, "CSP has no default-src");
+    // Only what the pages use: Turnstile (script + frame), the analytics beacon (script) and its reports (connect).
+    if ((policy.get("connect-src") ?? []).join(" ") !== "'self' https://cloudflareinsights.com") fail(f, `CSP connect-src is "${(policy.get("connect-src") ?? []).join(" ")}"`);
+    if (policy.has("child-src")) fail(f, "CSP has a child-src (frame-src and worker-src cover it)");
+    if ((policy.get("worker-src") ?? []).some((v) => v === "blob:" || v === "*")) fail(f, "CSP worker-src allows blob: or *");
     for (const s of elements(html, "script")) {
       if (s.attrs.has("src") || /json/i.test(s.attrs.get("type") ?? "") || !s.body) continue;
       if (!scriptSrc?.includes(cspHash(s.body))) fail(f, `inline script not in script-src: ${s.body.trim().slice(0, 60)}…`);
@@ -192,17 +247,36 @@ for (const f of htmlFiles) {
   else if (!og.startsWith(`${SITE}/`)) fail(f, `og:image is not an absolute site URL: ${og}`);
   else if (!fileSet.has(fileForPath(new URL(og).pathname))) fail(f, `og:image file missing: ${new URL(og).pathname}`);
   if (!metaByName("og:title") || !metaByName("twitter:card")) fail(f, "missing og:title or twitter:card");
+  const ogAlt = metaByName("og:image:alt");
+  if (!ogAlt) fail(f, "missing og:image:alt");
+  else if (ogAlt !== metaByName("twitter:image:alt")) fail(f, "og:image:alt and twitter:image:alt differ");
+  if (ogAlt && !is404 && path !== "/" && path !== "/ar/") ogAlts.set(f, ogAlt);
 
   // JSON-LD
+  const nodes = [];
   for (const s of elements(html, "script").filter((s) => s.attrs.get("type") === "application/ld+json")) {
     try {
       const data = JSON.parse(s.body);
+      nodes.push(data);
       const people = JSON.stringify(data).match(/"@type":"Person"[^}]*"name":"([^"]+)"/g) ?? [];
       for (const p of people) if (!/Mohamed Hatem|محمد حاتم/.test(p)) fail(f, `JSON-LD features another person: ${p.slice(0, 80)}`);
     } catch (e) {
       fail(f, `JSON-LD does not parse: ${e.message}`);
     }
   }
+  const json = JSON.stringify(nodes);
+  for (const n of nodes) {
+    // One description per entity: the Person and the WebSite are identical on every page, in both languages.
+    if (n["@id"] === `${SITE}/#person` || n["@id"] === `${SITE}/#website`) {
+      const body = JSON.stringify(n);
+      if (!entities.has(n["@id"])) entities.set(n["@id"], { body, f });
+      else if (entities.get(n["@id"]).body !== body) fail(f, `${n["@id"]} differs from ${entities.get(n["@id"]).f}`);
+    }
+    if (n["@type"] === "Article")
+      for (const k of ["datePublished", "dateModified"]) if (!/^\d{4}-\d{2}-\d{2}$/.test(n[k] ?? "")) fail(f, `Article ${k} is "${n[k]}" (expected YYYY-MM-DD)`);
+  }
+  if (json.includes(`"@id":"${SITE}/#website"`) && !nodes.some((n) => n["@type"] === "WebSite")) fail(f, "JSON-LD refers to #website without a WebSite node");
+  if (/"@type":"(?!SoftwareSourceCode)[^"]+"[^{}]*"codeRepository"/.test(json)) fail(f, "codeRepository outside a SoftwareSourceCode node");
 
   // one <h1>
   const h1 = (withoutCode(html).match(/<h1[\s>]/gi) ?? []).length;
@@ -242,6 +316,9 @@ for (const f of htmlFiles) {
     }
   }
 }
+
+// Each page's sharing card has its own description (not the home card's on every page).
+for (const [f, alt] of ogAlts) if ([...ogAlts.values()].filter((a) => a === alt).length > 1) fail(f, `og:image:alt is shared with another page: "${alt.slice(0, 60)}…"`);
 
 /* ------------------------------------------------------------------ analytics beacon */
 // When the repo's .env configures Cloudflare Web Analytics, every page must carry the (cookieless) beacon with it.

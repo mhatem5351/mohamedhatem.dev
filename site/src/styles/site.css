@@ -115,3 +115,16 @@ bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
 .chat-noscript__links { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-block-start: 10px; font-weight: 600; }
 .chat-noscript__links a { color: var(--color-accent); text-decoration: underline; text-underline-offset: .2em; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
 @media print { .chat-noscript { display: none !important; } }
+
+/*
+ * The chat bubble steps aside while the contact form's Send button is under it (src/scripts/site.ts, [data-chat-dodge]).
+ * The host is the widget's light-DOM element; visibility and opacity reach the bubble in its shadow root.
+ */
+[data-mh-chat] { transition: opacity var(--duration-fast) var(--ease-standard), visibility 0s; }
+[data-mh-chat][data-dodge] { opacity: 0; visibility: hidden; transition: opacity var(--duration-fast) var(--ease-standard), visibility 0s linear var(--duration-fast); }
+@media (prefers-reduced-motion: reduce) { [data-mh-chat], [data-mh-chat][data-dodge] { transition: none; } }
+
+/* Forced colors: the trace bars are background fills, which are dropped; an outline keeps each span visible. */
+@media (forced-colors: active) {
+  .span__bar { border: 1px solid CanvasText; }
+}
