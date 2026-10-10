@@ -39,6 +39,7 @@ export function createPanel(ctx: PanelContext): PanelApi {
   const emails = [contact.email, contact.altEmail ?? ""];
   const de = document.documentElement;
   const sheet = matchMedia(SHEET);
+  const vv = window.visualViewport;
 
   let entries: Entry[] = loadEntries(key);
   let isOpen = false;
@@ -51,6 +52,13 @@ export function createPanel(ctx: PanelContext): PanelApi {
   let chips: HTMLElement | null = null;
   let inerted: HTMLElement[] = [];
   let overflow: string | null = null;
+  /** What had focus when the chat opened: focus goes back there when it closes. */
+  let opener: Element | null | undefined;
+  /** The phone sheet added a history entry (Back closes it); `then` runs once closing has removed it. */
+  let pushed = false;
+  let then: (() => void) | null = null;
+  /** The log is scrolled to its end (kept there when the keyboard makes it shorter). */
+  let pinned = true;
 
   /* ---------------------------------------------------------------- DOM */
 
@@ -118,10 +126,10 @@ export function createPanel(ctx: PanelContext): PanelApi {
   const toBottom = () => (log.scrollTop = log.scrollHeight);
   /**
    * While an answer streams in, scroll with it, but never past the point where the question reaches the top. A very
-   * long question (a pasted job description) shows only its end, so the answer stays in view.
+   * long question (a pasted job description) shows only its end, so the answer stays in view. Also when it ends, so
+   * a contact card or follow-ups added below never push its first line out of view.
    */
-  const follow = () => {
-    const a = current?.el;
+  const follow = (a = current?.el) => {
     const q = a?.previousElementSibling;
     const max = log.scrollHeight - log.clientHeight;
     log.scrollTop = q
@@ -129,6 +137,8 @@ export function createPanel(ctx: PanelContext): PanelApi {
       : max;
   };
   const dirOf = (text: string) => detectLang(text, lang);
+  /** Focus for typing: the textarea, except in the phone sheet (the log: no keyboard until the composer is tapped). */
+  const toComposer = (draft?: boolean) => (sheet.matches && !draft ? log : ta).focus({ preventScroll: true });
 
   function thinking(): HTMLElement {
     const label = phase === "verifying" ? t.verifying : phase === "slow" ? t.slow : t.thinking;
@@ -236,7 +246,7 @@ export function createPanel(ctx: PanelContext): PanelApi {
       b.addEventListener("click", (e) => {
         // The chips are re-rendered away: keep focus in the panel. A tap in the sheet focuses the log, not the
         // textarea, so the on-screen keyboard doesn't cover the answer.
-        (e.detail && sheet.matches ? log : ta).focus({ preventScroll: true });
+        toComposer(!e.detail);
         void ask(prompt);
       });
       chips.append(b);
@@ -284,6 +294,8 @@ export function createPanel(ctx: PanelContext): PanelApi {
 
   const save = () => saveEntries(key, entries);
   const sessionValid = () => getSessionExp(key) - SESSION_MARGIN_MS > Date.now();
+  /** No session yet: start Turnstile in the background. */
+  const prep = () => verifier && !busy && !sessionValid() && verifier.prepare();
 
   /**
    * What the Worker gets: role + content of the last 12 settled messages (the latest visitor message up to 6,000
@@ -444,7 +456,8 @@ export function createPanel(ctx: PanelContext): PanelApi {
     current?.el.replaceWith(el);
     current = null;
     renderChips();
-    if (stick || out.kind !== "done") toBottom();
+    if (out.kind !== "done") toBottom();
+    else if (stick) follow(el);
     const body = el.querySelector(".md")?.textContent?.trim() ?? "";
     announce(out.kind === "done" ? t.answered + body : out.kind === "aborted" ? t.stopped : el.querySelector(".err p")?.textContent ?? "");
   }
@@ -513,6 +526,21 @@ export function createPanel(ctx: PanelContext): PanelApi {
     document.addEventListener("scrollend", check, { once: true });
   }
 
+  /**
+   * The panel fits the visual viewport while it is open. iOS Safari keeps the layout viewport (and so anything fixed
+   * at inset 0) full height when the on-screen keyboard opens, and pans the page instead: the sheet's header and Close
+   * would scroll away. Chrome on Android resizes the layout viewport (interactive-widget=resizes-content, in the page's
+   * viewport meta), where both are the same. Not while pinch-zoomed. data-kb: the keyboard is up.
+   */
+  function fit(): void {
+    const z = isOpen && vv && vv.scale < 1.01 ? vv : null;
+    host.style.setProperty("--vvh", z ? `${z.height}px` : "");
+    host.style.setProperty("--vvt", z ? `${z.offsetTop}px` : "");
+    host.toggleAttribute("data-kb", !!z && innerHeight - z.height > 120);
+    // A shorter log stays on its last lines if the visitor was there.
+    if (pinned) toBottom();
+  }
+
   function setOpen(on: boolean): void {
     isOpen = on;
     panel.toggleAttribute("data-open", on);
@@ -520,20 +548,41 @@ export function createPanel(ctx: PanelContext): PanelApi {
     applyMode();
     // Reopened on the next page of this tab (index.ts), except as the phone sheet, which would cover that page.
     setOpenFlag(key, on && !sheet.matches);
+    // The phone sheet looks like a screen of its own, and Back (the gesture or the button) closes it: it gets a
+    // history entry, which closing it removes (when it is still the current one).
+    if (on && sheet.matches && !pushed) {
+      pushed = true;
+      history.pushState({ ...history.state, mhChat: 1 }, "");
+    } else if (!on && pushed) {
+      pushed = false;
+      if (history.state?.mhChat) history.back();
+    }
     const listen = on ? addEventListener : removeEventListener;
     listen("resize", measure);
     listen("keydown", onKey as EventListener);
     listen("focusin", onFocus as EventListener);
+    const m = on ? "addEventListener" : "removeEventListener";
+    vv?.[m]("resize", fit);
+    vv?.[m]("scroll", fit);
+    fit();
     document.dispatchEvent(new CustomEvent("mh:chat-state", { detail: { open: on } }));
   }
 
-  function open(o?: OpenOptions, quiet?: boolean): void {
+  function open(o?: OpenOptions, quiet?: boolean, by?: Element | null): void {
     if (quiet && sheet.matches) return;
     if (!isOpen) {
+      opener = by;
+      panel.style.cssText = "";
       measure();
       setOpen(true);
       toBottom();
-      if (!quiet) ta.focus({ preventScroll: true });
+      if (!quiet) {
+        // Phones: no keyboard until the visitor taps the composer, so the welcome, the suggestions and the answer
+        // stay in view (the log is focusable and labelled: screen readers land in the dialog). The composer on larger
+        // screens, and for a draft to edit. Either way Turnstile starts getting ready (no session yet).
+        toComposer(o?.send === false);
+        prep();
+      }
     }
     const q = o?.question?.trim();
     if (q) {
@@ -545,11 +594,37 @@ export function createPanel(ctx: PanelContext): PanelApi {
     }
   }
 
+  /**
+   * Focus goes back to what opened the chat (WCAG 2.4.3), else (gone, hidden, not focusable) to the bubble. On phones
+   * a text field's form button gets it instead (the hero's ask bar: its send button), so the keyboard stays down.
+   */
   function close(returnFocus = true): void {
     if (!isOpen) return;
     setOpen(false);
-    if (returnFocus) bubble.focus();
+    let el = opener as HTMLElement | null;
+    if (sheet.matches && el?.matches("input,textarea")) el = (el as HTMLInputElement).form?.querySelector("button") ?? el;
+    if (returnFocus) {
+      el?.focus({ preventScroll: true });
+      if (!el?.matches(":focus")) bubble.focus();
+    }
+    opener = null;
   }
+
+  /** Closes without moving focus, then runs `fn` once the sheet's history entry is gone (after the Back it causes). */
+  function closeThen(fn: () => void): void {
+    const wait = pushed && history.state?.mhChat;
+    close(false);
+    wait ? (then = fn) : fn();
+  }
+  addEventListener("popstate", () => {
+    const fn = then;
+    then = null;
+    if (fn) requestAnimationFrame(fn);
+    else if (pushed && !history.state?.mhChat) {
+      pushed = false; // Back took the entry already
+      close();
+    }
+  });
 
   /* ---------------------------------------------------------------- events */
 
@@ -569,6 +644,7 @@ export function createPanel(ctx: PanelContext): PanelApi {
     void ask(v);
   });
   ta.addEventListener("input", autosize);
+  log.onscroll = () => (pinned = nearBottom());
   ta.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
       e.preventDefault();
@@ -576,19 +652,62 @@ export function createPanel(ctx: PanelContext): PanelApi {
     }
   });
   // No session yet: start Turnstile while the visitor types (also after a quiet reopen, which doesn't load it).
-  ta.addEventListener("focus", () => verifier && !busy && !sessionValid() && verifier.prepare());
+  ta.addEventListener("focus", prep);
   stop.addEventListener("click", () => busy?.abort());
   closeBtn.addEventListener("click", () => close());
+  // New chat sits next to Close: for a few seconds, Undo brings the conversation back (it may hold a pasted job
+  // description). Anything that redraws the log (a new question) drops the offer.
   newBtn.addEventListener("click", () => {
-    busy?.abort();
-    busy = null;
-    entries = [];
-    save();
-    setBusy(false);
-    renderAll();
-    ta.focus();
-    announce(t.newChat);
+    const old = entries.map((e) => (e.status === "streaming" ? { ...e, status: "stopped" as const } : e));
+    if (old.length) {
+      busy?.abort();
+      busy = null;
+      entries = [];
+      save();
+      setBusy(false);
+      renderAll();
+      const back = h("button", { type: "button", class: "rt" }, t.undo);
+      const row = h("p", { class: "card ud" }, t.cleared, back);
+      back.onclick = () => {
+        entries = old;
+        save();
+        renderAll();
+        toComposer();
+      };
+      log.prepend(row);
+      setTimeout(() => row.remove(), 6000);
+      announce(t.cleared);
+    }
+    toComposer();
   });
+
+  // Swipe the sheet's header (its grab bar) down to close it, like a native sheet: past 80 px or on a quick flick,
+  // otherwise it springs back. No motion under reduced motion. Close (×) stays (WCAG 2.5.7).
+  const hd = panel.firstElementChild as HTMLElement;
+  let y0: number | null = null;
+  let t0 = 0;
+  let dy = 0;
+  // One finger: a second one (a pinch) is ignored.
+  hd.onpointerdown = (e) => {
+    if (!e.isPrimary) return;
+    y0 = sheet.matches && !(e.target as Element).closest("button") ? e.clientY : null;
+    t0 = e.timeStamp;
+    dy = 0;
+  };
+  hd.onpointermove = (e) => {
+    if (y0 === null || !e.isPrimary) return;
+    dy = Math.max(0, e.clientY - y0);
+    // Ignored under reduced motion (panel-css.ts: transform none, !important), like the slide below.
+    panel.style.cssText = `transition:none;transform:translateY(${dy}px)`;
+  };
+  hd.onpointerup = hd.onpointercancel = (e) => {
+    if (y0 === null || !e.isPrimary) return;
+    y0 = null;
+    const go = e.type === "pointerup" && (dy > 80 || (dy > 16 && dy / (e.timeStamp - t0) > 0.5));
+    // Closing: on down and out of view (open() resets it); otherwise back into place.
+    panel.style.cssText = go ? "transform:translateY(100%)" : "";
+    if (go) close();
+  };
 
   // Focus trap for the modal sheet (Turnstile's slotted iframe sits between the ends, in natural order). Escape: onKey.
   root.addEventListener("keydown", (e) => {
@@ -610,31 +729,32 @@ export function createPanel(ctx: PanelContext): PanelApi {
   });
 
   // In-page links (#section, or this page's URL + hash): scroll there instead of navigating. A section of another
-  // page of the site: the panel closes first, so it doesn't reopen there on top of that section.
+  // page of the site: the panel closes first, so it doesn't reopen there on top of that section. Closing the sheet
+  // goes Back over its history entry first; the scroll or the navigation follows.
   log.addEventListener("click", (e) => {
     const a = (e.target as Element).closest?.("a[href]") as HTMLAnchorElement | null;
     if (!a?.hash || a.origin !== location.origin) return;
-    if (a.pathname !== location.pathname) return close(false);
-    const target = document.getElementById(a.hash.slice(1));
+    const target = a.pathname === location.pathname && document.getElementById(a.hash.slice(1));
     e.preventDefault();
     if (!target) {
-      // Not on this page after all (a section of the home page): go there.
-      close(false);
-      location.href = `${lang === "ar" ? "/ar/" : "/"}${a.hash}`;
-      return;
+      // Another page, or not on this page after all (a section of the home page): go there.
+      const href = a.pathname !== location.pathname ? a.href : `${lang === "ar" ? "/ar/" : "/"}${a.hash}`;
+      return closeThen(() => location.assign(href));
     }
     // Where the target will sit once scrolled to (below the page's scroll-padding). If the panel would hide much of
     // it, or any of its form controls, close the panel (the sheet always closes).
     const dy = target.getBoundingClientRect().top - (parseFloat(getComputedStyle(de).scrollPaddingTop) || 0);
     const hide = sheet.matches || [target, ...target.querySelectorAll("input,select,textarea,button")].some((c) => under(c, dy) >= COVER);
-    if (hide) close(false);
-    // The page's own scroll-behavior applies (the site scrolls smoothly unless reduced motion is preferred).
-    target.scrollIntoView();
-    history.replaceState(history.state, "", a.hash);
-    if (hide) {
-      if (target.tabIndex < 0) target.tabIndex = -1; // a section: focusable from script only
-      target.focus({ preventScroll: true });
-    }
+    const go = () => {
+      // The page's own scroll-behavior applies (the site scrolls smoothly unless reduced motion is preferred).
+      target.scrollIntoView();
+      history.replaceState(history.state, "", a.hash);
+      if (hide) {
+        if (target.tabIndex < 0) target.tabIndex = -1; // a section: focusable from script only
+        target.focus({ preventScroll: true });
+      }
+    };
+    hide ? closeThen(go) : go();
   });
 
   const onNetwork = () => {

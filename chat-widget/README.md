@@ -1,8 +1,9 @@
 # Chat widget ("Ask my AI")
 
-Framework-agnostic TypeScript + CSS-in-TS, no dependencies. The page pays for a ~2.5 KB gzip bubble; the panel
-(~15.5 KB gzip) loads on the first hover, focus, touch or click of the bubble, or at once when it was open on the
-previous page of the tab (budget: 18.5 KB gzip total, measured with fflate so CI and local builds agree; checked by `npm run widget:size`). Styles live in a shadow root
+Framework-agnostic TypeScript + CSS-in-TS, no dependencies. The page pays for a ~2.6 KB gzip bubble; the panel
+(~16.9 KB gzip) loads on the first hover, focus, touch or click of the bubble (or `MHChat.warm()`), or at once when it
+was open on the previous page of the tab (budget: 19.5 KB gzip total, measured with fflate so CI and local builds agree;
+checked by `npm run widget:size`). Styles live in a shadow root
 and read the design tokens (`design/tokens.css`) through CSS custom properties, so light/dark and the Arabic font
 follow the page. Talks to `POST /api/chat` (contract: `worker/src/chat/protocol.ts`, `worker/README.md`).
 
@@ -16,6 +17,7 @@ openChat(options?: { question?: string; send?: boolean }): void
 
 window.MHChat.open({ question?, send? })           // same as openChat, for inline scripts
 window.MHChat.close()
+window.MHChat.warm()                                // fetch and build the panel now (on the intent to open it, or when idle)
 document.dispatchEvent(new CustomEvent("mh:open-chat", { detail: { question } }))   // same, decoupled
 
 document.addEventListener("mh:chat-state", (e) => e.detail.open)                    // the panel opened (true) or closed (false)
@@ -24,7 +26,10 @@ window.MHChat.launcher                                                          
 ```
 
 `open({ question })` opens the panel and sends the question at once (`send: false` only puts it in the input).
-These work right after `mountChat`; the panel code is fetched on demand. `mh:chat-state` fires on `document` every
+These work right after `mountChat`; the panel code is fetched on demand, so a page with its own "Ask" buttons should
+call `warm()` on `pointerdown` / `focusin` of them (mohamedhatem.dev also does once the page is idle, except with
+Save-Data or on 2G), and the first open is instant. Focus returns to whatever had it when `open()` was called (the
+page's button, the hero's input), falling back to the bubble. `mh:chat-state` fires on `document` every
 time the panel opens or closes (also when it reopens after a navigation), so the page can coordinate its own layers.
 
 ### CSS custom property
@@ -85,7 +90,21 @@ site, so they are outside this widget's size budget; the hook costs 22 bytes gzi
   then hides it (`visibility: hidden`, so the bubble leaves the tab order and the accessibility tree). Listen to
   `mh:chat-state` to clear it when the chat opens (the site does so synchronously, before the composer takes focus).
 - Panel on phones (below 640 px wide or 520 px tall): full-screen modal sheet (`aria-modal`, the page is inert,
-  focus trap, scroll lock, safe-area insets); Escape closes and focus returns to the bubble.
+  focus trap, scroll lock, safe-area insets) that behaves like a native one:
+  - opening focuses the conversation (the log is focusable and labelled), not the textarea, so no on-screen keyboard
+    covers the welcome, the suggestions or a streaming answer until the visitor taps the composer;
+  - it adds a history entry: Back (the gesture or the button) closes it; closing it otherwise takes the entry back,
+    and an in-answer link closes it first and then scrolls or navigates, so history never grows;
+  - it fits the visual viewport while open (`--vvh` / `--vvt` on the host): with the keyboard up, iOS Safari pans the
+    page instead of resizing it, and the header, Close and the composer would scroll away. Pages should also set
+    `interactive-widget=resizes-content` in their viewport meta (Chrome and Firefox on Android). While the keyboard is
+    up (`data-kb` on the host) the home-indicator padding goes; short landscape windows get a compact header;
+  - a grab bar, and a swipe down on the header closes it (past 80 px or a quick flick; it springs back otherwise; no
+    motion under reduced motion); Close stays;
+  - 44 px targets (also on any touch screen), pressed (`:active`) states, and hover styles only where hovering exists,
+    so no hover look sticks after a tap.
+  Escape, Close, Back and the swipe all return focus to what opened it (on phones, a text field's form button, so
+  the keyboard stays down).
 - Panel on desktop: non-modal (`role="dialog"`), anchored above the bubble and below the site's sticky header
   (`--mh-chat-top`). Because the page stays usable around it, it gets out of the way: Escape closes it from anywhere
   (focus stays where it is when it was on the page; a page `<dialog>`, `[aria-modal]` layer or popover gets the
@@ -130,7 +149,12 @@ site, so they are outside this widget's size budget; the hook costs 22 bytes gzi
   over its 1 h, or started on another network) renders a fresh one silently and resends once.
 - Forced colors (Windows High Contrast): the bubble and every borderless control or box carry a transparent border
   that the system paints, and focus rings use `Highlight`.
-- History in sessionStorage (last 40 messages); New chat clears it.
+- History in sessionStorage (last 40 messages); New chat clears it, with an Undo for 6 s (New chat sits next to
+  Close, and a conversation can hold a pasted job description).
+- A finished answer keeps its question and first line in view (a contact card or follow-ups below it never push it
+  out). The contact card's three buttons share one row wherever they fit (375 px phones); otherwise the last one
+  takes a row of its own.
+- Turnstile follows the page's theme (`<html data-theme="light|dark">`, else the OS).
 
 ## Development
 
@@ -141,8 +165,8 @@ npm run test:widget:unit   # Vitest: markdown (links, isolation), SSE, language,
 npm run widget:size        # gzip budget
 ```
 
-Size today (gzip, fflate): loader 2.56 KB (budget 3 KB), total 18.50 KB (budget 18.5 KB, met to the byte after the
-launcher hook and the `avatar` option, +22 B).
+Size today (gzip, fflate): loader 2.60 KB (budget 3 KB), total 19.48 KB (budget 19.5 KB, raised once from 18.5 KB for
+the phone sheet: keyboard fit, Back, focus return, 44 px targets, swipe to close, hover guards and Undo).
 
 `tests/fixtures/site.html` mirrors the site's layout for the desktop tests (`tests/e2e/desktop.spec.ts`, 1440×807):
 64 px sticky header, scroll-padding, smooth scrolling, contact form in the right column.

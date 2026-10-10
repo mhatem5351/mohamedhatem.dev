@@ -18,7 +18,10 @@
  * The bubble shows a few seconds after the launcher first appears, at most twice per session, and on hover / focus of
  * the launcher. Its × hides it for the session (sessionStorage), so does opening the chat. Escape hides it; it stays
  * while hovered or focused (WCAG 1.4.13); it hides when page focus lands under it (2.4.11). site.ts sets data-hush
- * on the host while it would cover a [data-chat-avoid] element, and the host's data-dodge hides it with the launcher.
+ * on the host while it would cover a [data-chat-avoid] element, and the host's data-dodge (site.ts) and data-aside
+ * (chat.ts) hide it with the launcher; a greeting due meanwhile waits for the launcher to come back.
+ * On touch screens, where it sits over what the visitor reads, it says hello once per session, for 5 s, and leaves
+ * on the first scroll after 1.5 s; its × keeps a 24 px look with a 44 px target.
  */
 import source from "../../../design/assets/avatar/mh-avatar.svg?raw";
 import type { ChatLauncher } from "@chat/index.ts";
@@ -93,6 +96,10 @@ const CSS = `
 :host([lang=ar]) .bbx{font-family:var(--fontar);font-weight:600;line-height:1.55}
 .e{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-weight:400}
 .bx{position:absolute;inset-block-start:-.7rem;inset-inline-end:-.7rem;display:grid;place-items:center;box-sizing:border-box;width:1.5rem;height:1.5rem;padding:0;border:2px solid #14212b;border-radius:50%;background:var(--pp);color:#14212b;cursor:pointer}
+.bx::before{content:"";position:absolute;inset:-10px}
+.bbx,.bx{-webkit-tap-highlight-color:transparent}
+.bbx:active{scale:.97}
+.bx:active{scale:.88}
 .bx svg{width:.625rem;height:.625rem}
 .bx:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .mhb[data-s=on] .ball{animation:mhpop .35s var(--ease) both}
@@ -142,6 +149,9 @@ export function mountAvatar({ host, root, button }: ChatLauncher, copy: AvatarCo
 
   const reduce = matchMedia("(prefers-reduced-motion: reduce)");
   const still = () => reduce.matches;
+  const touch = matchMedia("(pointer: coarse), (max-width: 39.99rem)");
+  /** Stepped aside (site.ts data-dodge, chat.ts data-aside): hidden with its bubble. */
+  const away = () => host.matches("[data-dodge],[data-aside]");
   const flag = `${key}:greet`; // "1" / "2": auto-shown that many times this session; "x": dismissed or chat opened
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls: string) => Object.assign(document.createElement(tag), { className: cls });
 
@@ -218,21 +228,26 @@ export function mountAvatar({ host, root, button }: ChatLauncher, copy: AvatarCo
 
   // ---- the bubble
   let shown = false;
+  let shownAt = 0;
+  let due = false; // an automatic greeting waits for the launcher to come back
   let held = false; // hovered or focused: stays until that ends
   let hideTimer = 0;
   const allowed = () => read(flag) !== "x" && !open();
   const show = (auto: boolean) => {
     if (shown || !allowed()) return;
     if (auto) {
+      if (away()) return void (due = true);
+      due = false;
       const count = Number(read(flag)) || 0;
-      if (count >= 2) return;
+      if (count >= (touch.matches ? 1 : 2)) return;
       write(flag, String(count + 1));
     }
     shown = true;
+    shownAt = performance.now();
     box.dataset.s = "on";
     talk();
     clearTimeout(hideTimer);
-    if (auto) hideTimer = window.setTimeout(() => hide(), 9000);
+    if (auto) hideTimer = window.setTimeout(() => hide(), touch.matches ? 5000 : 9000);
   };
   const hide = (force = false) => {
     if (!shown || (held && !force)) return;
@@ -287,6 +302,8 @@ export function mountAvatar({ host, root, button }: ChatLauncher, copy: AvatarCo
       blink(head, 4200);
     }
   });
+  // Touch screens: the visitor moving on (a scroll, once it has been read for 1.5 s) ends the greeting.
+  addEventListener("scroll", () => shown && touch.matches && performance.now() - shownAt > 1500 && hide(true), { passive: true });
   // Never over the element that has keyboard focus (WCAG 2.4.11).
   document.addEventListener("focusin", (e) => {
     if (!shown || host.contains(e.target as Node)) return;
@@ -298,11 +315,11 @@ export function mountAvatar({ host, root, button }: ChatLauncher, copy: AvatarCo
   // ---- first appearance: when the launcher is first on screen (on phones only once the hero has scrolled past)
   let started = false;
   const start = () => {
-    if (started || host.hasAttribute("data-dodge")) return;
+    if (due && !away()) setTimeout(() => show(true), 600);
+    if (started || away()) return;
     // A page opened in a background tab greets once it is seen, not unseen.
     if (document.hidden) return void document.addEventListener("visibilitychange", start, { once: true });
     started = true;
-    mo.disconnect();
     if (!still()) button.classList.add("in");
     lively(5000);
     setTimeout(() => doWave(true), 700);
@@ -318,7 +335,7 @@ export function mountAvatar({ host, root, button }: ChatLauncher, copy: AvatarCo
     setTimeout(again, 13700);
   };
   const mo = new MutationObserver(start);
-  mo.observe(host, { attributes: true, attributeFilter: ["data-dodge"] });
+  mo.observe(host, { attributes: true, attributeFilter: ["data-dodge", "data-aside"] });
   host.dataset.art = "on";
   start();
   document.dispatchEvent(new Event("mh:chat-art")); // site.ts measures the bubble for [data-chat-avoid]

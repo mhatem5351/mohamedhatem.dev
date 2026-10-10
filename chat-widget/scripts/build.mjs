@@ -21,7 +21,10 @@ const outdir = join(widget, "dist");
 // Gzip is measured with fflate (pure JavaScript), not node:zlib: Node's zlib takes CPU-specific code paths, so the same
 // bundle measured 17.97 KB on an arm64 Mac and 18.21 KB on x64 CI. fflate gives the same bytes on every machine and
 // reads about 2.5% larger than Node's arm64 zlib. Brotli (what Cloudflare usually serves) is printed for reference.
-const BUDGET = { loader: 3 * 1024, total: 18.5 * 1024 };
+// The total was 18.5 KB until the mobile round raised it once, by 1 KB, for the phone-native sheet: CHAT-01 (fit above
+// the on-screen keyboard), CHAT-03 (Back closes the sheet), CHAT-07 (focus returns to the opener), CHAT-08 (44 px
+// targets), CHAT-09 (grab bar, swipe to close), plus the hover guards and New chat's Undo.
+const BUDGET = { loader: 3 * 1024, total: 19.5 * 1024 };
 
 execFileSync(process.execPath, [join(repo, "worker/scripts/gen-content.mjs"), "--quiet"], { stdio: "inherit" });
 rmSync(outdir, { recursive: true, force: true });

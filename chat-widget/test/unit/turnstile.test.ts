@@ -54,6 +54,18 @@ describe("Turnstile verifier", () => {
     expect(ts.renders[0]).toMatchObject({ action: "chat", appearance: "interaction-only", "refresh-expired": "manual", language: "ar-eg" });
   });
 
+  it("follows the page's theme (<html data-theme>), not the OS one; without one, Turnstile's auto", async () => {
+    const de = document.documentElement;
+    for (const theme of ["dark", "light", ""]) {
+      if (theme) de.dataset.theme = theme;
+      else delete de.dataset.theme;
+      verifier().prepare();
+      await tick();
+      expect(ts.renders.at(-1)?.theme).toBe(theme || "auto");
+      await tick();
+    }
+  });
+
   it("uses the compact widget (150 px) when its slot is narrower than the normal one (300 px + padding)", async () => {
     const sized = (w: number) => {
       const el = document.createElement("div");

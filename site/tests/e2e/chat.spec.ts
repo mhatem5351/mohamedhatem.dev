@@ -143,13 +143,14 @@ test.describe("Ask my AI", () => {
     await page.locator("[data-hero-ask]").evaluate((el) => scrollBy(0, el.getBoundingClientRect().bottom + 40));
     await expect(host).not.toHaveAttribute("data-dodge", "");
     await expect.poll(() => bubbleVisibility(page)).toBe("visible");
-    // Back to the top, the header's Ask AI still opens the chat with the composer focused.
+    // Back to the top, the header's Ask AI still opens the chat, focused inside the sheet (on the conversation, so
+    // the keyboard stays down: mobile-chat.spec.ts).
     await page.evaluate(() => scrollTo(0, 0));
     await expect(host).toHaveAttribute("data-dodge", "");
     await page.locator(".nav__ask").click();
     await expect(panel(page)).toBeVisible();
     await expect(host).not.toHaveAttribute("data-dodge", "");
-    await expect.poll(() => page.evaluate(() => document.querySelector("[data-mh-chat]")!.shadowRoot!.activeElement?.tagName)).toBe("TEXTAREA");
+    await expect.poll(() => page.evaluate(() => document.querySelector("[data-mh-chat]")!.shadowRoot!.activeElement?.className)).toBe("log");
   });
 
   test("the bubble never covers a case study's 'Ask my AI about this project' button @desktop-only", async ({ page }) => {

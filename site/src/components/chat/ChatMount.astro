@@ -2,8 +2,12 @@
 /**
  * Thin wrapper around the chat widget (../chat-widget, owned by the assistant track; see its src/index.ts).
  *
- * - The widget's loader (~2.5 KB gzip) mounts the floating launcher in a shadow root; the panel and its CSS load on
- *   the first hover / focus / touch of the launcher, so the widget costs almost nothing up front.
+ * - The widget's loader (~2.6 KB gzip) mounts the floating launcher in a shadow root; the panel and its CSS load on
+ *   the first hover / focus / touch of the launcher, on pointerdown / focus of any [data-open-chat] button or the hero's
+ *   ask bar, or once the page is idle (not with Save-Data or on 2G; ~/scripts/chat.ts), so the widget costs almost
+ *   nothing up front and the first open is instant.
+ * - On phones the launcher steps aside while a form field has focus, while it is over a form and while the page
+ *   scrolls down (~/scripts/chat.ts), and the chat opens as a native-feeling sheet (chat-widget README).
  * - Once the page has loaded, ~/scripts/chat-avatar.ts dresses the launcher as Hatem's avatar with a comic speech
  *   bubble (copy: chat.avatar). data-av-disc picks the disc: "dark" (deep ink disc, teal glow and rim; the default) or "teal".
  * - Any element with [data-open-chat] (optional data-question) opens it; "/" outside a text field too

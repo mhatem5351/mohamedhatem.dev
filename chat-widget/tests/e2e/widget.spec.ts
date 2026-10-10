@@ -389,6 +389,36 @@ test.describe("conversation", () => {
     await expect(log(page)).not.toContainText("Remember me");
   });
 
+  test("New chat offers Undo for a few seconds; Undo brings the conversation back", async ({ page }) => {
+    await openDemo(page);
+    await bubble(page).click();
+    await mock(page, answer("Kept answer."));
+    await ask(page, "Keep me");
+    await expect(log(page)).toContainText("Kept answer.");
+    await page.getByRole("button", { name: STRINGS.en.newChat }).click();
+    await expect(log(page)).not.toContainText("Keep me");
+    await expect(log(page).locator(".ud")).toContainText(STRINGS.en.cleared);
+    expect(await shadowFocus(page)).toBe("textarea");
+    await log(page).getByRole("button", { name: STRINGS.en.undo }).click();
+    await expect(log(page)).toContainText("Keep me");
+    await expect(log(page)).toContainText("Kept answer.");
+    expect(await page.evaluate(() => sessionStorage.getItem("mh-chat:log"))).toContain("Kept answer.");
+    // Nothing to clear: no offer.
+    await page.getByRole("button", { name: STRINGS.en.newChat }).click();
+    await page.getByRole("button", { name: STRINGS.en.newChat }).click();
+    await expect(log(page).locator(".ud")).toHaveCount(1);
+    await expect(log(page).locator(".ud")).toHaveCount(0, { timeout: 8000 });
+  });
+
+  test("focus returns to the page button that opened the panel", async ({ page }) => {
+    await openDemo(page);
+    await page.locator(".cta").click();
+    await expect(dialog(page)).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dialog(page)).toBeHidden();
+    expect(await page.evaluate(() => document.activeElement?.className)).toBe("cta");
+  });
+
   test("history sent to the Worker: last 12 messages; the latest up to 6,000 chars, earlier ones 1,200, answers 2,400", async ({ page }) => {
     await openDemo(page);
     await page.evaluate(() => {
