@@ -2,7 +2,7 @@
 
 Framework-agnostic TypeScript + CSS-in-TS, no dependencies. The page pays for a ~2.5 KB gzip bubble; the panel
 (~15.5 KB gzip) loads on the first hover, focus, touch or click of the bubble, or at once when it was open on the
-previous page of the tab (budget: 18.5 KB gzip total, measured with fflate so CI and local builds agree; checked by `npm run widget:size`). Styles live in a shadow root
+previous page of the tab (budget: 18.52 KB gzip total, measured with fflate so CI and local builds agree; checked by `npm run widget:size`). Styles live in a shadow root
 and read the design tokens (`design/tokens.css`) through CSS custom properties, so light/dark and the Arabic font
 follow the page. Talks to `POST /api/chat` (contract: `worker/src/chat/protocol.ts`, `worker/README.md`).
 
@@ -141,8 +141,12 @@ npm run test:widget:unit   # Vitest: markdown (links, isolation), SSE, language,
 npm run widget:size        # gzip budget
 ```
 
-Size today (gzip, fflate): loader 2.56 KB (budget 3 KB), total 18.50 KB (budget 18.5 KB, met to the byte after the
-launcher hook and the `avatar` option, +22 B).
+Size today (gzip, fflate): loader 2.58 KB (budget 3 KB), total 18.52 KB (budget 18.52 KB). The budget was 18.5 KB,
+met to the byte after the launcher hook and the `avatar` option (+22 B); it rose by 20 B with the Lapis palette
+(2026-10-10): the token fallbacks in `VARS` and the default launcher's bubble and glyph now carry the Lapis colours
+(lapis ink, alabaster, turquoise, gold, carnelian, lapis), +17 B gzip. The fallbacks only apply on a page without the
+design tokens, and the default launcher only shows when the site's avatar can't load (`data-art="off"`), but they are
+the brand as the widget ships it standalone.
 
 `tests/fixtures/site.html` mirrors the site's layout for the desktop tests (`tests/e2e/desktop.spec.ts`, 1440×807):
 64 px sticky header, scroll-padding, smooth scrolling, contact form in the right column.

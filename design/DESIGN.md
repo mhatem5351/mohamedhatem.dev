@@ -1,6 +1,6 @@
 # mohamedhatem.dev: art direction and design system
 
-Version 1.1 · 2026-10-10 (dark by default, living charts, brand-colour logos; 1.0: 2026-10-09) · owner: design (phase 1) · consumers: the Astro build (phase 2), the chat widget, content.
+Version 1.2 · 2026-10-10 (the Lapis & Gold palette; 1.1: dark by default, living charts, brand-colour logos; 1.0: 2026-10-09) · owner: design (phase 1) · consumers: the Astro build (phase 2), the chat widget, content.
 
 Everything in this document is implemented in `design/prototypes/*.html` (open them over http, see `HANDOFF.md`)
 and in `design/tokens.css`. Where this document and a prototype disagree, the prototype's CSS is the more precise
@@ -24,10 +24,11 @@ purple gradients and stock "neural" imagery. This one **shows the system**:
 - Case studies are drawn like **design docs**: an architecture diagram with numbered callouts, then the decisions.
 - Skills come **with receipts**: a matrix where every dot points to the role or repository where the skill was used.
 
-The visual voice is **warm precision**: paper and ink, hairline rules, mono annotation labels, one calm teal accent,
-saffron and coral as punctuation. It reads like a beautifully typeset engineering notebook with live instruments in it.
-It is the same brand as his GitHub profile (palette "Nile & Saffron", Space Grotesk, the agent graph, the tri-colour
-stripe), elevated to a product-grade site.
+The visual voice is **warm precision**: lapis night and ivory ink (alabaster and lapis by day), hairline rules, mono
+annotation labels, one gold accent, turquoise, carnelian and amethyst as quiet category colours ("Lapis & Gold",
+section 3). It reads like a beautifully typeset engineering notebook with live instruments in it. It shares his GitHub
+profile's type (Space Grotesk), agent graph and tri-colour stripe, elevated to a product-grade site; the palette moved
+from the profile's "Nile & Saffron" to Lapis & Gold on 2026-10-10.
 
 ### What each visitor should feel
 
@@ -82,83 +83,128 @@ the day real, attributable quotes exist; never placeholder or paraphrased quotes
 
 ## 3. Colour
 
-Source of truth: `design/scripts/build-tokens.mjs` → generates `tokens.css` (plain CSS), `tokens.tailwind.css`
-(Tailwind 4 `@theme static` + dark overrides) and `tokens.json`. Contrast is verified by
-`node design/scripts/check-contrast.mjs` (220 pairs, both themes, exits non-zero on any failure; currently 0 failures).
+**Palette: "Lapis & Gold"** (adopted 2026-10-10; it replaced "Nile & Saffron", the navy, mint-teal, saffron and coral
+palette of version 1.0 and 1.1). Pharaonic jewellery, engineered: by night (the default theme) lapis-night surfaces,
+warm ivory ink and **one gold accent**; by day alabaster paper, lapis ink and **lapis** links and buttons. Gold cannot
+carry a light-mode button or link at AA, so the lead accent flips with the theme and gold stays for details by day (the
+monogram's node, the stripe, the Ben-Day dots of the chat greeting). Faience turquoise, carnelian and amethyst are the
+quiet partners (the category colours). It also stops the brand teal from duplicating ArabsStock's mint logo, and it
+nods to Egypt without a single literal motif.
+
+Source of truth: `design/scripts/build-tokens.mjs` (authored in OKLCH: lapis-night hue 266, gold 80-88, turquoise
+192-195, carnelian 35, amethyst 318; stored as sRGB hex) → generates `tokens.css` (plain CSS), `tokens.tailwind.css`
+(Tailwind 4 `@theme static` + dark overrides) and `tokens.json`; `site/src/styles/tokens*.css` are copies. Token names
+are kept from the first palette, so **`teal` is turquoise and `sage` is amethyst** (no longer green: the availability
+dots, "copied" checks and success states read `teal-fill` / `success`). Contrast is verified by
+`node design/scripts/check-contrast.mjs` (263 pairs in both themes, including every category `-fill` at 3:1 as a
+graphic and the components that set their own colours, read from their source: the CTA band and the chat launcher's
+disc, rim and comic bubble; plus 16 colour-vision checks; exits non-zero on any failure; currently 0 failures).
 
 ### 3.1 Semantic tokens
 
 | Token (`--color-*`) | Light | Dark | Use |
 |---|---|---|---|
-| `bg` | `#FBF8F3` paper | `#0C151D` deep ink | page |
-| `bg-subtle` | `#F4EFE6` | `#0F1A23` | alternate section bands (02, 04, 06, 08) |
-| `surface` | `#FFFEFB` | `#111D27` | cards, panels, chat |
-| `surface-2` | `#F6F1E8` | `#162430` | insets, neutral chips, open trace row |
-| `surface-inverse` | `#14212B` | `#ECF1F4` | primary button, user chat bubble, tooltips |
-| `line` | `#E7E0D3` | `#213140` | hairlines, card borders (decorative) |
-| `line-strong` | `#D6CCBA` | `#2C3E4D` | hover borders, rules that must be seen |
-| `line-input` | `#8E8676` | `#5E7384` | form-control borders (≥ 3:1, WCAG 1.4.11) |
-| `ink` | `#14212B` | `#ECF1F4` | primary text |
-| `ink-2` | `#33414C` | `#C9D3DA` | body copy on cards, secondary text |
-| `muted` | `#5A6670` | `#97A5B1` | meta, captions, placeholders (≥ 4.5:1 everywhere) |
-| `subtle` | `#727C85` | `#7D8D9A` | decorative / disabled only (never body text in light) |
-| `on-inverse` | `#FBF8F3` | `#0C151D` | text on `surface-inverse` |
-| `accent` | `#0A766C` | `#3DD6C3` | links, active states, focus, emphasis word in H1 |
-| `accent-strong` | `#075E56` | `#6FE3D4` | hover/pressed accent text |
-| `accent-solid` / `-hover` | `#0A766C` / `#086A61` | `#3DD6C3` / `#5FDECD` | accent button ("Ask my AI") |
-| `on-accent` | `#FFFFFF` | `#06201D` | label on accent button |
-| `accent-fill` | `#16A394` | `#2CC2B0` | decorative strokes, stripe, graph hub |
-| `accent-tint` / `-tint-line` | `#E3F1EE` / `#B9DFD8` | `#10302E` / `#1E4B47` | chips, hover tint |
-| `focus` / `focus-halo` | `#0A766C` / teal 22% | `#3DD6C3` / teal 28% | 2 px focus ring + input halo |
-| `selection` | `#CDEAE4` | `#1E4B47` | `::selection` |
-| `scrim` | ink 46% | near-black 66% | mobile chat sheet backdrop |
-| `graph-edge` / `graph-grid` / `graph-node` | `#D3C8B5` / `#DDD3C2` / `#FFFEFB` | `#2B3C4A` / `#1F2E3A` / `#0F1A23` | hero graph, diagrams, dot grid |
-| `glow-1/2/3` | teal 13% / saffron 12% / coral 6% | teal 16% / saffron 10% / coral 7% | hero radial glows (never on text) |
+| `bg` | `#F7F6F3` alabaster | `#080E1C` lapis night | page |
+| `bg-subtle` | `#F2F0EC` | `#0B1222` | alternate section bands (02, 04, 06, 08) |
+| `surface` | `#FEFDFC` | `#0F1728` | cards, panels, chat |
+| `surface-2` | `#F1EFEA` | `#161E31` | insets, neutral chips, open trace row |
+| `surface-inverse` | `#131D36` | `#F4F0E7` | primary button, user chat bubble, tooltips |
+| `line` | `#E2DFDA` | `#242C40` | hairlines, card borders (decorative) |
+| `line-strong` | `#CFCCC5` | `#363F54` | hover borders, rules that must be seen |
+| `line-input` | `#7B808D` | `#6B748A` | form-control borders (≥ 3:1, WCAG 1.4.11) |
+| `ink` | `#131D36` lapis ink | `#F4F0E7` warm ivory | primary text |
+| `ink-2` | `#323D55` | `#CBD1DC` | body copy on cards, secondary text |
+| `muted` | `#5B6375` | `#A1A9BC` | meta, captions, placeholders (≥ 4.5:1 everywhere) |
+| `subtle` | `#7A808E` | `#7E8698` | decorative / disabled only (never body text in light) |
+| `on-inverse` | `#F7F6F3` | `#080E1C` | text on `surface-inverse` |
+| `accent` | `#2B51AA` lapis | `#E9BB61` gold | links, active states, focus, emphasis word in H1 |
+| `accent-strong` | `#1C3A8B` | `#F3D68F` | hover/pressed accent text |
+| `accent-solid` / `-hover` | `#2348A1` / `#1A3788` | `#E8B458` / `#F0CA78` | accent button ("Ask my AI") |
+| `on-accent` | `#FFFFFF` | `#091123` | label on accent button |
+| `accent-fill` | `#3E6DC8` | `#E4AD4B` | decorative strokes, live dot, progress, the monogram's node by night |
+| `accent-tint` / `-tint-line` | `#E7F0FE` / `#BCD3FE` | `#2F2005` / `#4E370C` | chips, hover tint |
+| `focus` / `focus-halo` | `#2B51AA` / lapis 22% | `#E9BB61` / gold 30% | 2 px focus ring + input halo |
+| `selection` | `#F0DEB3` pale gold | `#274172` lapis | `::selection` |
+| `scrim` | ink 46% | near-black 68% | mobile chat sheet backdrop |
+| `graph-edge` / `graph-grid` / `graph-node` | `#CECAC2` / `#DAD7D0` / `#FEFDFC` | `#384258` / `#222A3C` / `#0B1222` | hero graph, diagrams, dot grid |
+| `glow-1/2/3` | lapis 10% / gold 14% / turquoise 6% | lapis 22% / gold 9% / turquoise 6% | hero radial glows (never on text) |
 
 ### 3.2 Category colours (encode meaning, quietly)
 
-Each has four tokens: `--color-<c>` (text-safe), `-fill` (decorative stroke/fill), `-tint` (chip bg), `-tint-line`.
+Each has four tokens: `--color-<c>` (text-safe), `-fill` (stroke/fill, ≥ 3:1 on every page surface), `-tint` (chip
+bg), `-tint-line`.
 
-| Category | Colour | Light text / fill | Dark text / fill | Means |
+| Token | Colour | Light text / fill | Dark text / fill | Means |
 |---|---|---|---|---|
-| teal | primary | `#0A766C` / `#16A394` | `#3DD6C3` / `#2CC2B0` | orchestration, agents, current role (Globant) |
-| saffron | accent 1 | `#9C5800` / `#E9A23B` | `#F4B95A` / `#EFAE48` | retrieval, data; honours (award badge) |
-| coral | accent 2 | `#B3421C` / `#E4683F` | `#FF916E` / `#F57A54` | generation, LLM output; errors (`danger`) |
-| sky | category | `#2B65A6` / `#4A8FD6` | `#7DB6F0` / `#5EA2E6` | evaluation, observability, quality |
-| sage | category | `#55702A` / `#89A447` | `#B2CC72` / `#9DB95A` | guard, safety; bilingual; teaching |
-| slate | category | `#4A6072` / `#7F99AE` | `#AFC3D3` / `#8AA5BB` | serving, infra, tools/MCP, storage |
+| teal | faience turquoise (primary category) | `#136868` / `#038586` | `#82D9D5` / `#5AC0BC` | orchestration, agents, current role (Globant); availability, success |
+| saffron | gold | `#885716` / `#B47D19` | `#E9BB61` / `#E8B458` | retrieval, data; honours (award badge) |
+| coral | carnelian | `#A03B22` / `#B84D30` | `#F3957B` / `#DA6C50` | generation, LLM output; errors (`danger`) |
+| sky | lapis | `#2B51AA` / `#2855AD` | `#9EBEF8` / `#6591E1` | evaluation, observability, quality |
+| sage | amethyst | `#794589` / `#A66BB9` | `#E5C3EF` / `#DFBCEB` | guard, safety; bilingual; teaching |
+| slate | slate | `#515B6C` / `#515B6C` | `#B3BFCE` / `#7C8795` | serving, infra, tools/MCP, storage |
 
 Rules: one accent per component; category colour appears as a 3 px top bar, an icon tile, a chip, a node ring or a
-trace bar, never as a large fill. Never set text in a `-fill` colour. No gradients on text. No purple, no neon.
-Glows ≤ 16% opacity and only behind the hero graph and OG images.
+trace bar, never as a large fill. Never set text in a `-fill` colour. No gradients on text. No purple gradients, no
+neon: amethyst is a quiet category colour (guard), never a glow or a gradient. Glows ≤ 22% opacity (the lapis glow by
+night; blue reads dimmer than gold on lapis night) and only behind the hero graph, the CTA band and OG images.
+In the dark theme gold is both the accent and the retrieval category (as teal was both in 1.x); in the light theme
+lapis is both the accent and the evaluation category. The label always says which.
+
+**Colour vision.** The six fills stay apart under simulation (Machado et al. 2009, full severity; CIEDE2000 between the
+closest pair): dark 14.2 normal, **9.3 deuteranopia** (turquoise/amethyst), **12.9 protanopia**, 11.6 tritanopia; light
+13.4 normal, **9.3 deuteranopia** (gold/carnelian), **12.4 protanopia**, 11.2 tritanopia. `check-contrast.mjs` fails
+below 8 for deuteranopia and protanopia (1.x had 2.3: coral and sage collapsed). The text colours (chip labels) are
+closer under deuteranopia (light gold/carnelian 1.4, dark turquoise/slate 2.3, the same order as 1.x): they always sit
+inside a chip or next to a label that names the category, so no meaning rests on them (WCAG 1.4.1).
+
+**Components with their own colours** (not tokens, each checked by `check-contrast.mjs` from its source file):
+
+| Component | Values | Why |
+|---|---|---|
+| CTA band, dark (`case.css`) | band `#122349`, border `#273D6F`, text `--color-ink`, gold glow (`saffron-fill` 22%) | a deep lapis panel instead of the light inverse surface; title 13.6:1, eyebrow 6.3:1, gold button 8.2:1, focus 8.6:1 |
+| CTA band, light (`case.css`) | the light inverse surface `#131D36` with the dark theme's gold accent (`#E8B458`, label `#091123`, focus `#E9BB61`) | lapis on lapis ink would fall under 3:1; button 8.8:1, focus 9.4:1 |
+| Chat launcher disc (`chat-avatar.ts`) | disc `#131D36`, inner glow `#6591E1` 30%, rim `#E4AD4B` | lapis set in gold, both themes: rim 9.5:1 on the dark page, disc 15.5:1 on the light one, rim 8.3:1 on its disc |
+| Comic greeting (`chat-avatar.ts`) | paper `#FEFDFC` (94% over the page), ink `#131D36`, greeting line `#2B51AA`, Ben-Day dots `saffron-fill` | ink 14.5:1 and greeting 6.4:1 at worst (on the dark page's slightly greyer paper) |
+| Monogram node (`site.css`, brand assets) | `#E4AD4B` brand gold (by night `accent-fill`); `#B47D19` on light browser tabs | the mark keeps its gold on the lapis tile in both themes |
+| CV sheet (`cv.css`) | the light tokens as fixed values (`#131D36`, `#323D55`, `#5B6375`, lapis `#2B51AA`, gold `#885716`, stripe turquoise / gold / carnelian fills) | the A4 sheet and the PDFs are always paper |
+| Select chevron (`components.css`) | `muted` per theme (`#5B6375` / `#A1A9BC`) as two data URIs | a data URI can't read a custom property |
+| Phone bezel (`components.css`) | `#0A0F1A` | a device colour, near-black lapis |
 
 ### 3.3 Verified pairs (excerpt; full list: `node design/scripts/check-contrast.mjs`)
 
 | Pair (fg on bg) | Light | Dark | Min |
 |---|---|---|---|
-| `ink` on `bg` | #14212B / #FBF8F3 = **15.46** | #ECF1F4 / #0C151D = **16.18** | 4.5 |
-| `ink-2` on `bg` | #33414C / #FBF8F3 = **9.91** | #C9D3DA / #0C151D = **12.11** | 4.5 |
-| `muted` on `bg` | #5A6670 / #FBF8F3 = **5.55** | #97A5B1 / #0C151D = **7.31** | 4.5 |
-| `muted` on `surface-2` | #5A6670 / #F6F1E8 = **5.23** | #97A5B1 / #162430 = **6.27** | 4.5 |
-| `accent` on `bg` | #0A766C / #FBF8F3 = **5.19** | #3DD6C3 / #0C151D = **10.17** | 4.5 |
-| `accent` on `surface` | #0A766C / #FFFEFB = **5.45** | #3DD6C3 / #111D27 = **9.44** | 4.5 |
-| `saffron` on `bg` | #9C5800 / #FBF8F3 = **5.20** | #F4B95A / #0C151D = **10.46** | 4.5 |
-| `coral` on `bg` | #B3421C / #FBF8F3 = **5.34** | #FF916E / #0C151D = **8.35** | 4.5 |
-| `sky` on `bg` | #2B65A6 / #FBF8F3 = **5.64** | #7DB6F0 / #0C151D = **8.61** | 4.5 |
-| `sage` on `bg` | #55702A / #FBF8F3 = **5.30** | #B2CC72 / #0C151D = **10.32** | 4.5 |
-| `slate` on `bg` | #4A6072 / #FBF8F3 = **6.18** | #AFC3D3 / #0C151D = **10.14** | 4.5 |
-| `teal` on `teal-tint` | #0A766C / #E3F1EE = **4.73** | #3DD6C3 / #10302E = **7.82** | 4.5 |
-| `saffron` on `saffron-tint` | #9C5800 / #FAEFDC = **4.84** | #F4B95A / #2E2614 = **8.50** | 4.5 |
-| `coral` on `coral-tint` | #B3421C / #FAE7DF = **4.73** | #FF916E / #33201A = **6.99** | 4.5 |
-| `sky` on `sky-tint` | #2B65A6 / #E4EDF7 = **5.05** | #7DB6F0 / #15283A = **7.03** | 4.5 |
-| `sage` on `sage-tint` | #55702A / #ECF1DF = **4.87** | #B2CC72 / #1F2A17 = **8.40** | 4.5 |
-| `slate` on `slate-tint` | #4A6072 / #E8EDF1 = **5.55** | #AFC3D3 / #1C2A35 = **8.08** | 4.5 |
-| `on-inverse` on `surface-inverse` | #FBF8F3 / #14212B = **15.46** | #0C151D / #ECF1F4 = **16.18** | 4.5 |
-| `on-accent` on `accent-solid` | #FFFFFF / #0A766C = **5.50** | #06201D / #3DD6C3 = **9.42** | 4.5 |
-| `danger` on `danger-tint` | #B3421C / #FAE7DF = **4.73** | #FF916E / #33201A = **6.99** | 4.5 |
-| `line-input` on `surface` | #8E8676 / #FFFEFB = **3.58** | #5E7384 / #111D27 = **3.47** | 3 (UI) |
-| `focus` on `bg` | #0A766C / #FBF8F3 = **5.19** | #3DD6C3 / #0C151D = **10.17** | 3 (UI) |
-| `subtle` on `bg` | #727C85 / #FBF8F3 = **4.02** | #7D8D9A / #0C151D = **5.39** | 3 (large/UI only) |
+| `ink` on `bg` | #131D36 / #F7F6F3 = **15.46** | #F4F0E7 / #080E1C = **16.94** | 4.5 |
+| `ink-2` on `bg` | #323D55 / #F7F6F3 = **10.05** | #CBD1DC / #080E1C = **12.56** | 4.5 |
+| `muted` on `bg` | #5B6375 / #F7F6F3 = **5.57** | #A1A9BC / #080E1C = **8.18** | 4.5 |
+| `muted` on `surface-2` | #5B6375 / #F1EFEA = **5.24** | #A1A9BC / #161E31 = **7.05** | 4.5 |
+| `accent` on `bg` | #2B51AA / #F7F6F3 = **6.79** | #E9BB61 / #080E1C = **10.78** | 4.5 |
+| `accent` on `surface` | #2B51AA / #FEFDFC = **7.23** | #E9BB61 / #0F1728 = **10.01** | 4.5 |
+| `teal` on `bg` | #136868 / #F7F6F3 = **6.06** | #82D9D5 / #080E1C = **11.78** | 4.5 |
+| `saffron` on `bg` | #885716 / #F7F6F3 = **5.68** | #E9BB61 / #080E1C = **10.78** | 4.5 |
+| `coral` on `bg` | #A03B22 / #F7F6F3 = **6.18** | #F3957B / #080E1C = **8.62** | 4.5 |
+| `sky` on `bg` | #2B51AA / #F7F6F3 = **6.79** | #9EBEF8 / #080E1C = **10.25** | 4.5 |
+| `sage` on `bg` | #794589 / #F7F6F3 = **6.42** | #E5C3EF / #080E1C = **12.28** | 4.5 |
+| `slate` on `bg` | #515B6C / #F7F6F3 = **6.34** | #B3BFCE / #080E1C = **10.33** | 4.5 |
+| `teal` on `teal-tint` | #136868 / #E0F4F4 = **5.74** | #82D9D5 / #0B2827 = **9.53** | 4.5 |
+| `saffron` on `saffron-tint` | #885716 / #FAEDDB = **5.32** | #E9BB61 / #2E2006 = **8.86** | 4.5 |
+| `coral` on `coral-tint` | #A03B22 / #FFEAE4 = **5.77** | #F3957B / #371911 = **7.17** | 4.5 |
+| `sky` on `sky-tint` | #2B51AA / #E7F0FE = **6.40** | #9EBEF8 / #162339 = **8.38** | 4.5 |
+| `sage` on `sage-tint` | #794589 / #F7EAFC = **5.99** | #E5C3EF / #281F2B = **10.13** | 4.5 |
+| `slate` on `slate-tint` | #515B6C / #EDEFF4 = **5.96** | #B3BFCE / #202327 = **8.46** | 4.5 |
+| `on-inverse` on `surface-inverse` | #F7F6F3 / #131D36 = **15.46** | #080E1C / #F4F0E7 = **16.94** | 4.5 |
+| `on-accent` on `accent-solid` | #FFFFFF / #2348A1 = **8.36** | #091123 / #E8B458 = **9.95** | 4.5 |
+| `on-saffron` on `saffron-fill` | #091123 / #B47D19 = **5.28** | #091123 / #E8B458 = **9.95** | 4.5 |
+| `danger` on `danger-tint` | #A03B22 / #FFEAE4 = **5.77** | #F3957B / #371911 = **7.17** | 4.5 |
+| `line-input` on `surface` | #7B808D / #FEFDFC = **3.89** | #6B748A / #0F1728 = **3.83** | 3 (UI) |
+| `focus` on `bg` | #2B51AA / #F7F6F3 = **6.79** | #E9BB61 / #080E1C = **10.78** | 3 (UI) |
+| `subtle` on `bg` | #7A808E / #F7F6F3 = **3.66** | #7E8698 / #080E1C = **5.28** | 3 (large/UI only) |
+| `teal-fill` on `bg` | #038586 / #F7F6F3 = **4.13** | #5AC0BC / #080E1C = **8.90** | 3 (graphic) |
+| `saffron-fill` on `bg-subtle` (lowest fill) | #B47D19 / #F2F0EC = **3.13** | #E8B458 / #0B1222 = **9.88** | 3 (graphic) |
+| `coral-fill` on `bg` | #B84D30 / #F7F6F3 = **4.69** | #DA6C50 / #080E1C = **5.73** | 3 (graphic) |
+| `sky-fill` on `bg` | #2855AD / #F7F6F3 = **6.49** | #6591E1 / #080E1C = **6.14** | 3 (graphic) |
+| `sage-fill` on `bg-subtle` | #A66BB9 / #F2F0EC = **3.40** | #DFBCEB / #0B1222 = **11.15** | 3 (graphic) |
+| `slate-fill` on `bg` | #515B6C / #F7F6F3 = **6.34** | #7C8795 / #080E1C = **5.28** | 3 (graphic) |
 
 ### 3.4 Theme mechanics
 
@@ -170,13 +216,14 @@ Glows ≤ 16% opacity and only behind the hero graph and OG images.
   without JS; the light values apply only with `html[data-theme="light"]`. An `is:inline` script in `<head>` sets
   `html[data-theme]` before first paint (light only for a visitor who chose it). `check-contrast.mjs` fails if a colour
   token has no dark value.
-- `<meta name="theme-color" content="#0C151D">` and `<meta name="color-scheme" content="dark">`, so the browser's
+- `<meta name="theme-color" content="#080E1C">` and `<meta name="color-scheme" content="dark">`, so the browser's
   first frame and its chrome are dark; the boot script switches both to light (`data-light`, the page's own light
-  colour: the CV's band is #F4EFE6) for a visitor who chose light, and the toggle keeps them in step. The web
-  manifest's theme and background colours are #0C151D. The CV's A4 sheet stays paper-white inside the dark page, and
+  colour: `#F7F6F3`, the CV's band `#F2F0EC`; the CV's dark chrome is its band, `#0B1222`) for a visitor who chose
+  light, and the toggle keeps them in step. The web manifest's theme and background colours are `#080E1C`
+  (`brand.mjs` writes them from the dark `bg` token). The CV's A4 sheet stays paper-white inside the dark page, and
   print is unchanged (white).
 - Dark mode is not inverted light mode: surfaces step *up* in lightness for elevation, shadows deepen, glows rise to
-  16%, and a 1 px top inner highlight (`--inset-highlight`) gives cards their edge.
+  22%, and a 1 px top inner highlight (`--inset-highlight`, white 5%) gives cards their edge.
 
 ---
 
@@ -341,7 +388,7 @@ Motion is an enhancement: every component is complete and usable with no motion 
 | Chat header avatar | mouth talks; two blinks | 360 ms loop while an answer streams in (the cursor shows); blinks 1.2 s and 4.2 s after the panel opens | streaming / open | still |
 | Chat panel | grows from launcher: scale .96→1, y 8→0, opacity | 380 ms `--ease-spring` | open | opacity 120 ms |
 | Chat thinking | three-node pulse (graph motif) | 1.2 s loop while waiting | streaming | static dots + "Thinking…" text |
-| Chat caret | teal block caret blink | 1 s steps | streaming | solid caret |
+| Chat caret | accent block caret blink (gold by night, lapis by day) | 1 s steps | streaming | solid caret |
 | Theme switch | none (instant) | n/a | n/a | n/a |
 
 Rules: animate only `transform` and `opacity`, which browsers run on the compositor (the living charts measure
@@ -377,8 +424,9 @@ each over within 5 s, and then stops; it moves again only while hovered or focus
 ## 9. Imagery
 
 - **Portrait** (`design/assets/photo/`): plain square crop (avatar, person chip 32 px, chat header), 4:5 portrait,
-  duotone light/dark (ink → paper with a hint of teal; used where the photo must sit quietly, e.g. OG images, CV), and
-  the **orchestrator composition**: the photo in a circle with a thin teal ring and a dashed orbit carrying three
+  duotone light/dark (lapis ink → alabaster, or lapis night → ivory, with a hint of turquoise; used where the photo
+  must sit quietly, e.g. OG images, CV), and the **orchestrator composition**: the photo in a circle with a thin
+  turquoise ring (`teal-fill`, the orchestrator's colour) and a dashed orbit carrying three
   category-coloured nodes (`orbit-ring.svg` layered over a circle-cropped `<img>`), used in Contact. The beige studio
   backdrop of the original harmonises with the paper palette; no background removal.
   Formats: AVIF + WebP at 96 / 192 / 320 / 480 / 640, JPEG fallback at one size per crop.
@@ -399,14 +447,15 @@ each over within 5 s, and then stops; it moves again only while hovered or focus
 - **Showcase screenshots** (`design/assets/showcase/`): logic-controls.com desktop (EN, AR) and phone (EN, AR) and the
   HMI panel, AVIF + WebP at 390 / 780 / 960 / 1440 / 1920. Shown inside a neutral browser frame and a dark phone
   bezel. Never show or name the Logic Controls founder.
-- **OG images** (`design/assets/brand/og/`): 1200 × 630 PNG rendered from SVG templates, deep-ink theme for feed
+- **OG images** (`design/assets/brand/og/`): 1200 × 630 PNG rendered from SVG templates, lapis-night theme (the tokens' dark values: gold eyebrow and employer, the hero's glows, a gold monogram node) for feed
   contrast, EN and AR, home and per case study (template + render script in `design/scripts/brand/`).
 - **Chat avatar** (`design/assets/avatar/mh-avatar.svg`): Mohamed as a flat vector illustration, traced from the
   profile photo (rounder head, near-black buzz cut with the receding temples, light stubble, warm smile, navy blazer
-  over an open white shirt, sky-blue pocket square), raising his right hand to wave. It sits on a **deep ink disc**
-  (`#14212B`) with a soft teal inner glow and a `#2CC2B0` rim; the rim keeps the launcher's edge ≥ 3:1 on both themes
-  (8.3:1 on the dark page; the disc itself is 15.5:1 on paper). The disc is CSS-driven (`--mh-av-disc`, `--mh-av-glow`,
-  `--mh-av-glow-o`, `--mh-av-rim`), and `data-disc="teal"` is the brand-teal alternative (teal disc, `#0A766C` rim).
+  over an open white shirt, lapis-blue pocket square), raising his right hand to wave. It sits on a **lapis-night disc**
+  (`#131D36`) with a soft lapis inner glow (`#6591E1`, 30%), set in a **gold rim** (`#E4AD4B`); the launcher's edge
+  holds ≥ 3:1 in both themes (the rim is 9.5:1 on the dark page, the disc itself 15.5:1 on the light one, the rim 8.3:1
+  on its disc). The disc is CSS-driven (`--mh-av-disc`, `--mh-av-glow`, `--mh-av-glow-o`, `--mh-av-rim`), and
+  `data-disc="teal"` is the turquoise alternative (`#038586` disc, `#136868` rim).
   Layers carry classes for the motion: `.av-head` (nods), `.av-eyes` (blink; centre y 45.25), `.av-jaw` (talks; hinge
   y 65.4), `.av-arm` > `.av-wave` (elbow) > `.av-hand` (wrist at 0,0). Skin `#E6B593`, stubble a cool near-black at
   11–26 %, hair `#1D1A17`. ≈ 2.6 KB gzip.
@@ -429,12 +478,12 @@ example (EN and AR copy in `graph-data.ts`; never a step claimed for every produ
 mirrors the flow (query enters from the right). Budget ≤ 15 KB gzip JS + CSS (see `HANDOFF.md` for measured sizes).
 
 ### 10.2 Tri-colour stripe
-Three rounded bars 54 / 30 / 16 × 5 px, 6 px apart, teal / saffron / coral `-fill`. Used under the footer brand, on OG
+Three rounded bars 54 / 30 / 16 × 5 px, 6 px apart, turquoise / gold / carnelian (`teal`, `saffron`, `coral` `-fill`). Used under the footer brand, on OG
 images, on the CV header. Never as a divider between sections.
 
 ### 10.3 Dot grid and glows
 22 px dot grid (r 1.15, `--color-graph-grid`) masked by a radial fade behind the hero graph (18 px variant inside
-diagram frames and feature art). Radial glows teal (behind the graph), saffron (top end), coral (bottom start).
+diagram frames and feature art). Radial glows lapis (behind the graph), gold (top end), turquoise (bottom start) (`glow-1/2/3`).
 In RTL the composition mirrors.
 
 ### 10.4 Architecture diagrams (`design/assets/diagrams/`)
@@ -491,7 +540,7 @@ a two-way segmented theme control (Light / Dark, `aria-pressed`; Dark is pressed
 click; focus returns to the menu button; `aria-expanded` on the button.
 
 ### 12.3 Buttons (`.btn`)
-Heights 36 (sm) / 44 (md, default) / 52 (lg). Variants: **primary** (ink, `surface-inverse`), **accent** (teal; reserved
+Heights 36 (sm) / 44 (md, default) / 52 (lg). Variants: **primary** (ink, `surface-inverse`), **accent** (gold by night, lapis by day; reserved
 for "Ask my AI" and the chat send button, so the accent keeps meaning "talk to the AI"), **secondary** (surface +
 line-strong), **ghost**. Icon 18 px, gap 8. Arrow icons nudge 3 px on hover. Press: 1 px down. Disabled: 45% opacity,
 `aria-disabled`. Focus: 2 px `--color-focus` ring, 2 px offset.
@@ -508,7 +557,7 @@ name + role; name hidden < 480 where the nav shows it), **H1** = `basics.tagline
 **lede** = `basics.intro` (md, ink-2, ≤ 35rem), **ask bar** (a `<button>` that looks like an input: ask icon, typed
 example questions including one in the other language, "/" kbd, accent go button; opens the chat with the composer
 focused; keyboard shortcut "/" anywhere outside inputs), **actions** (secondary "See the work", ghost "CV"), **meta
-line** (mono 2xs: sage dot + "Open to new roles · remote, in Cairo, or relocating to the Gulf or Europe", a link to
+line** (mono 2xs: turquoise dot (`teal-fill`) + "Open to new roles · remote, in Cairo, or relocating to the Gulf or Europe", a link to
 the About facts, then clock icon + live Cairo time). Suggestion chips live in the AI
 assistant section and the chat welcome, not in the hero (the hero must fit 1440 × 900). Art column: hero graph +
 mono caption with a live dot. Background: dot grid + glows (section 10.3). Below: metric strip and logo row, inside the
@@ -639,7 +688,7 @@ CTAs keep the first-person "Ask my AI" (it is his site); the widget speaks about
 closed launcher bottom-end, safe-area aware: **his avatar** (section 9) in a 64 px circle (56 px on phones), named
 "Ask Hatem's AI assistant", that waves, blinks and floats (section 7.2). A **comic greeting** pops out of it behind two
 little balls, like a comic-strip thought trail: a paper bubble with a 2.5 px ink outline, organic corners, a 2.2° tilt
-and a teal Ben-Day dot offset, the first line in teal ("Hi, I'm Hatem! 👋"), then "Ask my AI assistant about my
+and a gold Ben-Day dot offset, the first line in lapis ("Hi, I'm Hatem! 👋"), then "Ask my AI assistant about my
 work." (AR «أهلًا، أنا حاتم! 👋» / «اسأل مساعدي الذكي عن خبرتي.»), in the site's display / Arabic faces. It is the
 launcher's description; its × ("Hide message") hides it for the session, Escape hides it, it stays while hovered or
 focused, and it never shows once the chat has been opened. It stays paper in the dark theme (with a faint light
@@ -653,7 +702,7 @@ header's "Ask my AI" button always opens the chat. Panel 400 × 640 (desktop) gr
 the avatar (its face; the mouth talks while an answer streams in), title, one-line subtitle, new chat + close; the welcome message ends with the disclaimer ("AI answers can be
 wrong…") and the privacy note (messages go to Google's Gemini API), which together describe the dialog; welcome with 8 suggestions (4 on phones), a
 language switch chip and a job-description tip; long pasted job descriptions collapse with Show more; user bubbles (ink, end-aligned)
-and unboxed assistant answers with markdown-lite; thinking indicator using the graph motif; streaming with a teal
+and unboxed assistant answers with markdown-lite; thinking indicator using the graph motif; streaming with an accent
 block caret; copy answer; in-thread contact card (WhatsApp, Email, LinkedIn, CV); error, rate-limit, offline and
 too-long states; mobile full-screen sheet with drag handle, sticky header, pinned composer and keyboard handling;
 full RTL. Non-modal dialog on desktop, modal on mobile; Escape closes and returns focus; live region announces

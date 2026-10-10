@@ -121,7 +121,7 @@ for (const theme of ["light", "dark"]) {
     ["edge label on canvas", T("muted"), T("bg"), 4.5],
     ["thumb caption on canvas", T("ink-2"), T("bg"), 4.5],
     ["edge stroke on canvas", T("line-input"), T("bg"), 3],
-    ["callout numeral on disc", "#14212B", T("saffron-fill"), 4.5],
+    ["callout numeral on disc", T("on-saffron"), T("saffron-fill"), 4.5],
     ...["teal", "saffron", "coral", "sky", "sage", "slate"].map((c) => [`${c} glyph on well`, T(c), T(`${c}-tint`), 3]),
   ];
   for (const [label, fg, bg, min] of checks) {
@@ -252,7 +252,7 @@ figcaption{display:grid;gap:1rem;margin-block-start:1.25rem;max-width:48rem}
 .cap{margin:0;color:var(--color-ink-2);line-height:var(--lh-body)}
 .callouts{list-style:none;margin:0;padding:0;display:grid;gap:.625rem}
 .callouts li{display:grid;grid-template-columns:1.25rem 1fr;gap:.75rem;align-items:start;font-size:var(--text-sm);line-height:var(--lh-ui);color:var(--color-ink-2)}
-.num{display:inline-grid;place-items:center;width:1.25rem;height:1.25rem;border-radius:50%;background:var(--color-saffron-fill);color:#14212B;font:700 11px/1 var(--font-mono);margin-top:.1rem}
+.num{display:inline-grid;place-items:center;width:1.25rem;height:1.25rem;border-radius:50%;background:var(--color-saffron-fill);color:var(--color-on-saffron);font:700 11px/1 var(--font-mono);margin-top:.1rem}
 .longdesc summary{cursor:pointer;font:500 var(--text-xs)/1.4 var(--font-mono);color:var(--color-muted)}
 .longdesc p{color:var(--color-ink-2);font-size:var(--text-sm);line-height:var(--lh-body)}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,20rem),1fr));gap:var(--grid-gap)}

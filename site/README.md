@@ -222,8 +222,8 @@ panel arrives on the first interaction and isn't counted in the JS budget.
 - **No JavaScript:** a `<noscript>` card offers email and WhatsApp instead.
 - **Avatar launcher (`src/scripts/chat-avatar.ts`):** once the page has loaded and the browser is idle, `chat.ts`
   imports it and it dresses the widget's launcher through `window.MHChat.launcher` (the widget README's "Launcher
-  hook"): Hatem's illustrated avatar (`design/assets/avatar/mh-avatar.svg`, imported `?raw`) on a deep ink disc with a
-  teal rim, named "Ask Hatem's AI assistant", and a comic greeting that pops out of it behind two balls ("Hi, I'm
+  hook"): Hatem's illustrated avatar (`design/assets/avatar/mh-avatar.svg`, imported `?raw`) on a lapis-night disc in a
+  gold rim, named "Ask Hatem's AI assistant", and a comic greeting that pops out of it behind two balls ("Hi, I'm
   Hatem! 👋 Ask my AI assistant about my work.", copy in `content/i18n` → `chat.avatar`), which is the launcher's
   description. The panel header uses the same avatar (`avatar` option) and its mouth talks while an answer streams.
   - Until it is in, `[data-mh-chat]:not([data-art])` keeps the launcher hidden (site.css), so the default launcher
@@ -235,7 +235,7 @@ panel arrives on the first interaction and isn't counted in the JS budget.
     Escape hides it; it stays while hovered or focused; it hides when page focus lands under it.
   - `site.ts` sets `data-hush` on the host while the greeting would cover a `[data-chat-avoid]` element (the greeting
     hides, the launcher may stay), alongside `data-dodge` for the launcher itself.
-  - The disc: `data-av-disc` in ChatMount.astro (`dark`, the default, or `teal`), or `--mh-av-disc`, `--mh-av-rim`,
+  - The disc: `data-av-disc` in ChatMount.astro (`dark`, the default: lapis night in gold, or `teal`: turquoise), or `--mh-av-disc`, `--mh-av-rim`,
     `--mh-av-glow`, `--mh-av-glow-o` on `[data-mh-chat]`.
 - **Build step:** `npm run content:gen` (part of `dev`, `build` and `check`) runs `../worker/scripts/gen-content.mjs`,
   which writes the widget's generated strings and suggestions.
@@ -274,7 +274,7 @@ Preloads:
 ## Budgets (`scripts/check-budgets.mjs`, part of `npm test`)
 
 - **JS:** ≤ 60 KB gzip loaded on first view of each page. The lazy chat panel and the launcher's avatar (loaded after
-  `load`, 7.0 KB gzip; design target ≤ 12 KB) are excluded; the loader counts. Today: home 19.0 KB, case studies with a
+  `load`, 7.1 KB gzip; design target ≤ 12 KB) are excluded; the loader counts. Today: home 19.0 KB, case studies with a
   diagram 9.2 KB (9.7 KB with the screens gallery), other pages 6.3–7.1 KB, hero graph 7.0 KB.
 - **CSS:** ≤ 40 KB gzip per page. Today: 19.8–26.1 KB.
 - **Fonts:** self-hosted woff2 only, with exactly the preloads listed under "Fonts".
@@ -292,7 +292,7 @@ Lighthouse (`npm run lighthouse`; mobile = simulated slow 4G, desktop preset):
 | AIP semantic search (a brief case study) | 99 | 100 |
 | CV, English / Arabic (logos, round 4) | 99 / 98 | 100 |
 
-Accessibility, best practices and SEO are 100 on every run (measured 2026-10-10, after the design review fixes, again after the avatar launcher, and again with dark as the default theme, the living charts and the brand-colour logos: the same scores; again with the STA case study and the CV's logos).
+Accessibility, best practices and SEO are 100 on every run (measured 2026-10-10, after the design review fixes, again after the avatar launcher, again with dark as the default theme, the living charts and the brand-colour logos, again with the STA case study and the CV's logos, and again with the Lapis & Gold palette: the same scores).
 CLS ≤ 0.001, TBT ≤ 30 ms (home, mobile; 0 ms elsewhere), and mobile LCP is 1.8–2.3 s.
 
 The runner blocks the Cloudflare analytics beacon (`--with-analytics` keeps it). From localhost, CORS refuses the
@@ -306,6 +306,10 @@ beacon's report, which logs a console error the live site doesn't have.
 - **i18n:** parity, placeholders, digits, and the date and duration helpers.
 - **Trace geometry:** checked against the prototype's numbers.
 - **Diagram motion values:** every pulse carries its length and hop, every lit node its arrival (`data-vars`).
+- **Palette (`palette.test.ts`):** the site's token stylesheets are exactly the generated ones,
+  `design/scripts/check-contrast.mjs` passes (every token pair in both themes, the components with their own colours,
+  and the category colours under deuteranopia and protanopia), and the theme-color defaults and the web manifest follow
+  the `bg` tokens.
 - **Brand logos:** the six employers in order, a file per theme that exists, equal visual area within 25 %, every file
   documented in `design/assets/logos/SOURCES.md`.
 - **CV data:** no projects list; a logo tile for every role and degree; a client named only on the Wakeb Data role,

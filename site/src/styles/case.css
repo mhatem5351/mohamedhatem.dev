@@ -101,7 +101,7 @@ html { scroll-padding-block-start: 6.5rem; }
 :lang(ar) .fig__caption-text b { font-family: var(--font-arabic); font-weight: 700; }
 
 /* Callout number badge (matches the diagram's saffron callouts) + the numbered legend under a figure */
-.co { display: inline-grid; place-items: center; min-width: 1.375rem; height: 1.375rem; padding-inline: .25rem; border-radius: var(--radius-full); background: var(--color-saffron-fill); color: #14212B; font: 700 .6875rem/1 var(--font-mono); font-variant-numeric: tabular-nums; flex: none; box-shadow: 0 0 0 2px var(--color-bg); }
+.co { display: inline-grid; place-items: center; min-width: 1.375rem; height: 1.375rem; padding-inline: .25rem; border-radius: var(--radius-full); background: var(--color-saffron-fill); color: var(--color-on-saffron); font: 700 .6875rem/1 var(--font-mono); font-variant-numeric: tabular-nums; flex: none; box-shadow: 0 0 0 2px var(--color-bg); }
 a.co { text-decoration: none; }
 .co-ref { vertical-align: .12em; margin-inline: .125rem; transform: scale(.92); }
 .callouts { display: grid; gap: .625rem 2rem; list-style: none; counter-reset: co; }
@@ -225,19 +225,23 @@ a.co { text-decoration: none; }
 .next-case__arrow { display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: var(--radius-full); background: var(--color-surface-2); border: 1px solid var(--color-line); color: var(--color-ink); transition: background-color var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast); }
 .next-case:hover .next-case__arrow { background: var(--color-accent-solid); border-color: var(--color-accent-solid); color: var(--color-on-accent); }
 .cta-band { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 1.25rem; align-content: center; padding: clamp(1.5rem, 1.1rem + 1.5vw, 2.25rem); border-radius: var(--radius-lg); background: var(--color-surface-inverse); color: var(--color-on-inverse); box-shadow: var(--shadow-lg); }
-/* dark mode: keep the band dark (a deep teal panel) instead of flipping to the light inverse surface */
-:root:not([data-theme="light"]) .cta-band { --color-surface-inverse: #10302E; --color-on-inverse: #ECF1F4; border: 1px solid #1E4B47; }
+/* dark mode: keep the band dark (a deep lapis panel with a gold glow) instead of flipping to the light inverse surface;
+   design/scripts/check-contrast.mjs checks the band against its text */
+:root:not([data-theme="light"]) .cta-band { --color-surface-inverse: #122349; --color-on-inverse: var(--color-ink); border: 1px solid #273D6F; }
+/* by day the band is the same lapis-night island: it borrows the dark theme's gold accent and focus ring (lapis on lapis
+   ink would fall under 3:1) */
+:root[data-theme="light"] .cta-band { --color-accent-solid: #E8B458; --color-accent-solid-hover: #F0CA78; --color-on-accent: #091123; --color-focus: #E9BB61; }
 .cta-band::before { content: ""; position: absolute; inset: 0; z-index: -1; background-image: radial-gradient(circle at 2px 2px, color-mix(in srgb, var(--color-on-inverse) 14%, transparent) 1.1px, transparent 1.4px); background-size: 22px 22px; -webkit-mask-image: radial-gradient(70% 90% at 100% 0%, #000, transparent 75%); mask-image: radial-gradient(70% 90% at 100% 0%, #000, transparent 75%); }
 [dir="rtl"] .cta-band::before { -webkit-mask-image: radial-gradient(70% 90% at 0% 0%, #000, transparent 75%); mask-image: radial-gradient(70% 90% at 0% 0%, #000, transparent 75%); }
-.cta-band::after { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(24rem 16rem at 100% 0%, color-mix(in srgb, var(--color-teal-fill) 28%, transparent), transparent 70%); }
-[dir="rtl"] .cta-band::after { background: radial-gradient(24rem 16rem at 0% 0%, color-mix(in srgb, var(--color-teal-fill) 28%, transparent), transparent 70%); }
+.cta-band::after { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(24rem 16rem at 100% 0%, color-mix(in srgb, var(--color-saffron-fill) 22%, transparent), transparent 70%); }
+[dir="rtl"] .cta-band::after { background: radial-gradient(24rem 16rem at 0% 0%, color-mix(in srgb, var(--color-saffron-fill) 22%, transparent), transparent 70%); }
 .cta-band .eyebrow { color: color-mix(in srgb, var(--color-on-inverse) 64%, transparent); }
 .cta-band__title { color: var(--color-on-inverse); font-size: var(--text-xl); line-height: var(--text-xl--line-height); letter-spacing: var(--text-xl--letter-spacing); max-width: 18ch; }
 .cta-band__text { color: color-mix(in srgb, var(--color-on-inverse) 78%, transparent); font-size: var(--text-sm); line-height: 1.6; max-width: 40ch; }
 :lang(ar) .cta-band__text { line-height: 1.85; }
 .cta-band .ask-bar { max-width: none; min-height: 3.25rem; background: color-mix(in srgb, var(--color-on-inverse) 7%, var(--color-surface-inverse)); border-color: color-mix(in srgb, var(--color-on-inverse) 18%, transparent); color: color-mix(in srgb, var(--color-on-inverse) 82%, transparent); box-shadow: none; font-size: var(--text-sm); }
 .cta-band .ask-bar:hover { border-color: color-mix(in srgb, var(--color-on-inverse) 34%, transparent); }
-.cta-band .ask-bar__icon { color: var(--color-teal-fill); }
+.cta-band .ask-bar__icon { color: var(--color-saffron-fill); }
 .cta-band .ask-bar__text { white-space: normal; line-height: 1.4; }
 .cta-band__row { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; }
 .cta-band__row .btn--onInverse { background: transparent; color: var(--color-on-inverse); border-color: color-mix(in srgb, var(--color-on-inverse) 26%, transparent); }
