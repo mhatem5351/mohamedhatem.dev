@@ -85,7 +85,7 @@ Dark is every visitor's default, whatever the OS; light only when chosen. The to
 without any script (`:root:not([data-theme="light"])`), so the boot script only has to apply a stored "light":
 
 ```astro
-<meta name="theme-color" content="#0C151D" data-light="#FBF8F3" data-dark="#0C151D">
+<meta name="theme-color" content="#080E1C" data-light="#F7F6F3" data-dark="#080E1C">
 <meta name="color-scheme" content="dark">
 <script is:inline>
   (() => { const d = document.documentElement; let m; try { m = localStorage.getItem("mh-theme"); } catch {}
@@ -161,7 +161,7 @@ Classes refer to `design/prototypes/proto.css` (port them into components with T
 | `components/nav/LanguageSwitch.astro` | `.lang-switch` | `i18n.language` | none |
 | `components/nav/ThemeToggle.astro` | `.theme-toggle`, `.segmented` | `i18n.theme` | cycle + persist |
 | `components/nav/AskButton.astro` | `.nav__ask` (accent sm) | `i18n.chat.launcher` | `[data-open-chat]` |
-| `components/brand/Monogram.astro` | `.brand__mark` | `assets/brand/monogram.svg` inlined (currentColor + teal node) | none |
+| `components/brand/Monogram.astro` | `.brand__mark` | `assets/brand/monogram.svg` inlined (currentColor + gold node) | none |
 | `components/ui/Icon.astro` | `<svg class="icon"><use href="#i-…"></svg>` | sprite `assets/icons/sprite.svg` inlined once in Base | none |
 | `components/ui/Button.astro` | `.btn` + `--primary/--accent/--secondary/--ghost`, `--sm/--lg/--icon` | | none |
 | `components/ui/Chip.astro`, `Badge.astro`, `Kbd.astro`, `IconTile.astro`, `Stripe.astro`, `Card.astro` | `.chip*`, `.badge`, `.kbd`, `.icon-tile*`, `.stripe`, `.card*` | | none |

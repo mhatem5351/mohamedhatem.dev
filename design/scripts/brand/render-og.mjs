@@ -14,12 +14,16 @@
 //    same anywhere), then screenshots THAT file to PNG (social platforms need PNG/JPG).
 import fs from "node:fs";
 import path from "node:path";
-import { BRAND, SCREENS, palette, need, FONT_FILES, browser, closeBrowser, esc, write, kb, round as R } from "./lib.mjs";
+import { BRAND, SCREENS, palette, tok, need, FONT_FILES, browser, closeBrowser, esc, write, kb, round as R } from "./lib.mjs";
 import { mh, MASTER } from "./monogram-geom.mjs";
 
 const OG = path.join(BRAND, "og");
 const W = 1200, H = 630, M = 72;            // M: text margin (the safe margin is 60)
-const P = palette("dark");                  // deep-ink theme: best contrast in feeds
+const P = palette("dark");                  // lapis-night theme (the site's default): best contrast in feeds
+// Lapis & Gold: the lead accent (eyebrow, employer) is the dark theme's gold; the monogram's node is the brand gold.
+const ACCENT = tok("accent", "dark"), NODE = tok("accent-fill", "dark");
+/** a glow token "rgb(r g b / a)" as SVG stop attributes */
+const glow = (v, at = 0) => { const m = /rgb\((\d+) (\d+) (\d+) \/ ([\d.]+)\)/.exec(v); return `stop-color="rgb(${m[1]},${m[2]},${m[3]})" stop-opacity="${at ? 0 : +m[4]}"`; };
 
 // ---------------------------------------------------------------- fonts
 const FACES = [
@@ -132,9 +136,10 @@ function background({ gx, gy }) {
   const defs = `<pattern id="og-dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="1.15" fill="${P.grid}"/></pattern>` +
     `<linearGradient id="og-fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset=".45" stop-color="#fff" stop-opacity=".3"/><stop offset=".8" stop-color="#fff" stop-opacity="1"/></linearGradient>` +
     `<mask id="og-m"><rect width="${W}" height="${H}" fill="url(#og-fade)"/></mask>` +
-    `<radialGradient id="og-g1" cx="${gx}" cy="${gy}" r="430" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${P.tealF}" stop-opacity=".17"/><stop offset="1" stop-color="${P.tealF}" stop-opacity="0"/></radialGradient>` +
-    `<radialGradient id="og-g2" cx="${W - 30}" cy="10" r="400" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${P.saffronF}" stop-opacity=".10"/><stop offset="1" stop-color="${P.saffronF}" stop-opacity="0"/></radialGradient>` +
-    `<radialGradient id="og-g3" cx="30" cy="${H}" r="460" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${P.coralF}" stop-opacity=".08"/><stop offset="1" stop-color="${P.coralF}" stop-opacity="0"/></radialGradient>`;
+    // the hero's glows (tokens glow-1/2/3): lapis behind the graph, gold at the top end, turquoise at the bottom start
+    `<radialGradient id="og-g1" cx="${gx}" cy="${gy}" r="430" gradientUnits="userSpaceOnUse"><stop offset="0" ${glow(P.glow1)}/><stop offset="1" ${glow(P.glow1, 1)}/></radialGradient>` +
+    `<radialGradient id="og-g2" cx="${W - 30}" cy="10" r="400" gradientUnits="userSpaceOnUse"><stop offset="0" ${glow(P.glow2)}/><stop offset="1" ${glow(P.glow2, 1)}/></radialGradient>` +
+    `<radialGradient id="og-g3" cx="30" cy="${H}" r="460" gradientUnits="userSpaceOnUse"><stop offset="0" ${glow(P.glow3)}/><stop offset="1" ${glow(P.glow3, 1)}/></radialGradient>`;
   const body = `<rect width="${W}" height="${H}" fill="url(#og-g1)"/><rect width="${W}" height="${H}" fill="url(#og-g2)"/><rect width="${W}" height="${H}" fill="url(#og-g3)"/>` +
     `<rect width="${W}" height="${H}" fill="url(#og-dots)" mask="url(#og-m)"/>`;
   return { defs, body };
@@ -147,7 +152,7 @@ function stripe(k = 1.4) {
 function mark(h) {
   const g = mh(MASTER), k = h / (g.bounds.y1 - g.bounds.y0);
   return { w: R((g.bounds.x1 - g.bounds.x0) * k), svg: `<path d="${g.d}" transform="scale(${R(k * 1000) / 1000}) translate(${-g.bounds.x0} ${-g.bounds.y0})" fill="${P.ink}"/>` +
-    `<circle cx="${R((g.node.cx - g.bounds.x0) * k)}" cy="${R((g.node.cy - g.bounds.y0) * k)}" r="${R(g.node.r * k)}" fill="${P.tealF}"/>` };
+    `<circle cx="${R((g.node.cx - g.bounds.x0) * k)}" cy="${R((g.node.cy - g.bounds.y0) * k)}" r="${R(g.node.r * k)}" fill="${NODE}"/>` };
 }
 
 // ---------------------------------------------------------------- templates
@@ -157,13 +162,13 @@ text{font-kerning:normal;font-variant-ligatures:common-ligatures}
 .name{font:700 92px ${DISPLAY};letter-spacing:-0.035em;fill:${P.ink}}
 .role{font:500 40px ${DISPLAY};letter-spacing:-0.01em;fill:${P.ink2}}
 .focus{font:500 28px ${MONO};fill:${P.ink2}}
-.eyebrow{font:600 28px ${MONO};letter-spacing:0.08em;fill:${P.teal}}
+.eyebrow{font:600 28px ${MONO};letter-spacing:0.08em;fill:${ACCENT}}
 .title{font:600 58px ${DISPLAY};letter-spacing:-0.025em;fill:${P.ink}}
 .summary{font:400 30px ${SANS};fill:${P.ink2}}
 .meta{font:500 30px ${DISPLAY};fill:${P.ink2}}
 .period{font:500 28px ${MONO};fill:${P.muted}}
 .chip{font:500 28px ${MONO}}
-.sep-s{fill:${P.saffron}}.sep-c{fill:${P.coral}}.org{fill:${P.teal}}
+.sep-s{fill:${P.teal}}.sep-c{fill:${P.coral}}.org{fill:${ACCENT}}
 [lang="ar"] .name{font:700 84px ${AR},${DISPLAY};letter-spacing:0}
 [lang="ar"] .role{font:500 38px ${AR},${DISPLAY};letter-spacing:0}
 [lang="ar"] .focus{font:500 29px ${AR},${MONO}}

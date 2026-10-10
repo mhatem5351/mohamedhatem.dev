@@ -33,8 +33,8 @@ test.describe("language switch", () => {
 });
 
 test.describe("theme", () => {
-  const DARK_BG = "rgb(12, 21, 29)"; // --color-bg, dark (#0C151D)
-  const LIGHT_BG = "rgb(251, 248, 243)"; // --color-bg, light (#FBF8F3)
+  const DARK_BG = "rgb(8, 14, 28)"; // --color-bg, dark (#080E1C)
+  const LIGHT_BG = "rgb(247, 246, 243)"; // --color-bg, light (#F7F6F3)
   const bodyBg = (page: Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
   for (const os of ["light", "dark"] as const) {
@@ -44,7 +44,7 @@ test.describe("theme", () => {
       const html = page.locator("html");
       await expect(html).toHaveAttribute("data-theme", "dark");
       expect(await bodyBg(page)).toBe(DARK_BG);
-      await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#0C151D");
+      await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#080E1C");
       await expect(page.locator('meta[name="color-scheme"]')).toHaveAttribute("content", "dark");
       expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe("dark");
       // A later OS change doesn't override the site's default.
@@ -83,14 +83,14 @@ test.describe("theme", () => {
     await expect(html).toHaveAttribute("data-theme", "light");
     expect(await bodyBg(page)).toBe(LIGHT_BG);
     expect(await page.evaluate(() => localStorage.getItem("mh-theme"))).toBe("light");
-    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#FBF8F3");
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#F7F6F3");
     await expect(page.locator('meta[name="color-scheme"]')).toHaveAttribute("content", "light");
     await page.reload();
     await expect(html).toHaveAttribute("data-theme", "light");
     // Persists across pages and languages too, with each page's own chrome colour (the CV's band).
     await page.goto("/ar/cv/");
     await expect(html).toHaveAttribute("data-theme", "light");
-    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#F4EFE6");
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#F2F0EC");
   });
 
   test("a visitor who chose light gets light before first paint (boot script, metas)", async ({ page }) => {
@@ -108,7 +108,7 @@ test.describe("theme", () => {
       });
     });
     await page.goto("/work/arabsstock-assistant/");
-    expect(await page.evaluate(() => (window as Window & { __boot?: unknown }).__boot)).toEqual({ theme: "light", chrome: "#FBF8F3", scheme: "light" });
+    expect(await page.evaluate(() => (window as Window & { __boot?: unknown }).__boot)).toEqual({ theme: "light", chrome: "#F7F6F3", scheme: "light" });
     expect(await bodyBg(page)).toBe(LIGHT_BG);
   });
 

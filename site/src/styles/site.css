@@ -69,6 +69,8 @@ bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
 .mono-tile { fill: var(--color-surface-inverse); }
 .mono-letters { fill: var(--color-on-inverse); }
 .mono-node { fill: var(--color-accent-fill); }
+/* By day the tile is lapis ink: the node keeps the brand gold (the favicon's; the dark theme's accent fill), not lapis on lapis. */
+:root[data-theme="light"] .mono-node { fill: #E4AD4B; }
 
 /* Nav: menu button swaps its icon; the sheet's language link sits flush with the links. */
 .nav__menu .i-close, .nav__menu[aria-expanded="true"] .i-menu { display: none; }
@@ -126,8 +128,9 @@ bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
  * The launcher is dressed as Hatem's avatar once the page has loaded (src/scripts/chat-avatar.ts sets data-art="on";
  * "off" if it can't load). Until then it is hidden, so the default launcher never flashes and changes shape. The
  * panel sets its own visibility, so the chat still opens from the page's buttons in the meantime.
- * The disc (deep ink with a teal glow and rim) can be switched in ChatMount.astro (data-av-disc="teal") or here:
- * --mh-av-disc, --mh-av-rim, --mh-av-glow, --mh-av-glow-o on [data-mh-chat].
+ * The disc (lapis night with a lapis glow, set in a gold rim) can be switched in ChatMount.astro (data-av-disc="teal")
+ * or here: --mh-av-disc, --mh-av-rim, --mh-av-glow, --mh-av-glow-o on [data-mh-chat]; the comic bubble's ink and
+ * greeting colour with --mh-bubble-ink and --mh-bubble-accent.
  */
 [data-mh-chat]:not([data-art]) { visibility: hidden; }
 [data-mh-chat][data-dodge] { opacity: 0; visibility: hidden; transition: opacity var(--duration-fast) var(--ease-standard), visibility 0s linear var(--duration-fast); }

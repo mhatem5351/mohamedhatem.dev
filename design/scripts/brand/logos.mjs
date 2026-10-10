@@ -496,8 +496,10 @@ async function rasterMark(up, bg, m) {
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (soft[y * N + x] > 0.5) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
   return { png: await sharp(out, { raw: { width: N, height: N, channels: 4 } }).png().toBuffer(), bbox: { x0, y0, x1: x1 + 1, y1: y1 + 1 } };
 }
+// the tile's inner hairline: ink at 13 % on light tiles (the light theme's ink token), white at 16 % on dark ones
+const INK_RGB = palette("light").ink.match(/\w\w/g).map(v => parseInt(v, 16)).join(" ");
 function hairline(bgRGB) {
-  return lumOf(bgRGB) > 0.4 ? "rgb(20 33 43 / 0.13)" : "rgb(255 255 255 / 0.16)";
+  return lumOf(bgRGB) > 0.4 ? `rgb(${INK_RGB} / 0.13)` : "rgb(255 255 255 / 0.16)";
 }
 // compose one tile at size S (PNG buffer). layers: { bg, vectorSVG?, raster? }
 async function composeTile(S, { bgRGB, bgSvg, vector, raster, place }) {
@@ -681,9 +683,10 @@ async function sheets(manifest) {
     const svg = fs.readFileSync(path.join(LOGOS, "mono", s + ".svg"), "utf8");
     return `<div class="c"><img src="file://${path.join(SRC, s + ".jpg")}"><div class="m">${svg}</div><div class="m d">${svg}</div><span>${manifest[s].name} (${manifest[s].treatment})</span></div>`;
   }).join("");
-  const html2 = `<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#E7E0D3;font:12px system-ui;padding:12px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  const L = palette("light"), D = palette("dark");
+  const html2 = `<!doctype html><meta charset="utf-8"><style>body{margin:0;background:${L.line};font:12px system-ui;padding:12px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
     .c{display:flex;gap:8px;align-items:center;background:#fff;padding:8px;position:relative}img{width:200px;height:200px}
-    .m{width:200px;height:200px;display:flex;align-items:center;justify-content:center;background:#FBF8F3;color:#14212B}.m svg{max-width:184px;max-height:150px;width:100%;height:auto}
-    .d{background:#0C151D;color:#ECF1F4}span{position:absolute;left:8px;top:-2px;transform:translateY(-100%);font-size:11px;color:#33414C}.c{margin-top:16px}</style><body>${cells}</body>`;
+    .m{width:200px;height:200px;display:flex;align-items:center;justify-content:center;background:${L.bg};color:${L.ink}}.m svg{max-width:184px;max-height:150px;width:100%;height:auto}
+    .d{background:${D.bg};color:${D.ink}}span{position:absolute;left:8px;top:-2px;transform:translateY(-100%);font-size:11px;color:${L.ink2}}.c{margin-top:16px}</style><body>${cells}</body>`;
   await shoot(html2, path.join(SCREENS, "logos-trace-check.png"), { width: 1300, height: 230 * Math.ceil(withSrc.length / 2) + 30, scale: 1, baseURL: LOGOS });
 }

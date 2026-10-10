@@ -19,7 +19,9 @@ const TILE16 = { a1: 2, a2: 7, a3: 12, w: 2, T: 3, B: 13, ch: 2, t: 2.1, yc: 8, 
 const TILE32 = { a1: 5, a2: 15, a3: 24, w: 3, T: 7, B: 24, ch: 3, t: 2.7, yc: 15.5, node: { r: 2.85 } };
 
 const L = palette("light"), D = palette("dark");
-const INK = L.ink, PAPER = L.bg, NODE_L = L.tealF, NODE_D = D.tealF;
+// Lapis & Gold: lapis ink tile, alabaster mark, gold node. NODE_D (the bright gold, the dark theme's accent fill) sits on
+// the ink tile and on dark tabs; NODE_L (the deep gold, the light theme's saffron fill) on light tabs and pages.
+const INK = L.ink, PAPER = L.bg, NODE_L = L.saffronF, NODE_D = tok("accent-fill", "dark");
 
 const m = mh(MASTER);
 const fv = mh(FAVICON);
@@ -41,7 +43,7 @@ function scaled(p, k, dx = 0, dy = 0) {
 // ---------------------------------------------------------------- SVG builders
 const svgOpen = (vb, w, h, extra = "") => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}"${w ? ` width="${w}" height="${h}"` : ""}${extra}>`;
 
-/** monogram.svg: tight viewBox (28 x 24 units), currentColor ink, teal node via CSS var */
+/** monogram.svg: tight viewBox (28 x 24 units), currentColor ink, gold node via CSS var */
 function monogramSVG() {
   return svgOpen(`${MB.x0} ${MB.y0} ${MW} ${MH}`, MW, MH, ` role="img" aria-label="Mohamed Hatem"`) +
     `<title>Mohamed Hatem</title>` +
@@ -50,7 +52,7 @@ function monogramSVG() {
     `</svg>\n`;
 }
 
-/** tile: ink square (radius 22 %), paper mark, teal node. size = viewBox units; geometry fitted per size */
+/** tile: ink square (radius 22 %), paper mark, gold node. size = viewBox units; geometry fitted per size */
 function tileGeometry(size) {
   if (size === 16) return mh(TILE16);
   if (size === 32) return mh(TILE32);
@@ -183,8 +185,9 @@ put("site.webmanifest", JSON.stringify({
   lang: "en",
   dir: "ltr",
   display: "standalone",
-  background_color: tok("bg"),
-  theme_color: tok("bg"),
+  // dark is the default theme for every visitor (DESIGN.md 3.4): the splash and the browser chrome are lapis night
+  background_color: tok("bg", "dark"),
+  theme_color: tok("bg", "dark"),
   icons: [
     { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
     { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
@@ -224,8 +227,8 @@ const inline = (svg, cls = "") => svg.replace("<svg ", `<svg class="${cls}" `);
       <img src="${file64(out["icon-maskable-512.png"])}" width="128" height="128" style="border-radius:50%"></div></div>`;
   const html = `<!doctype html><style>
   body{margin:0;font:12px/1.4 ui-monospace,monospace}
-  .pane{padding:28px 32px;display:grid;gap:26px}.light{--ink:${L.ink};--mh-node:${L.tealF};background:${L.bg};color:${L.muted}}
-  .dark{--ink:${D.ink};--mh-node:${D.tealF};background:${D.bg};color:${D.muted}}
+  .pane{padding:28px 32px;display:grid;gap:26px}.light{--ink:${L.ink};--mh-node:${NODE_L};background:${L.bg};color:${L.muted}}
+  .dark{--ink:${D.ink};--mh-node:${NODE_D};background:${D.bg};color:${D.muted}}
   .sizes{display:flex;align-items:flex-end;gap:26px}.cell{display:grid;justify-items:center;gap:8px}
   .locks{display:flex;align-items:center;gap:56px;flex-wrap:wrap}.tiles{display:flex;align-items:center;gap:22px}
   svg{display:block}</style>${row("light")}${row("dark")}`;
@@ -290,7 +293,7 @@ const inline = (svg, cls = "") => svg.replace("<svg ", `<svg class="${cls}" `);
   const img = (name, size, style = "") => `<img src="${file64(out[name])}" width="${size}" height="${size}" style="${style}">`;
   const html = `<!doctype html><style>body{margin:0;font:12px ui-monospace,monospace;color:${L.muted}}
   .row{display:flex;gap:28px;align-items:flex-end;padding:28px 32px}.c{display:grid;gap:8px;justify-items:center}
-  .safe{position:relative}.safe::after{content:"";position:absolute;inset:10%;border-radius:50%;outline:2px dashed #E9A23B}
+  .safe{position:relative}.safe::after{content:"";position:absolute;inset:10%;border-radius:50%;outline:2px dashed ${NODE_D}}
   .dk{background:${D.bg};color:${D.muted}}</style>
   <div class="row" style="background:${L.bg}">
     <div class="c"><div class="safe">${img("icon-maskable-512.png", 200)}</div>maskable + 80 % safe zone</div>

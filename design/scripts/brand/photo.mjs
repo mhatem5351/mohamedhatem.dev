@@ -114,7 +114,7 @@ function blurF(src, w, h, r) {
 // ("clarity") on the luminance keeps the face from going flat once colour is removed.
 function duotoneStops(theme) {
   const dark = theme === "dark";
-  // light: ink #14212B -> paper #FBF8F3; dark: deep ink #0C151D -> #ECF1F4
+  // light: lapis ink #131D36 -> alabaster #F7F6F3; dark: lapis night #080E1C -> ivory #F4F0E7 (from the tokens)
   const lo = rgb2oklab(hex(dark ? tok("bg", "dark") : tok("ink", "light")));
   const hi = rgb2oklab(hex(dark ? tok("ink", "dark") : tok("bg", "light")));
   const teal = rgb2oklab(hex(dark ? tok("teal-fill", "dark") : tok("teal", "light")));
@@ -161,7 +161,7 @@ async function duotone({ data, info }, theme) {
   const LIFT = dark ? 0.03 : 0.05;  // shadows stop just short of the ink stop (beard keeps its texture)
   const KNEE = 0.72, KS = 0.42;
   // shoulder steepness chosen so the slope is continuous (=1) at the knee: SK / (1 - e^-SK) = 1 / KS
-  let SK = 1; for (let i = 0; i < 60; i++) SK = (1 - Math.exp(-SK)) / KS;     // dark only: highlights above the face roll off (backdrop never hits full #ECF1F4)
+  let SK = 1; for (let i = 0; i < 60; i++) SK = (1 - Math.exp(-SK)) / KS;     // dark only: highlights above the face roll off (backdrop never hits the full dark ink, #F4F0E7)
   const out = Buffer.alloc(data.length);
   for (let j = 0; j < n; j++) {
     let t = Math.min(1, Math.max(0, (Ls[j] - black) / (white - black))) ** GAMMA;

@@ -14,81 +14,88 @@ import { fileURLToPath } from "node:url";
 const DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 // ---------------------------------------------------------------------------------------------
-// 1. Colour. "Nile & Saffron": warm paper + ink, teal primary, saffron + coral accents,
-//    sky / sage / slate as category colours. Same family as github.com/mhatem5351.
-//    Every *text* colour below is checked against every surface it may sit on (check-contrast.mjs).
+// 1. Colour. "Lapis & Gold": Pharaonic jewellery, engineered. By night (the default theme) lapis-night surfaces,
+//    warm ivory ink and one gold accent; by day alabaster paper, lapis ink and lapis links (gold cannot carry a
+//    light-mode button or link at AA, so the lead accent flips to lapis; gold stays for details). The category
+//    colours are the jewellery's quiet partners: faience turquoise (teal), gold (saffron), carnelian (coral),
+//    lapis (sky), amethyst (sage) and slate. Token names are kept from the first palette, so `teal` is turquoise and
+//    `sage` is amethyst (no longer green: availability dots and "success" read turquoise).
+//    Authored in OKLCH (lapis-night hue 266, gold 80-88, turquoise 192-195, carnelian 35, amethyst 318) and rounded
+//    to sRGB hex. Every *text* colour below is checked against every surface it may sit on, every -fill against the
+//    page as a graphic (3:1), and the six category fills are kept apart under deuteranopia and protanopia
+//    (check-contrast.mjs).
 // ---------------------------------------------------------------------------------------------
 export const COLOR = {
   //                      light        dark
-  "bg":                ["#FBF8F3", "#0C151D"], // page (paper / deep ink)
-  "bg-subtle":         ["#F4EFE6", "#0F1A23"], // alternate section band
-  "surface":           ["#FFFEFB", "#111D27"], // cards, panels, chat
-  "surface-2":         ["#F6F1E8", "#162430"], // insets inside cards, code, neutral chips
-  "surface-inverse":   ["#14212B", "#ECF1F4"], // primary button, user chat bubble, tooltips
-  "line":              ["#E7E0D3", "#213140"], // hairlines, card borders (decorative)
-  "line-strong":       ["#D6CCBA", "#2C3E4D"], // hover borders, dividers that must be seen
-  "line-input":        ["#8E8676", "#5E7384"], // form-control boundaries (>= 3:1, WCAG 1.4.11)
-  "ink":               ["#14212B", "#ECF1F4"], // primary text
-  "ink-2":             ["#33414C", "#C9D3DA"], // secondary text, body copy on cards
-  "muted":             ["#5A6670", "#97A5B1"], // meta text, captions, placeholders (>= 4.5:1)
-  "subtle":            ["#727C85", "#7D8D9A"], // decorative / disabled only. Not for body text in light.
-  "on-inverse":        ["#FBF8F3", "#0C151D"], // text on surface-inverse
+  "bg":                ["#F7F6F3", "#080E1C"], // page (alabaster / lapis night)
+  "bg-subtle":         ["#F2F0EC", "#0B1222"], // alternate section band
+  "surface":           ["#FEFDFC", "#0F1728"], // cards, panels, chat
+  "surface-2":         ["#F1EFEA", "#161E31"], // insets inside cards, code, neutral chips
+  "surface-inverse":   ["#131D36", "#F4F0E7"], // primary button, user chat bubble, tooltips
+  "line":              ["#E2DFDA", "#242C40"], // hairlines, card borders (decorative)
+  "line-strong":       ["#CFCCC5", "#363F54"], // hover borders, dividers that must be seen
+  "line-input":        ["#7B808D", "#6B748A"], // form-control boundaries (>= 3:1, WCAG 1.4.11)
+  "ink":               ["#131D36", "#F4F0E7"], // primary text (lapis ink / warm ivory)
+  "ink-2":             ["#323D55", "#CBD1DC"], // secondary text, body copy on cards
+  "muted":             ["#5B6375", "#A1A9BC"], // meta text, captions, placeholders (>= 4.5:1)
+  "subtle":            ["#7A808E", "#7E8698"], // decorative / disabled only. Not for body text in light.
+  "on-inverse":        ["#F7F6F3", "#080E1C"], // text on surface-inverse
 
-  // primary accent (teal)
-  "accent":            ["#0A766C", "#3DD6C3"], // links, icons, active states (text-safe)
-  "accent-strong":     ["#075E56", "#6FE3D4"], // hover / pressed text-accent
-  "accent-solid":      ["#0A766C", "#3DD6C3"], // accent button background
-  "accent-solid-hover":["#086A61", "#5FDECD"],
-  "on-accent":         ["#FFFFFF", "#06201D"], // text on accent-solid
-  "accent-fill":       ["#16A394", "#2CC2B0"], // decorative strokes, graph orchestrator, stripe
-  "accent-tint":       ["#E3F1EE", "#10302E"], // chip / badge background
-  "accent-tint-line":  ["#B9DFD8", "#1E4B47"],
+  // lead accent: lapis by day, gold by night
+  "accent":            ["#2B51AA", "#E9BB61"], // links, icons, active states (text-safe)
+  "accent-strong":     ["#1C3A8B", "#F3D68F"], // hover / pressed text-accent
+  "accent-solid":      ["#2348A1", "#E8B458"], // accent button background
+  "accent-solid-hover":["#1A3788", "#F0CA78"],
+  "on-accent":         ["#FFFFFF", "#091123"], // text on accent-solid
+  "accent-fill":       ["#3E6DC8", "#E4AD4B"], // decorative strokes, monogram node, portrait ring, progress
+  "accent-tint":       ["#E7F0FE", "#2F2005"], // chip / badge background
+  "accent-tint-line":  ["#BCD3FE", "#4E370C"],
 
-  // category colours: <name> = text-safe, -fill = decorative stroke/fill, -tint = chip bg, -tint-line = chip border
-  "teal":              ["#0A766C", "#3DD6C3"],
-  "teal-fill":         ["#16A394", "#2CC2B0"],
-  "teal-tint":         ["#E3F1EE", "#10302E"],
-  "teal-tint-line":    ["#B9DFD8", "#1E4B47"],
-  "saffron":           ["#9C5800", "#F4B95A"],
-  "saffron-fill":      ["#E9A23B", "#EFAE48"],
-  "saffron-tint":      ["#FAEFDC", "#2E2614"],
-  "saffron-tint-line": ["#F0D3A4", "#4D3C1A"],
-  "on-saffron":        ["#14212B", "#14212B"], // numerals on saffron-fill discs (diagram callouts, flow steps)
-  "coral":             ["#B3421C", "#FF916E"],
-  "coral-fill":        ["#E4683F", "#F57A54"],
-  "coral-tint":        ["#FAE7DF", "#33201A"],
-  "coral-tint-line":   ["#F0BFA9", "#563226"],
-  "sky":               ["#2B65A6", "#7DB6F0"],
-  "sky-fill":          ["#4A8FD6", "#5EA2E6"],
-  "sky-tint":          ["#E4EDF7", "#15283A"],
-  "sky-tint-line":     ["#B7CDE8", "#23405C"],
-  "sage":              ["#55702A", "#B2CC72"],
-  "sage-fill":         ["#89A447", "#9DB95A"],
-  "sage-tint":         ["#ECF1DF", "#1F2A17"],
-  "sage-tint-line":    ["#CBD8A9", "#344524"],
-  "slate":             ["#4A6072", "#AFC3D3"],
-  "slate-fill":        ["#7F99AE", "#8AA5BB"],
-  "slate-tint":        ["#E8EDF1", "#1C2A35"],
-  "slate-tint-line":   ["#C3CFD9", "#2D4050"],
+  // category colours: <name> = text-safe, -fill = stroke/fill (>= 3:1 on the page), -tint = chip bg, -tint-line = chip border
+  "teal":              ["#136868", "#82D9D5"], // faience turquoise: agents, orchestration, current role
+  "teal-fill":         ["#038586", "#5AC0BC"],
+  "teal-tint":         ["#E0F4F4", "#0B2827"],
+  "teal-tint-line":    ["#B3DCDC", "#184442"],
+  "saffron":           ["#885716", "#E9BB61"], // gold: retrieval, data; honours
+  "saffron-fill":      ["#B47D19", "#E8B458"],
+  "saffron-tint":      ["#FAEDDB", "#2E2006"],
+  "saffron-tint-line": ["#E8CEAA", "#4D3810"],
+  "on-saffron":        ["#091123", "#091123"], // numerals on saffron-fill discs (diagram callouts, flow steps)
+  "coral":             ["#A03B22", "#F3957B"], // carnelian: generation, LLM output; errors
+  "coral-fill":        ["#B84D30", "#DA6C50"],
+  "coral-tint":        ["#FFEAE4", "#371911"],
+  "coral-tint-line":   ["#FAC4B5", "#5C2C20"],
+  "sky":               ["#2B51AA", "#9EBEF8"], // lapis: evaluation, observability
+  "sky-fill":          ["#2855AD", "#6591E1"],
+  "sky-tint":          ["#E7F0FE", "#162339"],
+  "sky-tint-line":     ["#BCD4FE", "#293B5E"],
+  "sage":              ["#794589", "#E5C3EF"], // amethyst: guard, safety; bilingual; teaching
+  "sage-fill":         ["#A66BB9", "#DFBCEB"],
+  "sage-tint":         ["#F7EAFC", "#281F2B"],
+  "sage-tint-line":    ["#E3C7EC", "#443649"],
+  "slate":             ["#515B6C", "#B3BFCE"], // slate: serving, infra, tools/MCP, storage
+  "slate-fill":        ["#515B6C", "#7C8795"],
+  "slate-tint":        ["#EDEFF4", "#202327"],
+  "slate-tint-line":   ["#CED3DC", "#373C42"],
 
   // status (aliases of the category colours, kept separate so they can diverge later)
-  "success":           ["#0A766C", "#3DD6C3"],
-  "warning":           ["#9C5800", "#F4B95A"],
-  "danger":            ["#B3421C", "#FF916E"],
-  "danger-tint":       ["#FAE7DF", "#33201A"],
-  "info":              ["#2B65A6", "#7DB6F0"],
+  "success":           ["#136868", "#82D9D5"],
+  "warning":           ["#885716", "#E9BB61"],
+  "danger":            ["#A03B22", "#F3957B"],
+  "danger-tint":       ["#FFEAE4", "#371911"],
+  "info":              ["#2B51AA", "#9EBEF8"],
 
   // utility
-  "focus":             ["#0A766C", "#3DD6C3"], // focus ring (2px solid + 2px offset)
-  "focus-halo":        ["rgb(10 118 108 / 0.22)", "rgb(61 214 195 / 0.28)"],
-  "selection":         ["#CDEAE4", "#1E4B47"],
-  "scrim":             ["rgb(12 21 29 / 0.46)", "rgb(2 6 10 / 0.66)"],
-  "graph-edge":        ["#D3C8B5", "#2B3C4A"], // hero graph + diagrams: idle edges
-  "graph-grid":        ["#DDD3C2", "#1F2E3A"], // dot grid
-  "graph-node":        ["#FFFEFB", "#0F1A23"], // node fill
-  "glow-1":            ["rgb(22 163 148 / 0.13)", "rgb(44 194 176 / 0.16)"],
-  "glow-2":            ["rgb(233 162 59 / 0.12)", "rgb(239 174 72 / 0.10)"],
-  "glow-3":            ["rgb(228 104 63 / 0.06)", "rgb(245 122 84 / 0.07)"],
+  "focus":             ["#2B51AA", "#E9BB61"], // focus ring (2px solid + 2px offset)
+  "focus-halo":        ["rgb(62 109 200 / 0.22)", "rgb(228 173 75 / 0.3)"],
+  "selection":         ["#F0DEB3", "#274172"], // pale gold by day, lapis by night
+  "scrim":             ["rgb(19 29 54 / 0.46)", "rgb(2 4 8 / 0.68)"],
+  "graph-edge":        ["#CECAC2", "#384258"], // hero graph + diagrams: idle edges
+  "graph-grid":        ["#DAD7D0", "#222A3C"], // dot grid
+  "graph-node":        ["#FEFDFC", "#0B1222"], // node fill
+  "glow-1":            ["rgb(62 109 200 / 0.1)", "rgb(58 108 206 / 0.22)"],   // lapis (behind the hero graph)
+  "glow-2":            ["rgb(232 180 88 / 0.14)", "rgb(233 187 97 / 0.09)"],  // gold
+  "glow-3":            ["rgb(90 192 188 / 0.06)", "rgb(90 192 188 / 0.06)"],  // turquoise
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -175,12 +182,12 @@ export const SCALAR = {
 // shadows are colour-dependent, so themed
 export const SHADOW = {
   //            light                                                                                         dark
-  "shadow-xs": ["0 1px 1px rgb(20 33 43 / 0.04)",                                                           "0 1px 1px rgb(0 0 0 / 0.30)"],
-  "shadow-sm": ["0 1px 2px rgb(20 33 43 / 0.05), 0 1px 3px rgb(20 33 43 / 0.04)",                          "0 1px 2px rgb(0 0 0 / 0.40), 0 1px 3px rgb(0 0 0 / 0.24)"],
-  "shadow-md": ["0 6px 16px -4px rgb(20 33 43 / 0.08), 0 2px 4px -2px rgb(20 33 43 / 0.05)",               "0 8px 20px -6px rgb(0 0 0 / 0.55), 0 2px 6px -2px rgb(0 0 0 / 0.35)"],
-  "shadow-lg": ["0 18px 40px -12px rgb(20 33 43 / 0.14), 0 6px 12px -6px rgb(20 33 43 / 0.06)",           "0 22px 48px -14px rgb(0 0 0 / 0.70), 0 6px 14px -6px rgb(0 0 0 / 0.40)"],
-  "shadow-xl": ["0 32px 72px -18px rgb(20 33 43 / 0.24), 0 12px 24px -12px rgb(20 33 43 / 0.10)",          "0 36px 80px -18px rgb(0 0 0 / 0.80), 0 12px 28px -10px rgb(0 0 0 / 0.50)"],
-  "inset-highlight": ["inset 0 1px 0 rgb(255 255 255 / 0.70)",                                              "inset 0 1px 0 rgb(255 255 255 / 0.045)"],
+  "shadow-xs": ["0 1px 1px rgb(19 29 54 / 0.04)",                                                           "0 1px 1px rgb(0 0 0 / 0.30)"],
+  "shadow-sm": ["0 1px 2px rgb(19 29 54 / 0.05), 0 1px 3px rgb(19 29 54 / 0.04)",                          "0 1px 2px rgb(0 0 0 / 0.40), 0 1px 3px rgb(0 0 0 / 0.24)"],
+  "shadow-md": ["0 6px 16px -4px rgb(19 29 54 / 0.08), 0 2px 4px -2px rgb(19 29 54 / 0.05)",               "0 8px 20px -6px rgb(0 0 0 / 0.55), 0 2px 6px -2px rgb(0 0 0 / 0.35)"],
+  "shadow-lg": ["0 18px 40px -12px rgb(19 29 54 / 0.14), 0 6px 12px -6px rgb(19 29 54 / 0.06)",           "0 22px 48px -14px rgb(0 0 0 / 0.70), 0 6px 14px -6px rgb(0 0 0 / 0.40)"],
+  "shadow-xl": ["0 32px 72px -18px rgb(19 29 54 / 0.24), 0 12px 24px -12px rgb(19 29 54 / 0.10)",          "0 36px 80px -18px rgb(0 0 0 / 0.80), 0 12px 28px -10px rgb(0 0 0 / 0.50)"],
+  "inset-highlight": ["inset 0 1px 0 rgb(255 255 255 / 0.70)",                                              "inset 0 1px 0 rgb(255 255 255 / 0.05)"],
 };
 
 export const BREAKPOINT = { sm: "40rem", md: "48rem", lg: "64rem", xl: "80rem", "2xl": "96rem", "3xl": "120rem" };

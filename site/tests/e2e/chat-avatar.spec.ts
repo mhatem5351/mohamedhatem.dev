@@ -53,9 +53,9 @@ test.describe("avatar launcher", () => {
       await expect(btn).toHaveAttribute("aria-haspopup", "dialog");
       await expect(btn).toHaveAccessibleDescription(new RegExp(`${esc(m.chat.avatar.hi)}\\s+${esc(m.chat.avatar.text)}`));
       await expect(btn.locator("svg.mh-av")).toHaveCount(1);
-      // The default disc: deep ink with the teal rim.
-      expect(await btn.locator(".av-disc").evaluate((c) => getComputedStyle(c).fill)).toBe("rgb(20, 33, 43)");
-      expect(await btn.locator(".av-rim").evaluate((c) => getComputedStyle(c).stroke)).toBe("rgb(44, 194, 176)");
+      // The default disc: lapis night in the gold rim.
+      expect(await btn.locator(".av-disc").evaluate((c) => getComputedStyle(c).fill)).toBe("rgb(19, 29, 54)");
+      expect(await btn.locator(".av-rim").evaluate((c) => getComputedStyle(c).stroke)).toBe("rgb(228, 173, 75)");
     }
   });
 

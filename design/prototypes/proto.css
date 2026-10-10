@@ -513,8 +513,11 @@ button { cursor: pointer; background: none; border: 0; padding: 0; }
 :lang(ar) .facts dt { font-family: var(--font-arabic); font-size: var(--text-xs); letter-spacing: 0; }
 .facts dd { margin: 0; font-size: var(--text-sm); color: var(--color-ink); font-weight: 500; line-height: 1.45; }
 .facts .wide { grid-column: 1 / -1; }
-select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235A6670' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-position: right .75rem center; background-size: 1rem; background-repeat: no-repeat; padding-inline-end: 2.5rem; }
+select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B6375' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-position: right .75rem center; background-size: 1rem; background-repeat: no-repeat; padding-inline-end: 2.5rem; }
 [dir="rtl"] select.input { background-position: left .75rem center; }
+/* the chevron is --color-muted (a data URI can't read tokens): the dark theme's value */
+:root[data-theme="dark"] select.input { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A1A9BC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) select.input { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A1A9BC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); } }
 
 /* ---------- 15. Frontend showcase ---------- */
 .show { display: grid; gap: clamp(2rem, 1rem + 3vw, 4rem); align-items: center; }
@@ -529,7 +532,7 @@ select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csv
 .browser__dots { display: flex; gap: .375rem; } .browser__dots i { width: .5625rem; height: .5625rem; border-radius: 50%; background: var(--color-line-strong); }
 .browser__url { flex: 1; max-width: 18rem; margin-inline: auto; height: 1.375rem; border-radius: var(--radius-xs); background: var(--color-surface); border: 1px solid var(--color-line); font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); display: grid; place-items: center; direction: ltr; }
 .browser img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; }
-.phone { position: absolute; inset-inline-end: 0; inset-block-end: 0; width: 30%; max-width: 12rem; border-radius: 1.75rem; padding: .375rem; background: #0E171F; border: 1px solid color-mix(in srgb, var(--color-line-strong) 60%, #0E171F); box-shadow: var(--shadow-xl); }
+.phone { position: absolute; inset-inline-end: 0; inset-block-end: 0; width: 30%; max-width: 12rem; border-radius: 1.75rem; padding: .375rem; background: #0A0F1A; border: 1px solid color-mix(in srgb, var(--color-line-strong) 60%, #0A0F1A); box-shadow: var(--shadow-xl); }
 .phone img { border-radius: 1.4rem; width: 100%; aspect-ratio: 390 / 844; object-fit: cover; object-position: top; }
 
 /* ---------- 16. Skills matrix ("skills with receipts") ---------- */
@@ -627,7 +630,7 @@ textarea.input { min-height: 8.5rem; resize: vertical; }
 [data-note] { position: relative; }
 .show-notes [data-note]::after {
   content: attr(data-note); position: absolute; inset-block-start: -.625rem; inset-inline-start: -.375rem; z-index: 150; max-width: 26rem;
-  padding: .25rem .5rem; border-radius: 4px; background: #E9A23B; color: #14212B; font: 600 11px/1.35 var(--font-mono); letter-spacing: 0; text-transform: none; white-space: normal;
+  padding: .25rem .5rem; border-radius: 4px; background: var(--color-saffron-fill); color: var(--color-on-saffron); font: 600 11px/1.35 var(--font-mono); letter-spacing: 0; text-transform: none; white-space: normal;
   box-shadow: 0 2px 6px rgb(0 0 0 / .18); pointer-events: none; text-align: start; direction: ltr;
 }
-.show-notes [data-note] { outline: 1px dashed #E9A23B; outline-offset: 4px; }
+.show-notes [data-note] { outline: 1px dashed var(--color-saffron-fill); outline-offset: 4px; }
