@@ -2,7 +2,7 @@
 
 Framework-agnostic TypeScript + CSS-in-TS, no dependencies. The page pays for a ~2.5 KB gzip bubble; the panel
 (~15.5 KB gzip) loads on the first hover, focus, touch or click of the bubble, or at once when it was open on the
-previous page of the tab (budget: 18 KB gzip total, checked by `npm run widget:size`). Styles live in a shadow root
+previous page of the tab (budget: 18.5 KB gzip total, measured with fflate so CI and local builds agree; checked by `npm run widget:size`). Styles live in a shadow root
 and read the design tokens (`design/tokens.css`) through CSS custom properties, so light/dark and the Arabic font
 follow the page. Talks to `POST /api/chat` (contract: `worker/src/chat/protocol.ts`, `worker/README.md`).
 

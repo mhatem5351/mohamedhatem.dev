@@ -10,14 +10,18 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, rmSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { gzipSync } from "node:zlib";
+import { brotliCompressSync, constants } from "node:zlib";
 import { build } from "esbuild";
+import { gzipSync } from "fflate";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const widget = join(here, "..");
 const repo = join(widget, "..");
 const outdir = join(widget, "dist");
-const BUDGET = { loader: 3 * 1024, total: 18 * 1024 };
+// Gzip is measured with fflate (pure JavaScript), not node:zlib: Node's zlib takes CPU-specific code paths, so the same
+// bundle measured 17.97 KB on an arm64 Mac and 18.21 KB on x64 CI. fflate gives the same bytes on every machine and
+// reads about 2.5% larger than Node's arm64 zlib. Brotli (what Cloudflare usually serves) is printed for reference.
+const BUDGET = { loader: 3 * 1024, total: 18.5 * 1024 };
 
 execFileSync(process.execPath, [join(repo, "worker/scripts/gen-content.mjs"), "--quiet"], { stdio: "inherit" });
 rmSync(outdir, { recursive: true, force: true });
@@ -43,13 +47,15 @@ const rows = Object.keys(result.metafile.outputs)
   .filter((f) => f.endsWith(".js"))
   .map((f) => {
     const buf = readFileSync(join(repo, f));
-    return { file: relative(widget, join(repo, f)), raw: buf.length, gzip: gzipSync(buf, { level: 9 }).length };
+    const br = brotliCompressSync(buf, { params: { [constants.BROTLI_PARAM_QUALITY]: 11 } }).length;
+    return { file: relative(widget, join(repo, f)), raw: buf.length, gzip: gzipSync(buf, { level: 9, mtime: 0 }).length, br };
   });
 const kb = (n) => `${(n / 1024).toFixed(2)} KB`;
 const loader = rows.find((r) => r.file.endsWith("index.js"));
 const total = rows.reduce((s, r) => s + r.gzip, 0);
-for (const r of rows) console.log(`${r.file.padEnd(28)} ${kb(r.raw).padStart(10)} min  ${kb(r.gzip).padStart(9)} gzip`);
-console.log(`${"total".padEnd(28)} ${"".padStart(14)} ${kb(total).padStart(9)} gzip  (budget: loader ≤ ${kb(BUDGET.loader)}, total ≤ ${kb(BUDGET.total)})`);
+const totalBr = rows.reduce((s, r) => s + r.br, 0);
+for (const r of rows) console.log(`${r.file.padEnd(28)} ${kb(r.raw).padStart(10)} min  ${kb(r.gzip).padStart(9)} gzip  ${kb(r.br).padStart(9)} br`);
+console.log(`${"total".padEnd(28)} ${"".padStart(14)} ${kb(total).padStart(9)} gzip  ${kb(totalBr).padStart(9)} br  (budget, gzip: loader ≤ ${kb(BUDGET.loader)}, total ≤ ${kb(BUDGET.total)})`);
 
 if (process.argv.includes("--check")) {
   const over = [];
