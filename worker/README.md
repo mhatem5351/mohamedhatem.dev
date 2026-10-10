@@ -289,6 +289,11 @@ visitor, without billing.
   then Flash-Lite); a Flash-Lite hedge runs at `thinkingLevel: "minimal"` (first token ~1 s instead of 2-4 s at
   "low"), except for job-description turns, which keep "low" for accuracy. The first to produce content wins and the
   other request is aborted.
+- **Early stop:** Gemini sometimes ends a stream after a few words with an unexpected finish reason (`OTHER`, or none
+  at all; seen live on `gemini-2.5-flash`: 21 tokens, mid-sentence, reported as a normal stop before this rule). The
+  answer is then asked again once from the next model, if at least 10 s of the answer budget are left, and its text
+  replaces the cut one (`event: replace`). Otherwise `done` says `finish: "length"`, which the widget shows as "the
+  answer was cut short". Trace: `gemini-2.5-flash:finish-other`.
 - **Observability:** the model that answered is in the `done` event, in Analytics Engine (`blob4`; `double11` = 1
   when a fallback answered; `blob9` = the content-free upstream trace) and, for failovers, in a content-free log line
   such as `chat ok gemini-3.8-flash:quota429>gemini-3.7-flash:busy503>gemini-3.6-flash:ok first=2210ms total=3105ms`.

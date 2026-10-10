@@ -553,6 +553,54 @@ describe("streamAnswer: SSE assembly with a mocked Gemini", () => {
     expect(sink.events.at(-1)!.data.finish).toBe("length");
   });
 
+  describe("early stop (an unexpected finish reason mid-answer)", () => {
+    /** What the widget ends up showing: tokens appended, `replace` starting over. */
+    const shown = (sink: ReturnType<typeof memorySink>) =>
+      sink.events.reduce((acc, e) => (e.event === "replace" ? e.data.t : e.event === "token" ? acc + e.data.t : acc), "");
+
+    it("asks the next model once and replaces the cut text", async () => {
+      const sink = memorySink();
+      const fetcher = async (url: string) =>
+        modelOf(url) === "primary"
+          ? geminiSse([textChunk("At Wakeb Data, Hatem built a bilingual (Arabic/English"), finalChunk("OTHER")])
+          : geminiSse([textChunk("He built a bilingual assistant with answer-quality monitoring."), finalChunk()]);
+      const r = await streamAnswer("SYS", contents, deps(fetcher, { timeouts: { first: 2000, idle: 500, total: 20_000, ping: 50 } }), sink, new AbortController().signal);
+      expect(r.outcome).toBe("ok");
+      expect(r.model).toBe("fallback");
+      expect(r.trace).toContain("primary:finish-other");
+      expect(sink.names()).toContain("replace");
+      expect(shown(sink)).toBe("He built a bilingual assistant with answer-quality monitoring.");
+      expect(sink.events.at(-1)!.data.finish).toBe("stop");
+    });
+
+    it("reports the answer as cut when no other model is left", async () => {
+      const sink = memorySink();
+      // The stream just ends: no final chunk, no finish reason.
+      const fetcher = async () => geminiSse([textChunk("At Wakeb Data, Hatem built a bilingual (Arabic/English")]);
+      const r = await streamAnswer("SYS", contents, deps(fetcher, { fallbacks: [], timeouts: { first: 2000, idle: 500, total: 20_000, ping: 50 } }), sink, new AbortController().signal);
+      expect(r.outcome).toBe("ok");
+      expect(r.trace).toContain("primary:finish-none");
+      expect(sink.text()).toBe("At Wakeb Data, Hatem built a bilingual (Arabic/English");
+      expect(sink.events.at(-1)!.data.finish).toBe("length");
+    });
+
+    it("retries only once, and not without the time for it", async () => {
+      const calls: string[] = [];
+      const fetcher = async (url: string) => {
+        calls.push(modelOf(url));
+        return geminiSse([textChunk("Cut"), finalChunk("OTHER")]);
+      };
+      const sink = memorySink();
+      await streamAnswer("SYS", contents, deps(fetcher, { fallbacks: ["fallback", "third"], timeouts: { first: 2000, idle: 500, total: 20_000, ping: 50 } }), sink, new AbortController().signal);
+      expect(calls).toEqual(["primary", "fallback"]);
+      expect(sink.events.at(-1)!.data.finish).toBe("length");
+      // 5 s answer budget: below RETRY_MIN_MS, so no second model at all.
+      calls.length = 0;
+      await streamAnswer("SYS", contents, deps(fetcher), memorySink(), new AbortController().signal);
+      expect(calls).toEqual(["primary"]);
+    });
+  });
+
   it("an answer that is only a directive is 'empty', not a silent done", async () => {
     const fetcher = async () => geminiSse([textChunk('<ui>{"contact":"general"}</ui>'), finalChunk()]);
     expect((await streamAnswer("SYS", contents, deps(fetcher), memorySink(), new AbortController().signal)).outcome).toBe("empty");

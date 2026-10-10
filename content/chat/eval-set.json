@@ -2481,6 +2481,42 @@
         ],
         "behaviour": "The starter chip (audit #25 rated it 'strong fit' while listing fine-tuning as a gap). Gives the fit structure; the fine-tuning gap is stated plainly; no technique is credited where the knowledge base doesn't (LLM-as-judge, AIP). Ideally says it is judged against a typical role and invites pasting the job description."
       }
+    },
+    {
+      "id": "fact-gov-001",
+      "category": "fact",
+      "language": "en",
+      "turns": [
+        {
+          "role": "user",
+          "content": "In one sentence, what did Hatem build for the Saudi government client at Wakeb?"
+        }
+      ],
+      "expect": {
+        "mustInclude": [
+          [
+            "bilingual",
+            "Arabic"
+          ],
+          [
+            "evaluation",
+            "observability",
+            "monitoring"
+          ]
+        ],
+        "mustNotInclude": [
+          "multi-agent",
+          "multi agent",
+          "LangGraph",
+          "Qwen",
+          "vLLM",
+          "self-hosted"
+        ],
+        "facts": [
+          "A bilingual (Arabic/English) enterprise assistant with LLM evaluation and observability monitoring; client unnamed"
+        ],
+        "behaviour": "Doesn't merge it with the separate 6-agent Wakeb chatbot or invent its architecture or models."
+      }
     }
   ]
 }

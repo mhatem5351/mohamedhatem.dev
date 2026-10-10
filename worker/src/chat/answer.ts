@@ -80,6 +80,8 @@ export interface AnswerDeps {
  * spent still reaches a model that has quota; the chain length bounds those.
  */
 export const MAX_ATTEMPTS = 4;
+/** Time an answer needs left for a retry after an early stop to be worth starting. */
+export const RETRY_MIN_MS = 10_000;
 
 export interface Timeouts {
   /** Request start → first content, all models included. */
@@ -164,10 +166,13 @@ export async function streamAnswer(
   const t = { ...DEFAULT_TIMEOUTS, ...deps.timeouts };
   const t0 = Date.now();
   const names = deps.confidential ?? CONFIDENTIAL;
-  const guard = new OutputGuard(CANARIES, promptFingerprints(), names);
-  const directive = new DirectiveExtractor();
-  const links = new LinkFilter(LINK_CHECK);
-  const phones = new PhoneFilter(PHONE_FORMATS);
+  // Fresh per model attempt: a retry after an early stop starts the pipeline again from an empty answer.
+  let guard = new OutputGuard(CANARIES, promptFingerprints(), names);
+  let directive = new DirectiveExtractor();
+  let links = new LinkFilter(LINK_CHECK);
+  let phones = new PhoneFilter(PHONE_FORMATS);
+  /** The next text replaces what the widget already shows (a retry after an early stop). */
+  let replacing = false;
   const usage: Usage = { input: 0, output: 0, thoughts: 0, cached: 0 };
   const sentTools: ToolName[] = [];
   const trace: string[] = [];
@@ -199,7 +204,10 @@ export async function streamAnswer(
   const emit = (text: string) => {
     if (!text) return;
     if (firstMs === null) firstMs = Date.now() - t0;
-    sink.send("token", { t: text });
+    if (replacing) {
+      replacing = false;
+      sink.send("replace", { t: text });
+    } else sink.send("token", { t: text });
   };
   const show = (visible: string) => {
     if (!visible) return;
@@ -246,42 +254,61 @@ export async function streamAnswer(
       trace.push("all-cooling");
       return fail("upstream_busy", cooling.length ? Math.max(1, Math.ceil((Math.min(...cooling) - Date.now()) / 1000)) : 60);
     }
-    const won = await pickModel(
-      chain,
-      (m, hedge) => buildBody(systemFor(m), inputs.get(m) ?? contents, m, { fast: hedge && !deps.jd }),
-      { ...deps, cooldowns },
-      run.signal,
-      t0 + t.first,
-      trace,
-    );
-    model = won.model;
-
+    const bodyFor = (m: string, hedge: boolean) => buildBody(systemFor(m), inputs.get(m) ?? contents, m, { fast: hedge && !deps.jd });
+    const deadline = t0 + t.total;
     let finishReason: string | undefined;
     let blockReason: string | undefined;
-    let last: Usage | undefined;
-    const handle = (c: Chunk) => {
-      // model text → UI directive cut out → links checked → phone number canonical → output guard → browser
-      if (c.text) show(phones.push(links.push(directive.push(c.text))));
-      if (c.finishReason) finishReason = c.finishReason;
-      if (c.blockReason) blockReason = c.blockReason;
-      if (c.usage) last = c.usage;
-    };
-    if (won.first) handle(won.first);
-    const deadline = t0 + t.total;
-    for (;;) {
-      const next = await withTimeout(won.rest.next(), Math.min(t.idle, deadline - Date.now()), won.ctrl);
-      if (next.done) break;
-      handle(next.value);
-    }
-    if (last) Object.assign(usage, last);
-    if (signal.aborted) return result("aborted");
+    let cut = false;
+    // Gemini sometimes ends a stream after a few words with an unexpected finish reason ("OTHER", or none at all; seen
+    // live: 21 tokens, mid-sentence). Such an answer is asked again once, from the next model, and its text replaces
+    // the cut one in the widget (`replace`); without a model or the time for that, it is reported as cut ("length",
+    // which the widget shows as "the answer was cut short").
+    for (let pool = chain, firstBy = t0 + t.first, retried = false; ; ) {
+      const won = await pickModel(pool, bodyFor, { ...deps, cooldowns }, run.signal, firstBy, trace);
+      model = won.model;
+      finishReason = undefined;
+      blockReason = undefined;
+      let last: Usage | undefined;
+      const handle = (c: Chunk) => {
+        // model text → UI directive cut out → links checked → phone number canonical → output guard → browser
+        if (c.text) show(phones.push(links.push(directive.push(c.text))));
+        if (c.finishReason) finishReason = c.finishReason;
+        if (c.blockReason) blockReason = c.blockReason;
+        if (c.usage) last = c.usage;
+      };
+      if (won.first) handle(won.first);
+      for (;;) {
+        const next = await withTimeout(won.rest.next(), Math.min(t.idle, deadline - Date.now()), won.ctrl);
+        if (next.done) break;
+        handle(next.value);
+      }
+      if (last) Object.assign(usage, last);
+      if (signal.aborted) return result("aborted");
 
-    show(phones.push(links.push(directive.flush())));
-    show(phones.push(links.flush()));
-    show(phones.flush());
-    const tail = guard.flush();
-    if (!tail.ok) throw new Blocked(tail.reason);
-    emit(tail.emit);
+      show(phones.push(links.push(directive.flush())));
+      show(phones.push(links.flush()));
+      show(phones.flush());
+      const tail = guard.flush();
+      if (!tail.ok) throw new Blocked(tail.reason);
+      emit(tail.emit);
+
+      const expected = finishReason === "STOP" || finishReason === "MAX_TOKENS" || SAFETY_REASONS.has(finishReason ?? "") || Boolean(blockReason);
+      if (expected) break;
+      trace.push(`${model}:finish-${(finishReason ?? "none").toLowerCase()}`);
+      const rest = pool.filter((m) => m !== model);
+      if (retried || !rest.length || deadline - Date.now() < RETRY_MIN_MS) {
+        cut = guard.answer.trim().length > 0;
+        break;
+      }
+      retried = true;
+      replacing = guard.started;
+      guard = new OutputGuard(CANARIES, promptFingerprints(), names);
+      directive = new DirectiveExtractor();
+      links = new LinkFilter(LINK_CHECK);
+      phones = new PhoneFilter(PHONE_FORMATS);
+      pool = rest;
+      firstBy = Math.min(deadline, Date.now() + t.first);
+    }
 
     const visible = guard.answer.trim();
     if (blockReason || (SAFETY_REASONS.has(finishReason ?? "") && !visible)) return fail("safety");
@@ -300,7 +327,7 @@ export async function streamAnswer(
       tool(ev);
     }
     if (SAFETY_REASONS.has(finishReason ?? "")) return fail("safety");
-    return done(finishReason === "MAX_TOKENS" ? "length" : "stop");
+    return done(cut || finishReason === "MAX_TOKENS" ? "length" : "stop");
   } catch (e) {
     if (signal.aborted) return result("aborted");
     if (e instanceof Blocked) return e.message === "confidential" ? redact() : fail("blocked");

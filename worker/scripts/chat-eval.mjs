@@ -36,7 +36,7 @@
  */
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClient, EVAL_MODEL, percentile } from "./lib/chat-client.mjs";
 
@@ -48,7 +48,7 @@ const arg = (name, fallback) => {
 const flag = (name) => process.argv.includes(`--${name}`);
 
 const base = arg("base", "http://127.0.0.1:8790");
-const outFile = join(root, arg("out", "worker/eval/results.json"));
+const outFile = resolve(root, arg("out", "worker/eval/results.json")); // absolute --out paths stay absolute
 // Judges: the two Gemma 4 models in turn (14,400 requests a day, a different model family from the one answering),
 // with short retrieval-based prompts for their 16k input tokens/min; Flash-Lite only as a last resort. Never the
 // premium Flash models (their 20 requests a day belong to visitors).
