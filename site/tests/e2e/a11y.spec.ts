@@ -43,6 +43,9 @@ test.describe("axe: zero WCAG 2.2 AA violations", () => {
       await page.goto("/", { waitUntil: "networkidle" });
       await page.locator("[data-menu-button]").click();
       await expect(page.locator("[data-menu-sheet]")).toBeVisible();
+      // The sheet fades in (240 ms): measure contrast on its final colours, not mid-transition.
+      await expect.poll(() => page.locator("[data-menu-sheet]").evaluate((el) => el.getAnimations({ subtree: true }).filter((a) => a.playState === "running").length)).toBe(0);
+      await page.waitForTimeout(100);
       expect(await axe(page)).toEqual([]);
     });
 });

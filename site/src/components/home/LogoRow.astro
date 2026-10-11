@@ -1,10 +1,12 @@
 ---
 /**
- * "Shipped at" row (DESIGN.md 12.7): each company's official logo in its real colours (design/assets/logos/brand,
+ * "Worked at" row (DESIGN.md 12.7): each company's official logo in its real colours (design/assets/logos/brand,
  * built by design/scripts/brand/brand-logos.mjs; sources in design/assets/logos/SOURCES.md), optically balanced
  * (equal visual area, so a long wordmark sits lower than a stacked lockup). One file per theme: the dark page uses the
  * company's official reversed artwork, or a light rendition of only the parts that would vanish, so every logo holds
- * 3:1 against the page. The file for the other theme is display:none and, being lazy, never downloads.
+ * 3:1 against the page. Both files load with the page (eager: six small files), so switching the theme swaps them in
+ * the same frame instead of blanking the row for a round trip (audit M-03); the light set, hidden by default, at low
+ * priority.
  * The logos carry the company name as alt text; MDP is known by its symbol and initials, so its name is real text
  * and the symbol is decorative. Static, not links.
  */
@@ -36,7 +38,7 @@ const ROW = Object.entries(brand.logos as Record<string, Entry>);
       ROW.map(([key, e]) => {
         const alt = e.symbolOnly ? "" : e.name;
         const same = e.files.light.file === e.files.dark.file;
-        const img = (f: File, cls: string) => (
+        const img = (f: File, cls: string, low = false) => (
           <Image
             src={src(f.file)}
             alt={alt}
@@ -45,7 +47,8 @@ const ROW = Object.entries(brand.logos as Record<string, Entry>);
             densities={f.file.endsWith(".png") ? [1, 2, 3] : undefined}
             quality={f.file.endsWith(".png") ? 70 : 92}
             class={cls}
-            loading="lazy"
+            loading="eager"
+            fetchpriority={low ? "low" : undefined}
             decoding="async"
           />
         );
@@ -53,7 +56,7 @@ const ROW = Object.entries(brand.logos as Record<string, Entry>);
           <li class={`brand-logo brand-logo--${key}`} lang="en">
             {same ? img(e.files.light, "brand-logo__img") : (
               <>
-                {img(e.files.light, "brand-logo__img brand-logo__light")}
+                {img(e.files.light, "brand-logo__img brand-logo__light", true)}
                 {img(e.files.dark, "brand-logo__img brand-logo__dark")}
               </>
             )}

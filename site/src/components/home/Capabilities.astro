@@ -1,15 +1,15 @@
 ---
 /**
- * 01 What I build (DESIGN.md 12.9): a bento of six capability cards. The feature card carries the multi-agent
- * chatbot diagram (decorative thumbnail on a dot-grid inset, moving while on screen, with its pause button); "Front end, too" links to the logic-controls.com case
- * study (the front-end showcase lives there).
+ * 02 What I build (DESIGN.md 12.9): a bento of five capability cards. The feature card carries the multi-agent
+ * chatbot diagram (decorative thumbnail on a dot-grid inset, moving while on screen, with its pause button); the four
+ * others sit two beside it and two under it (components.css 11). The front end is part of "Arabic and English" (the
+ * right-to-left interface) and of the logic-controls.com case study in Selected work.
  */
 import Icon from "~/components/ui/Icon.astro";
 import MotionToggle from "~/components/ui/MotionToggle.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
 import { diagramSvg } from "~/lib/diagrams";
-import { localePath, messages, type Locale } from "~/lib/i18n";
-import { PATHS } from "~/lib/site";
+import { messages, type Locale } from "~/lib/i18n";
 
 interface Props {
   locale: Locale;
@@ -34,8 +34,9 @@ const featureArt = diagramSvg("wakeb-multi-agent-chatbot", "thumb", { decorative
 ---
 <section class="section" id="what" aria-labelledby="what-title">
   <div class="container">
-    <SectionHeader index="01" eyebrow={c.eyebrow} title={c.title} titleId="what-title" lede={c.lead} />
-    <div class="bento">
+    <SectionHeader index="02" eyebrow={c.eyebrow} title={c.title} titleId="what-title" lede={c.lead} />
+    {/* Phones: one swipeable row (components.css 21i), a keyboard-focusable, labelled region only while it scrolls (site.ts). */}
+    <div class="bento" tabindex="0" role="region" aria-label={c.eyebrow} data-scroll-region>
       <article class="card card--pad bento__feature" data-reveal>
         <div class="cap">
           <span class="icon-tile"><Icon name="agents" /></span>
@@ -76,22 +77,6 @@ const featureArt = diagramSvg("wakeb-multi-agent-chatbot", "thumb", { decorative
           );
         })
       }
-      <a class="card card--pad card--link cap cap--link" href={localePath(PATHS.work("logic-controls-website"), locale)} data-reveal data-reveal-i="5">
-        <span class="icon-tile icon-tile--coral"><Icon name="frontend" /></span>
-        <h3 class="cap__title">{c.frontend.title}</h3>
-        <p class="cap__body">{c.frontend.body}</p>
-        {
-          (() => {
-            const s = stack(c.frontend.stack);
-            return (
-              <p class="cap__stack" dir={locale === "ar" && s.ltr ? "ltr" : undefined}>
-                <b>{s.first}</b>
-                {s.rest}
-              </p>
-            );
-          })()
-        }
-      </a>
     </div>
   </div>
 </section>
@@ -100,9 +85,5 @@ const featureArt = diagramSvg("wakeb-multi-agent-chatbot", "thumb", { decorative
   /* Arabic stack lines set LTR still align to the card's start (the right edge). */
   :global([dir="rtl"]) .cap__stack[dir="ltr"] {
     text-align: end;
-  }
-  .cap--link:focus-visible {
-    outline-offset: 3px;
-    border-radius: var(--radius-lg);
   }
 </style>

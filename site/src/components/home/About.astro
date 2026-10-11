@@ -23,9 +23,11 @@ const b = profile.basics;
 // The overlay's own <style> and comment are dropped (hash-only style-src; colours come from home-b.css tokens).
 const orbit = orbitRaw.replace(/<!--[\s\S]*?-->/g, "").replace(/<style>[\s\S]*?<\/style>/g, "").trim();
 const [timeBefore, timeAfter] = m.hero.localTime.split("{time}") as [string, string];
+// Open to one role or the other ("… or …"), as the profile's decision reads.
 const roles = joinList(
   b.openTo.roles.map((r) => r[locale]),
   locale,
+  "disjunction",
 );
 ---
 <section class="section section--band" id="about" aria-labelledby="about-title">

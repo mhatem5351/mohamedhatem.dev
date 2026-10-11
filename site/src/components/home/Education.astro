@@ -5,11 +5,12 @@
  * AWS certification reads "Earned 2022", never "active" (content/README.md).
  */
 import "~/styles/home-b.css";
+import BidiText from "~/components/ui/BidiText.astro";
 import Icon from "~/components/ui/Icon.astro";
 import LogoTile from "~/components/ui/LogoTile.astro";
 import Ltr from "~/components/ui/Ltr.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
-import { format, formatMonth, formatYears, joinList, messages, parseIso, type Locale } from "~/lib/i18n";
+import { dirOf, format, formatMonth, formatYears, joinList, messages, parseIso, type Locale } from "~/lib/i18n";
 import { profile } from "~/lib/site";
 import type { Education } from "@content/profile.ts";
 
@@ -73,10 +74,10 @@ const issuedText = (issued: string | null) => (issued ? format(m.education.earne
               <LogoTile file={c.logo?.file ?? null} monogram={c.logo?.monogram ?? "AWS"} size={44} class="edu__logo" />
               <div>
                 <div class="edu__title">
-                  <bdi>{c.name[locale]}</bdi>
+                  <bdi dir={dirOf(locale)}><BidiText text={c.name[locale]} locale={locale} /></bdi>
                 </div>
                 <div class="edu__sub">
-                  <bdi>{c.issuer[locale]}</bdi>
+                  <bdi dir={dirOf(locale)}><BidiText text={c.issuer[locale]} locale={locale} /></bdi>
                   {c.issued && (
                     <>
                       {" · "}
@@ -101,10 +102,10 @@ const issuedText = (issued: string | null) => (issued ? format(m.education.earne
                 )}
                 <div>
                   <div class="edu__title">
-                    <bdi>{c.name[locale]}</bdi>
+                    <bdi dir={dirOf(locale)}><BidiText text={c.name[locale]} locale={locale} /></bdi>
                   </div>
                   <div class="edu__sub">
-                    <bdi>{c.issuer[locale]}</bdi>
+                    <bdi dir={dirOf(locale)}><BidiText text={c.issuer[locale]} locale={locale} /></bdi>
                   </div>
                 </div>
                 <div class="edu__when">{c.issued ? formatMonth(c.issued, locale) : ""}</div>
@@ -124,7 +125,7 @@ const issuedText = (issued: string | null) => (issued ? format(m.education.earne
                 <div>
                   <div class="edu__title">{h.title[locale]}</div>
                   <div class="edu__sub">
-                    <bdi>{h.issuer[locale]}</bdi>
+                    <bdi dir={dirOf(locale)}><BidiText text={h.issuer[locale]} locale={locale} /></bdi>
                   </div>
                   <p class="edu__notes">{h.description[locale]}</p>
                 </div>

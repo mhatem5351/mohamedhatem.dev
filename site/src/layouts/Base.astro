@@ -83,7 +83,8 @@ const dir = dirOf(locale);
     <Footer locale={locale} path={path} alternatePath={alternatePath} variant={variant} />
     {variant === "full" && <ActionDock locale={locale} />}
     <p id="live" class="sr-only" aria-live="polite"></p>
-    <ChatMount locale={locale} />
+    {/* The 404 offers the assistant in its own actions: no launcher in its corner, no greeting (audit L-05, HM-12). */}
+    <ChatMount locale={locale} greet={variant !== "minimal"} launcher={variant !== "minimal"} />
     <script>
       import "~/scripts/site";
     </script>

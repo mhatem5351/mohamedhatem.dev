@@ -23,7 +23,8 @@ const path = (d: string) => (rtl ? d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?
     <path class="nf-edge" d={path("M134 82 Q210 52 286 82")}></path>
     <path class="nf-edge" d={path("M323 112 Q350 170 323 228")}></path>
     <path class="nf-edge" d={path("M97 112 Q70 170 97 228")}></path>
-    <path class="nf-broken" d={path("M327 266 Q340 300 364 314")}></path>
+    {/* The broken edge leaves "evaluate" from its side, above its label, so it never crosses the word (audit D-08). */}
+    <path class="nf-broken" d={path("M331 255 Q362 270 370 307")}></path>
     <circle class="nf-hub-ring" cx="210" cy="170" r="44"></circle>
     <circle class="nf-node nf-node--teal" cx="210" cy="170" r="34"></circle>
     <g class="nf-glyph" transform="translate(198 158)">

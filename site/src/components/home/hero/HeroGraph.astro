@@ -17,7 +17,8 @@ const { locale } = Astro.props;
 const m = messages(locale);
 ---
 <div class="hero__art">
-  <Fragment set:html={renderHeroGraph({ lang: locale, dir: dirOf(locale) })} />
+  {/* The Arabic page names the nodes in Arabic (m.hero.graph; audit HM-37); English keeps the mono ids. */}
+  <Fragment set:html={renderHeroGraph({ lang: locale, dir: dirOf(locale), labels: locale === "ar" ? m.hero.graph : undefined })} />
   <p class="hero__caption"><span class="dot dot--live" aria-hidden="true"></span>{m.hero.graphCaption}</p>
 </div>
 <script>

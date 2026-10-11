@@ -238,6 +238,13 @@ function staticVars() {
 }
 const arabicVars = Object.entries(ARABIC).map(([k, v]) => `  --${k}: ${v};`).join("\n");
 const darkBlock = themeVars(1);
+// Paper is light: a page printed from the dark theme takes the light values, or its ivory ink lands on white paper.
+const printBlock = `@media print {
+  :root:not([data-theme="light"]) {
+    color-scheme: light;
+${themeVars(0).replace(/^/gm, "  ")}
+  }
+}`;
 
 const css = `${HEADER}
 /* ---- static tokens (always) + the light theme values (in effect only with html[data-theme="light"], the visitor's choice) ---- */
@@ -252,6 +259,9 @@ ${themeVars(0)}
   color-scheme: dark;
 ${darkBlock}
 }
+
+/* ---- print: always the light values (paper is light, whatever the screen theme) ---- */
+${printBlock}
 
 /* ---- Arabic / RTL: fonts, line-heights, size compensation, no tracking ---- */
 :root:lang(ar), [lang="ar"] {
@@ -282,6 +292,7 @@ ${themeVars(0)}
   color-scheme: dark;
 ${darkBlock}
 }
+${printBlock}
 :root:lang(ar), [lang="ar"] {
 ${arabicVars}
 }

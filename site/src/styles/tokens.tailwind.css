@@ -238,6 +238,78 @@
   --shadow-xl: 0 36px 80px -18px rgb(0 0 0 / 0.80), 0 12px 28px -10px rgb(0 0 0 / 0.50);
   --inset-highlight: inset 0 1px 0 rgb(255 255 255 / 0.05);
 }
+@media print {
+  :root:not([data-theme="light"]) {
+    color-scheme: light;
+    --color-bg: #F7F6F3;
+    --color-bg-subtle: #F2F0EC;
+    --color-surface: #FEFDFC;
+    --color-surface-2: #F1EFEA;
+    --color-surface-inverse: #131D36;
+    --color-line: #E2DFDA;
+    --color-line-strong: #CFCCC5;
+    --color-line-input: #7B808D;
+    --color-ink: #131D36;
+    --color-ink-2: #323D55;
+    --color-muted: #525A6C;
+    --color-subtle: #7A808E;
+    --color-on-inverse: #F7F6F3;
+    --color-accent: #2B51AA;
+    --color-accent-strong: #1C3A8B;
+    --color-accent-solid: #2348A1;
+    --color-accent-solid-hover: #1A3788;
+    --color-on-accent: #FFFFFF;
+    --color-accent-fill: #3E6DC8;
+    --color-accent-tint: #E7F0FE;
+    --color-accent-tint-line: #BCD3FE;
+    --color-teal: #0C6464;
+    --color-teal-fill: #038586;
+    --color-teal-tint: #E0F4F4;
+    --color-teal-tint-line: #B3DCDC;
+    --color-saffron: #885716;
+    --color-saffron-fill: #B47D19;
+    --color-saffron-tint: #FAEDDB;
+    --color-saffron-tint-line: #E8CEAA;
+    --color-on-saffron: #091123;
+    --color-coral: #9D381F;
+    --color-coral-fill: #B84D30;
+    --color-coral-tint: #FFEAE4;
+    --color-coral-tint-line: #FAC4B5;
+    --color-sky: #2B51AA;
+    --color-sky-fill: #2855AD;
+    --color-sky-tint: #E7F0FE;
+    --color-sky-tint-line: #BCD4FE;
+    --color-sage: #784488;
+    --color-sage-fill: #A66BB9;
+    --color-sage-tint: #F7EAFC;
+    --color-sage-tint-line: #E3C7EC;
+    --color-slate: #505A6B;
+    --color-slate-fill: #515B6C;
+    --color-slate-tint: #EDEFF4;
+    --color-slate-tint-line: #CED3DC;
+    --color-success: #0C6464;
+    --color-warning: #885716;
+    --color-danger: #9D381F;
+    --color-danger-tint: #FFEAE4;
+    --color-info: #2B51AA;
+    --color-focus: #2B51AA;
+    --color-focus-halo: rgb(62 109 200 / 0.22);
+    --color-selection: #F0DEB3;
+    --color-scrim: rgb(19 29 54 / 0.46);
+    --color-graph-edge: #CECAC2;
+    --color-graph-grid: #DAD7D0;
+    --color-graph-node: #FEFDFC;
+    --color-glow-1: rgb(62 109 200 / 0.1);
+    --color-glow-2: rgb(232 180 88 / 0.14);
+    --color-glow-3: rgb(90 192 188 / 0.06);
+    --shadow-xs: 0 1px 1px rgb(19 29 54 / 0.04);
+    --shadow-sm: 0 1px 2px rgb(19 29 54 / 0.05), 0 1px 3px rgb(19 29 54 / 0.04);
+    --shadow-md: 0 6px 16px -4px rgb(19 29 54 / 0.08), 0 2px 4px -2px rgb(19 29 54 / 0.05);
+    --shadow-lg: 0 18px 40px -12px rgb(19 29 54 / 0.14), 0 6px 12px -6px rgb(19 29 54 / 0.06);
+    --shadow-xl: 0 32px 72px -18px rgb(19 29 54 / 0.24), 0 12px 24px -12px rgb(19 29 54 / 0.10);
+    --inset-highlight: inset 0 1px 0 rgb(255 255 255 / 0.70);
+  }
+}
 :root:lang(ar), [lang="ar"] {
   --font-sans: "IBM Plex Sans Arabic", "Inter Variable", "Inter", "IBM Plex Sans Arabic Fallback", "Geeza Pro", Tahoma, sans-serif;
   --font-display: "IBM Plex Sans Arabic", "Space Grotesk Variable", "Space Grotesk", "IBM Plex Sans Arabic Fallback", "Geeza Pro", Tahoma, sans-serif;

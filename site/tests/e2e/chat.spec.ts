@@ -92,11 +92,18 @@ test.describe("Ask my AI", () => {
 
   test("the page tells the panel where its sticky header ends (--mh-chat-top)", async ({ page }) => {
     await page.goto("/");
-    const { top, header } = await page.evaluate(() => ({
-      top: getComputedStyle(document.documentElement).getPropertyValue("--mh-chat-top").trim(),
-      header: Math.round(document.querySelector("[data-nav]")!.getBoundingClientRect().height),
-    }));
-    expect(top).toBe(`${header + 12}px`);
+    // The value is a calc() over the header's height (components.css; site.ts writes it only for a taller header):
+    // resolve it as a length.
+    const { top, header } = await page.evaluate(() => {
+      const probe = document.createElement("div");
+      probe.style.position = "absolute";
+      probe.style.height = "var(--mh-chat-top)";
+      document.body.append(probe);
+      const top = probe.getBoundingClientRect().height;
+      probe.remove();
+      return { top, header: Math.round(document.querySelector("[data-nav]")!.getBoundingClientRect().height) };
+    });
+    expect(top).toBe(header + 12);
   });
 
   test("the bubble never covers the contact form's Send button @desktop-only", async ({ page }) => {

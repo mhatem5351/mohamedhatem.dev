@@ -2,7 +2,9 @@
 /**
  * 03 Experience as a trace view (DESIGN.md 12.12, HANDOFF.md 6.2): every role (newest first) and the two study
  * lanes as spans on one timeline from 2020 to the build year, with a dashed "now" line. Rows are <details>, so they
- * work without JS; the script adds a single-open accordion and ArrowUp/ArrowDown/Home/End between rows.
+ * work without JS (the current role open); the script opens the two roles before it too on desktop (Wakeb Data,
+ * ArabsStock: the agent work a reader looks for, audit HM-30), makes the rows a single-open accordion for the
+ * visitor's own clicks, and adds ArrowUp/ArrowDown/Home/End between rows.
  * Bar positions come from src/lib/trace.ts as month "digit classes" that src/styles/home-a.css turns into
  * percentages (no style="": the CSP is hash-only).
  * Motion (src/scripts/motion.ts, components.css 20a): the bars grow in row by row the first time the trace is on
@@ -106,7 +108,11 @@ function view(row: TraceRow): { title: string; org: string; dates: string; durat
             const v = view(row);
             const g = row.geometry;
             return (
-              <details class={`span span--${row.id} accent-${row.accent} ${row.classes}`} open={row.role?.period.end === null ? true : undefined}>
+              <details
+                class={`span span--${row.id} accent-${row.accent} ${row.classes}`}
+                open={row.role?.period.end === null ? true : undefined}
+                data-open-wide={row.id === "wakeb" || row.id === "arabsstock" ? "" : undefined}
+              >
                 <summary>
                   {/* One heading per role (h3 under the section's h2), so heading navigation lists the career. */}
                   <h3 class="span__who">
@@ -275,10 +281,13 @@ function view(row: TraceRow): { title: string; org: string; dates: string; durat
   for (const trace of document.querySelectorAll<HTMLElement>("[data-trace]")) {
     const rows = [...trace.querySelectorAll<HTMLDetailsElement>("details.span")];
     const sums = rows.map((r) => r.querySelector("summary")!);
-    // Single-open accordion: opening a span closes the others.
-    for (const r of rows)
-      r.addEventListener("toggle", () => {
-        if (r.open) for (const o of rows) if (o !== r) o.open = false;
+    // Desktop: the roles marked data-open-wide open with the current one.
+    if (matchMedia("(min-width: 64rem)").matches) for (const r of rows) if (r.hasAttribute("data-open-wide")) r.open = true;
+    // Single-open accordion for the visitor's own opening (a click, or Enter / Space on a row): the others close. Rows
+    // opened by default stay open until then.
+    for (const [i, r] of rows.entries())
+      sums[i]!.addEventListener("click", () => {
+        if (!r.open) for (const o of rows) if (o !== r) o.open = false;
       });
     // Arrow keys move between rows (one row = one stop in the list), Home/End jump to the ends.
     trace.addEventListener("keydown", (e) => {

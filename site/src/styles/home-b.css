@@ -41,6 +41,8 @@
   .toolbox__title { font-size: var(--text-lg); line-height: var(--text-lg--line-height); letter-spacing: var(--text-lg--letter-spacing); }
   .toolbox__grid { display: grid; gap: var(--grid-gap); grid-template-columns: minmax(0, 1fr); }
   @media (min-width: 48rem) { .toolbox__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  /* Tablets: an odd last group takes the row instead of sitting beside a hole (audit H-19). */
+  @media (min-width: 48rem) and (max-width: 63.99rem) { .toolbox__grid > :last-child:nth-child(odd) { grid-column: 1 / -1; } }
   @media (min-width: 64rem) { .toolbox__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   .toolbox__group { display: grid; gap: .625rem; align-content: start; padding: 1.125rem 1.25rem 1.25rem; border-radius: var(--radius-lg); border: 1px solid var(--color-line); background: var(--color-surface); box-shadow: var(--shadow-xs), var(--inset-highlight); }
   .toolbox__group h4 { font-size: var(--text-base); line-height: 1.35; display: flex; align-items: center; gap: .5rem; }
@@ -74,7 +76,9 @@
   .about__portrait { position: relative; width: min(13rem, 52vw); aspect-ratio: 1; }
   .about__portrait img { position: absolute; inset: 15%; width: 70%; height: 70%; border-radius: 50%; object-fit: cover; background: var(--color-surface-2); }
   .about__portrait svg { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--color-line-strong); }
-  .about__bio { display: grid; gap: 1.25rem; max-width: var(--container-prose); color: var(--color-ink-2); }
+  /* The reading measure is the paragraphs'; the "Open to" card fills the column, level with the cards above (audit H-13). */
+  .about__bio { display: grid; gap: 1.25rem; color: var(--color-ink-2); }
+  .about__bio > p { max-width: var(--container-prose); }
   .about__bio p:first-child { font-size: var(--text-md); line-height: var(--text-md--line-height); color: var(--color-ink); }
   .about__bio .about__line { padding-block-start: 1.25rem; border-block-start: 1px solid var(--color-line); font-size: var(--text-sm); color: var(--color-muted); }
   .facts dd ul { list-style: none; display: grid; gap: .25rem; }

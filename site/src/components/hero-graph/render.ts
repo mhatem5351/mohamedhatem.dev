@@ -13,6 +13,8 @@ import {
 export interface RenderOptions {
   dir?: Dir;
   lang?: Lang;
+  /** Visible node labels in the page's language (the Arabic page: m.hero.graph); the rest keep their Latin ids. */
+  labels?: Partial<Record<NodeId, string>>;
   /** id prefix, only needed if two graphs share a page */
   id?: string;
 }
@@ -51,15 +53,16 @@ const MIRROR: Partial<Record<NodeId, true>> = { rerank: true, generate: true };
    copy lives in the <use>'s own shadow tree, so a node's text is its label once and still matches its accessible name
    (WCAG 2.5.3). A label with a phone placement (LABEL_PHONE) gets that second position too; a container query shows
    one of the two (the other is display: none). */
-function label(id: Id, dir: Dir, r: number, pfx: string): string {
-  const t = esc(LABEL[id]), side = sideOf(id, dir), g = r + 10;
+function label(id: Id, dir: Dir, r: number, pfx: string, text: string = LABEL[id]): string {
+  const t = esc(text), side = sideOf(id, dir), g = r + 10;
+  const tcls = text === LABEL[id] ? "hg-lbl" : "hg-lbl hg-lbl--loc";
   const [x, y, at] =
     side === "n" ? [0, -g, 'text-anchor="middle"'] :
     side === "s" ? [0, g, 'dy=".8em" text-anchor="middle"'] :
     side === "e" ? [g, 0, 'dy=".34em" text-anchor="start"'] :
     [-g, 0, 'dy=".34em" text-anchor="end"'];
   const at2 = (cls: string, x: number, y: number, a: string, lid: string): string =>
-    `<g class="${cls}" transform="translate(${x} ${y})"><g class="hg-off"><text class="hg-lbl" id="${lid}" ${a}>${t}</text></g>` +
+    `<g class="${cls}" transform="translate(${x} ${y})"><g class="hg-off"><text class="${tcls}" id="${lid}" ${a}>${t}</text></g>` +
     `<use class="hg-lbl-on hg-on" href="#${lid}" aria-hidden="true"/></g>`;
   const lid = `${pfx}-l-${id}`;
   const ph = LABEL_PHONE[id];
@@ -75,10 +78,11 @@ function glyph(id: NodeId, dir: Dir, scale: number): string {
   return `<g class="hg-glyph" transform="translate(${m ? h : -h} ${-h}) scale(${m ? -scale : scale} ${scale})">${GLYPH[id]}</g>`;
 }
 
-function node(id: NodeId, dir: Dir, lang: Lang, pfx: string): string {
+function node(id: NodeId, dir: Dir, lang: Lang, pfx: string, labels: RenderOptions["labels"] = {}): string {
   const p = pos(id, dir), r = PLACE[id].r, c = COPY[lang].nodes[id];
-  // WCAG 2.5.3: the accessible name starts with the visible (Latin) label, in both locales
-  const name = lang === "ar" ? `${LABEL[id]}، ${c.title}` : LABEL[id];
+  const text = labels[id] ?? LABEL[id];
+  // WCAG 2.5.3: the accessible name starts with the visible label (a Latin id on the Arabic page adds the title)
+  const name = lang === "ar" && text === LABEL[id] ? `${LABEL[id]}، ${c.title}` : text;
   const o = id === "orchestrator";
   let inner =
     `<circle class="hg-hit" r="${r + 12}"/>` +
@@ -86,15 +90,15 @@ function node(id: NodeId, dir: Dir, lang: Lang, pfx: string): string {
     `<circle class="hg-ripple" r="${r}"/>` +
     `<circle class="hg-focus" r="${r + 6}"/>`;
   if (o) {
-    const cw = Math.round(LABEL[id].length * 7.8 + 18), cy = R_SPIN + 9;
+    const cw = Math.round(text.length * 7.8 + 18), cy = R_SPIN + 9;
     inner +=
       `<circle class="hg-spin" r="${R_SPIN}" pathLength="288"/>` +
       `<circle class="hg-disc hg-off" r="${r}"/><circle class="hg-disc hg-on" r="${r}"/><circle class="hg-ring2" r="${r - 6}"/>` +
       glyph(id, dir, 1.25) +
       `<g transform="translate(0 ${cy})"><g class="hg-chip"><rect x="${-cw / 2}" y="0" width="${cw}" height="22" rx="6"/>` +
-      `<text x="0" y="15.5" text-anchor="middle">${esc(LABEL[id])}</text></g></g>`;
+      `<text x="0" y="15.5" text-anchor="middle"${text === LABEL[id] ? "" : ' class="hg-lbl--loc"'}>${esc(text)}</text></g></g>`;
   } else {
-    inner += `<circle class="hg-disc hg-off" r="${r}"/><circle class="hg-disc hg-on" r="${r}"/>` + glyph(id, dir, 0.88) + label(id, dir, r, pfx);
+    inner += `<circle class="hg-disc hg-off" r="${r}"/><circle class="hg-disc hg-on" r="${r}"/>` + glyph(id, dir, 0.88) + label(id, dir, r, pfx, text);
   }
   return (
     `<g class="hg-node hg-c-${CAT[id]}" data-id="${id}" data-title="${esc(c.title)}" data-label="${esc(LABEL[id])}" ` +
@@ -154,7 +158,7 @@ export function renderHeroGraphSVG(o: SvgOptions = {}): string {
     }
   }
   // DOM order = reading / keyboard order (guard, orchestrator, retrieve, ...); the orchestrator keeps its own layer
-  const sats = (ids: NodeId[]): string => ids.map(id => node(id, dir, lang, pfx)).join("");
+  const sats = (ids: NodeId[]): string => ids.map(id => node(id, dir, lang, pfx, o.labels)).join("");
   // node descriptions (aria-describedby targets) live outside the buttons so they never count as their visible text
   const descs = ORDER.map(id => `<text id="${pfx}-d-${id}">${esc(copy.nodes[id].text)}</text>`).join("");
 
@@ -169,7 +173,7 @@ export function renderHeroGraphSVG(o: SvgOptions = {}): string {
     `<g class="hg-comet hg-c-teal" aria-hidden="true">${grads}${tail}` +
     `<g class="hg-hd"><circle class="hg-head-h" r="8"/><circle class="hg-head" r="3.4"/></g></g>` +
     `<g class="hg-sl"><g aria-hidden="true">${port("query", dir, pfx)}${port("answer", dir, pfx)}</g>${sats(["guard"])}</g>` +
-    `<g class="hg-ol">${node("orchestrator", dir, lang, pfx)}</g>` +
+    `<g class="hg-ol">${node("orchestrator", dir, lang, pfx, o.labels)}</g>` +
     `<g class="hg-sl">${sats(ORDER.slice(2))}</g>` +
     `</svg>`
   );

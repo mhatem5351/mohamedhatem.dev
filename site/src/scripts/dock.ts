@@ -32,14 +32,14 @@ if (dock) {
 
   let shown: boolean | undefined;
   const update = () => {
-    dock.hidden = !phone.matches;
+    if (dock.hidden === phone.matches) dock.hidden = !phone.matches;
     const show = phone.matches && pastStart && endsInView.size === 0 && !menu && !chat && !field && !launcherAway && !dialogOpen();
     if (show === shown) return;
     shown = show;
     dock.toggleAttribute("data-away", !show);
     document.dispatchEvent(new Event("mh:dock"));
   };
-  dock.toggleAttribute("data-away", true);
+  if (!dock.hasAttribute("data-away")) dock.toggleAttribute("data-away", true);
 
   // Past the start: the hero's (or the case study's) own buttons are above the viewport (not merely below it, e.g. at
   // first paint on a short phone); measured on scroll, because a jump from the top straight past them (a menu link)
@@ -53,7 +53,8 @@ if (dock) {
     }
   };
   addEventListener("scroll", () => void (frame ||= requestAnimationFrame(check)), { passive: true });
-  check();
+  // The first check runs with the first frame, not while the page's scripts start (no forced reflow: audit PERF-01).
+  frame = requestAnimationFrame(check);
   if ("IntersectionObserver" in window) {
     const io = new IntersectionObserver((entries) => {
       for (const e of entries) e.isIntersecting ? endsInView.add(e.target) : endsInView.delete(e.target);

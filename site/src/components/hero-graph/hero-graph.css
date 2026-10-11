@@ -82,6 +82,8 @@
 .hg-chip { transform: scale(var(--hg-ls)) }
 .hg-chip rect { fill: var(--hg-tint); stroke: var(--hg-tl) }
 .hg-chip text { font: 600 13px/1 var(--font-mono, ui-monospace, monospace); letter-spacing: 0; fill: var(--hg-t) }
+/* Labels in the page's language (the Arabic page): the Arabic face, a step larger, as the 404 graph sets them. */
+.hg-lbl.hg-lbl--loc, .hg-chip text.hg-lbl--loc { font: 600 14px/1 var(--font-arabic, var(--font-sans, sans-serif)) }
 .hg-term { fill: var(--hg-node); stroke: var(--color-line-input, #7B808D); stroke-width: 1.5 }
 .hg-term.hg-on { fill: var(--hg-tint); stroke: var(--hg-f) }
 .hg-port .hg-gd { fill: var(--hg-mut) }

@@ -46,9 +46,10 @@ const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, loc
   <CvSheet locale={locale} />
   <p class="cv-after">
     <span>{updated}{fileInfo && <> · <Ltr>{fileInfo}</Ltr></>}</span>
-    {/* Touch screens open the PDF from the toolbar; this saves the file instead (cv.css shows it on touch only). */}
-    <a class="cv-after__save" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf">{m.cv.savePdf}</a>
+    {/* Touch screens open the PDF from the toolbar; this saves the file instead (cv.css shows it on touch only). The
+        chat launcher steps aside while it would sit on either link (data-chat-avoid, site.ts; audit L-05). */}
+    <a class="cv-after__save" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf" data-chat-avoid>{m.cv.savePdf}</a>
     {/* The other language's PDF opens in the viewer on touch screens (site.ts drops `download` there). */}
-    <a href={CV_PDF[other]} download={profile.cv.fileName[other]} hreflang={other} type="application/pdf" data-open-on-touch>{m.cv.otherLanguagePdf}</a>
+    <a href={CV_PDF[other]} download={profile.cv.fileName[other]} hreflang={other} type="application/pdf" data-open-on-touch data-chat-avoid>{m.cv.otherLanguagePdf}</a>
   </p>
 </Document>

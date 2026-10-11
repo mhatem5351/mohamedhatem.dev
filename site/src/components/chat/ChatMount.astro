@@ -10,7 +10,9 @@
  *   scrolls down (~/scripts/chat.ts), and the chat opens as a native-feeling sheet (chat-widget README).
  * - Once the page has loaded, ~/scripts/chat-avatar.ts dresses the launcher as Hatem's avatar with a comic speech
  *   bubble (copy: chat.avatar). data-av-disc picks the disc: "dark" (lapis-night disc in a gold rim; the default) or "teal"
- *   (turquoise).
+ *   (turquoise). `greet={false}` (data-av-greet="off": the CV, the 404) keeps the bubble for hover and focus only, and
+ *   `launcher={false}` (data-launcher="off": the 404, whose own "Ask the assistant" opens the chat) keeps the launcher
+ *   out of the page's corner until the chat is open (~/scripts/site.ts).
  * - Any element with [data-open-chat] (optional data-question) opens it; "/" outside a text field too
  *   (src/scripts/site.ts). Clicks before the loader runs are queued.
  * - Config comes from data attributes here (no inline script: strict CSP). Contact details come from profile.ts,
@@ -28,8 +30,12 @@ import { TURNSTILE_SITE_KEY, contact, link, mailtoHref, whatsappHref } from "~/l
 
 interface Props {
   locale: Locale;
+  /** The avatar says hello on its own (once per session, over empty page). Off on pages that ask for quiet. */
+  greet?: boolean;
+  /** The floating launcher sits in the page's corner. Off where the page offers the assistant itself (the 404). */
+  launcher?: boolean;
 }
-const { locale } = Astro.props;
+const { locale, greet = true, launcher = true } = Astro.props;
 const m = messages(locale);
 const avatarImg = await getImage({ src: avatar, width: 96, height: 96, format: "webp" });
 ---
@@ -51,6 +57,8 @@ const avatarImg = await getImage({ src: avatar, width: 96, height: 96, format: "
   data-av-text={m.chat.avatar.text}
   data-av-hide={m.chat.avatar.hide}
   data-av-disc="dark"
+  data-av-greet={greet ? undefined : "off"}
+  data-launcher={launcher ? undefined : "off"}
 >
 </div>
 <noscript>

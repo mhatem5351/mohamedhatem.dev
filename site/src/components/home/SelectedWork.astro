@@ -1,9 +1,11 @@
 ---
 /**
- * 02 Selected work (DESIGN.md 12.10): featured case studies (feature card first, then the grid; an orphan last card
- * becomes a wide card), then the compact "More work" list: the brief case studies, whose implementation details
- * aren't public (content/profile.ts `featured: false`). Every card links to its case-study page.
- * Phones: "More work" sits behind a "Show more work (3)" disclosure (with JS; open without it), like the toolbox.
+ * 01 Selected work (DESIGN.md 12.10): featured case studies (feature card first, then the grid; an orphan last card
+ * becomes a wide card), then the compact "More work" list: the case studies that aren't featured (content/profile.ts
+ * `featured: false`: the briefs, whose implementation details aren't public, and the freelance logic-controls.com
+ * site). Every card links to its case-study page; the logic-controls.com card keeps the old /#craft anchor wherever it
+ * sits. "More work" never leaves one card alone on a row: three in a row, or two by two for an even count.
+ * Phones: "More work" sits behind a "Show more work (n)" disclosure (with JS; open without it), like the toolbox.
  */
 import CaseCard from "~/components/work/CaseCard.astro";
 import Icon from "~/components/ui/Icon.astro";
@@ -19,10 +21,12 @@ const m = messages(locale);
 const { feature, grid, wide, more } = workLayout();
 /** The home page's former front-end showcase anchor (/#craft) now lands on the logic-controls.com card. */
 const anchorOf = (cs: { slug: string }) => (cs.slug === "logic-controls-website" ? "craft" : undefined);
+/** "More work" in rows of three, unless that would leave one card alone: an even count goes two by two (4 = 2 × 2). */
+const pairs = more.length % 3 === 1 && more.length % 2 === 0;
 ---
 <section class="section section--band" id="work" aria-labelledby="work-title">
   <div class="container">
-    <SectionHeader index="02" eyebrow={m.work.eyebrow} title={m.work.title} titleId="work-title" lede={m.work.lead} />
+    <SectionHeader index="01" eyebrow={m.work.eyebrow} title={m.work.title} titleId="work-title" lede={m.work.lead} />
     <div class="work-list">
       {feature && <CaseCard cs={feature} locale={locale} variant="feature" id={anchorOf(feature)} />}
       {
@@ -40,9 +44,9 @@ const anchorOf = (cs: { slug: string }) => (cs.slug === "logic-controls-website"
             {format(m.work.moreToggle, { count: more.length })}
             <Icon name="chevron-down" class="disclose__chev" />
           </button>
-          <div class="more-work__list disclose__body" id="more-work-list">
+          <div class:list={["more-work__list disclose__body", pairs && "more-work__list--pairs"]} id="more-work-list">
             {more.map((cs, i) => (
-              <CaseCard cs={cs} locale={locale} variant="compact" i={i + 1} headingLevel={4} />
+              <CaseCard cs={cs} locale={locale} variant="compact" i={(i % 3) + 1} headingLevel={4} id={anchorOf(cs)} />
             ))}
           </div>
         </div>
@@ -76,7 +80,8 @@ const anchorOf = (cs: { slug: string }) => (cs.slug === "logic-controls-website"
     display: grid;
     gap: var(--grid-gap);
   }
-  /* Brief case studies: three compact cards in a row; on tablets two, the odd last one across the row. */
+  /* More work: three compact cards in a row (two by two for an even count that three would orphan); on tablets two,
+     the odd last one across the row. */
   @media (min-width: 48rem) {
     .more-work__list {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -86,7 +91,7 @@ const anchorOf = (cs: { slug: string }) => (cs.slug === "logic-controls-website"
     }
   }
   @media (min-width: 64rem) {
-    .more-work__list {
+    .more-work__list:not(.more-work__list--pairs) {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
     .more-work__list > :global(.work:last-child:nth-child(odd)) {

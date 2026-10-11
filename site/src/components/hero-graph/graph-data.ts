@@ -207,8 +207,9 @@ export const COPY: Record<Lang, Copy> = {
       "Not every system uses every step.",
     group: "Agent graph",
     hint: "Use the arrow keys to move between agents. Press Enter for details.",
-    pause: "Pause animation",
-    play: "Play animation",
+    // One name for the one site-wide control, as on every chart's button (audit A11Y-09, M-14).
+    pause: "Pause animations",
+    play: "Play animations",
     nodes: {
       orchestrator: { title: "orchestrator", text: "Routes each turn to the right agent: LangGraph Command routing across 6 agents at Wakeb Data, and 14 agents in the ArabsStock Assistant." },
       guard: { title: "guard", text: "Screens the input before a model sees it, like the prompt-injection guardrail in my open-source rag-answering-service." },

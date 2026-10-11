@@ -8,6 +8,7 @@
 import "~/styles/home-b.css";
 import { Image } from "astro:assets";
 import avatar from "~/assets/photo/mh-avatar-320.jpg";
+import BidiText from "~/components/ui/BidiText.astro";
 import Icon from "~/components/ui/Icon.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
 import suggestions from "@content/chat/suggestions.json";
@@ -40,7 +41,7 @@ const flow = [m.assistant.flow.question, m.assistant.flow.worker, m.assistant.fl
       </ol>
       <p class="t-sm muted assist__how">{m.assistant.howItWorks}</p>
       <div class="cluster gap-loose">
-        <button class="btn btn--accent" type="button" data-open-chat aria-haspopup="dialog" data-chat-avoid>
+        <button class="btn btn--accent" type="button" data-open-chat aria-haspopup="dialog" data-chat-avoid data-js-only>
           <Icon name="ask" />
           {m.assistant.open}
         </button>
@@ -66,7 +67,12 @@ const flow = [m.assistant.flow.question, m.assistant.flow.worker, m.assistant.fl
           </span>
           <span class="chat-preview__try">{m.chat.suggestionsTitle}</span>
           <span class="chat-preview__chips">
-            {chips.map((c) => <span dir="auto">{c.label}</span>)}
+            {/* In the page's direction, only the other script's runs isolated (lib/bidi.ts; audit A-01). */}
+            {chips.map((c) => (
+              <span>
+                <BidiText text={c.label} locale={locale} />
+              </span>
+            ))}
           </span>
         </span>
         <span class="chat-preview__composer">

@@ -35,7 +35,7 @@ for (const theme of ["dark", "light"] as const) {
     expect(dark).toBe(theme === "dark" ? 5 : 0);
     // MDP: its symbol with the initials as text
     await expect(row.locator(".brand-logo--mdp .brand-logo__name")).toHaveText("MDP");
-    // the other theme's files stay hidden (and lazy: never fetched)
+    // the other theme's files stay hidden, but loaded (eager), so a theme switch never blanks the row
     await expect(row.locator(theme === "dark" ? ".brand-logo__light" : ".brand-logo__dark").first()).toBeHidden();
   });
 }
@@ -109,3 +109,41 @@ for (const lang of ["", "/ar"]) {
     }
   });
 }
+
+test("a theme switch swaps the logos in the same frame: the other theme's files are already loaded (audit M-03)", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  const row = page.locator(".logos__list");
+  await row.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() => row.locator("img").evaluateAll((imgs) => (imgs as HTMLImageElement[]).every((i) => i.complete && i.naturalWidth > 0)), { timeout: 10_000 })
+    .toBe(true);
+  // Switch (the header's toggle, or the menu's segmented control on phones) and look in the very next frame.
+  const ready = await page.evaluate(
+    () =>
+      new Promise<boolean>((done) => {
+        const root = document.documentElement;
+        const next = root.dataset.theme === "light" ? "dark" : "light";
+        (document.querySelector<HTMLElement>(`[data-set-theme="${next}"]`) ?? document.querySelector<HTMLElement>("[data-theme-toggle]"))!.click();
+        requestAnimationFrame(() => {
+          const shown = [...document.querySelectorAll<HTMLImageElement>(".logos__list img")].filter((i) => getComputedStyle(i).display !== "none");
+          done(shown.length === 6 && shown.every((i) => i.complete && i.naturalWidth > 0));
+        });
+      }),
+  );
+  expect(ready).toBe(true);
+});
+
+test("the theme switch is instant: no colour transition runs in the header (audit M-04) @desktop-only", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForTimeout(500);
+  const running = await page.evaluate(async () => {
+    document.querySelector<HTMLElement>("[data-theme-toggle]")!.click(); // no pointer over the header
+    await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 30)));
+    return document
+      .querySelector("[data-nav]")!
+      .getAnimations({ subtree: true })
+      .filter((a) => a instanceof CSSTransition && a.playState === "running")
+      .map((a) => (a as CSSTransition).transitionProperty);
+  });
+  expect(running).toEqual([]);
+});

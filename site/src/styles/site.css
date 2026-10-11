@@ -49,8 +49,9 @@
 .metrics-wrap { margin-block-start: clamp(2.5rem, 1.5rem + 3vw, 4.5rem); }
 .portrait__ring { position: absolute; inset: 0; width: 100%; height: 100%; }
 
-/* Inlined diagram SVGs fill their media box (the prototypes set this inline on the <img>). */
-.work__media > svg, .feature-art > svg { width: 100%; height: 100%; }
+/* Inlined diagram SVGs fill their media box (the prototypes set this inline on the <img>); a work card's drawing is
+   laid out in its media's content box (components.css 12). */
+.feature-art > svg { width: 100%; height: 100%; }
 .feature-art > svg { padding: 1rem; }
 
 /* Visually hidden until focused (e.g. "skip to graph description"). */
@@ -117,6 +118,8 @@ bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
 .chat-noscript__links { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-block-start: 10px; font-weight: 600; }
 .chat-noscript__links a { color: var(--color-accent); text-decoration: underline; text-underline-offset: .2em; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
 @media print { .chat-noscript { display: none !important; } }
+/* Printing from the dark theme: the page prints on light paper (D2 does the same for the CV and the case studies). */
+@media print { :root, :root:not([data-theme="light"]) { color-scheme: light only !important; } }
 
 /*
  * The chat bubble steps aside while it would cover one of the page's own CTAs ([data-chat-avoid]), and on phones until
@@ -133,6 +136,10 @@ bdi.ltr, .ltr-iso { direction: ltr; unicode-bidi: isolate; }
  * greeting colour with --mh-bubble-ink and --mh-bubble-accent.
  */
 [data-mh-chat]:not([data-art]) { visibility: hidden; }
+/* The greeting by night is a "night comic" (audit M-09): surface paper, ivory words, a gold outline and gold balls, so
+   it keeps its comic edge on lapis night and never out-shines the headline. By day: alabaster paper, lapis ink (the
+   defaults in chat-avatar.ts). */
+:root:not([data-theme="light"]) [data-mh-chat] { --mh-bubble-paper: var(--color-surface); --mh-bubble-text: var(--color-ink); --mh-bubble-ink: var(--color-accent-fill); --mh-bubble-accent: var(--color-accent); }
 [data-mh-chat][data-dodge] { opacity: 0; visibility: hidden; transition: opacity var(--duration-fast) var(--ease-standard), visibility 0s linear var(--duration-fast); }
 @media (prefers-reduced-motion: reduce) { [data-mh-chat], [data-mh-chat][data-dodge] { transition: none; } }
 
