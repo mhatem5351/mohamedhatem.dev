@@ -371,6 +371,22 @@ Preloads:
   when the fonts swapped in.
 - **The Arabic CV:** Inter as well (the sheet's Latin runs: names and tools; its summary shifted when Inter swapped in).
 
+Round 6 (audit PERF-07) measured whether the Arabic preloads could be trimmed. Method: cold cache, 4x CPU, Slow 4G and
+Slow 3G, HTTP/1.1 and HTTP/2, widths from 360 to 1920 px, 3–7 runs per cell. Scripts and data are kept outside the
+repo. The answer for case studies is no; the current set is the smallest that keeps CLS ≤ 0.01:
+- **Plex 700 is the case-study H1's weight.** The audit assumed 600. Dropping it shifts the page by 0.018–0.263 (the
+  H1 re-wraps and pushes the summary, the actions and the meta card down).
+- **Each other face is needed too.** Dropping Plex 600, Space Grotesk or Inter fails at 360–412 px or at 1024 px.
+- **Why the Latin faces matter on Arabic pages.** Plex's `unicode-range` has no space character, so the spaces between
+  Arabic words come from Inter (body text) or Space Grotesk (headings). Their widths differ from the fallbacks', which is
+  enough to re-wrap a line.
+- **The lasting fix** is to add U+0020 to the Plex subset and its range, or to give Plex a metric-matched fallback. Then
+  the extra preloads can go. That changes the rendered Arabic layout, so it needs a visual review first.
+- **Left as they are:** small shifts at single widths elsewhere (home and privacy 0.02 at 768 px, the CV 0.014 at
+  412 px; all "good" by the Core Web Vitals threshold). Adding preloads would fix them, but costs up to 0.5 s of FCP on
+  slow links. The exception is privacy: swapping Plex 600 for Inter costs no FCP.
+- **Never preload JetBrains Mono.** It is metric-identical to its Courier New fallback, so it never moves anything.
+
 ## Budgets (`scripts/check-budgets.mjs`, part of `npm test`)
 
 - **JS:** ≤ 60 KB gzip loaded on first view of each page. The lazy chat panel and the launcher's avatar (loaded after
