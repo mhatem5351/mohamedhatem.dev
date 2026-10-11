@@ -510,7 +510,9 @@
             "fuzzy"
           ]
         ],
-        "mustNotInclude": [],
+        "mustNotInclude": [
+          "gender"
+        ],
         "facts": [
           "Data integration across 3,008+ developers for the real-time e-map",
           "Lead lifecycle models",
@@ -2110,16 +2112,14 @@
             "Cairo"
           ],
           [
-            "on-site",
-            "onsite",
             "hybrid"
           ]
         ],
         "mustNotInclude": [],
         "facts": [
-          "Open to hybrid or on-site work in Cairo"
+          "Open to hybrid work in Cairo (the one list on his site and CV); fully on-site work isn't in that list"
         ],
-        "behaviour": "Answers yes; offers contact."
+        "behaviour": "Says hybrid in Cairo is in his list; doesn't promise fully on-site work (suggests asking him); offers contact."
       }
     },
     {

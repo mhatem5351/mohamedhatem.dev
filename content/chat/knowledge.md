@@ -29,11 +29,9 @@ answer.
 - **Languages:** Arabic (native), English (professional working proficiency).
 - **Education:** M.Sc. in Data Science, Cairo University, in progress (2023 – 2027, expected; not yet awarded); Diploma in Artificial Intelligence, ITI with
   EPITA Paris (2021–2022); B.Eng. in Structural Engineering, Tanta University (2015–2020).
-- **Certification:** AWS Certified Machine Learning – Specialty (earned 2022).
 - **Award:** Best Engineer of the Year at Empoweromics.
-- **Open to:** AI/ML Team Lead, Senior AI / LLM Engineer and MLOps Engineer roles first (the list on his CV); he
-  has also said AI Agents / LLM Engineer and ML Engineer roles. Remote from Cairo, hybrid or on-site in Cairo, or
-  relocating to the Gulf or Europe (details in section 1.1).
+- **Open to:** AI/ML Team Lead or Senior AI / LLM Engineer roles: remote, relocation to the Gulf or Europe, or
+  hybrid in Cairo (details in section 1.1). This is the one list on his site and his CV.
 
 **In one paragraph:** Hatem is an AI Team Lead at Globant, based in Cairo, leading a team of 7 on the Saudi Tourism
 Authority (STA) project. He is leading AI engineering on that project: an agentic LLM runtime (LangGraph) with
@@ -49,12 +47,12 @@ has built works in Arabic and English.
 
 Share this when a visitor asks about availability, location, remote work or relocation.
 
-- **Roles:** AI/ML Team Lead, Senior AI / LLM Engineer and MLOps Engineer first (his CV's list); also AI Agents /
-  LLM Engineer and ML Engineer.
+- **Roles:** AI/ML Team Lead or Senior AI / LLM Engineer. No other role types are listed (for other roles, suggest
+  asking him).
 - **Remote:** yes, working from Cairo.
 - **Relocation to the Gulf:** yes: Saudi Arabia, UAE, Qatar and nearby countries.
 - **Relocation to Europe:** yes.
-- **Hybrid or on-site in Cairo:** yes.
+- **Hybrid in Cairo:** yes. (Fully on-site work isn't in his list; suggest asking him.)
 - **Not stated (suggest contacting him):** notice period, earliest start date, visa or work-authorisation status,
   and anything about compensation.
 - He currently works full-time at Globant.
@@ -87,7 +85,8 @@ He asked for these to be public. Prefer the professional email and WhatsApp.
 - **LinkedIn:** [linkedin.com/in/mohamed-hatem-6a5790173](https://www.linkedin.com/in/mohamed-hatem-6a5790173).
 - **GitHub:** [github.com/mhatem5351](https://github.com/mhatem5351).
 - **CV:** [CV](https://mohamedhatem.dev/cv/) (Arabic: [السيرة الذاتية](https://mohamedhatem.dev/ar/cv/)); read online
-  or download the PDF.
+  or download the PDF, which saves as Mohamed-Hatem-AI-Team-Lead-CV.pdf (Arabic:
+  Mohamed-Hatem-AI-Team-Lead-CV-Arabic.pdf).
 - **Contact form:** [Contact form](https://mohamedhatem.dev/#contact) (Arabic:
   [نموذج التواصل](https://mohamedhatem.dev/ar/#contact)); messages go straight to his inbox.
 
@@ -103,7 +102,7 @@ whole markdown link; never shorten a URL to a path.
 
 **English pages:**
 - [Home](https://mohamedhatem.dev/)
-- [Selected work](https://mohamedhatem.dev/#work) (case studies)
+- [Selected work](https://mohamedhatem.dev/#work) (case studies; the section is titled "Systems I've built and led")
 - [Experience](https://mohamedhatem.dev/#experience)
 - [Open-source projects](https://mohamedhatem.dev/#projects)
 - [Skills](https://mohamedhatem.dev/#skills)
@@ -114,7 +113,7 @@ whole markdown link; never shorten a URL to a path.
 
 **Arabic pages:**
 - [الصفحة الرئيسية](https://mohamedhatem.dev/ar/)
-- [الأعمال المختارة](https://mohamedhatem.dev/ar/#work)
+- [الأعمال المختارة](https://mohamedhatem.dev/ar/#work) (عنوان القسم: «أنظمة بنيتها أو قدت هندستها»)
 - [الخبرات](https://mohamedhatem.dev/ar/#experience)
 - [المشروعات مفتوحة المصدر](https://mohamedhatem.dev/ar/#projects)
 - [المهارات](https://mohamedhatem.dev/ar/#skills)
@@ -129,9 +128,9 @@ whole markdown link; never shorten a URL to a path.
 
 ### AI Team Lead · Globant · April 2026 – present
 - Full-time, remote from Cairo. ([globant.com](https://www.globant.com))
-- Leading AI engineering on the Saudi Tourism Authority (STA) project: an agentic LLM runtime (LangGraph) with
-  retrieval, human-approval gates and evaluation, serving Noura, the public visitor assistant, and an internal staff
-  assistant, in Arabic and English.
+- Leading a team of 7 and the AI engineering on the Saudi Tourism Authority (STA) project (his site's summary of the
+  role): an agentic LLM runtime (LangGraph) with retrieval, human-approval gates and evaluation, serving Noura, the
+  public visitor assistant, and an internal staff assistant, in Arabic and English.
 - **Team:** he is leading a team of 7 on the STA project (Arabic: «يقود فريقًا من 7 أعضاء»). Nothing else about the
   team is stated: not its roles, reporting lines, hiring, reviews or working practices.
 - The client (the Saudi Tourism Authority, STA) and both products (Noura and the staff assistant) may be named, with
@@ -193,9 +192,9 @@ whole markdown link; never shorten a URL to a path.
   routing in production.
 - **Media pipelines:** production processing pipelines for raw video and audio content (including footage from
   ArabsStock studios): quality optimisation and metadata enrichment.
-- Tech: LangGraph, OpenAI API, Pinecone, Python, FastAPI, PostgreSQL, Docker, A100 GPU, vLLM. (LinkedIn lists A100
-  and vLLM for this role, but the sources don't say how they were used here; don't claim he served models at
-  ArabsStock.)
+- Tech: LangGraph, OpenAI API, Pinecone, Python, FastAPI, PostgreSQL, Docker (the stack on the case-study page).
+  LinkedIn also tags this role with A100 GPU and vLLM, but the sources don't say how they were used here; don't claim
+  he served models at ArabsStock.
 - This role overlapped for four months (September–December 2024) with the start of his Wakeb role; the sources don't
   explain the arrangement, so don't speculate.
 
@@ -218,8 +217,6 @@ whole markdown link; never shorten a URL to a path.
   routing each message to the right department: Tech, HR, Accounting, Operations or Marketing.
 - **Smart Search:** fuzzy-matching client lookup that finds records even from misspelled or partial Arabic or English
   names.
-- **Gender detection:** a deep-learning model (PyTorch) that infers gender from Arabic names, improving client
-  targeting and campaign personalisation.
 - **ETL:** pipelines from Cosmos DB (NoSQL) to Microsoft SQL Server, scheduled with Azure Functions.
 - **Award:** named **Best Engineer of the Year** at Empoweromics, recognising innovation and excellence in AI
   engineering.
@@ -362,7 +359,7 @@ study has its own page on the site, linked below (English page, then the Arabic 
 - **Approach and components:** a data integration system feeding the real-time e-map; lifecycle-stage classification
   models for brokers; a text + image classifier routing WhatsApp messages to the right department (Tech, HR,
   Accounting, Operations or Marketing); fuzzy Smart Search over
-  Arabic and English names; a PyTorch name-to-gender model for targeting; Cosmos DB → SQL Server ETL scheduled with
+  Arabic and English names; Cosmos DB → SQL Server ETL scheduled with
   Azure Functions.
 - **Outcome:** the e-map could scale on unified data; leads ranked by predicted stage; messages routed automatically.
   (Separately, he was named Best Engineer of the Year at Empoweromics.)
@@ -406,8 +403,8 @@ All on [github.com/mhatem5351](https://github.com/mhatem5351).
 - **[prompt-reliability-harness](https://github.com/mhatem5351/prompt-reliability-harness)**: measures how consistently
   an LLM answers when the same question is paraphrased, misspelled, padded with noise, reordered or given
   distractors. Invariance and perturbation tests; exact, regex and embedding-similarity scoring; consistency and flip
-  rate. In its committed run (gpt-4o-mini, 3 runs per variant), every answer was correct by regex while mean
-  consistency was 0.49, mostly from the same answer worded differently.
+  rate. Result (gpt-4o-mini, 3 runs per variant): regex correctness 1.00, yet mean consistency 0.49, mostly from the
+  same answer worded differently.
 - **[rag-answering-service](https://github.com/mhatem5351/rag-answering-service)**: a small retrieval-only FastAPI
   service with OpenAI embeddings, cosine vs dot-product indexes compared side by side (`/compare`), a denylist
   guardrail against prompt injection, SQL/XSS probes and oversized queries, and P50/P95/P99 latency plus hit-rate
@@ -416,8 +413,9 @@ All on [github.com/mhatem5351](https://github.com/mhatem5351).
 ### ML and NLP (2022)
 - **[Arabic sentiment analysis](https://github.com/mhatem5351/Arabic-Sentiment-Analysis-With-Multiple-Models)**:
   positive/negative classification on about 455k Arabic tweets and reviews; recurrent models (BiGRU, BiLSTM) with
-  trainable embeddings, CNNs on AraVec embeddings, and classical ML; best held-out accuracy 0.816 (2-layer BiGRU) against a 0.595 majority baseline; Arabic
-  preprocessing (diacritics, alef normalisation, ISRI stemming).
+  trainable embeddings, CNNs on AraVec embeddings, and classical ML. Result: a BiGRU (2 layers) at 0.816 accuracy on
+  held-out data, against a 0.595 baseline (the majority class). Arabic preprocessing (diacritics, alef normalisation,
+  ISRI stemming).
 - **[Text summarization](https://github.com/mhatem5351/Text-Summarization-NLP)**: a Dash app comparing DistilBART, T5
   and TextRank summaries of a news article or URL, with sentence-aligned chunking for long inputs. A team project in
   the ITI AI diploma.
@@ -455,7 +453,8 @@ GitHub skill lists **without** any project in the sources: never tie those to a 
 | Evaluation and observability | LLM evaluation, agent evaluation, observability for answer quality, prompt robustness testing, guardrails | Saudi government assistant (Wakeb); ArabsStock agent evaluation; staged-llm-evaluator; prompt-reliability-harness; rag-answering-service; Globant (evaluation and human-approval gates in the STA runtime) |
 | Backend | Python, FastAPI, gRPC, REST | Wakeb (FastAPI, REST to gRPC); ArabsStock (FastAPI); rag-answering-service |
 | Data | SQL, PostgreSQL, SQL Server, Cosmos DB, DuckDB, ETL design | MDP (SQL); ArabsStock (PostgreSQL in its tech list); Empoweromics (Cosmos DB to SQL Server); Tabaqat (DuckDB); AestheticsPro (SQL Server) |
-| ML and data science | PyTorch, TensorFlow, scikit-learn, NLP (Arabic and English), computer vision, classification, regression, Spark | Empoweromics (classification, NLP, computer vision, PyTorch); Arabic sentiment analysis (TensorFlow); coursework (scikit-learn, Spark) |
+| Generative and agentic AI | Generative AI, agentic AI | Globant (the STA agentic runtime); ArabsStock (14 agents, AI image generation, sound generation); Wakeb chatbot (6 agents) |
+| ML and data science | PyTorch, TensorFlow, scikit-learn, Hugging Face Transformers, NLP (Arabic and English), computer vision, classification, regression, Spark | Empoweromics (classification, NLP, computer vision, PyTorch); Arabic sentiment analysis (TensorFlow); text summarization (Hugging Face Transformers: DistilBART, T5); coursework (scikit-learn, Spark) |
 | Cloud | AWS Athena, Azure Functions, Azure Cosmos DB, Cloudflare Workers | Tabaqat (Athena); Empoweromics (Azure); Logic Controls (Cloudflare) |
 | GIS | Prefect pipelines for GIS data, Overture Maps, MapProxy, MBTileServer, MapLibre, Kepler.gl | Tabaqat |
 | Frontend | TypeScript, Astro, Tailwind CSS, accessibility (WCAG 2.2 AA), Arabic RTL and multilingual sites, unit and end-to-end testing | Logic Controls website |
@@ -486,7 +485,8 @@ B.Eng. Never open with the B.Eng.
 
 ## 8. Certifications
 
-- **AWS Certified Machine Learning – Specialty**, Amazon Web Services, earned in 2022. Its current status is not
+- **AWS Certified Machine Learning – Specialty (2022)**, Amazon Web Services, earned in 2022 (his site and CV show it
+  only here, under Certifications). Its current status is not
   stated; for that, suggest contacting him.
 - DataCamp: Data Scientist with Python (October 2021); Data Analyst with SQL Server (May 2022).
 - 365 Data Science: Introduction to Tableau.
@@ -670,8 +670,8 @@ For each of these, answer that it isn't stated, and offer his email ([hatem@moha
 or WhatsApp ([+20 114 207 0946](https://wa.me/201142070946)).
 
 - Notice period, earliest start date, interview availability, working hours.
-- Visa or work-authorisation status, travel. (Remote work, relocation to the Gulf or Europe, and hybrid or on-site
-  work in Cairo are known: see section 1.1.)
+- Visa or work-authorisation status, travel. (Remote work, relocation to the Gulf or Europe, and hybrid work in Cairo
+  are known: see section 1.1.)
 - Full-time vs contract vs freelance for new roles. (Known: he has worked full-time, part-time and freelance.)
 - Reasons for leaving any employer; references; performance reviews.
 - Details of the STA project (the Saudi Tourism Authority, with Noura and the staff assistant) beyond case study 4.1,
