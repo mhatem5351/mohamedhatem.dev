@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bidiParts, scriptDir } from "~/lib/bidi";
+import { bidiParts, bidiUnits, scriptDir } from "~/lib/bidi";
 
 /** The parts as a compact string: isolated runs in ⟨…⟩ with their direction. */
 const show = (text: string, locale: "en" | "ar" = "ar") =>
@@ -54,5 +54,22 @@ describe("scriptDir", () => {
   it("is rtl for anything with an Arabic letter", () => {
     expect(scriptDir("vLLM يخدم Qwen")).toBe("rtl");
     expect(scriptDir("LangGraph")).toBe("ltr");
+  });
+});
+
+describe("bidiUnits (A-20, R7-HOME-03: lines break only between whole units)", () => {
+  it("joins a short Latin name with no-break spaces on Arabic pages, leaves a long run breakable", () => {
+    const u = bidiUnits("خلال العمل في Wakeb Data", "ar");
+    expect(u.at(-1)).toEqual({ text: "Wakeb\u00a0Data", dir: "ltr" });
+    const long = bidiUnits("مبني بـ Astro و Tailwind CSS and TypeScript on Cloudflare Workers", "ar").find((p) => p.text.includes("Cloudflare"));
+    expect(long?.text).toContain(" ");
+  });
+  it("keeps a number range as one unit in both languages", () => {
+    expect(bidiUnits("مشروعات (2021–2022)، أبقيتها", "ar").find((p) => p.keep)).toEqual({ text: "2021–2022", dir: "ltr", keep: true });
+    expect(bidiUnits("Coursework (2021–22), kept", "en").find((p) => p.keep)).toEqual({ text: "2021–22", keep: true });
+  });
+  it("never loses a character other than the joined spaces", () => {
+    const s = "Coursework from my AI diploma (2021–22), kept public as a record.";
+    expect(bidiUnits(s, "en").map((p) => p.text).join("")).toBe(s);
   });
 });

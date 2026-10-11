@@ -118,7 +118,7 @@ stack chips, the component view's group labels, the assistant flow's step numera
 | Token (`--color-*`) | Light | Dark | Use |
 |---|---|---|---|
 | `bg` | `#F7F6F3` alabaster | `#080E1C` lapis night | page |
-| `bg-subtle` | `#F2F0EC` | `#0B1222` | alternate section bands (02, 04, 06, 08) |
+| `bg-subtle` | `#F2F0EC` | `#0B1222` | alternate section bands (home: 01 Work, 03 Experience, 05 Open source, 07 Skills, 09 Contact; every boundary changes band) |
 | `surface` | `#FEFDFC` | `#0F1728` | cards, panels, chat |
 | `surface-2` | `#F1EFEA` | `#161E31` | insets, neutral chips, open trace row |
 | `surface-inverse` | `#131D36` | `#F4F0E7` | primary button, user chat bubble, tooltips |
@@ -392,10 +392,10 @@ Motion is an enhancement: every component is complete and usable with no motion 
 
 | Element | Animation | Timing | Trigger | Reduced motion |
 |---|---|---|---|---|
-| Hero graph | pulses travel query → guard → orchestrator → retrieve → rerank → generate → evaluate → answer (every 2nd loop detours via tools · mcp); arrival halos; outer hub ring rotates | 9 s loop, hops eased in-out, halos 640 ms | starts on idle after load; pauses offscreen / tab hidden; pause button | static snapshot frame, no rotation |
+| Hero graph | pulses travel query → guard → orchestrator → retrieve → rerank → generate → evaluate → answer (every 2nd loop detours via tools · mcp); arrival halos; outer hub ring rotates | 9 s loop, hops eased in-out, halos 640 ms | starts on idle after load; plays 3 loops, then settles on its still frame on every screen; plays 3 more when it comes back into view, is tapped, hovered with a mouse or focused; pauses offscreen / tab hidden; pause button | static snapshot frame, no rotation |
 | Hero graph parallax | satellites ±6 px, hub ±2 px | rAF + lerp | pointer move (fine pointers) | off |
-| Ask bar | typed example questions; caret blink | 45 ms/char, 1.1 s caret | auto | static placeholder, no caret blink |
-| Live dot (hero caption) | single ping ring | 2.4 s | auto | static dot |
+| Ask bar | one example question typed once (the first suggestion that fits the field), held ~2 s showing its start, then the placeholder; caret blink while it types | 65 ms/char, 1.1 s caret | auto, once per visit, every screen | static placeholder, no caret |
+| Live dot (hero caption) | none (a still dot: the hero graph is the first screen's one motion) | n/a | n/a | n/a |
 | Architecture diagrams (cards, What I build, case-study figures, next case) | one request per loop travels the main path as a **comet** (bright head with a halo and two trailing dots, in the colour of the node it reaches); each node it reaches **lights up** as it lands (tint fill + category stroke, fading); members of a target group ripple in reading order (the 14 agents); slow **packets** drift along async (dashed) edges; the orchestrator's dashed ring **breathes** | hop 0.72 s (0.5 s on thumbnails), loop = hop / 0.12 (6 s / 4.2 s), hero easing; landing 3 % up, gone by 24 %; packets ~48 px/s; ring 3.6 s | while on screen (IntersectionObserver), tab visible, not paused; restarts from the top each time it comes into view | the static drawing, unchanged; no pause button |
 | Experience trace | bars **grow** from their start date (scaleX), row by row; then the current role's bar ends in a **"now" dot** that pings | 1 s per bar, 60 ms stagger; ping 2.4 s | grow: once, the first time the trace is on screen (only if it was below the fold at load); ping: while on screen | bars in place, no dot |
 | Skills matrix | the receipts (dots) **pop in** column by column | 0.5 s spring, 70 ms per column + 45 ms per group | once, the first time the matrix is on screen | dots in place |
@@ -404,16 +404,18 @@ Motion is an enhancement: every component is complete and usable with no motion 
 | Button / arrow | arrow nudges 3 px in reading direction | 240 ms | hover | none |
 | Trace span | chevron rotates; row background | 240 ms | open/close | instant |
 | Mobile menu | fade + 6 px drop | 240 ms | open | instant |
-| Chat launcher (avatar) | pop-in (scale .6→1, y 8→0), then a wave (hand ±17° from the wrist, forearm ±3° from the elbow, head ±2.5°) and a 2 px float; a blink | 550 ms pop, 1.7 s wave, float 2.4 s period, blink 180 ms | first appearance (after load, on idle; on phones once the hero has scrolled past), then a wave + blink 13 s and 26 s later, three in all; afterwards only hover / keyboard focus | still avatar |
-| Chat greeting bubble | two balls pop one after the other (scale 0→1.2→1), the comic bubble pops (scale .35→1.05→1, tilted 2.2°), words fade in one by one while the mouth talks (scaleY .42–1.1) | balls 350 ms (+120 ms), bubble 450 ms (+240 ms), words 110 ms apart | 2.6 s after the launcher first appears, at most twice per session; hover / keyboard focus | still bubble, all words shown |
+| Chat launcher (avatar) | a short fade-in on first appearance; a wave (hand ±17° from the wrist, forearm ±3° from the elbow, head ±2.5°), a 2 px float and a blink with the greeting, on hover and on keyboard focus | fade 450 ms, 1.7 s wave, float 2.4 s period, blink 180 ms | first appearance after load, on idle (on phones once the page's hold-back marker, the hero's ask bar or a case study's hero actions, has scrolled past); then only with the greeting, hover or focus | still avatar |
+| Chat greeting bubble | two balls pop one after the other (scale 0→1.2→1), the comic bubble pops (scale .35→1.05→1, tilted 2.2°), words fade in one by one while the mouth talks (scaleY .42–1.1) | balls 350 ms (+120 ms), bubble 450 ms (+240 ms), words 110 ms apart; shown about 5 s | after the visitor's first scroll, at a rest, only where it lands on empty page; once per session; never on the CV or the 404; hover / keyboard focus show it on demand; Escape dismisses it from anywhere | still bubble, all words shown |
 | Chat header avatar | mouth talks; two blinks | 360 ms loop while an answer streams in (the cursor shows); blinks 1.2 s and 4.2 s after the panel opens | streaming / open | still |
 | Chat panel | grows from launcher: scale .96→1, y 8→0, opacity | 380 ms `--ease-spring` | open | opacity 120 ms |
 | Chat thinking | three-node pulse (graph motif) | 1.2 s loop while waiting | streaming | static dots + "Thinking…" text |
 | Chat caret | accent block caret blink (gold by night, lapis by day) | 1 s steps | streaming | solid caret |
 | Theme switch | none (instant) | n/a | n/a | n/a |
 
-Rules: animate only `transform` and `opacity`, which browsers run on the compositor (the living charts measure
-~0 main-thread time while on screen, section 15); no scroll-jacking; no parallax on scroll; nothing flashes more than
+Rules: animate only `transform` and `opacity`. On HTML those run on the compositor; on SVG children they still restyle
+every frame (the hero graph cost about 10 % of the main thread while it played), so every auto-playing loop either
+stops on its own (the hero graph after 3 loops, the ask bar after one example) or runs only while on screen (the
+living charts, about 6 ms per 5 s for the work cards); no scroll-jacking; no parallax on scroll; nothing flashes more than
 3 times per second. Every auto-playing loop longer than 5 s (the hero graph, each diagram, the trace's "now" ping) has
 a visible pause button in its own corner (the hero graph's top-end corner; a diagram's top-left corner, which every
 drawing keeps clear, or its figure's title bar; the trace's footer), all styled like the hero's (32 px, pause/play
@@ -741,13 +743,15 @@ little balls, like a comic-strip thought trail: a paper bubble with a 2.5 px ink
 and a gold Ben-Day dot offset, the first line in lapis ("Hi, I'm Hatem! 👋"), then "Ask my AI assistant about my
 work." (AR «أهلًا، أنا حاتم! 👋» / «اسأل مساعدي الذكي عن خبرتي.»), in the site's display / Arabic faces. It is the
 launcher's description; its × ("Hide message") hides it for the session, Escape hides it, it stays while hovered or
-focused, and it never shows once the chat has been opened. It stays paper in the dark theme (with a faint light
-keyline). Mirrored on `/ar/` (launcher bottom-start, the hand on the page side). The avatar arrives after load;
+focused, and it never shows once the chat has been opened. By day it is paper with lapis ink; by night a "night
+comic": surface paper, ivory words, a gold outline and gold balls. Mirrored on `/ar/` (launcher bottom-start, the hand on the page side). The avatar arrives after load;
 until then the launcher is hidden, so nothing changes shape on screen. The launcher never covers the page's own CTAs:
 it steps aside (fades, then leaves the tab order and the accessibility tree) while it would overlap any
 `[data-chat-avoid]` element, and the greeting bubble alone steps aside while it would cover one (the hero ask bar, the case-study "Ask my AI
 about this project" buttons, the contact form's Send and copy buttons, the assistant section's CTA), and on phones it
-appears only once the hero's ask bar has scrolled past; never while the chat is open or the launcher has focus; the
+appears only once the page's hold-back marker (`[data-chat-after]`: the hero's ask bar, a case study's hero actions)
+has scrolled past, together with the action dock beside it, and never on a line of a text being read
+(`[data-chat-read]`: the CV sheet, checked against its line boxes); never while the chat is open or the launcher has focus; the
 header's "Ask my AI" button always opens the chat. Panel 400 × 640 (desktop) growing from the launcher; header with
 the avatar (its face; the mouth talks while an answer streams in), title, one-line subtitle, new chat + close; the welcome message ends with the disclaimer ("AI answers can be
 wrong…") and the privacy note (messages go to Google's Gemini API), which together describe the dialog; welcome with 8 suggestions (4 on phones), a

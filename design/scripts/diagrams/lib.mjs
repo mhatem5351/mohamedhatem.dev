@@ -3,6 +3,10 @@
 // Grammar (sizes, kinds, edges, callouts) is documented at the top of assets/diagrams/diagram.css.
 import fs from "node:fs";
 import { METRICS, MONO_ADVANCE } from "./metrics.mjs";
+// Arabic variants: every label's advance width (em), measured in Chromium with the site's fonts by measure-ar.mjs
+// (Arabic shaping makes per-character widths useless). Missing until that script has run once.
+let AR_EM = {};
+try { ({ AR_EM } = await import("./metrics-ar.mjs")); } catch { /* not measured yet: estimated, with a warning */ }
 
 export const DESIGN = new URL("../../", import.meta.url); // design/
 
@@ -41,7 +45,9 @@ export const KINDS = {
 // pl: the pills behind group tabs and edge labels and the ring around callout discs. They take the page background
 // (not the canvas), so a page that makes the canvas transparent (the site's figure panels, --dg-canvas: transparent)
 // never lets a group border or an edge run through their text (audit C-07); --dg-pill overrides it.
-const BASE_VARS = { cv: ["dg-canvas|bg"], pl: ["dg-pill|bg"], nd: ["dg-node|surface"], ink: ["ink"], ink2: ["ink-2"], mut: ["muted"], lns: ["line-strong"], edge: ["line-input"], grid: ["graph-grid"] };
+// co / con: the callout disc and its numeral take the page's solid accent, gold by night and lapis by day (audit C-44:
+// a gold disc read as muddy olive on the light page).
+const BASE_VARS = { cv: ["dg-canvas|bg"], pl: ["dg-pill|bg"], nd: ["dg-node|surface"], ink: ["ink"], ink2: ["ink-2"], mut: ["muted"], lns: ["line-strong"], edge: ["line-input"], grid: ["graph-grid"], co: ["accent-solid"], con: ["on-accent"] };
 function varDecl(theme, cats) {
   const T = TOK[theme];
   const out = [];
@@ -62,27 +68,31 @@ function varDecl(theme, cats) {
 
 const SANS = `"Inter Variable",Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif`;
 const MONO = `"JetBrains Mono Variable","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace`;
-export const FONT = { SANS, MONO };
+// Arabic variants: IBM Plex Sans Arabic (the site serves it for Arabic code points only), Latin runs in Inter; titles
+// and tabs 600, everything else 400 (the weights the site ships), never letter-spaced or upper-cased (DESIGN 4.3).
+const AR_SANS = `"IBM Plex Sans Arabic","Inter Variable",Inter,"Geeza Pro","Segoe UI",Tahoma,sans-serif`;
+export const FONT = { SANS, MONO, AR_SANS };
 
-// Text sizes in drawing units. Every variant's smallest text is 12 units, so a label renders at 11 CSS px or more
-// whenever the drawing is shown at scale 0.917 or more: the compact variant (320 wide) on a 375 px phone (about
-// 294-308 px wide, scale 0.92-0.96), the wide one (1120) only from a 64.25rem canvas (the site switches variants at
-// that width, case.css; audit C-08). Titles stay 13; callout numerals are 12 (wide) and 13 (compact). The wide sizes are
-// the defaults in the grammar, the compact ones reach the page through .dg-compact rules (inlined diagrams lose their
-// own <style>).
-// tabH / elH: pill heights; tabY / elY / coY: baseline offsets that centre the text on its pill or disc.
+// Text sizes in drawing units. Wide and thumb variants: the smallest text is 12 units, so a label renders at 11 CSS px
+// or more whenever the drawing is shown at scale 0.917 or more (the wide one only from a 64.25rem canvas: the site
+// switches variants at that width, case.css; audit C-08). Compact variant (320 wide): 13 units (titles 14), so a label
+// renders at 11 CSS px on the smallest phones too: a 320 px phone shows the drawing about 270 px wide (scale 0.844;
+// audit C-45), a 375 px phone about 294 px (scale 0.92). The wide sizes are the defaults in the grammar, the compact
+// ones reach the page through .dg-compact rules (inlined diagrams lose their own <style>).
+// tabH / elH: pill heights; tabY / elY / coY: baseline offsets that centre the text on its pill or disc; tLead: the step
+// from one title line (or the last title line) to the next line; capH: the title's cap height (vertical centring).
 export const TEXT = {
-  base:    { t: 13, s: 12, tab: 12, el: 12, co: 12, lg: 12, subGap: 16, tabH: 18, tabY: 4.9, elH: 18, elY: 4.2, coY: 4.25 },
-  compact: { t: 13, s: 12, tab: 12, el: 12, co: 13, lg: 12, subGap: 16, tabH: 18, tabY: 4.9, elH: 18, elY: 4.2, coY: 4.6 },
+  base:    { t: 13, s: 12, tab: 12, el: 12, co: 12, lg: 12, subGap: 16, tLead: 16, capH: 9.45, tabH: 18, tabY: 4.9, elH: 18, elY: 4.2, coY: 4.25 },
+  compact: { t: 14, s: 13, tab: 13, el: 13, co: 13, lg: 13, subGap: 17, tLead: 17, capH: 10.2, tabH: 20, tabY: 5.3, elH: 20, elY: 4.55, coY: 4.6 },
 };
-const COMPACT_RULES = [["s", "dg-s"], ["tab", "dg-tab"], ["el", "dg-el"], ["co", "dg-co text"], ["lg", "dg-lg"]]
+const COMPACT_RULES = [["t", "dg-t"], ["s", "dg-s"], ["tab", "dg-tab"], ["el", "dg-el"], ["co", "dg-co text"], ["lg", "dg-lg"]]
   .filter(([k]) => TEXT.compact[k] !== TEXT.base[k])
   .map(([k, sel]) => `.dg-compact .${sel}{font-size:${TEXT.compact[k]}px}`);
 
 // The full stylesheet. `cats` limits the per-category rules to the ones a diagram uses (keeps files small);
 // `compact: false` leaves out the compact text sizes (wide and thumb files).
 export function css(cats = CATS, { compact = true } = {}) {
-  const c = [...new Set(["teal", "saffron", ...cats])]; // teal: pulses/orchestrator ring; saffron: callouts
+  const c = [...new Set(["teal", ...cats])]; // teal: pulses/orchestrator ring
   const r = [];
   r.push(`.dg{${varDecl("light", c)};direction:ltr;unicode-bidi:isolate;font-family:${SANS};-webkit-font-smoothing:antialiased}`);
   r.push(`@media (prefers-color-scheme:dark){.dg{${varDecl("dark", c)}}}`);
@@ -102,11 +112,14 @@ export function css(cats = CATS, { compact = true } = {}) {
   r.push(`.dg-e{fill:none;stroke:var(--_edge);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.dg-a{stroke-dasharray:4 5}`);
   r.push(`.dg-ah{fill:none;stroke:var(--_edge);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}`);
   r.push(`.dg-el{font:500 ${TEXT.base.el}px/1 ${MONO};fill:var(--_mut)}`);
-  r.push(`.dg-co circle{fill:var(--_saffron-f);stroke:var(--_pl);stroke-width:2}.dg-co text{font:700 ${TEXT.base.co}px/1 ${MONO};fill:var(--color-on-saffron,${TOK.light["color-on-saffron"]});text-anchor:middle}`);
+  r.push(`.dg-co circle{fill:var(--_co);stroke:var(--_pl);stroke-width:2}.dg-co text{font:700 ${TEXT.base.co}px/1 ${MONO};fill:var(--_con);text-anchor:middle}`);
   r.push(`.dg-cap{font:500 12px/1 ${MONO};fill:var(--_ink2)}.dg-stk{opacity:.55}`);
   r.push(`.dg-lg{font:500 ${TEXT.base.lg}px/1 ${MONO};fill:var(--_mut)}.dg-lsw{stroke:var(--nl);stroke-width:1}`);
   r.push(`.dg-dot{fill:var(--ni,var(--_mut))}.dg-mute{fill:var(--_mut)}.dg-ink2{fill:var(--_ink2)}`);
   if (compact) r.push(...COMPACT_RULES);
+  // Arabic variants (class dg-ar on the root): text runs right to left (start = its right end), in Plex Arabic.
+  r.push(`.dg.dg-ar{direction:rtl}.dg-ar .dg-t,.dg-ar .dg-tab{font-family:${AR_SANS};letter-spacing:0}`);
+  r.push(`.dg-ar .dg-s,.dg-ar .dg-el,.dg-ar .dg-cap,.dg-ar .dg-lg{font-family:${AR_SANS};font-weight:400;letter-spacing:0}`);
   // Opt-in motion: add class "dg-play" to the <svg> (or any ancestor). Static and complete without it.
   // One loop = one request travelling the main path (--i: hop index, --L: path length), each hop lasting --dg-hop
   // (12% of the loop); the node it reaches lights up as it lands (.dg-hl, --at: arrival index, --k: wave order inside
@@ -140,6 +153,7 @@ export function splitRules(cssText) {
 // drop rules whose class selectors never occur in the markup (per-file CSS stays small)
 export function shake(cssText, markup) {
   const present = new Set([...markup.matchAll(/class="([^"]+)"/g)].flatMap((m) => m[1].split(/\s+/)));
+  if (!/class="[^"]*\bdg-ar\b/.test(markup)) present.delete("dg-ar");
   const always = new Set(["dg", "dg-play", "dg-paused", "dg-comets", "dg-wide", "dg-compact", "dg-thumb"]);
   const ok = (sel) => [...sel.matchAll(/\.(dg-[\w-]+)/g)].every((m) => always.has(m[1]) || present.has(m[1]));
   return splitRules(cssText).filter((rule) => {
@@ -179,13 +193,25 @@ export function glyph(name, x, y, size = 16) {
 
 // ---------------------------------------------------------------- the renderer
 export class Diagram {
-  constructor(spec, { id, variant, title, desc }) {
+  constructor(spec, { id, variant, title, desc, legendLabels }) {
     this.s = spec; this.id = id; this.variant = variant; this.title = title; this.desc = desc;
-    this.pid = `dg-${id}-${variant[0]}`; // unique per diagram+variant: wide and compact can share a page
+    this.rtl = Boolean(spec.rtl); // an Arabic variant (specs.mjs mirror()): right to left, Arabic labels
+    this.legendLabels = legendLabels;
+    this.pid = `dg-${id}-${variant[0]}${this.rtl ? "-ar" : ""}`; // unique per diagram+variant(+locale): they can share a page
     this.W = spec.w; this.H = spec.h;
     this.T = variant === "compact" ? TEXT.compact : TEXT.base;
     this.boxes = new Map(); this.warn = []; this.used = new Set(); this.kindsUsed = new Set();
     this.hasAsync = false; this.hasSync = false; this.hasCallout = false; this.lateCallouts = [];
+  }
+
+  // text width in drawing units: Latin from the font metrics, Arabic variants from the measured table (measure-ar.mjs)
+  tw(str, kind) {
+    if (!this.rtl) return textW(str, kind, this.T);
+    const size = { title: this.T.t, sub: this.T.s, tab: this.T.tab, el: this.T.el, lg: this.T.lg, cap: 12 }[Array.isArray(kind) ? "title" : kind];
+    const weight = kind === "title" || kind === "tab" || Array.isArray(kind) ? 600 : 400;
+    const em = AR_EM[weight]?.[str];
+    if (em === undefined) { this.warn.push(`Arabic label not measured (run measure-ar.mjs): "${str}" ${weight}`); return str.length * 0.62 * size; }
+    return em * size;
   }
 
   // geometry of a node / group for ports
@@ -284,20 +310,31 @@ export class Diagram {
     let s = `<rect class="dg-grp" x="${x + 0.5}" y="${y + 0.5}" width="${w - 1}" height="${h - 1}" rx="14"/>`;
     if (g.tab) {
       const T = this.T;
-      const label = g.tab.toUpperCase();
-      const tw = textW(label, "tab", T);
-      const tx = g.tabX ?? (g.tabAlign === "center" ? x + w / 2 - tw / 2 : g.tabAlign === "right" ? x + w - 16 - tw : x + 16);
+      const label = this.rtl ? g.tab : g.tab.toUpperCase();
+      const tw = this.tw(label, "tab");
+      // RTL: tabX is the tab's right end (its start), the default place is the group's top-right corner
+      const tx = this.rtl
+        ? (g.tabX !== undefined ? g.tabX - tw : g.tabAlign === "center" ? x + w / 2 - tw / 2 : g.tabAlign === "left" ? x + 16 : x + w - 16 - tw)
+        : (g.tabX ?? (g.tabAlign === "center" ? x + w / 2 - tw / 2 : g.tabAlign === "right" ? x + w - 16 - tw : x + 16));
       s += `<rect class="dg-tabbg" x="${n2(tx - 7)}" y="${y + 0.5 - T.tabH / 2}" width="${n2(tw + 14)}" height="${T.tabH}" rx="4"/>`;
-      s += `<text class="dg-tab" x="${n2(tx)}" y="${n2(y + T.tabY)}">${esc(label)}</text>`;
+      (this.pills ??= []).push({ tab: g.tab, x0: tx - 7, x1: tx + tw + 7, y0: y + 0.5 - T.tabH / 2, y1: y + 0.5 + T.tabH / 2 });
+      s += `<text class="dg-tab" x="${n2(this.rtl ? tx + tw : tx)}" y="${n2(y + T.tabY)}">${esc(label)}</text>`;
       if (tw + 30 > w) this.warn.push(`group tab overflows: ${g.tab}`);
       // the group's callout disc (r 10 + its 2 px ring) must clear the tab's pill
       if (g.co) {
-        const cx = g.coX ?? (g.tabAlign === "right" ? x + 20 : x + w - 16);
+        const cx = this.coX(g);
         if (cx + 12 > tx - 7 && cx - 12 < tx + tw + 7) this.warn.push(`group tab runs into its callout: ${g.tab}`);
       }
     }
-    if (g.co) this.lateCallouts.push(this.callout(g.co, g.coX ?? (g.tabAlign === "right" ? x + 20 : x + w - 16), y));
+    if (g.co) this.lateCallouts.push(this.callout(g.co, this.coX(g), y));
     return s;
+  }
+
+  // a group's callout: on the corner opposite its tab (RTL mirrors it)
+  coX(g) {
+    if (g.coX !== undefined) return g.coX;
+    if (this.rtl) return g.tabAlign === "left" ? g.x + g.w - 20 : g.x + 16;
+    return g.tabAlign === "right" ? g.x + 20 : g.x + g.w - 16;
   }
 
   // layout: "row" (well left, text left), "center" (well + text centred), "tile" (well on top, text centred
@@ -319,7 +356,9 @@ export class Diagram {
     const hit = this.arrivalOf(n.id, { x, y, w, h });
     let s = `<g class="${cls}"${hit ? ` style="--at:${hit.at}${hit.k ? `;--k:${hit.k}` : ""}"` : ""}>`;
     const rx0 = n.rx ?? 10;
-    for (let i = n.stack ?? 0; i > 0; i--) s += `<rect class="dg-b dg-stk" x="${x + i * 8}" y="${y - i * 6}" width="${w - i * 16}" height="${h}" rx="${rx0}"/>`;
+    // stack: cards behind the node, peeking out above it (stackDir "down": below it, so an edge can reach its top)
+    const sdy = n.stackDir === "down" ? 6 : -6;
+    for (let i = n.stack ?? 0; i > 0; i--) s += `<rect class="dg-b dg-stk" x="${x + i * 8}" y="${y + i * sdy}" width="${w - i * 16}" height="${h}" rx="${rx0}"/>`;
     if (ring) s += `<rect class="dg-ring" x="${x - 4}" y="${y - 4}" width="${w + 8}" height="${h + 8}" rx="${rx0 + 4}"/>`;
     if (shape === "cyl") {
       const rx = w / 2;
@@ -339,9 +378,9 @@ export class Diagram {
     const tl = n.t ? String(n.t).split("\n") : [];
     const sl = n.s ? String(n.s).split("\n") : [];
     const T = this.T;
-    const tw = Math.max(0, ...tl.map((t) => textW(t, n.font ?? "title", T)));
-    const sw = Math.max(0, ...sl.map((t) => textW(t, "sub", T)));
-    const D = 16 * Math.max(tl.length - 1, 0) + (sl.length ? (tl.length ? 16 : 0) + T.subGap * (sl.length - 1) : 0);
+    const tw = Math.max(0, ...tl.map((t) => this.tw(t, n.font ?? "title")));
+    const sw = Math.max(0, ...sl.map((t) => this.tw(t, "sub")));
+    const D = T.tLead * Math.max(tl.length - 1, 0) + (sl.length ? (tl.length ? T.tLead : 0) + T.subGap * (sl.length - 1) : 0);
     const drawWell = (wx, wy) => {
       if (!gName) return "";
       return (well ? `<rect class="dg-w" x="${n2(wx)}" y="${n2(wy)}" width="${WL}" height="${WL}" rx="${n2(WL * 0.29)}"/>` : "") +
@@ -350,8 +389,8 @@ export class Diagram {
     const drawText = (tx, b0, anchor) => {
       const a = anchor ? ` text-anchor="middle"` : "";
       let o = ""; let b = b0;
-      tl.forEach((t, i) => { o += `<text class="dg-t" x="${n2(tx)}" y="${n2(b)}"${a}>${esc(t)}</text>`; if (i < tl.length - 1) b += 16; });
-      if (sl.length && tl.length) b += 16;
+      tl.forEach((t, i) => { o += `<text class="dg-t" x="${n2(tx)}" y="${n2(b)}"${a}>${esc(t)}</text>`; if (i < tl.length - 1) b += T.tLead; });
+      if (sl.length && tl.length) b += T.tLead;
       sl.forEach((t, i) => { o += `<text class="dg-s" x="${n2(tx)}" y="${n2(b)}"${a}>${esc(t)}</text>`; if (i < sl.length - 1) b += T.subGap; });
       return o;
     };
@@ -367,18 +406,29 @@ export class Diagram {
     } else if (mode === "icon") {
       s += drawWell(x + w / 2 - WL / 2, cy - WL / 2);
     } else {
-      const b0 = cy - (D - 9.45) / 2;
+      const b0 = cy - (D - T.capH) / 2;
       if (mode === "center") {
         const lead = gName ? (well ? WL + 10 : gs + 10) : 0;
         const blockW = lead + Math.max(tw, sw);
         const bx = x + w / 2 - blockW / 2;
-        if (gName) s += well ? drawWell(bx, cy - WL / 2) : glyph(gName, bx, cy - gs / 2, gs);
-        s += gName ? drawText(bx + lead, b0, false) : drawText(x + w / 2, b0, true);
+        if (this.rtl) { // the glyph at the block's right end (its start), the text to its left
+          const br = bx + blockW;
+          if (gName) s += well ? drawWell(br - WL, cy - WL / 2) : glyph(gName, br - gs, cy - gs / 2, gs);
+          s += gName ? drawText(br - lead, b0, false) : drawText(x + w / 2, b0, true);
+        } else {
+          if (gName) s += well ? drawWell(bx, cy - WL / 2) : glyph(gName, bx, cy - gs / 2, gs);
+          s += gName ? drawText(bx + lead, b0, false) : drawText(x + w / 2, b0, true);
+        }
         need = blockW + 28;
       } else {
         const tx0 = gName ? (well ? 10 + WL + 10 : 40) : 16;
-        if (gName) s += well ? drawWell(x + 10, cy - WL / 2) : glyph(gName, x + 14, cy - gs / 2, gs);
-        s += drawText(x + tx0, b0, false);
+        if (this.rtl) { // mirrored: the well at the right edge, the text anchored at its right end
+          if (gName) s += well ? drawWell(x + w - 10 - WL, cy - WL / 2) : glyph(gName, x + w - 14 - gs, cy - gs / 2, gs);
+          s += drawText(x + w - tx0, b0, false);
+        } else {
+          if (gName) s += well ? drawWell(x + 10, cy - WL / 2) : glyph(gName, x + 14, cy - gs / 2, gs);
+          s += drawText(x + tx0, b0, false);
+        }
         need = tx0 + 14 + Math.max(tw, sw);
       }
     }
@@ -391,7 +441,7 @@ export class Diagram {
     }
     if ((tl.length || sl.length) && need > w + 0.5) this.warn.push(`text overflow in ${n.id}: needs ${Math.ceil(need)} > ${w}`);
     for (const [k, v] of Object.entries({ x, y, w, h })) if (v % 4 !== 0 && !n.offgrid) this.warn.push(`${n.id}.${k}=${v} off the 4px half-grid`);
-    if (n.co) s += this.callout(n.co, x + w - (n.coIn ?? 8), y - (n.coUp ?? 0));
+    if (n.co) s += this.callout(n.co, this.rtl ? x + (n.coIn ?? 8) : x + w - (n.coIn ?? 8), y - (n.coUp ?? 0));
     return s;
   }
 
@@ -429,7 +479,7 @@ export class Diagram {
       let [lx, ly] = e.lxy ?? this.pointAt(pts, e.lt ?? 0.5);
       if (e.lo) { lx += e.lo[0]; ly += e.lo[1]; }
       const T = this.T;
-      const tw = textW(e.label, "el", T);
+      const tw = this.tw(e.label, "el");
       s += `<rect class="dg-elbg" x="${n2(lx - tw / 2 - 6)}" y="${n2(ly - T.elH / 2)}" width="${n2(tw + 12)}" height="${T.elH}" rx="4"/>`;
       s += `<text class="dg-el" x="${n2(lx)}" y="${n2(ly + T.elY)}" text-anchor="middle">${esc(e.label)}</text>`;
     }
@@ -438,6 +488,13 @@ export class Diagram {
   }
 
   checkEdge(e, pts) {
+    // no edge runs through (or within 4 units of) a group's tab pill
+    for (const p of this.pills ?? []) {
+      for (let i = 1; i < pts.length; i++) {
+        const [x1, y1] = pts[i - 1], [x2, y2] = pts[i];
+        if (Math.max(x1, x2) > p.x0 - 4 && Math.min(x1, x2) < p.x1 + 4 && Math.max(y1, y2) > p.y0 && Math.min(y1, y2) < p.y1) this.warn.push(`edge ${e.from}->${e.to} runs into the tab "${p.tab}"`);
+      }
+    }
     const ends = new Set([e.from.split(":")[0], e.to.split(":")[0]]);
     for (const [id, b] of this.boxes) {
       if (ends.has(id) || b.group) continue;
@@ -450,17 +507,20 @@ export class Diagram {
   }
 
   legend(lg) {
-    const LABEL = { orch: "orchestrator", agent: "agent", data: "retrieval · data", model: "model · LLM", eval: "evaluation", guard: "guard · safety", infra: "service · infra", store: "store", ext: "external" };
+    const LABEL = { orch: "orchestrator", agent: "agent", data: "retrieval · data", model: "model · LLM", eval: "evaluation", guard: "guard · safety", infra: "service · infra", store: "store", ext: "external", request: "request", batch: "batch · background", note: "note", ...this.legendLabels };
     const kinds = ["orch", "agent", "data", "model", "eval", "guard", "infra", "store", "ext"].filter((k) => this.kindsUsed.has(k) && !(lg.skip ?? []).includes(k)).map((k) => ({ k, label: lg.labels?.[k] ?? LABEL[k] }));
     const links = [];
-    if (this.hasSync) links.push({ e: "sync", label: "request" });
-    if (this.hasAsync) links.push({ e: "async", label: "batch · background" });
-    if (this.hasCallout) links.push({ co: true, label: "note" });
+    if (this.hasSync) links.push({ e: "sync", label: LABEL.request });
+    if (this.hasAsync) links.push({ e: "async", label: LABEL.batch });
+    if (this.hasCallout) links.push({ co: true, label: LABEL.note });
     const rowH = lg.rowH ?? 24, gap = lg.gap ?? 24;
     const maxW = lg.w ?? this.W - lg.x * 2;
     const T = this.T;
-    const itemW = (it) => (it.e ? 28 : 16) + 8 + textW(it.label, "lg", T);
-    const edge = this.W - 12; // legend text stays 12 units inside the canvas
+    const itemW = (it) => (it.e ? 28 : 16) + 8 + this.tw(it.label, "lg");
+    // legend text stays 12 units inside the canvas. RTL: items are laid out left to right in the box, then mirrored
+    // inside it (swatch at the right, text to its left), so the edge that matters is the canvas's left one.
+    const edge = this.rtl ? 2 * lg.x + maxW - 12 : this.W - 12;
+    const flip = (x0, w) => (this.rtl ? 2 * lg.x + maxW - x0 - w : x0);
     // column starts: equal columns, or explicit offsets from lg.x (lg.colX) when one column needs more room
     const colAt = (c) => lg.x + (lg.colX ? lg.colX[c] : c * (maxW / lg.cols));
     // columns: each slot takes the first remaining item that fits before the canvas edge, so a long label never runs
@@ -492,6 +552,8 @@ export class Diagram {
         if (!lg.cols && x > lg.x && x + iw > lg.x + maxW + 0.5) { x = lg.x; y += rowH; }
         if (x + iw > edge + 0.5) this.warn.push(`legend item "${it.label}" runs past the canvas edge`);
         const cy = y - 4;
+        const lx = x; // the item's left edge in the left-to-right layout
+        { const L = flip(lx, iw); x = this.rtl ? L + iw - sw : L; } // x: the swatch's left edge
         if (it.k) {
           const [cat0, shape] = KINDS[it.k];
           const cls = `dg-n dg-${it.k}${cat0 ? ` dg-c-${cat0}` : ""}`;
@@ -502,6 +564,8 @@ export class Diagram {
           else s += `<rect class="dg-w dg-lsw" x="${x + 0.75}" y="${cy - 7.25}" width="14.5" height="14.5" rx="4"/>`;
           if (it.k !== "ext") s += `<circle class="dg-dot" cx="${x + 8}" cy="${shape === "cyl" ? cy + 1.5 : cy}" r="2.5"/>`;
           s += `</g>`;
+        } else if (it.e && this.rtl) { // the arrow points left, as the drawing reads
+          s += `<path class="dg-e${it.e === "async" ? " dg-a" : ""}" d="M${x + 28} ${cy}H${x + 2}"/><path class="dg-ah" d="M${x + 5.5} ${cy - 4}L${x + 1.5} ${cy}L${x + 5.5} ${cy + 4}"/>`;
         } else if (it.e) {
           s += `<path class="dg-e${it.e === "async" ? " dg-a" : ""}" d="M${x} ${cy}H${x + 26}"/><path class="dg-ah" d="M${x + 22.5} ${cy - 4}L${x + 26.5} ${cy}L${x + 22.5} ${cy + 4}"/>`;
         } else if (it.co) {
@@ -509,13 +573,15 @@ export class Diagram {
           // attributes, so a legend-only size would never reach the page)
           s += `<g class="dg-co"><circle cx="${x + 8}" cy="${cy}" r="10"/><text x="${x + 8}" y="${n2(cy + T.coY)}">1</text></g>`;
         }
-        s += `<text class="dg-lg" x="${x + sw + 8}" y="${y}">${esc(it.label)}</text>`;
+        s += `<text class="dg-lg" x="${this.rtl ? x - 8 : x + sw + 8}" y="${y}">${esc(it.label)}</text>`;
+        x = lx;
         if (!lg.cols) x += iw + gap;
       }
       y += rowH;
     }
     s += `</g>`;
     this.legendBottom = y - rowH;
+    if (this.legendBottom + 4 > this.H) this.warn.push(`legend runs past the bottom (baseline ${n2(this.legendBottom)} > ${this.H - 4})`);
     return s;
   }
 
@@ -554,9 +620,10 @@ export class Diagram {
     if (main.length > 8) this.warn.push("main path longer than 8 hops: pulses overlap");
     const dots = S.grid === false ? "" : `<defs><pattern id="${this.pid}-dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle class="dg-dots" cx="12" cy="12" r="1"/></pattern></defs>`;
     const bg = `<rect class="dg-cv" width="${this.W}" height="${this.H}" rx="16"/>` + (S.grid === false ? "" : `<rect width="${this.W}" height="${this.H}" rx="16" fill="url(#${this.pid}-dots)" opacity="${S.gridOpacity ?? 0.55}"/>`);
-    const style = shake(css([...this.used], { compact: this.variant === "compact" }), `${dots}${bg}${groups}${edges}${pulses}${nodes}${extra}${legend}`);
+    const rootCls = `dg dg-${this.variant}${this.rtl ? " dg-ar" : ""}`;
+    const style = shake(css([...this.used], { compact: this.variant === "compact" }), `<svg class="${rootCls}">${dots}${bg}${groups}${edges}${pulses}${nodes}${extra}${legend}`);
     const vars = "";
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${this.W} ${this.H}" width="${this.W}" height="${this.H}" class="dg dg-${this.variant}" role="img" aria-labelledby="${this.pid}-title" aria-describedby="${this.pid}-desc" lang="en" direction="ltr" fill="none"${vars}>` +
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${this.W} ${this.H}" width="${this.W}" height="${this.H}" class="${rootCls}" role="img" aria-labelledby="${this.pid}-title" aria-describedby="${this.pid}-desc" lang="${this.rtl ? "ar" : "en"}" direction="${this.rtl ? "rtl" : "ltr"}" fill="none"${vars}>` +
       `<title id="${this.pid}-title">${esc(this.title)}</title><desc id="${this.pid}-desc">${esc(this.desc)}</desc>` +
       `<style>${style}</style>${dots}${bg}${groups}${edges}${pulses}${nodes}${extra}${legend}</svg>`;
     this.checkOverlaps();

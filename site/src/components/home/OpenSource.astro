@@ -5,9 +5,11 @@
  * Data: profile.projects. Copy: content/i18n projects.*.
  */
 import "~/styles/home-b.css";
+import BidiText from "~/components/ui/BidiText.astro";
 import Icon from "~/components/ui/Icon.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
 import { format, messages, type Locale } from "~/lib/i18n";
+import { noBreakHtml } from "~/lib/nobreak";
 import { link, profile } from "~/lib/site";
 import type { ProjectId } from "@content/profile.ts";
 
@@ -34,7 +36,7 @@ const coursework = profile.projects.filter((p) => p.kind === "coursework");
 const owner = "mhatem5351";
 const repoPath = (url: string) => url.replace(/^https:\/\/github\.com\//, "");
 ---
-<section class="section" id="projects" aria-labelledby="projects-title">
+<section class="section section--band" id="projects" aria-labelledby="projects-title">
   <div class="container disclose" data-disclose>
     <SectionHeader index="05" eyebrow={m.projects.eyebrow} title={m.projects.title} titleId="projects-title" lede={m.projects.lead} />
     <ul class="repos" id="repos-list" role="list">
@@ -65,7 +67,7 @@ const repoPath = (url: string) => url.replace(/^https:\/\/github\.com\//, "");
                 </div>
                 <Icon name="arrow-up-right" size="sm" class="repo__ext" />
               </div>
-              <p class="repo__desc">{p.description[locale]}</p>
+              <p class="repo__desc" set:html={noBreakHtml(p.description[locale], "nowrap")} />
               {p.credit && <p class="repo__credit">{p.credit[locale]}</p>}
               {!isSmall && (
                 <div class="cluster gap-tight repo__meta">
@@ -88,7 +90,8 @@ const repoPath = (url: string) => url.replace(/^https:\/\/github\.com\//, "");
     <div class="repos__more">
       <div class="repos__archive disclose" data-disclose>
         <p class="repos__archive-title">{m.projects.archiveTitle}</p>
-        <p>{m.projects.archiveLead}</p>
+        {/* The year range reads "2021–2022" in Arabic too (an isolated LTR run; audit A-02), and stays on one line. */}
+        <p><BidiText text={m.projects.archiveLead} locale={locale} /></p>
         <button class="btn btn--secondary btn--sm disclose__toggle" type="button" aria-expanded="false" aria-controls="archive-list" data-disclose-toggle>
           {format(m.projects.archiveToggle, { count: coursework.length })}
           <Icon name="chevron-down" class="disclose__chev" />

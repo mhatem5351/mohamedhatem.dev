@@ -35,7 +35,7 @@ const featured = profile.certifications.filter((c) => c.featured);
 const others = profile.certifications.filter((c) => !c.featured);
 const issuedText = (issued: string | null) => (issued ? format(m.education.earned, { date: formatMonth(issued, locale) }) : null);
 ---
-<section class="section section--band" id="education" aria-labelledby="education-title">
+<section class="section" id="education" aria-labelledby="education-title">
   <div class="container">
     <SectionHeader index="08" eyebrow={m.education.eyebrow} title={m.education.title} titleId="education-title" />
     <div class="edu">

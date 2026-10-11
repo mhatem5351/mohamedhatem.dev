@@ -92,9 +92,11 @@ function warmUp(w: ChatWindow): () => void {
  *   - it is over a form (the contact form: its fields and its controls, not only Send);
  *   - on phones, the visitor scrolls down the page: nothing slides under it while they read on, and it comes back
  *     as soon as they stop (1.2 s), scroll up or reach the end of the page. Over a text to read ([data-chat-read]:
- *     the CV sheet, whose lines run to the screen's edge on a phone) it doesn't come back on its own after a scroll
- *     down: only on a scroll up, past that text or at the end of the page, so it never sits on the line ends being
- *     read. It is there when the page opens, and a small scroll up always brings it back.
+ *     the CV sheet, whose lines run to the screen's edge) it doesn't come back on its own after a scroll down: only
+ *     on a scroll up, past that text or at the end of the page;
+ *   - on phones, it would sit on a line of such a text: checked against the text's own line boxes (not the sheet's
+ *     box), when the page opens, once the avatar is in and at every rest, so it is never on the first screen's text
+ *     (audit R7-LEAD-02), nor on a line after a scroll up.
  * Never while the chat is open or the launcher has focus. The avatar (chat-avatar.ts) waits for it to come back
  * before it greets. The phone action dock steps aside with it (dock.ts), so the two never look half there.
  */
@@ -118,19 +120,52 @@ function manners(host: HTMLElement, button: HTMLElement): void {
   let frame = 0;
   let pause = 0;
 
+  const hits = (r: DOMRect, b: DOMRect, pad: number) => r.width > 0 && r.right + pad > b.left && r.left - pad < b.right && r.bottom + pad > b.top && r.top - pad < b.bottom;
   /** The launcher (measured even while it is aside) is over one of `els`, with `pad` px around it. */
   const over = (els: Element[], pad: number) => {
     const b = button.getBoundingClientRect();
-    return els.some((f) => {
-      const r = f.getBoundingClientRect();
-      return r.width > 0 && r.right + pad > b.left && r.left - pad < b.right && r.bottom + pad > b.top && r.top - pad < b.bottom;
-    });
+    return els.some((f) => hits(f.getBoundingClientRect(), b, pad));
+  };
+  /**
+   * The launcher is on a line of a [data-chat-read] text: the elements under its disc (five points), then the line
+   * boxes of their text (a Range per text node: only the few nodes under the disc are measured).
+   */
+  const range = document.createRange();
+  const onText = () => {
+    const b = button.getBoundingClientRect();
+    if (!b.width) return false;
+    const seen = new Set<Element>();
+    // A 3 × 3 grid over the disc and 8 px of air beside it.
+    const xs = [Math.max(0, b.left - 8), (b.left + b.right) / 2, Math.min(innerWidth - 1, b.right + 8)];
+    const ys = [b.top + 2, (b.top + b.bottom) / 2, b.bottom - 2];
+    for (const x of xs)
+      for (const y of ys) {
+        const el = document.elementsFromPoint(x, y).find((e) => e !== host && !host.contains(e));
+        if (!el || seen.has(el) || !texts.some((t) => t.contains(el))) continue;
+        seen.add(el);
+        const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        for (let n = walk.nextNode(), i = 0; n && i < 80; n = walk.nextNode(), i++) {
+          if (!n.textContent?.trim()) continue;
+          range.selectNodeContents(n);
+          for (const r of range.getClientRects()) if (hits(r, b, 8)) return true;
+        }
+      }
+    return false;
+  };
+  let onRead = false;
+  /** Looked at when the page opens, at each rest and on resize (never per scroll frame). */
+  const checkRead = () => {
+    const next = !!texts.length && phone.matches && onText();
+    if (next !== onRead) {
+      onRead = next;
+      schedule();
+    }
   };
   const update = () => {
     frame = 0;
     const a = document.activeElement;
     const typing = touch.matches && !!a && a !== host && a.matches(FIELD);
-    host.toggleAttribute("data-aside", !open && !host.matches(":focus-within") && (typing || over(forms, PAD) || reading));
+    host.toggleAttribute("data-aside", !open && !host.matches(":focus-within") && (typing || over(forms, PAD) || reading || onRead));
   };
   const schedule = () => void (frame ||= requestAnimationFrame(update));
 
@@ -145,13 +180,26 @@ function manners(host: HTMLElement, button: HTMLElement): void {
         lastY = y;
       }
       clearTimeout(pause);
-      // Still for 1.2 s: back, unless it would sit on the text being read (then a scroll up or the end brings it).
-      if (reading) pause = window.setTimeout(() => over(texts, 0) || ((reading = false), schedule()), 1200);
+      // Still for 1.2 s after a scroll down: back, unless it is over a text being read (then a scroll up or the end
+      // brings it). Any rest (0.25 s after a scroll up): never on a line of that text.
+      pause = window.setTimeout(
+        () => {
+          checkRead();
+          if (reading && !over(texts, 0)) {
+            reading = false;
+            schedule();
+          }
+        },
+        reading ? 1200 : 250,
+      );
       schedule();
     },
     { passive: true },
   );
-  addEventListener("resize", schedule);
+  addEventListener("resize", () => {
+    checkRead();
+    schedule();
+  });
   document.addEventListener("focusin", schedule);
   document.addEventListener("focusout", schedule);
   document.addEventListener("mh:chat-state", (e) => {
@@ -162,4 +210,10 @@ function manners(host: HTMLElement, button: HTMLElement): void {
     schedule();
   });
   update();
+  // The first screen: once the fonts have set the lines, and again once the avatar has dressed the launcher (its final
+  // size and place; it is hidden until then).
+  if (texts.length) {
+    void document.fonts.ready.then(() => requestAnimationFrame(checkRead));
+    document.addEventListener("mh:chat-art", () => requestAnimationFrame(checkRead));
+  }
 }

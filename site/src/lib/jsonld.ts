@@ -25,7 +25,7 @@ import type { CaseStudy, Certification, Client, Locale, Period } from "@content/
 import { datedByRole } from "./case";
 import { PRIVACY_UPDATED, SITE_PUBLISHED, HOME_UPDATED } from "./dates";
 import { format, localePath, messages, parseIso } from "./i18n";
-import { PATHS, absolute, caseStudyBySlug, contact, link, ogImage, profile } from "./site";
+import { PATHS, absolute, caseStudyBySlug, contact, byLocale, link, ogImage, profile } from "./site";
 import { versioned } from "./og-version";
 
 export const PERSON_ID = `${profile.site.url}/#person`;
@@ -183,8 +183,10 @@ export function caseStudyJsonLd(slug: string, locale: Locale): object[] {
   if (!cs) return [];
   const m = messages(locale);
   const url = absolute(localePath(PATHS.work(cs.slug), locale));
-  const live = cs.links.find((l) => /^https?:\/\//.test(l.href) && !l.href.includes("github.com"));
-  const code = cs.links.find((l) => l.href.includes("github.com"));
+  // A link may be one URL per language (SEO-04): each page names its own.
+  const links = cs.links.map((l) => ({ ...l, href: byLocale(l.href as string | Record<Locale, string>, locale) }));
+  const live = links.find((l) => /^https?:\/\//.test(l.href) && !l.href.includes("github.com"));
+  const code = links.find((l) => l.href.includes("github.com"));
   const article = {
     "@context": CONTEXT,
     "@type": "Article",
@@ -202,7 +204,8 @@ export function caseStudyJsonLd(slug: string, locale: Locale): object[] {
     isPartOf: { "@id": WEBSITE_ID },
     datePublished: cs.published,
     dateModified: cs.updated,
-    keywords: cs.stack.join(", "),
+    // A stack item may be a product name or a { en, ar } concept (round 7, R7-30).
+    keywords: (cs.stack as readonly (string | Record<Locale, string>)[]).map((t) => byLocale(t, locale)).join(", "),
     about: {
       "@type": "CreativeWork",
       name: cs.title[locale],

@@ -31,6 +31,7 @@ const { locale } = Astro.props;
 const m = messages(locale);
 const b = profile.basics;
 const [before, after] = m.hero.localTime.split("{time}");
+const availabilityShort = (m.hero as { availabilityShort?: string }).availabilityShort;
 ---
 <section class="hero" id="top" aria-labelledby="hero-title" data-hero>
   <div class="hero__bg" aria-hidden="true"></div>
@@ -38,7 +39,9 @@ const [before, after] = m.hero.localTime.split("{time}");
     <div class="hero__copy">
       {/* Phones only (< 30rem): availability above the headline; from 30rem it sits in the meta line under the buttons. */}
       <p class="hero__status">
-        <a class="hero__status-link" href="#open-to"><i class="dot" aria-hidden="true"></i><span>{m.hero.availability}<span class="hero__status-detail"> · {m.hero.arrangementsShort}</span></span></a>
+        {/* The roles in one line when the copy has them (hero.availabilityShort, HM-13); else availability and
+            arrangements. */}
+        <a class="hero__status-link" href="#open-to"><i class="dot" aria-hidden="true"></i>{availabilityShort ? <span>{availabilityShort}</span> : <span>{m.hero.availability}<span class="hero__status-detail"> · {m.hero.arrangementsShort}</span></span>}</a>
       </p>
       {
         /*
@@ -72,8 +75,11 @@ const [before, after] = m.hero.localTime.split("{time}");
         </a>
         <p class="hero__meta">
           {/* Availability and work arrangements up front (recruiters scan for them); the link goes to the full list. */}
-          <a class="hero__open" href="#open-to"><i class="dot" aria-hidden="true"></i><span>{m.hero.availability}<span class="hero__open-detail"> · {m.hero.arrangements}</span></span></a>
-          <span>
+          {/* The full arrangements, or the short form where the copy column is narrow (64-80rem: three ragged mono lines
+              with a widow; audit H-22). */}
+          <a class="hero__open" href="#open-to"><i class="dot" aria-hidden="true"></i><span>{m.hero.availability}<span class="hero__open-detail"> · <span class="hero__arr-long">{m.hero.arrangements}</span><span class="hero__arr-short">{m.hero.arrangementsShort}</span></span></span></a>
+          {/* The live time needs the script: without it the build's time would be stale (hidden, round 7 RES-01). */}
+          <span data-js-only>
             <Icon name="clock" size="sm" />
             {before}<time data-cairo-time>{cairoTime(locale)}</time>{after}
           </span>
@@ -95,15 +101,5 @@ const [before, after] = m.hero.localTime.split("{time}");
     :global([dir="rtl"]) .btn:hover :global(.arrow--down) {
       transform: translateY(2px);
     }
-  }
-  /* The graph's pause button also stops the hero's other loop: the live dot (and the typed examples, see AskBar). */
-  :global([data-hero][data-paused]) :global(.dot--live)::after {
-    animation: none;
-    opacity: 0;
-  }
-  /* The live dot rests whenever the graph does (off screen, hidden tab, after its loops on touch screens: the
-     runtime sets .is-frozen on the svg), so it doesn't ping for the rest of the visit. */
-  :global(.hero__art:has(.is-frozen)) :global(.dot--live)::after {
-    animation-play-state: paused;
   }
 </style>

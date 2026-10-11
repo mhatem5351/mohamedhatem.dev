@@ -12,7 +12,9 @@
 @layer theme, base, components, utilities;
 @layer components {
   .cv-page { background: var(--color-bg-subtle); min-height: 100dvh; }
-  .cv-page main { padding-block-end: 4rem; }
+  /* The page ends with room for the chat launcher under the last links (as the footer does elsewhere: WCAG 2.4.11), so
+     at the end it is back beside them, never over them. */
+  .cv-page main { padding-block-end: calc(var(--chat-clearance, 5rem) + 1.5rem + env(safe-area-inset-bottom)); }
 
   /* ---------- toolbar ---------- */
   .cv-bar { position: sticky; inset-block-start: 0; z-index: var(--z-nav); background: color-mix(in srgb, var(--color-bg) 86%, transparent); -webkit-backdrop-filter: saturate(1.5) blur(12px); backdrop-filter: saturate(1.5) blur(12px); border-block-end: 1px solid var(--color-line); }
@@ -20,6 +22,8 @@
   .cv-bar__title { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); letter-spacing: .04em; margin-inline-start: .5rem; direction: ltr; unicode-bidi: isolate; white-space: nowrap; }
   .cv-bar__spacer { flex: 1; }
   .cv-bar .lang-switch { min-height: 2.25rem; height: 2.25rem; }
+  /* "English" in the Arabic toolbar at its siblings' size, not the loudest word in the bar (audit A-11). */
+  :lang(ar) .cv-bar .lang-switch > [lang="en"] { font-size: calc(var(--text-xs) / var(--script-scale, 1)); }
   .cv-bar .btn--icon-sm { width: 2.25rem; padding: 0; }
   .cv-bar__label-short { display: none; }
   @media (max-width: 63.99rem) { .cv-bar__title { display: none; } }
@@ -59,7 +63,7 @@
   .cv-head__mark { width: 15mm; height: 15mm; grid-row: span 2; }
   .cv-name { font-family: var(--font-display); font-weight: 600; font-size: 22pt; line-height: 1; letter-spacing: -.02em; color: var(--ink); margin: 0; }
   .cv-name:lang(ar) { font-weight: 700; letter-spacing: 0; line-height: 1.25; }
-  .cv-title { font-family: var(--font-display); font-weight: 500; font-size: 11.5pt; line-height: 1.35; color: var(--ink-2); margin-block-start: 1.6mm; }
+  .cv-title { font-family: var(--font-display); font-weight: var(--fw-medium, 500); font-size: 11.5pt; line-height: 1.35; color: var(--ink-2); margin-block-start: 1.6mm; }
   .cv-title b { color: var(--accent); font-weight: 600; }
   .cv-title .sep { color: var(--muted); padding-inline: .1em; }
   .cv-contact { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2.2mm 4.5mm; margin-block-start: 3.2mm; font-family: var(--font-mono); font-size: 7.8pt; line-height: 1.6; color: var(--ink-2); list-style: none; padding: 0; }
@@ -146,6 +150,8 @@
   /* below the sheet (screen only): other-language PDF, file size */
   .cv-after { width: min(210mm, 100% - 2 * var(--space-gutter)); margin: 1rem auto 0; display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; justify-content: space-between; font-size: var(--text-sm); color: var(--color-muted); }
   .cv-after a { color: var(--color-accent); text-decoration: underline; text-underline-offset: .2em; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+  /* Which PDF suits an applicant tracking system (/ar/cv/ only; HM-26). */
+  .cv-after__ats { margin-block-start: .5rem; font-size: var(--text-xs); line-height: 1.7; }
   @media (hover: hover) { .cv-after a:hover { text-decoration-color: currentColor; } }
 
   /*
@@ -319,4 +325,54 @@
   @media screen {
     :root:not([data-theme="light"]) .sheet { background: #F4F0E7; border-color: rgb(255 255 255 / .06); box-shadow: 0 30px 80px -20px rgb(0 0 0 / .6); }
   }
+}
+
+/* ---------- round 7: phone role heads, skills that wrap as items, the tablet sidebar, the toolbar's edges ---------- */
+@layer components {
+  /* Phones (audit D-02): a role's dates take their own line under the role, beside the logo column, instead of a
+     no-wrap column that squeezed the role and its company into 2-4 lines. The earlier roles follow the same rule.
+     Screen only: print is A4, never this narrow. */
+  @media screen and (max-width: 39.99rem) {
+    .sheet .job__head--logo, .sheet .earlier__row--logo { grid-template-columns: var(--cv-logo) minmax(0, 1fr); }
+    .job__head--logo > .job__when { grid-column: 2; grid-row: 2; margin-inline-start: 0; }
+    .job__head--logo > .job__where { grid-column: 2; grid-row: 3; }
+    .earlier__row--logo > em { grid-column: 2; grid-row: 2; margin-inline-start: 0; }
+    .earlier__row--logo > p { grid-column: 2; }
+  }
+  /* The company's "·" stays with the company: a wrapped head reads "Senior AI & MLOps Engineer" / "· Wakeb Data", never
+     a line ending on the separator. Screen only (the PDF's text layer keeps its plain space). */
+  @media screen { .job__org::before { content: "·\00a0"; } }
+  /* A skill is one unit (audit D-14): "Azure OpenAI", "AWS (SageMaker, EC2, …)" and "Hugging Face Transformers" move
+     to the next line whole, so a line never opens on "EKS)". The unit is the item WITH its trailing comma
+     (<span class="skill-i"><bdi>…</bdi>،</span>, CvSheet.astro): an atomic inline always allows a break before the
+     next character, so a bare <bdi> unit would push its comma to the start of the next line. An item wider than the
+     column still wraps inside itself. Screen and print (the Arabic PDF had the same breaks). */
+  .skill-g .skill-i { display: inline-block; max-width: 100%; }
+  /* Tablets (audit R7-DOC-04): the two sidebar columns balance. Skills may continue in the second column between its
+     groups (a group never splits), so the columns end within a group of each other instead of 360 px apart. */
+  @media screen and (min-width: 48rem) and (max-width: 63.99rem) {
+    .cv-side > .cv-sec:not(.cv-sec--keep) { break-inside: auto; }
+    .cv-side .skill-g { break-inside: avoid; }
+  }
+  /* Phones (audit R7-DOC-05): the title line never ends on a separator. The employer carries its own "·" glued to it
+     (so a narrow line breaks before the dot, never after it), and the focus starts its own line without a second dot.
+     The markup's separators stay for copied text. */
+  @media screen and (max-width: 39.99rem) {
+    .cv-title > .sep { display: none; }
+    .cv-title > b::before { content: "·\00a0"; color: var(--muted); font-weight: 400; }
+    .cv-title > b::after { content: "\A"; white-space: pre; }
+  }
+  /* The footer sentence wraps into even lines on screen, so the domain is never left alone on the last one. */
+  @media screen { .cv-foot > span { text-wrap: balance; } }
+  /* The line under the sheet: the PDF's size at its start, the links at its end (also when the size is unknown). */
+  .cv-after { justify-content: flex-end; }
+  .cv-after__info { margin-inline-end: auto; }
+}
+/* Wide screens (audit D-18): the toolbar spans the document, not the site container: its first and last buttons line
+   up with the sheet's edges (the sheet is 210 mm × 1.16 there). The decorative address ("mohamedhatem.dev/cv", the
+   browser's own bar shows it) gives its room to the actions' labels. Unlayered: the .container utility (utilities
+   layer) would otherwise keep the site's width. */
+@media screen and (min-width: 75rem) {
+  .cv-bar .cv-bar__inner { max-width: calc(210mm * 1.16); padding-left: 0; padding-right: 0; }
+  .cv-bar .cv-bar__title { display: none; }
 }

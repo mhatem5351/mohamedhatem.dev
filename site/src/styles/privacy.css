@@ -32,3 +32,19 @@
     .doc__body { order: 2; }
   }
 }
+@layer components {
+  /* A hyphenated compound ("rate-limited", "short-lived") or a short product name in Arabic text ("Cloudflare Email
+     Routing") is one unit (PrivacyPage.astro; audits D-27, A-20): it moves to the next line whole, and still wraps
+     inside itself when it is wider than the line (user text spacing, WCAG 1.4.12). */
+  .doc .nb-unit { display: inline-block; max-width: 100%; }
+  /* 64-80rem (audit R7-DOC-03): the chat launcher (bottom inline-end corner, 56 px + 16 px) has no reading dodge on
+     laptops, and the 40rem column ran under it at 1024 px. The column ends 4.5rem before the page's edge there; from
+     80rem it already does. */
+  @media (min-width: 64rem) and (max-width: 79.99rem) {
+    .doc__body { max-width: min(var(--container-prose), 100% - 4.5rem); }
+  }
+  /* The way back closes the text column (audit D-12). The last section keeps no hairline under it (as before): the
+     button follows its text, and the column's end stays an empty spot for the assistant's greeting. */
+  .doc__body > .doc__sec:last-of-type { border-block-end: 0; }
+  .doc__body > .doc__back { margin-block-start: .5rem; }
+}

@@ -186,3 +186,35 @@ test("44 px targets in the sheet: chips, header buttons, contact card, copy (hit
   );
   expect(small).toEqual([]);
 });
+
+test("small phones (320 px): a one-line header and a one-line placeholder; the subtitle still describes the dialog @mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  for (const query of ["", "lang=ar"]) {
+    await openDemo(page, query);
+    await bubble(page).tap();
+    await expect(dialog(page)).toBeVisible();
+    // Audit M-11: the header was 106 px (title and subtitle on two lines each); the subtitle goes below 375 px.
+    await expect(page.locator("[data-mh-chat] #mhc-sub")).toBeHidden();
+    await expect(dialog(page)).toHaveAccessibleDescription(/LinkedIn/);
+    const title = page.locator("[data-mh-chat] .ti");
+    expect(await title.evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)))).toBe(1);
+    expect(await page.locator("[data-mh-chat] .hd").evaluate((el) => el.getBoundingClientRect().height)).toBeLessThan(80);
+    // The placeholder stays on one line instead of wrapping into a second, cut-off line.
+    const ta = page.locator("[data-mh-chat] textarea");
+    expect(await ta.evaluate((el) => getComputedStyle(el, "::placeholder").whiteSpace)).toBe("nowrap");
+    expect(await ta.evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(true);
+  }
+});
+
+test("the sheet slides in from the bottom edge, opaque: the page never shows through it (audit M-12) @mobile", async ({ page }) => {
+  await openDemo(page);
+  // The panel is built on the first intent (warm), closed: parked below the screen at full opacity.
+  await page.evaluate(() => (window as unknown as { MHChat: { warm(): void } }).MHChat.warm());
+  const pn = page.locator("[data-mh-chat] .pn");
+  await expect(pn).toBeAttached();
+  expect(await pn.evaluate((el) => [getComputedStyle(el).opacity, getComputedStyle(el).transform])).toEqual(["1", "matrix(1, 0, 0, 1, 0, 844)"]);
+  await bubble(page).tap();
+  await expect(dialog(page)).toBeVisible();
+  await expect.poll(() => pn.evaluate((el) => getComputedStyle(el).transform)).toBe("none");
+  expect(await pn.evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
+});

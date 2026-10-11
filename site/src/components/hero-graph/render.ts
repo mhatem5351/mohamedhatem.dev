@@ -13,8 +13,9 @@ import {
 export interface RenderOptions {
   dir?: Dir;
   lang?: Lang;
-  /** Visible node labels in the page's language (the Arabic page: m.hero.graph); the rest keep their Latin ids. */
-  labels?: Partial<Record<NodeId, string>>;
+  /** Visible node and port labels in the page's language (the Arabic page: m.hero.graph); the rest keep their Latin
+      ids. The ports ("query", "answer") and the tools node follow when the copy has them (audit R7-AR-12). */
+  labels?: Partial<Record<NodeId | "query" | "answer", string>>;
   /** id prefix, only needed if two graphs share a page */
   id?: string;
 }
@@ -107,14 +108,14 @@ function node(id: NodeId, dir: Dir, lang: Lang, pfx: string, labels: RenderOptio
   );
 }
 
-function port(id: "query" | "answer", dir: Dir, pfx: string): string {
+function port(id: "query" | "answer", dir: Dir, pfx: string, text?: string): string {
   const p = pos(id, dir), r = PLACE[id].r;
   return (
     `<g class="hg-port hg-c-${catOf(id)}" data-id="${id}" transform="translate(${p.x} ${p.y})">` +
     `<circle class="hg-ripple" r="${r + 2}"/>` +
     `<rect class="hg-term hg-off" x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" rx="3.5"/>` +
     `<rect class="hg-term hg-on" x="${-r}" y="${-r}" width="${2 * r}" height="${2 * r}" rx="3.5"/>` +
-    `<circle class="hg-gd hg-off" r="1.9"/><circle class="hg-gd hg-on" r="1.9"/>${label(id, dir, r, pfx)}</g>`
+    `<circle class="hg-gd hg-off" r="1.9"/><circle class="hg-gd hg-on" r="1.9"/>${label(id, dir, r, pfx, text)}</g>`
   );
 }
 
@@ -172,7 +173,7 @@ export function renderHeroGraphSVG(o: SvgOptions = {}): string {
     `<g class="hg-spokes" aria-hidden="true">${spokes}${cmds}${routeSpoke}${hotSpoke}</g>` +
     `<g class="hg-comet hg-c-teal" aria-hidden="true">${grads}${tail}` +
     `<g class="hg-hd"><circle class="hg-head-h" r="8"/><circle class="hg-head" r="3.4"/></g></g>` +
-    `<g class="hg-sl"><g aria-hidden="true">${port("query", dir, pfx)}${port("answer", dir, pfx)}</g>${sats(["guard"])}</g>` +
+    `<g class="hg-sl"><g aria-hidden="true">${port("query", dir, pfx, o.labels?.query)}${port("answer", dir, pfx, o.labels?.answer)}</g>${sats(["guard"])}</g>` +
     `<g class="hg-ol">${node("orchestrator", dir, lang, pfx, o.labels)}</g>` +
     `<g class="hg-sl">${sats(ORDER.slice(2))}</g>` +
     `</svg>`

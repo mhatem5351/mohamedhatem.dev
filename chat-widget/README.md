@@ -99,8 +99,11 @@ site, so they are outside this widget's size budget; the hook costs 22 bytes gzi
     page instead of resizing it, and the header, Close and the composer would scroll away. Pages should also set
     `interactive-widget=resizes-content` in their viewport meta (Chrome and Firefox on Android). While the keyboard is
     up (`data-kb` on the host) the home-indicator padding goes; short landscape windows get a compact header;
-  - a grab bar, and a swipe down on the header closes it (past 80 px or a quick flick; it springs back otherwise; no
+  - it slides up from the bottom edge and back down, opaque all the way (the page never shows through it), and a
+    grab bar and a swipe down on the header close it (past 80 px or a quick flick; it springs back otherwise; no
     motion under reduced motion); Close stays;
+  - below 375 px the header keeps to one line: the subtitle goes (it still describes the dialog) and the title steps
+    down to 14 px; the composer's placeholder stays on one line (an ellipsis where the engine draws one);
   - 44 px targets (also on any touch screen), pressed (`:active`) states, and hover styles only where hovering exists,
     so no hover look sticks after a tap.
   Escape, Close, Back and the swipe all return focus to what opened it (on phones, a text field's form button, so
@@ -165,13 +168,17 @@ npm run test:widget:unit   # Vitest: markdown (links, isolation), SSE, language,
 npm run widget:size        # gzip budget
 ```
 
-Size today (gzip, fflate): loader 2.62 KB (budget 3 KB), total 19.50 KB (budget 19.5 KB). The budget was 18.5 KB,
+Size today (gzip, fflate): loader 2.61 KB (budget 3 KB), total 19.49 KB (budget 19.5 KB). The budget was 18.5 KB,
 met to the byte after the launcher hook and the `avatar` option (+22 B). It rose by 20 B with the Lapis palette
 (2026-10-10): the token fallbacks in `VARS` and the default launcher's bubble and glyph carry the Lapis colours (lapis
 ink, alabaster, turquoise, gold, carnelian, lapis), +17 B gzip. The fallbacks only apply on a page without the design
 tokens, and the default launcher only shows when the site's avatar can't load (`data-art="off"`), but they are the
 brand as the widget ships it standalone. It was then raised once, to 19.5 KB, for the phone sheet: keyboard fit,
-Back, focus return, 44 px targets, swipe to close, hover guards and Undo.
+Back, focus return, 44 px targets, swipe to close, hover guards and Undo. Round 7 (2026-10-11) fitted the Arabic
+panel's type (DESIGN 4.3), the RTL placeholder, the small-phone header, the sliding sheet and the site's focus halo
+and radii (+120 B) inside it, paid for by CSS that repeated inherited values (colour, tap highlight), a shared
+reduced-motion rule, one rule for the header and send buttons, and `calc()` inside `min()`/`max()`: 19,960 of
+19,968 B.
 
 `tests/fixtures/site.html` mirrors the site's layout for the desktop tests (`tests/e2e/desktop.spec.ts`, 1440×807):
 64 px sticky header, scroll-padding, smooth scrolling, contact form in the right column.

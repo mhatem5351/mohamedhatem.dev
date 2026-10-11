@@ -2,7 +2,9 @@
 /**
  * The case study's one "enlarge" view (DESIGN.md 12.11): a modal <dialog> that shows a product screen
  * (ScreenGallery.astro, `a[data-zoom]`) or an architecture figure's wide drawing (FigurePanel.astro,
- * `button[data-zoom-figure]` + its <template>) large enough to read, to pan and to pinch-zoom on a phone.
+ * `button[data-zoom-figure]` + its <template>) large enough to read, to pan (scroll, drag, keys) and to pinch-zoom on a
+ * phone. For a figure on a wider screen, the bar's "Show the full diagram" toggle (aria-pressed) switches between the
+ * whole drawing and the readable zoom.
  * Escape, the close button, a click on the backdrop and the phone's Back all close it, and focus returns to what opened
  * it. While it is open the page's living charts rest and the chat launcher and the action dock step away.
  * Behaviour: src/scripts/zoom-dialog.ts. Styles: case.css (section 12).
@@ -15,16 +17,33 @@ interface Props {
 }
 const { locale } = Astro.props;
 const m = messages(locale);
+/** With a mouse there is no pinch: its own hint where the copy has one (R7-CASE-03). */
+const pointerHint = (m.work.page as { zoomHintPointer?: string }).zoomHintPointer;
 ---
-<dialog class="zoom" data-zoom-dialog aria-labelledby="zoom-cap">
+<dialog class="zoom" data-zoom-dialog aria-labelledby="zoom-cap" tabindex="-1">
   <div class="zoom__bar">
     <p class="zoom__cap" id="zoom-cap" data-zoom-cap></p>
+    <button
+      class="btn btn--icon btn--ghost zoom__fit"
+      type="button"
+      data-zoom-fit
+      aria-label={m.work.page.showFullDiagram}
+      title={m.work.page.showFullDiagram}
+      aria-pressed="false"
+      hidden
+    >
+      <svg class="icon zoom__fit-whole" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3.5V9H3.5M15 3.5V9h5.5M9 20.5V15H3.5M15 20.5V15h5.5" /></svg>
+      <Icon name="expand" class="zoom__fit-zoom" />
+    </button>
     <button class="btn btn--icon btn--ghost zoom__close" type="button" data-zoom-close aria-label={m.work.page.closeScreen}>
       <Icon name="close" />
     </button>
   </div>
   <div class="zoom__body" tabindex="0" role="group" aria-labelledby="zoom-cap" data-zoom-body></div>
-  <p class="zoom__hint" data-zoom-hint>{m.work.page.zoomHint}</p>
+  <p class="zoom__hint" data-zoom-hint>
+    <span class="zoom__hint-touch">{m.work.page.zoomHint}</span>
+    {pointerHint && <span class="zoom__hint-pointer">{pointerHint}</span>}
+  </p>
 </dialog>
 <script>
   import "~/scripts/zoom-dialog";

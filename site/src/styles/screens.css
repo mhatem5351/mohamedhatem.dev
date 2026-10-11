@@ -49,6 +49,12 @@
   .shot--desktop .shot__hint { top: .125rem; right: .375rem; left: auto; width: 1.5rem; height: 1.5rem; }
   .shot--desktop .shot__hint .icon { width: .875rem; height: .875rem; }
   .shot--phone .shot__zoom { width: fit-content; max-width: 100%; margin-inline: auto; }
+  /* Round 7 (C-28): on the phone the cue sits on the bezel's corner, off the screen (it covered the app's own
+     language button); on the dialog crop it sits in the stage's corner, above the card, whose top clears it. */
+  .shot--phone .shot__hint { inset-block-start: -.75rem; inset-inline-end: -.75rem; }
+  .shot--panel .shot__hint { inset-block-start: .375rem; inset-inline-end: .375rem; width: 1.75rem; height: 1.75rem; }
+  .shot--panel .shot__hint .icon { width: .875rem; height: .875rem; }
+  .shot--panel .shot__frame { padding-block-start: 2.5rem; }
   .shot__zoom:focus-visible .shot__hint { opacity: 1; }
   @media (hover: hover) { .shot__zoom:hover .shot__hint { opacity: 1; } }
   @media (hover: none) { .shot__hint { opacity: 1; } }

@@ -26,9 +26,15 @@ const m = messages(locale);
 const f = m.contact.form;
 const email = contact("email").display;
 const [leadBefore, leadAfter] = f.lead.split("{email}") as [string, string];
-/** Without JavaScript the spam check can't run: a note above Send points to email and WhatsApp (when the copy has it). */
+/**
+ * Without JavaScript the spam check can't run: a note at the top of the form, before its first field, says so and links
+ * email and WhatsApp (audit R7-RES-02), so nobody fills five fields first. The copy's "{email}" becomes the address as
+ * a mailto link and its "WhatsApp" the WhatsApp link.
+ */
 const noJs = (f as { noJs?: string }).noJs;
-const [noJsBefore, noJsAfter] = (noJs ?? "").split("{email}") as [string, string?];
+const [noJsBefore, noJsAfter = ""] = (noJs ?? "").split("{email}") as [string, string?];
+const waTitle = m.contact.channels.whatsapp.title;
+const [noJsMid, noJsEnd] = noJsAfter.includes(waTitle) ? (noJsAfter.split(waTitle) as [string, string]) : [noJsAfter, undefined];
 
 /** Strings the client script needs (data, not code: a JSON block is exempt from script-src). */
 const i18n = {
@@ -71,6 +77,20 @@ const json = JSON.stringify(i18n).replace(/</g, "\\u003c");
       <h3 class="t-lg" id="cf-title">{f.title}</h3>
       <p class="muted t-sm">{leadBefore}<bdi dir="ltr">{email}</bdi>{leadAfter}</p>
     </div>
+
+    {
+      noJs && (
+        <noscript>
+          <p class="form__nojs">
+            {noJsBefore}
+            {noJs.includes("{email}") && <a href={mailtoHref(locale)}><bdi dir="ltr">{email}</bdi></a>}
+            {noJsMid}
+            {noJsEnd !== undefined && <a href={whatsappHref(locale)} rel="noopener"><bdi dir="ltr">{waTitle}</bdi></a>}
+            {noJsEnd}
+          </p>
+        </noscript>
+      )
+    }
 
     <div class="form__summary" tabindex="-1" hidden data-summary role="alert" aria-labelledby="cf-summary-title">
       <p id="cf-summary-title" data-summary-title></p>
@@ -167,7 +187,9 @@ const json = JSON.stringify(i18n).replace(/</g, "\\u003c");
     </div>
     <input type="hidden" name="lang" value={locale} />
 
-    <div class="turnstile-slot" data-turnstile-slot></div>
+    {/* The spam check's reserved space says what it is until the check renders there (audit R7-HOME-08); without
+        JavaScript neither shows (data-js-only), since the check can't run (R7-RES-02). */}
+    <div class="turnstile-slot" data-turnstile-slot data-js-only><p class="field__hint turnstile-slot__hint">{f.turnstile}</p></div>
 
     <div class="form__status" role="alert" data-status>
       <Icon name="alert" size="sm" />
@@ -180,19 +202,7 @@ const json = JSON.stringify(i18n).replace(/</g, "\\u003c");
       </div>
     </div>
 
-    {
-      noJs && (
-        <noscript>
-          <p class="field__hint">
-            {noJsBefore}
-            {noJsAfter !== undefined && <bdi dir="ltr">{email}</bdi>}
-            {noJsAfter}
-          </p>
-        </noscript>
-      )
-    }
     <div class="form__foot">
-      <p class="field__hint">{f.turnstile}</p>
       <button class="btn btn--primary" type="submit" data-submit data-chat-avoid>
         <span data-submit-label>{f.submit}</span>
         <Icon name="arrow-right" class="arrow" />

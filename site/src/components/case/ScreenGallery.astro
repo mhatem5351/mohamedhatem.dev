@@ -6,8 +6,10 @@
  * spans both when it has three or more, and phone or dialog captures sit in the narrow column beside the rest
  * (src/lib/case.ts screenGroups). One column on phones.
  *
- * Images: lazy, responsive (srcset/sizes, WebP), never upscaled: 2x captures offer widths up to their native size,
- * 1x captures (the phone screen, the dialog) only their native width and are never shown wider than it.
+ * Images: lazy, responsive (srcset/sizes, WebP), never upscaled: 2x captures offer widths up to their native size at
+ * WebP quality 80 (round 7, PERF-04: 23 % smaller than 88, no visible difference at 100 % or 2x, Arabic text included);
+ * 1x captures (the phone screen, the dialog) are served as their lossless source file, the same file the enlarge link
+ * opens (a re-encode was larger: 46.9 KB against 31.2 KB for the phone screen), and never shown wider than it.
  * Enlarge: each screen links to its full-size file (works without JS); with JS the link opens it in the page's
  * enlarge view (components/case/ZoomDialog.astro, shared with the figures): on phones at its natural size (a 2x capture
  * at half its pixels), scrollable and pinch-zoomable; on wider screens as large as the window allows, never beyond the
@@ -84,17 +86,31 @@ const id = (i: number) => `screens-${i + 1}`;
                           <i />
                         </span>
                       )}
-                      <Image
-                        src={img}
-                        widths={widthsOf(s, img)}
-                        sizes={sizesOf(slot, img)}
-                        format="webp"
-                        quality={88}
-                        alt={alt}
-                        loading="lazy"
-                        decoding="async"
-                        class="shot__img"
-                      />
+                      {s.density === 1 ? (
+                        <img
+                          src={img.src}
+                          srcset={`${img.src} ${img.width}w`}
+                          sizes={sizesOf(slot, img)}
+                          width={img.width}
+                          height={img.height}
+                          alt={alt}
+                          loading="lazy"
+                          decoding="async"
+                          class="shot__img"
+                        />
+                      ) : (
+                        <Image
+                          src={img}
+                          widths={widthsOf(s, img)}
+                          sizes={sizesOf(slot, img)}
+                          format="webp"
+                          quality={80}
+                          alt={alt}
+                          loading="lazy"
+                          decoding="async"
+                          class="shot__img"
+                        />
+                      )}
                     </span>
                     <span class="shot__hint" aria-hidden="true">
                       <Icon name="expand" size="sm" />

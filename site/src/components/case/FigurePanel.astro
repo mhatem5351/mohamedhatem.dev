@@ -27,8 +27,10 @@ interface Props {
   /** id of the <figure> (anchor target) */
   anchor?: string;
   class?: string;
+  /** The drawing shows parts approved for publication (HM-19): its note says so where the copy has that line. */
+  approved?: boolean;
 }
-const { locale, id, n, anchor, class: className } = Astro.props;
+const { locale, id, n, anchor, class: className, approved = false } = Astro.props;
 const m = messages(locale);
 const d = diagram(id);
 const figLabel = format(m.work.page.figure, { n });
@@ -43,6 +45,8 @@ const enlarge = format(m.work.page.enlargeFigure, { n });
  * title (the diagram title up to its colon) and the kind, "Architecture", like the generated component views. */
 const barId = locale === "ar" ? figLabel : `Fig. ${n}`;
 const barTitle = d.title[locale].split(/[:：]/)[0]!.trim();
+const approvedNote = (m.work as { architectureNoteApproved?: string }).architectureNoteApproved;
+const note = approved && approvedNote ? approvedNote : m.work.architectureNote;
 ---
 <figure class:list={["fig", "fig--dg", className]} id={anchor} aria-labelledby={capId}>
   <div class="fig-panel">
@@ -80,8 +84,8 @@ const barTitle = d.title[locale].split(/[:：]/)[0]!.trim();
   <figcaption class="fig__caption">
     <p class="fig__caption-text" id={capId}>
       <b>{figLabel}</b>
-      {" "}{d.caption[locale]}
-      <span class="fig__note">{m.work.architectureNote}</span>
+      {" "}<BidiText text={d.caption[locale]} locale={locale} />
+      <span class="fig__note">{note}</span>
     </p>
     <ol class:list={["callouts", d.callouts.length > 4 && "callouts--3"]} aria-label={m.work.page.components}>
       {
@@ -91,9 +95,9 @@ const barTitle = d.title[locale].split(/[:：]/)[0]!.trim();
               {c.n}
             </span>
             <span>
-              {c.term && <b>{c.term[locale]}.</b>}
+              {c.term && <b><BidiText text={c.term[locale]} locale={locale} />.</b>}
               {c.term && " "}
-              {c[locale]}
+              <BidiText text={c[locale]} locale={locale} />
             </span>
           </li>
         ))
@@ -104,7 +108,7 @@ const barTitle = d.title[locale].split(/[:：]/)[0]!.trim();
         {m.work.page.textDescription}
         <Icon name="chevron-down" size="sm" />
       </summary>
-      <p>{d.desc.long[locale]}</p>
+      <p><BidiText text={d.desc.long[locale]} locale={locale} /></p>
     </details>
   </figcaption>
 </figure>
@@ -128,3 +132,86 @@ const barTitle = d.title[locale].split(/[:：]/)[0]!.trim();
     </script>
   )
 }
+<script>
+  // The numbered notes and the drawing point at each other (audit C-50): resting the pointer on a note (or tapping it)
+  // lights its part of the drawing and dims the rest; resting it on a disc in the drawing lights its note. The disc's
+  // part is found by geometry (a node disc sits on its node's top edge, a group disc on its group's tab), so it follows
+  // any layout the diagram build makes. A state change only, no motion.
+  type Hit = { svg: SVGSVGElement; on: Element[] };
+  const near = (b: DOMRect | SVGRect, x: number, y: number, pad: number) => x >= b.x - pad && x <= b.x + b.width + pad && y >= b.y - pad && y <= b.y + b.height + pad;
+  /** The disc numbered `n` in the drawing on screen, and what it annotates. */
+  function partsOf(fig: HTMLElement, n: string): Hit | null {
+    const svg = [...fig.querySelectorAll<SVGSVGElement>(".dg-variant > svg")].find((s) => s.getClientRects().length);
+    if (!svg) return null;
+    const disc = [...svg.querySelectorAll<SVGGElement>(".dg-co")].find((g) => !g.closest(".dg-legend") && g.textContent?.trim() === n);
+    const c = disc?.querySelector("circle");
+    if (!disc || !c) return null;
+    const x = c.cx.baseVal.value;
+    const y = c.cy.baseVal.value;
+    const area = (b: SVGRect) => b.width * b.height;
+    const nodes = [...svg.querySelectorAll<SVGGElement>(".dg-n")].map((g) => ({ g, b: g.getBBox() })).filter((o) => near(o.b, x, y, 12));
+    if (nodes.length) {
+      nodes.sort((a, b) => area(a.b) - area(b.b));
+      return { svg, on: [disc, nodes[0]!.g] };
+    }
+    const groups = [...svg.querySelectorAll<SVGRectElement>(".dg-grp")].map((r) => ({ r, b: r.getBBox() })).filter((o) => near(o.b, x, y, 14));
+    if (!groups.length) return { svg, on: [disc] };
+    groups.sort((a, b) => area(a.b) - area(b.b));
+    const gb = groups[0]!.b;
+    // The group, its tab and every node inside it.
+    const inside = [...svg.querySelectorAll<SVGGElement>(".dg-n")].filter((g) => {
+      const b = g.getBBox();
+      return near(gb, b.x + b.width / 2, b.y + b.height / 2, 0);
+    });
+    const tabs = [...svg.querySelectorAll<SVGElement>(".dg-tab, .dg-tabbg")].filter((t) => {
+      const b = (t as SVGGraphicsElement).getBBox();
+      return near(gb, b.x + b.width / 2, b.y + b.height / 2, 14);
+    });
+    return { svg, on: [disc, groups[0]!.r, ...tabs, ...inside] };
+  }
+  let lit: { hit: Hit; li: HTMLElement } | null = null;
+  function clear(): void {
+    if (!lit) return;
+    lit.hit.svg.classList.remove("dg-focus");
+    for (const el of lit.hit.on) el.classList.remove("dg-on");
+    lit.li.classList.remove("is-on");
+    lit = null;
+  }
+  function light(fig: HTMLElement, li: HTMLElement): void {
+    const n = li.querySelector(".co")?.textContent?.trim();
+    if (!n) return;
+    if (lit?.li === li) return;
+    clear();
+    const hit = partsOf(fig, n);
+    if (!hit) return;
+    hit.svg.classList.add("dg-focus");
+    for (const el of hit.on) el.classList.add("dg-on");
+    li.classList.add("is-on");
+    lit = { hit, li };
+  }
+  for (const fig of document.querySelectorAll<HTMLElement>("figure.fig--dg")) {
+    const items = [...fig.querySelectorAll<HTMLElement>(".callouts > li")];
+    for (const li of items) {
+      li.addEventListener("pointerenter", (e) => e.pointerType === "mouse" && light(fig, li));
+      li.addEventListener("pointerleave", (e) => e.pointerType === "mouse" && lit?.li === li && clear());
+      // Touch: a tap on a note lights it until the next tap.
+      li.addEventListener("click", (e) => {
+        if ((e as PointerEvent).pointerType === "mouse") return;
+        if (lit?.li === li) clear();
+        else light(fig, li);
+      });
+    }
+    fig.addEventListener("pointerover", (e) => {
+      if (e.pointerType !== "mouse") return;
+      const disc = (e.target as Element).closest?.(".dg-co");
+      if (!disc || disc.closest(".dg-legend")) return;
+      const li = items.find((l) => l.querySelector(".co")?.textContent?.trim() === disc.textContent?.trim());
+      if (li) light(fig, li);
+    });
+    fig.addEventListener("pointerout", (e) => {
+      if (e.pointerType !== "mouse" || !lit) return;
+      const from = (e.target as Element).closest?.(".dg-co");
+      if (from && !from.contains(e.relatedTarget as Node)) clear();
+    });
+  }
+</script>

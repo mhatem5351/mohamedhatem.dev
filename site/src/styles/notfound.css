@@ -16,11 +16,15 @@
   .nf__path { display: inline-flex; align-items: center; gap: .5rem; margin-block-start: 1.25rem; padding: .375rem .75rem; border-radius: var(--radius-sm); border: 1px dashed var(--color-line-strong); background: var(--color-surface); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted); max-width: 100%; direction: ltr; unicode-bidi: isolate; }
   .nf__path[hidden] { display: none; }
   .nf__path b { color: var(--color-coral); font-weight: 600; overflow-wrap: anywhere; }
-  .nf__actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-block-start: 2rem; }
-  .nf__actions .btn--ghost .icon { color: var(--color-accent); }
-  /* Phones: the two secondary actions wrap to their own row; flush with the buttons' edge, they read as links, not as
-     stray text under the buttons (audit D-23). */
-  @media (max-width: 39.99rem) { .nf__actions .btn--ghost { padding-inline: 0; } }
+  /* The two buttons, then the assistant and the other language as quiet links on their own row, flush with the buttons'
+     edge at every width, so they read as links, never as stray padded text under the buttons (audit D-23). */
+  .nf__actions { display: grid; justify-items: start; gap: .75rem; margin-block-start: 2rem; }
+  .nf__buttons { display: flex; flex-wrap: wrap; gap: .75rem; }
+  .nf__links { display: flex; flex-wrap: wrap; align-items: center; gap: 0 1.5rem; }
+  .nf__links .btn--ghost { padding-inline: 0; }
+  .nf__links .btn--ghost .icon { color: var(--color-accent); }
+  .nf__links .btn--ghost { text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .25em; transition: color var(--duration-fast) var(--ease-standard), text-decoration-color var(--duration-fast) var(--ease-standard); }
+  @media (hover: hover) { .nf__links .btn--ghost:hover { background: none; color: var(--color-ink); text-decoration-color: currentColor; } }
   .nf__art { justify-self: center; width: 100%; max-width: 30rem; margin: 0; }
   @media (max-width: 55.99rem) { .nf__art { max-width: 22rem; } }
   .nf__art svg { width: 100%; height: auto; overflow: visible; }

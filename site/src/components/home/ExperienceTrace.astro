@@ -17,6 +17,7 @@ import MotionToggle from "~/components/ui/MotionToggle.astro";
 import DateRun from "~/components/work/DateRun.astro";
 import Emph from "~/components/ui/Emph.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
+import { glueArabic } from "~/lib/nobreak";
 import { formatDuration, formatPeriod, localePath, messages, monthsInclusive, type Locale } from "~/lib/i18n";
 import { PATHS, caseStudyBySlug, profile } from "~/lib/site";
 import { axis, axisClasses, digitClasses, nowIndex, traceRows, yearIndex, type TraceRow } from "~/lib/trace";
@@ -50,7 +51,7 @@ function view(row: TraceRow): { title: string; org: string; dates: string; durat
     const r = row.role;
     const honors = profile.honors.filter((h) => r.honors.includes(h.id));
     return {
-      title: r.title[locale],
+      title: glueArabic(r.title[locale]),
       org: r.company[locale],
       dates: formatPeriod(r.period, locale),
       duration: durationOf(r.period),
@@ -85,7 +86,7 @@ function view(row: TraceRow): { title: string; org: string; dates: string; durat
   };
 }
 ---
-<section class="section" id="experience" aria-labelledby="exp-title">
+<section class="section section--band" id="experience" aria-labelledby="exp-title">
   <div class="container">
     <SectionHeader index="03" eyebrow={m.experience.eyebrow} title={m.experience.title} titleId="exp-title" lede={m.experience.lead} />
     <div class={`card trace ${axisClasses(now)}`} data-trace data-motion="is-live" data-motion-once>
@@ -124,26 +125,22 @@ function view(row: TraceRow): { title: string; org: string; dates: string; durat
                           <Icon name="award" class="span__award" label={`${m.experience.award}: ${h.title[locale]}`} />
                         ))}
                       </span>
-                      <span class="span__org">
-                        {/* Each organisation name and the date range are unbreakable units ("Umm Al-Qura
-                            University", "Jan 2020 – Jan 2021"): lines break only between them (audit VUX-08). */}
-                        {v.org.split(" · ").map((part, i) => (
-                          <>
-                            {i > 0 && " · "}
+                      <span class="span__org sep-list">
+                        {/* Each organisation name, the date range and the duration are unbreakable units ("Umm
+                            Al-Qura University", "Jan 2020 – Jan 2021"): lines break only between them (audit VUX-08),
+                            and the "·" between them never ends or starts a line (separator list; audit H-07). */}
+                        <span class="sep-list__in">
+                          {v.org.split(" · ").map((part) => (
                             <span class="span__unit" lang={isLatin(part) ? "en" : undefined}>{part}</span>
-                          </>
-                        ))}
-                        <span class="span__when">
-                          {"\u00a0· "}
-                          <DateRun text={v.dates} class="span__unit" />
+                          ))}
+                          <span class="span__when"><DateRun text={v.dates} class="span__unit" /></span>
                           {v.duration && (
                             <span class="span__dur">
-                              {"\u00a0· "}
                               <span class="span__unit">{v.duration}</span>
                             </span>
                           )}
+                          {v.srType && <span class="sr-only">, {v.srType}</span>}
                         </span>
-                        {v.srType && <span class="sr-only">, {v.srType}</span>}
                       </span>
                     </span>
                     <Icon name="chevron-down" size="sm" class="span__chev" />

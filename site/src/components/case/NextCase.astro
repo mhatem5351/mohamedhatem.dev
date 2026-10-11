@@ -4,7 +4,7 @@
  * with the next system's decorative diagram thumbnail (moving while on screen, with its pause button) or, for
  * logic-controls.com, its desktop screenshot whole in a small browser frame (never cropped or upscaled, audit C-09).
  * The drawing and the screenshot are decorative (aria-hidden / alt=""). Titles never break inside a hyphenated
- * compound (noBreakHtml, audit C-02).
+ * compound (noBreakHtml, audit C-02). The label shows the next study's place in the series ("3 / 8", C-49).
  */
 import { Image } from "astro:assets";
 import Icon from "~/components/ui/Icon.astro";
@@ -15,8 +15,9 @@ import type { CaseStudy } from "@content/profile.ts";
 import { diagramSvg } from "~/lib/diagrams";
 import { localePath, messages, tr, type Locale } from "~/lib/i18n";
 import { noBreakHtml } from "~/lib/nobreak";
-import { PATHS, profile } from "~/lib/site";
-import { accentOf, diagramsOf, eyebrowParts } from "~/lib/case";
+import { bidiUnits } from "~/lib/bidi";
+import { PATHS, caseStudies, profile } from "~/lib/site";
+import { accentOf, diagramsOf, eyebrowParts, stackLabel } from "~/lib/case";
 import lcDesktopEn from "~/assets/showcase/lc-desktop-en-960.webp";
 import lcDesktopAr from "~/assets/showcase/lc-desktop-ar-960.webp";
 
@@ -28,11 +29,15 @@ const { locale, cs } = Astro.props;
 const m = messages(locale);
 const eb = eyebrowParts(cs, locale);
 const thumb = diagramsOf(cs)[0];
-const svg = thumb ? diagramSvg(thumb, "thumb", { decorative: true, idSuffix: "next" }) : undefined;
+const svg = thumb ? diagramSvg(thumb, "thumb", { locale, decorative: true, idSuffix: "next" }) : undefined;
 const shot = cs.slug === "logic-controls-website" ? (locale === "ar" ? lcDesktopAr : lcDesktopEn) : undefined;
 const isLatin = (s: string) => !/[؀-ۿ]/.test(s);
 const role = cs.roleId ? profile.experience.find((r) => r.id === cs.roleId) : undefined;
 const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monogram } : { file: "logic-controls", monogram: "LC" };
+/** Its place in the series ("3 / 8", C-49): numbers only, so no copy is needed; decorative (the card is the link). */
+const pos = caseStudies.findIndex((c) => c.slug === cs.slug) + 1;
+/** A short Latin name in an Arabic title or summary never splits at its space (A-20). */
+const glue = (t: string) => bidiUnits(t, locale).map((u) => u.text).join("");
 ---
 <article class:list={["card card--link work next-case", `accent-${accentOf(cs)}`, !(svg || shot) && "next-case--plain"]}>
   {
@@ -61,18 +66,19 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
   <div class="work__body">
     <div class="next-case__label">
       <span class="eyebrow">{m.work.nextCase}</span>
+      {pos > 0 && <span class="next-case__pos" aria-hidden="true" dir="ltr">{pos} / {caseStudies.length}</span>}
       <span class="next-case__arrow" aria-hidden="true"><Icon name="arrow-right" size="sm" /></span>
     </div>
     <span class="next-case__org">
     <LogoTile file={logo.file} monogram={logo.monogram} size={24} class="work__logo" />
     <span class="eyebrow eyebrow--ink">
-      {isLatin(eb.company) ? <span lang="en">{eb.company}</span> : eb.company}<span class="sep" aria-hidden="true">/</span><Ltr>{eb.years}</Ltr>
+      {isLatin(eb.company) ? <span lang="en">{eb.company}</span> : eb.company}<span class="next-case__yrs"><span class="sep" aria-hidden="true">/</span>&nbsp;<Ltr>{eb.years}</Ltr></span>
     </span>
     </span>
-    <h3 class="work__title"><a class="stretched" href={localePath(PATHS.work(cs.slug), locale)} set:html={noBreakHtml(tr(cs.title, locale))} /></h3>
-    <p class="work__summary" set:html={noBreakHtml(tr(cs.summary, locale))} />
+    <h3 class="work__title"><a class="stretched" href={localePath(PATHS.work(cs.slug), locale)} set:html={noBreakHtml(glue(tr(cs.title, locale)))} /></h3>
+    <p class="work__summary" set:html={noBreakHtml(glue(tr(cs.summary, locale)))} />
     <ul class="cluster gap-tight" role="list">
-      {cs.stack.slice(0, 5).map((t) => <li class="chip">{t}</li>)}
+      {cs.stack.slice(0, 5).map((t) => <li class="chip">{stackLabel(t, locale)}</li>)}
     </ul>
   </div>
 </article>

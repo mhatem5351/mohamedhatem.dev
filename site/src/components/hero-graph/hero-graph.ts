@@ -8,8 +8,10 @@
  *     per colour, each riding its own hops). The script only wakes once per hop, to move the coming pulse with the
  *     pointer parallax (desktop);
  *   - starts when the page is idle and runs only while 35% of the graph is on screen and the tab is visible;
- *     on touch screens it stops after 3 loops (the still frame) and plays 3 more when the graph comes back into
- *     view or is tapped; never runs under prefers-reduced-motion (the server markup already is the still frame);
+ *     on every screen it stops after 3 loops (the still frame: SVG parts restyle on every frame while they move, so an
+ *     endless loop cost the main thread for as long as the first screen was read; audit R7-PERF-01) and plays 3 more
+ *     when the graph comes back into view, is tapped, hovered with a mouse or focused; never runs under
+ *     prefers-reduced-motion (the server markup already is the still frame);
  *   - pause control (WCAG 2.2.2; the site-wide motion preference, shared with the living charts), pointer parallax,
  *     hover / focus highlight,
  *     roving-tabindex keyboard model and a toggletip per node.
@@ -118,10 +120,9 @@ export function mountHeroGraph(host: HTMLElement, opts: HeroGraphOptions = {}): 
   const attr = (n: string): string => host.closest(`[${n}]`)?.getAttribute(n) || document.documentElement.getAttribute(n) || "";
   const mq = matchMedia("(prefers-reduced-motion: reduce)");
   const fine = matchMedia("(hover: hover) and (pointer: fine)");
-  const coarse = matchMedia("(pointer: coarse)");
 
   let paused = false, live = false, isRun = false, running = false, inView = true, visible = true, destroyed = false;
-  /** touch screens: loops played since the graph last came into view (or was tapped); spent = stopped after LOOPS */
+  /** loops played since the graph last came into view (or was tapped, hovered, focused); spent = stopped after LOOPS */
   let done = 0, spent = false;
   let reduced = opts.reducedMotion ?? (host.dataset.motion === "reduce" || mq.matches);
   // the site-wide motion preference: this button and the living charts' pause buttons share it
@@ -367,8 +368,8 @@ export function mountHeroGraph(host: HTMLElement, opts: HeroGraphOptions = {}): 
       let P = plans[loop & 1]!;
       while (t >= P.end) {
         t -= P.end; base += P.end; loop++;
-        // touch screens: after LOOPS loops, settle on the still frame (a tap or the next visit plays more)
-        if (++done >= LOOPS && coarse.matches) { spent = true; sync(); return; }
+        // after LOOPS loops, settle on the still frame (the next visit, a tap, a hover or focus plays more)
+        if (++done >= LOOPS) { spent = true; sync(); return; }
         P = plans[loop & 1]!;
       }
       apply();
@@ -587,10 +588,14 @@ export function mountHeroGraph(host: HTMLElement, opts: HeroGraphOptions = {}): 
 
     // ---------------------------------------------------------------- lifecycle
     btn.addEventListener("click", () => setPaused(!paused), on);
-    // touch screens: a tap on a graph that stopped after its loops plays it again (the tap still opens a toggletip)
-    host.addEventListener("click", e => {
+    // a graph that stopped after its loops plays again on a tap (which still opens a toggletip), when a mouse comes
+    // over it, or when it takes keyboard focus: motion the visitor asked for
+    const again = (e: Event): void => {
       if (spent && !btn.contains(e.target as Node)) { spent = false; done = 0; sync(); }
-    }, on);
+    };
+    host.addEventListener("click", again, on);
+    host.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") again(e); }, on);
+    host.addEventListener("focusin", again, on);
     // run only while a meaningful part shows (a sliver at the bottom of a phone screen doesn't count); coming back into
     // view starts a new run of loops on touch screens
     const io = new IntersectionObserver(es => {

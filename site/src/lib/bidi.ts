@@ -81,3 +81,40 @@ export function bidiParts(text: string, locale: Locale): BidiPart[] {
   }
   return parts;
 }
+
+export type BidiUnit = BidiPart & { keep?: true };
+
+/** A number range anywhere in a run ("2021–2022", "98–100", "(2021–22)"). */
+const RANGE_IN_TEXT = /\d[\d,.]*[-\u2010-\u2015]\d[\d,.]*/g;
+
+/**
+ * The parts, ready to render with lines that break only between whole units (audit A-20, R7-HOME-03):
+ * - a short Latin run on an Arabic page (a product or brand name: up to 3 words and 24 characters, "Cloudflare
+ *   Workers", "Wakeb Data", "Brave Search") never breaks at its spaces (they become no-break spaces); a longer run (a
+ *   list, a phrase) still wraps between its words;
+ * - a number range ("2021–2022", "(2021–22)") is one unit (`keep`: rendered in a no-wrap element), on both pages.
+ * Nothing is added or reordered except the spaces inside short Latin runs.
+ */
+export function bidiUnits(text: string, locale: Locale): BidiUnit[] {
+  const out: BidiUnit[] = [];
+  for (const p of bidiParts(text, locale)) {
+    if (p.dir === "ltr") {
+      if (NUMBER_RANGE.test(p.text)) out.push({ ...p, keep: true });
+      else if (p.text.length <= 24 && p.text.trim().split(/\s+/).length <= 3) out.push({ ...p, text: p.text.replace(/ /g, "\u00a0") });
+      else out.push(p);
+      continue;
+    }
+    if (p.dir) {
+      out.push(p);
+      continue;
+    }
+    let at = 0;
+    for (const m of p.text.matchAll(RANGE_IN_TEXT)) {
+      if (m.index > at) out.push({ text: p.text.slice(at, m.index) });
+      out.push({ text: m[0], keep: true });
+      at = m.index + m[0].length;
+    }
+    if (at < p.text.length) out.push({ text: p.text.slice(at) });
+  }
+  return out;
+}

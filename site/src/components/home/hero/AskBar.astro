@@ -4,12 +4,13 @@
  * go button, and the assistant opens and asks it (window.mhOpenChat from src/scripts/site.ts, queued until the
  * widget is ready). Empty submit just opens the assistant.
  *
- * While the field is empty and unfocused, an aria-hidden overlay types example questions (the chat's first
- * suggestions, plus one in the other language). It stops under reduced motion, in a hidden tab, offscreen, and while
- * the hero graph is paused (its pause button is the hero's motion control, WCAG 2.2.2); on touch screens it types each
- * example once and then leaves the placeholder. A question longer than the field scrolls like real typing (the
- * latest characters stay in view). The overlay is contained (each tick lays out only itself). Without JS the
- * placeholder shows and the form leads to the contact section.
+ * While the field is empty and unfocused, an aria-hidden overlay types one example question, once, on every screen
+ * (the first of the chat's suggestions that fits the field), rests on it for a moment and gives way to the
+ * placeholder: the hero graph stays the first screen's one motion (audits M-08, R7-PERF-01). It stops under reduced
+ * motion, in a hidden tab, offscreen, and while the hero graph is paused (its pause button is the hero's motion
+ * control, WCAG 2.2.2). A question longer than the field scrolls like real typing (the latest characters stay in
+ * view), then rests showing its start with the end faded (R7-HOME-09). The overlay is contained (each tick lays out
+ * only itself). Without JS the placeholder shows and the form leads to the contact section.
  *
  * The field is at least 16 px on every screen: iOS Safari zooms the page into any focused field under 16 px and
  * doesn't zoom back out (audit HERO-02). Never "maximum-scale" in the viewport meta: it blocks pinch-zoom.
@@ -25,6 +26,9 @@ interface Props {
 const { locale } = Astro.props;
 const m = messages(locale);
 const other = otherLocale(locale);
+/** A short placeholder for the narrowest fields (≤ 360 px: "Ask my AI about my…" truncated; audit H-06), when the copy
+ *  has one. */
+const short = (m.hero.ask as { placeholderShort?: string }).placeholderShort;
 const examples = [
   ...suggestions[locale].slice(0, 3).map((s) => ({ text: s.label, lang: locale })),
   { text: `${m.hero.ask.otherLanguage}: ${suggestions[other][0]!.label}`, lang: other },
@@ -43,6 +47,7 @@ const examples = [
       spellcheck="false"
       maxlength={CHAT_LIMITS.maxUserChars}
       placeholder={m.hero.ask.placeholder}
+      data-short={short}
       dir="auto"
     />
     <span class="ask-bar__typed" aria-hidden="true"><span class="ask-bar__typed-text" data-typed dir="auto"></span><i class="ask-bar__caret"></i></span>
@@ -132,6 +137,19 @@ const examples = [
     -webkit-mask-image: linear-gradient(to left, transparent, #000 1.5rem);
     mask-image: linear-gradient(to left, transparent, #000 1.5rem);
   }
+  /* Typed out, it rests showing its start, the end faded (never read from mid-word), without the caret. */
+  .ask-bar__typed.is-over.is-rest .ask-bar__typed-text {
+    justify-content: flex-start;
+    -webkit-mask-image: linear-gradient(to left, transparent, #000 1.5rem);
+    mask-image: linear-gradient(to left, transparent, #000 1.5rem);
+  }
+  .ask-bar__typed.is-over.is-rest .ask-bar__typed-text:dir(rtl) {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 1.5rem);
+    mask-image: linear-gradient(to right, transparent, #000 1.5rem);
+  }
+  .ask-bar__typed.is-over.is-rest :global(.ask-bar__caret) {
+    visibility: hidden;
+  }
   /* Typing state: the overlay replaces the placeholder. */
   .ask-bar.is-typing .ask-bar__typed {
     display: flex;
@@ -177,6 +195,15 @@ const examples = [
       }
       sync();
     });
+    // The narrowest phones get the short placeholder (when the copy has one), and the full one again when wider.
+    const shortText = input.dataset.short;
+    if (shortText) {
+      const full = input.placeholder;
+      const narrow = matchMedia("(max-width: 22.49rem)");
+      const swap = () => (input.placeholder = narrow.matches ? shortText : full);
+      swap();
+      narrow.addEventListener("change", swap);
+    }
     // Clicking anywhere on the bar (icon, padding) focuses the field.
     form.addEventListener("pointerdown", (e) => {
       if (!(e.target as Element).closest("button, input")) {
@@ -187,9 +214,8 @@ const examples = [
 
     const examples: Example[] = JSON.parse(form.dataset.examples || "[]");
     const reduce = matchMedia("(prefers-reduced-motion: reduce)");
-    // Touch screens: one pass through the examples, then the static placeholder (the hero is the whole first screen
-    // there, and a loop would keep the main thread busy for as long as it is read).
-    const onePass = matchMedia("(pointer: coarse)").matches;
+    // One example, typed once, on every screen; then the static placeholder (a loop kept the main thread busy for as
+    // long as the first screen was read, and competed with the hero graph: audits M-08, R7-PERF-01).
     let done = false;
     let inView = true;
     let paused = false;
@@ -205,10 +231,16 @@ const examples = [
     // a tick never forces a layout (audit PERF-02).
     const ctx = document.createElement("canvas").getContext("2d");
     let fieldW = -1;
-    let qi = 0;
+    let qi = -1;
     let ci = 0;
     let step = 1;
     let wait = 0;
+    /** The first example that fits the field without scrolling (on a phone too), else the first one. */
+    const pick = (): number => {
+      if (!ctx || fieldW < 0) return 0;
+      const i = examples.findIndex((ex) => ex.lang === examples[0]!.lang && ctx.measureText(ex.text).width <= fieldW);
+      return i < 0 ? 0 : i;
+    };
 
     const active = () =>
       !done && !reduce.matches && !paused && inView && !document.hidden && examples.length > 0 && !input.value && document.activeElement !== input;
@@ -216,18 +248,20 @@ const examples = [
     function tick(): void {
       if (wait > 0) {
         wait--;
+        if (!wait) overlay?.classList.remove("is-rest");
         return;
       }
-      const ex = examples[qi]!;
-      ci += step;
-      out!.textContent = ex.text.slice(0, ci);
-      out!.lang = ex.lang;
       // Wider than the field? (Its overflow is on the start side, which scrollWidth doesn't count: measure the text.)
       if (fieldW < 0 && ctx && overlay) {
         fieldW = overlay.clientWidth - 4; // the text's max-width (calc(100% - 4px)): beyond it, the start scrolls out
         const cs = getComputedStyle(out!);
         ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
       }
+      if (qi < 0) qi = pick();
+      const ex = examples[qi]!;
+      ci += step;
+      out!.textContent = ex.text.slice(0, ci);
+      out!.lang = ex.lang;
       let width: number;
       if (ctx && overlay) width = ctx.measureText(out!.textContent ?? "").width;
       else {
@@ -237,17 +271,13 @@ const examples = [
       overlay?.classList.toggle("is-over", width > (ctx && overlay ? fieldW : out!.clientWidth) + 1);
       if (ci >= ex.text.length) {
         step = -1;
-        wait = 26;
+        wait = 30;
+        overlay?.classList.add("is-rest");
       }
       if (ci <= 0) {
-        step = 1;
-        qi = (qi + 1) % examples.length;
-        wait = 4;
-        fieldW = -1; // the next example measures again (its language, a resize, a late font)
-        if (qi === 0 && onePass) {
-          done = true;
-          sync();
-        }
+        done = true;
+        out!.textContent = "";
+        sync();
       }
     }
 

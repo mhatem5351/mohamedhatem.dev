@@ -1,6 +1,7 @@
 ---
 /** Site footer (DESIGN.md 12.18): brand + summary + stripe, three link columns, copyright + colophon. */
 import Monogram from "~/components/brand/Monogram.astro";
+import BidiText from "~/components/ui/BidiText.astro";
 import { format, localePath, messages, otherLocale, type Locale } from "~/lib/i18n";
 import { PATHS, homeAnchor, link, mailtoHref, profile, whatsappHref } from "~/lib/site";
 
@@ -70,7 +71,8 @@ const otherHref = alternatePath ?? localePath(path, other);
     }
     <div class:list={["footer__base", variant === "minimal" && "footer__base--flush"]}>
       <span>{format(m.footer.copyright, { year })}</span>
-      <span>{m.footer.builtWith}</span>
+      {/* Product names never split ("Cloudflare Workers"; audit A-20). */}
+      <span><BidiText text={m.footer.builtWith} locale={locale} /></span>
     </div>
   </div>
 </footer>

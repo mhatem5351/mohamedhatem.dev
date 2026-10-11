@@ -43,17 +43,23 @@ const n = m.notFound;
           <span aria-hidden="true">404</span>
           <b data-nf-path-value></b>
         </p>
+        {/* Two buttons, then two quieter links on their own row, flush with the buttons' edge at every width: the
+            four never wrap into a ragged second row with an inset ghost (audit D-23). */}
         <div class="nf__actions">
-          <a class="btn btn--primary" href={localePath("/", locale)}>
-            <Icon name="arrow-left" />
-            {n.home}
-          </a>
-          <a class="btn btn--secondary" href={homeAnchor("work", locale, false)}>{m.work.eyebrow}</a>
-          <button class="btn btn--ghost" type="button" data-open-chat aria-haspopup="dialog" data-js-only>
-            <Icon name="ask" />
-            {n.ask}
-          </button>
-          <a class="btn btn--ghost" href={localePath("/", other)} hreflang={other} lang={other}>{m.language.switchTo}</a>
+          <div class="nf__buttons">
+            <a class="btn btn--primary" href={localePath("/", locale)}>
+              <Icon name="arrow-left" />
+              {n.home}
+            </a>
+            <a class="btn btn--secondary" href={homeAnchor("work", locale, false)}>{m.work.eyebrow}</a>
+          </div>
+          <div class="nf__links">
+            <button class="btn btn--ghost" type="button" data-open-chat aria-haspopup="dialog" data-js-only>
+              <Icon name="ask" />
+              {n.ask}
+            </button>
+            <a class="btn btn--ghost" href={localePath("/", other)} hreflang={other} lang={other}>{m.language.switchTo}</a>
+          </div>
         </div>
       </div>
       <LostGraph locale={locale} />

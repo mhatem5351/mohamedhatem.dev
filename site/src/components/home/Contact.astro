@@ -12,7 +12,7 @@ import Ltr from "~/components/ui/Ltr.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
 import ContactForm from "~/components/home/contact/ContactForm.astro";
 import { cairoTime, messages, type Locale } from "~/lib/i18n";
-import { contact, link, mailtoHref, whatsappHref } from "~/lib/site";
+import { CV_PDF, contact, link, mailtoHref, profile, whatsappHref } from "~/lib/site";
 import { VCARD_PATH } from "~/lib/vcard";
 
 interface Props {
@@ -28,8 +28,10 @@ const github = link("github");
 const [timeBefore, timeAfter] = m.contact.localTime.split("{time}") as [string, string];
 /** On a narrow phone an address wraps after its "@", never inside a word. */
 const [emailUser, emailDomain] = email.display.split("@") as [string, string];
+/** The CV as a channel (round 7, R7-25), once the copy has its row. */
+const cvChannel = (m.contact.channels as { cv?: { title: string; action: string } }).cv;
 ---
-<section class="section" id="contact" aria-labelledby="contact-title">
+<section class="section section--band" id="contact" aria-labelledby="contact-title">
   <div class="container contact">
     <div class="contact__copy">
       <SectionHeader variant="rule" index="09" eyebrow={m.contact.eyebrow} title={m.contact.title} titleId="contact-title" />
@@ -39,7 +41,7 @@ const [emailUser, emailDomain] = email.display.split("@") as [string, string];
         {" "}
         <span data-js-only>{m.contact.askFirst.before}{" "}<button class="link" type="button" data-open-chat aria-haspopup="dialog">{m.contact.askFirst.action}</button>{" "}{m.contact.askFirst.after}</span>
       </p>
-      <p class="contact__time">
+      <p class="contact__time" data-js-only>
         <i class="dot" aria-hidden="true"></i>
         <span>{timeBefore}<Ltr><time data-cairo-time>{cairoTime(locale)}</time></Ltr>{timeAfter}</span>
       </p>
@@ -82,6 +84,20 @@ const [emailUser, emailDomain] = email.display.split("@") as [string, string];
             <span class="channel__alt">{m.contact.channels.email.or} <a href={mailtoHref(locale, "gmail")}><Ltr>{gmail.display}</Ltr></a></span>
           </div>
         </li>
+        {
+          cvChannel && (
+            <li>
+              <a class="channel" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf" data-open-on-touch>
+                <span class="icon-tile icon-tile--saffron"><Icon name="file-text" /></span>
+                <span>
+                  <span class="channel__label">{cvChannel.title}</span><br />
+                  <span class="channel__value">{cvChannel.action}</span>
+                </span>
+                <Icon name="download" size="sm" class="channel__arrow" />
+              </a>
+            </li>
+          )
+        }
         <li>
           <a class="channel" href={linkedin.href} rel="me">
             <span class="icon-tile icon-tile--sky"><Icon name="linkedin" /></span>

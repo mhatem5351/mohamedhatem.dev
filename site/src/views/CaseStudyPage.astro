@@ -29,9 +29,9 @@ import Icon from "~/components/ui/Icon.astro";
 import BidiText from "~/components/ui/BidiText.astro";
 import type { CaseStudy } from "@content/profile.ts";
 import { dirOf, format, formatYears, messages, tr, type Locale } from "~/lib/i18n";
-import { PATHS, homeAnchor, nextCaseStudy } from "~/lib/site";
+import { PATHS, byLocale, homeAnchor, nextCaseStudy } from "~/lib/site";
 import { caseStudyJsonLd } from "~/lib/jsonld";
-import { KIND_ACCENT, askQuestion, companyOf, decisionOf, diagramsOf, edgesOf, nodesByKind, roleOf, sourcesText, stackGroups, techAccent, tocOf } from "~/lib/case";
+import { KIND_ACCENT, askQuestion, companyOf, decisionOf, diagramsOf, edgesOf, nodesByKind, roleOf, sourcesText, stackGroups, stackLabel, techAccent, tocOf } from "~/lib/case";
 
 interface Props {
   locale: Locale;
@@ -53,6 +53,8 @@ const question = askQuestion(cs, locale);
 const briefFigure = brief && cs.architecture.nodes.length > 5;
 /** logic-controls.com: the live site is figure 1 and the component view moves into the architecture section. */
 const siteShots = !mainDiagram && cs.slug === "logic-controls-website";
+/** A diagram of parts the client approved for publication gets its own note under it (HM-19, C7's key when present). */
+const approved = cs.source.includes("mohamed");
 const accent = (a: string) => (a === "neutral" ? undefined : `accent-${a}`);
 const num = (id: string) => String(toc.findIndex((t) => t.id === id) + 1).padStart(2, "0");
 const sources = format(m.work.page.sourcesBody, { sources: sourcesText(cs.source, locale) });
@@ -82,7 +84,7 @@ const ogAlt = format(m.meta.ogImageAltCase, {
     {
       !brief &&
         (mainDiagram ? (
-          <FigurePanel locale={locale} id={mainDiagram} n={1} anchor="architecture" class="fig--hero" />
+          <FigurePanel locale={locale} id={mainDiagram} n={1} anchor="architecture" class="fig--hero" approved={approved} />
         ) : siteShots ? (
           <SiteShots locale={locale} n={1} class="fig--hero" />
         ) : (
@@ -120,7 +122,14 @@ const ogAlt = format(m.meta.ogImageAltCase, {
               ))}
             </ul>
           </section>
-          {briefFigure && <ComponentView locale={locale} cs={cs} n={1} anchor="architecture" class="wide" />}
+          {
+            briefFigure && (
+              <section class="cs-brief__sec" id="components" aria-labelledby="h-components">
+                <h2 class="cs-brief__h" id="h-components">{m.work.page.components}</h2>
+                <ComponentView locale={locale} cs={cs} n={1} anchor="architecture" class="wide" />
+              </section>
+            )
+          }
         </article>
         <aside class="cs-brief__aside" aria-labelledby="brief-note-title">
           <div class="card cs-brief__note">
@@ -130,10 +139,8 @@ const ogAlt = format(m.meta.ogImageAltCase, {
             </p>
             <p>{m.work.briefNote}</p>
             <p class="cs-brief__src">{format(m.work.page.briefSources, { sources: sourcesText(cs.source, locale) })}</p>
-            <button class="btn btn--secondary" type="button" data-open-chat data-question={question} aria-haspopup="dialog" data-chat-avoid>
-              <Icon name="ask" />
-              {m.work.page.ask}
-            </button>
+            {/* One in-content "Ask my AI about this project" per page: the hero's (C-35; the header and the launcher
+                offer the assistant everywhere). */}
             <a class="btn btn--ghost btn--sm" href={homeAnchor("work", locale, false)}>
               <Icon name="arrow-left" />
               {m.work.allWork}
@@ -204,7 +211,7 @@ const ogAlt = format(m.meta.ogImageAltCase, {
                 <ComponentView locale={locale} cs={cs} n={2} anchor="architecture" class="wide" />
               ) : (
                 <p>
-                  {tr(cs.architecture.caption, locale)}{" "}
+                  <BidiText text={tr(cs.architecture.caption, locale)} locale={locale} />{" "}
                   <a href="#architecture">{format(m.work.page.figure, { n: 1 })}</a>
                 </p>
               )}
@@ -233,34 +240,34 @@ const ogAlt = format(m.meta.ogImageAltCase, {
                       </dd>
                     </div>
                   ))}
-                  {edges.length > 0 && (
-                    <div class="arch-list__row">
-                      <dt>
-                        <i aria-hidden="true" />
-                        {m.work.page.connections}
-                      </dt>
-                      <dd>
-                        <ul class="arch-list__items" role="list">
-                          {edges.map((e) => (
-                            <li>
-                              {m.work.page.connection.split(/(\{from\}|\{to\})/).filter(Boolean).map((bit) =>
-                                bit === "{from}" || bit === "{to}" ? (
-                                  <bdi dir={dirOf(locale)}><BidiText text={bit === "{from}" ? e.from : e.to} locale={locale} /></bdi>
-                                ) : (
-                                  bit
-                                ),
-                              )}
-                              {e.label && <small> (<BidiText text={e.label} locale={locale} />)</small>}
-                            </li>
-                          ))}
-                        </ul>
-                      </dd>
-                    </div>
-                  )}
                 </dl>
               )}
+              {/* The connections restate the figure's arrows: one click away instead of a long list (C-22). Opened for
+                  print (script below). */}
+              {mainDiagram && edges.length > 0 && (
+                <details class="fig__desc arch-more wide" data-print-open>
+                  <summary>
+                    {m.work.page.connections} <span class="arch-more__n" dir="ltr">({edges.length})</span>
+                    <Icon name="chevron-down" size="sm" />
+                  </summary>
+                  <ul class="arch-more__list" role="list">
+                    {edges.map((e) => (
+                      <li>
+                        {m.work.page.connection.split(/(\{from\}|\{to\})/).filter(Boolean).map((bit) =>
+                          bit === "{from}" || bit === "{to}" ? (
+                            <bdi dir={dirOf(locale)}><BidiText text={bit === "{from}" ? e.from : e.to} locale={locale} /></bdi>
+                          ) : (
+                            bit
+                          ),
+                        )}
+                        {e.label && <small> (<BidiText text={e.label} locale={locale} />)</small>}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
               {moreDiagrams.map((id, i) => (
-                <FigurePanel locale={locale} id={id} n={i + 2} anchor={`fig-${id}`} />
+                <FigurePanel locale={locale} id={id} n={i + 2} anchor={`fig-${id}`} approved={approved} />
               ))}
             </div>
           </section>
@@ -304,7 +311,7 @@ const ogAlt = format(m.meta.ogImageAltCase, {
                     <dd>
                       {g.items.map((t) => {
                         const a = techAccent(t);
-                        return <span class:list={["chip", a !== "neutral" && `chip--${a}`]}>{t}</span>;
+                        return <span class:list={["chip", a !== "neutral" && `chip--${a}`]}>{stackLabel(t, locale)}</span>;
                       })}
                     </dd>
                   </div>
@@ -331,15 +338,18 @@ const ogAlt = format(m.meta.ogImageAltCase, {
               </h2>
               <div class="cs-prose">
                 <div class="cs-links">
-                  {cs.links.map((l, i) => (
-                    <a class:list={["btn", i === 0 ? "btn--primary" : "btn--secondary"]} href={l.href} rel="noopener">
-                      <Icon name={l.href.includes("github.com") ? "github" : "arrow-up-right"} />
+                  {cs.links.map((l, i) => {
+                    const href = byLocale(l.href as string | Record<Locale, string>, locale);
+                    return (
+                    <a class:list={["btn", i === 0 ? "btn--primary" : "btn--secondary"]} href={href} rel="noopener">
+                      <Icon name={href.includes("github.com") ? "github" : "arrow-up-right"} />
                       {tr(l.label, locale)}
                       <span class="sr-only" dir="ltr">
-                        ({l.href.replace(/^https:\/\//, "")})
+                        ({href.replace(/^https:\/\//, "")})
                       </span>
                     </a>
-                  ))}
+                    );
+                  })}
                 </div>
                 <p class="sources">
                   <Icon name="info" />
@@ -372,6 +382,18 @@ const ogAlt = format(m.meta.ogImageAltCase, {
 </Base>
 
 <script>
+  // Paper has no disclosures: the ones marked data-print-open print open, and close again after.
+  const printOpen = [...document.querySelectorAll<HTMLDetailsElement>("details[data-print-open]")];
+  let reopen: HTMLDetailsElement[] = [];
+  addEventListener("beforeprint", () => {
+    reopen = printOpen.filter((d) => !d.open);
+    for (const d of reopen) d.open = true;
+  });
+  addEventListener("afterprint", () => {
+    for (const d of reopen) d.open = false;
+    reopen = [];
+  });
+
   // TOC: current section (aria-current) for the rail and the mobile bar, % read, and closing the mobile panel on
   // navigation; the rail steps aside while an in-article figure that breaks out over it passes (case.css). Plain links
   // work without this.

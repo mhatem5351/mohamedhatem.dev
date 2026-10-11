@@ -235,7 +235,7 @@ export const COPY: Record<Lang, Copy> = {
       guard: { title: "الحارس", text: "يفحص المدخلات قبل أن تصل إلى النموذج، مثل حاجز الحماية من حقن الموجّهات في مشروعي مفتوح المصدر rag-answering-service." },
       retrieve: { title: "الاسترجاع", text: "استرجاع هجين: متجهات دلالية مع بحث BM25 بالكلمات المفتاحية، كما في خط RAG وراء روبوت المحادثة في Wakeb Data." },
       rerank: { title: "إعادة الترتيب", text: "نموذج لغوي يعيد ترتيب النتائج، فلا يصل إلى الموجّه إلا أنسب سياق (البحث الهجين لروبوت المحادثة في Wakeb Data)." },
-      generate: { title: "التوليد", text: "يكتب الإجابة. في Wakeb Data: نموذج Qwen مستضاف ذاتيًا يخدّمه vLLM على وحدات A100." },
+      generate: { title: "التوليد", text: "يكتب الإجابة. في Wakeb Data: نموذج Qwen مستضاف ذاتيًا عبر vLLM على وحدات A100." },
       evaluate: { title: "التقييم", text: "يتحقق من جودة الإجابات: تقييم الوكلاء في بيئة الإنتاج في ArabsStock، ومراقبة الجودة في Wakeb Data، ومشروعي staged-llm-evaluator الذي يحسب الحكم في الكود." },
       tools: { title: "الأدوات", text: "يستدعي أدوات خارجية عبر MCP، مثل Brave Search لنتائج الويب الحية في Wakeb Data." },
     },

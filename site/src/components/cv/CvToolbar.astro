@@ -39,7 +39,7 @@ const title = `mohamedhatem.dev${localePath(PATHS.cv, locale).replace(/\/$/, "")
     <span class="cv-bar__spacer"></span>
     <a class="lang-switch" href={localePath(PATHS.cv, other)} hreflang={other} lang={other} title={m.language.switchToLabel}>
       <Icon name="globe" size="sm" />
-      <span>{m.language.switchTo}</span>
+      <span lang={other}>{m.language.switchTo}</span>
       <span class="sr-only" lang={locale}>, {m.language.switchToLabel}</span>
     </a>
     {/* data-js-only: hidden when scripts don't run (Head.astro's noscript rule; round 6, RES-01). */}

@@ -2,7 +2,10 @@
 /**
  * Metric strip (DESIGN.md 12.6): five sourced facts from profile.metrics, featured first. Value over label (the
  * label is the <dt>, the value the <dd>, shown first with CSS order). No count-up: numbers are content.
+ * Each number is a quiet link to the work that proves it on this page (audit H-33): the experience trace, or the case
+ * card in Selected work. The whole cell is the link's hit area; the label describes it.
  */
+import BidiText from "~/components/ui/BidiText.astro";
 import type { Locale } from "~/lib/i18n";
 import { profile } from "~/lib/site";
 
@@ -12,17 +15,29 @@ interface Props {
 const { locale } = Astro.props;
 const metrics = [...profile.metrics.filter((x) => x.featured), ...profile.metrics.filter((x) => !x.featured)].slice(0, 5);
 const latinOnly = (s: string) => !/[؀-ۿ]/.test(s);
+/** Where each fact is shown at work (SelectedWork.astro card ids). */
+const PROOF: Record<string, string> = {
+  years: "#experience",
+  "sta-tools": "#work-sta-tourism-assistants",
+  "arabsstock-agents": "#work-arabsstock-assistant",
+  "wakeb-agents": "#work-wakeb-bilingual-chatbot",
+  "assets-indexed": "#work-arabsstock-assistant",
+};
 ---
 <dl class="metrics">
   {
-    metrics.map((x) => (
-      <div class="metric">
-        <dt class="metric__label">{x.label[locale]}</dt>
-        <dd class="metric__value" dir={locale === "ar" && latinOnly(x.value[locale]) ? "ltr" : undefined}>
-          {x.value[locale]}
-        </dd>
-      </div>
-    ))
+    metrics.map((x) => {
+      const href = PROOF[x.id];
+      const labelId = `metric-${x.id}`;
+      return (
+        <div class:list={["metric", href && "metric--link"]}>
+          <dt class="metric__label" id={labelId}><BidiText text={x.label[locale]} locale={locale} /></dt>
+          <dd class="metric__value" dir={locale === "ar" && latinOnly(x.value[locale]) ? "ltr" : undefined}>
+            {href ? <a class="metric__a" href={href} aria-describedby={labelId}>{x.value[locale]}</a> : x.value[locale]}
+          </dd>
+        </div>
+      );
+    })
   }
 </dl>
 
@@ -30,5 +45,34 @@ const latinOnly = (s: string) => !/[؀-ۿ]/.test(s);
   /* Arabic: a Latin value (A100) keeps the column's start edge although it is set LTR. */
   :global([dir="rtl"]) .metric__value[dir="ltr"] {
     justify-content: flex-end;
+  }
+  .metric--link {
+    position: relative;
+  }
+  .metric__a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.18em;
+    text-decoration-color: transparent;
+    transition: text-decoration-color var(--duration-fast) var(--ease-standard);
+  }
+  /* The whole cell is the hit area, and a little more at its sides (a cell starts at the strip's edge on phones). */
+  .metric__a::after {
+    content: "";
+    position: absolute;
+    inset: 0 -1rem;
+  }
+  .metric__a:focus-visible {
+    outline: none;
+  }
+  .metric--link:has(.metric__a:focus-visible) {
+    outline: 2px solid var(--color-focus);
+    outline-offset: -2px;
+    border-radius: var(--radius-sm);
+  }
+  .metric__a:focus-visible,
+  .metric--link:hover .metric__a {
+    text-decoration-color: var(--color-accent-fill);
   }
 </style>

@@ -11,10 +11,13 @@ import Breadcrumbs from "./Breadcrumbs.astro";
 import Icon from "~/components/ui/Icon.astro";
 import LogoTile from "~/components/ui/LogoTile.astro";
 import Ltr from "~/components/ui/Ltr.astro";
+import BidiText from "~/components/ui/BidiText.astro";
 import type { CaseStudy } from "@content/profile.ts";
 import { messages, tr, type Locale } from "~/lib/i18n";
+import { byLocale, profile } from "~/lib/site";
 import { noBreakHtml } from "~/lib/nobreak";
-import { askQuestion, contextDetail, eyebrowParts, monoLogoOf, periodInfo, roleOf, techAccent } from "~/lib/case";
+import { bidiUnits } from "~/lib/bidi";
+import { askQuestion, contextDetail, eyebrowParts, periodInfo, roleOf, stackLabel, techAccent } from "~/lib/case";
 
 interface Props {
   locale: Locale;
@@ -27,7 +30,6 @@ const m = messages(locale);
 const role = roleOf(cs);
 const eb = eyebrowParts(cs, locale);
 const period = periodInfo(cs, locale);
-const mono = monoLogoOf(cs);
 // The same tile as the work cards: the employer's for client work, Logic Controls for the freelance site.
 const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monogram } : { file: "logic-controls", monogram: "LC" };
 const detail = contextDetail(cs, locale);
@@ -38,10 +40,16 @@ const figures = cs.figures.length >= 2 ? cs.figures.slice(0, 4) : [];
 /** A date range with each end unbreakable ("Sep 2024" / "سبتمبر 2024" never splits from its year; C-18, A-20). */
 const dateUnits = (text: string) => text.split(/(\s+[–—-]\s+)/);
 const question = askQuestion(cs, locale);
+/** A short Latin name in an Arabic title or summary ("Cloudflare Workers") never splits at its space (A-20). */
+const glue = (t: string) => bidiUnits(t, locale).map((u) => u.text).join("");
+/** A title with a domain in it ("logic-controls.com: …") steps down on small phones, so the domain fits one line (C-02). */
+/** Awards of this role (R7-26): a badge on the role row, as on the work cards. */
+const honors = role ? profile.honors.filter((h) => h.roleId === role.id) : [];
+const domainTitle = /\b[a-z0-9-]+\.(?:com|dev|org|net|io)\b/.test(tr(cs.title, locale));
 /** A short role ("AI Engineer", "Data Scientist") moves to the next line whole; a long one wraps word by word (C-36). */
 const shortRole = eb.role.trim().split(/\s+/).length <= 2 || eb.role.length <= 18;
 ---
-<section class="cs-hero" aria-labelledby="cs-title">
+<section class:list={["cs-hero", cs.depth === "brief" && "cs-hero--brief"]} aria-labelledby="cs-title">
   <div class="cs-hero__bg" aria-hidden="true"></div>
   <div class="container">
     <Breadcrumbs locale={locale} current={tr(cs.shortTitle, locale)} />
@@ -57,9 +65,11 @@ const shortRole = eb.role.trim().split(/\s+/).length <= 2 || eb.role.length <= 1
             {cs.depth === "brief" && <span class="cs-hero__brief">{m.work.page.briefTag}</span>}
           </span>
         </p>
-        <h1 class="cs-hero__title" id="cs-title" set:html={noBreakHtml(tr(cs.title, locale))} />
-        <p class="cs-hero__summary" set:html={noBreakHtml(tr(cs.summary, locale))} />
-        <div class="cs-hero__actions" data-dock-after>
+        <h1 class:list={["cs-hero__title", domainTitle && "cs-hero__title--domain"]} id="cs-title" set:html={noBreakHtml(glue(tr(cs.title, locale)))} />
+        <p class="cs-hero__summary" set:html={noBreakHtml(glue(tr(cs.summary, locale)))} />
+        {/* On phones the chat launcher and the action dock wait until these actions have scrolled past (site.ts,
+            dock.ts): the hero already offers the assistant, so the launcher never sits on the hero's text (R7-LEAD-02). */}
+        <div class="cs-hero__actions" data-dock-after data-chat-after>
           <button class="btn btn--secondary" type="button" data-open-chat data-question={question} aria-haspopup="dialog" data-chat-avoid>
             <Icon name="ask" />
             {m.work.page.ask}
@@ -73,12 +83,16 @@ const shortRole = eb.role.trim().split(/\s+/).length <= 2 || eb.role.length <= 1
             )
           }
           {
-            cs.links.map((l) => (
-              <a class="btn btn--ghost" href={l.href} rel="noopener">
-                <Icon name={l.href.includes("github.com") ? "github" : "arrow-up-right"} />
+            cs.links.map((l) => {
+              // A link may be one URL or one per language (SEO-04).
+              const href = byLocale(l.href as string | Record<Locale, string>, locale);
+              return (
+              <a class="btn btn--ghost" href={href} rel="noopener">
+                <Icon name={href.includes("github.com") ? "github" : "arrow-up-right"} />
                 {tr(l.label, locale)}
               </a>
-            ))
+              );
+            })
           }
         </div>
       </div>
@@ -87,24 +101,28 @@ const shortRole = eb.role.trim().split(/\s+/).length <= 2 || eb.role.length <= 1
         <div class="cs-meta__row">
           <dt>{m.work.page.role}</dt>
           <dd>
-            {tr(cs.contribution, locale)}
+            <BidiText text={tr(cs.contribution, locale)} locale={locale} />
             <small>{[employment, mode].filter(Boolean).join(locale === "ar" ? "، " : ", ")}</small>
+            {honors.map((h) => (
+              <span class="badge cs-meta__award">
+                <Icon name="award" />
+                <BidiText text={h.title[locale]} locale={locale} />
+              </span>
+            ))}
           </dd>
         </div>
         <div class="cs-meta__row">
           <dt>{m.work.page.company}</dt>
           <dd>
-            <span class="cs-meta__org">
-              {mono && <span class:list={["mask", `mask--${mono}`]} aria-hidden="true" />}
-              {isLatin(eb.company) ? <span lang="en">{eb.company}</span> : eb.company}
-            </span>
-            {detail && <small>{detail}</small>}
+            {/* Text only: the eyebrow above already leads with the organisation's logo tile (C-19). */}
+            <span class="cs-meta__org">{isLatin(eb.company) ? <span lang="en">{eb.company}</span> : <BidiText text={eb.company} locale={locale} />}</span>
+            {detail && <small><BidiText text={detail} locale={locale} /></small>}
           </dd>
         </div>
         <div class="cs-meta__row">
           <dt>{m.work.labels.period}</dt>
           <dd>
-            {period.isRolePeriod ? period.main : <Ltr>{dateUnits(period.main).map((p, i) => (i % 2 ? p : <span class="cs-meta__date">{p}</span>))}</Ltr>}
+            {period.isRolePeriod ? <BidiText text={period.main} locale={locale} /> : <Ltr>{dateUnits(period.main).map((p, i) => (i % 2 ? p : <span class="cs-meta__date">{p}</span>))}</Ltr>}
             {period.small && <small>{period.isRolePeriod ? <Ltr>{dateUnits(period.small).map((p, i) => (i % 2 ? p : <span class="cs-meta__date">{p}</span>))}</Ltr> : period.small}</small>}
           </dd>
         </div>
@@ -112,7 +130,7 @@ const shortRole = eb.role.trim().split(/\s+/).length <= 2 || eb.role.length <= 1
           role && (
             <div class="cs-meta__row">
               <dt>{m.work.page.location}</dt>
-              <dd>{tr(role.location, locale)}</dd>
+              <dd><BidiText text={tr(role.location, locale)} locale={locale} /></dd>
             </div>
           )
         }
@@ -122,7 +140,7 @@ const shortRole = eb.role.trim().split(/\s+/).length <= 2 || eb.role.length <= 1
             <ul class="cluster" role="list">
               {cs.stack.slice(0, 7).map((t) => {
                 const a = techAccent(t);
-                return <li class:list={["chip", a !== "neutral" && `chip--${a}`]}>{t}</li>;
+                return <li class:list={["chip", a !== "neutral" && `chip--${a}`]}>{stackLabel(t, locale)}</li>;
               })}
             </ul>
           </dd>

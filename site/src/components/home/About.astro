@@ -6,6 +6,7 @@
  * Added to the design's section list so the bio is on the page and the assistant's "about" jump has a target.
  */
 import "~/styles/home-b.css";
+import { noBreakHtml } from "~/lib/nobreak";
 import { Image } from "astro:assets";
 import photo from "~/assets/photo/mh-square-480.jpg";
 import orbitRaw from "~/assets/photo/orbit-ring.svg?raw";
@@ -23,6 +24,10 @@ const b = profile.basics;
 // The overlay's own <style> and comment are dropped (hash-only style-src; colours come from home-b.css tokens).
 const orbit = orbitRaw.replace(/<!--[\s\S]*?-->/g, "").replace(/<style>[\s\S]*?<\/style>/g, "").trim();
 const [timeBefore, timeAfter] = m.hero.localTime.split("{time}") as [string, string];
+/** The notice period beside "Open to" (round-7 decision; the copy and the fact arrive with the content round, so the
+ *  row shows once both exist). */
+const noticeLabel = (m.about as { noticePeriod?: string }).noticePeriod;
+const notice = (b.openTo as { noticePeriod?: Record<Locale, string> }).noticePeriod?.[locale];
 // Open to one role or the other ("… or …"), as the profile's decision reads.
 const roles = joinList(
   b.openTo.roles.map((r) => r[locale]),
@@ -30,7 +35,7 @@ const roles = joinList(
   "disjunction",
 );
 ---
-<section class="section section--band" id="about" aria-labelledby="about-title">
+<section class="section" id="about" aria-labelledby="about-title">
   <div class="container">
     <SectionHeader index="04" eyebrow={m.about.eyebrow} title={m.about.title} titleId="about-title" />
     <div class="about">
@@ -48,7 +53,7 @@ const roles = joinList(
             <dt>{m.about.timeZone}</dt>
             <dd>
               <span>{b.location.utcOffset[locale]}</span>
-              <small>
+              <small data-js-only>
                 {timeBefore}<Ltr><time data-cairo-time>{cairoTime(locale)}</time></Ltr>{timeAfter}
               </small>
             </dd>
@@ -60,12 +65,20 @@ const roles = joinList(
         </dl>
       </div>
       <div class="about__bio">
-        {b.bio.map((f) => <p>{f.text[locale]}</p>)}
+        {b.bio.map((f) => <p set:html={noBreakHtml(f.text[locale], "nowrap")} />)}
         <dl class="facts about__open" id="open-to">
           <div class="wide">
             <dt>{m.about.openTo}</dt>
             <dd>{roles}</dd>
           </div>
+          {
+            noticeLabel && notice && (
+              <div class="wide">
+                <dt>{noticeLabel}</dt>
+                <dd>{notice}</dd>
+              </div>
+            )
+          }
           <div class="wide">
             <dt>{m.about.workArrangements}</dt>
             <dd>

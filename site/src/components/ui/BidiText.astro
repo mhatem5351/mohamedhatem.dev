@@ -5,7 +5,7 @@
  * each Arabic run a `<bdi dir="rtl">`. Use it instead of `dir="auto"` or a bare <bdi>, which flip a whole Arabic
  * phrase to left-to-right when it starts with a Latin word.
  */
-import { bidiParts } from "~/lib/bidi";
+import { bidiUnits } from "~/lib/bidi";
 import type { Locale } from "~/lib/i18n";
 
 interface Props {
@@ -13,6 +13,7 @@ interface Props {
   locale: Locale;
 }
 const { text, locale } = Astro.props;
-const parts = bidiParts(text, locale);
+// Lines break only between whole units: a short Latin name or a number range never splits (lib/bidi.ts bidiUnits).
+const parts = bidiUnits(text, locale);
 ---
-{parts.map((p) => (p.dir ? <bdi dir={p.dir}>{p.text}</bdi> : p.text))}
+{parts.map((p) => (p.dir ? <bdi dir={p.dir} class={p.keep ? "nb" : undefined}>{p.text}</bdi> : p.keep ? <span class="nb">{p.text}</span> : p.text))}

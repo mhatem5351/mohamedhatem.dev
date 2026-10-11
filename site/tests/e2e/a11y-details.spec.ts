@@ -109,8 +109,15 @@ test.describe("structure", () => {
     const wrap = page.locator(".matrix-wrap");
     await expect(wrap).not.toHaveAttribute("tabindex", "0");
     await expect(wrap).not.toHaveAttribute("role", "region");
-    // Between 40rem and the table's 46rem width it scrolls sideways (phones get the list instead, see skills.spec).
-    await page.setViewportSize({ width: 700, height: 844 });
+    // The table shows from 64rem, where it fits (below that the receipts are a list, see skills.spec); when it can't
+    // fit (strong text zoom, a narrow column), it scrolls sideways and becomes a labelled, focusable region.
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await expect(wrap).not.toHaveAttribute("role", "region");
+    await page.evaluate(() => {
+      const s = new CSSStyleSheet();
+      s.replaceSync(".matrix-wrap { max-width: 24rem; }");
+      document.adoptedStyleSheets = [...document.adoptedStyleSheets, s];
+    });
     await expect(wrap).toHaveAttribute("tabindex", "0");
     await expect(wrap).toHaveAttribute("role", "region");
     await expect(wrap).toHaveAccessibleName(/./);

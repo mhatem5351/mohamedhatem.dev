@@ -55,6 +55,14 @@ function textSizes(svg: string, css: string, inline: boolean): { size: number; t
   return out;
 }
 
+/** Every drawing the site can inline: each diagram's variants, in English and (where drawn) in Arabic. */
+const VARIANTS = ["wide", "compact", "thumb"] as const;
+const DRAWINGS = DIAGRAMS.flatMap((d) =>
+  (["en", "ar"] as const).flatMap((locale) =>
+    VARIANTS.filter((v) => (locale === "en" ? d.files : d.ar?.files)?.[v]).map((v) => ({ d, v, locale })),
+  ),
+);
+
 describe("diagrams", () => {
   it("maps case studies only to diagrams that exist", () => {
     const ids = new Set(DIAGRAMS.map((d) => d.id));
@@ -65,28 +73,26 @@ describe("diagrams", () => {
   });
 
   it("inlines SVGs without <style> blocks or style attributes (hash-only CSP)", () => {
-    for (const d of DIAGRAMS)
-      for (const v of ["wide", "compact", "thumb"] as const) {
-        const svg = diagramSvg(d.id, v);
-        expect(svg).not.toMatch(/<style/);
-        expect(svg).not.toMatch(/\sstyle="/);
-        expect(svg).toMatch(/role="img"/);
-      }
+    for (const { d, v, locale } of DRAWINGS) {
+      const svg = diagramSvg(d.id, v, { locale });
+      expect(svg).not.toMatch(/<style/);
+      expect(svg).not.toMatch(/\sstyle="/);
+      expect(svg).toMatch(/role="img"/);
+    }
   });
 
   it("keeps the motion values as data-vars: every pulse has a length and hop, every lit node an arrival", () => {
-    for (const d of DIAGRAMS)
-      for (const v of ["wide", "compact", "thumb"] as const) {
-        const svg = diagramSvg(d.id, v);
-        const pulses = [...svg.matchAll(/<path [^>]*class="dg-p[ "][^>]*>/g)].map((x) => x[0]);
-        expect(pulses.length, `${d.id}/${v} pulses`).toBeGreaterThan(0);
-        for (const p of pulses) expect(p, `${d.id}/${v}`).toMatch(/data-vars="--L:\d+px;--i:\d+"/);
-        // each highlight overlay sits in a node that says when the request reaches it
-        const nodes = [...svg.matchAll(/<g class="dg-n[^"]*"([^>]*)>(?:(?!<\/?g[ >])[\s\S])*?class="dg-hl"/g)];
-        expect(nodes.length, `${d.id}/${v} lit nodes`).toBeGreaterThan(1);
-        for (const [, attrs] of nodes) expect(attrs).toMatch(/data-vars="--at:\d+(;--k:\d+)?"/);
-        expect(svg.match(/class="dg-hl"/g)!.length).toBe(nodes.length);
-      }
+    for (const { d, v, locale } of DRAWINGS) {
+      const svg = diagramSvg(d.id, v, { locale });
+      const pulses = [...svg.matchAll(/<path [^>]*class="dg-p[ "][^>]*>/g)].map((x) => x[0]);
+      expect(pulses.length, `${d.id}/${v}/${locale} pulses`).toBeGreaterThan(0);
+      for (const p of pulses) expect(p, `${d.id}/${v}/${locale}`).toMatch(/data-vars="--L:\d+px;--i:\d+"/);
+      // each highlight overlay sits in a node that says when the request reaches it
+      const nodes = [...svg.matchAll(/<g class="dg-n[^"]*"([^>]*)>(?:(?!<\/?g[ >])[\s\S])*?class="dg-hl"/g)];
+      expect(nodes.length, `${d.id}/${v}/${locale} lit nodes`).toBeGreaterThan(1);
+      for (const [, attrs] of nodes) expect(attrs).toMatch(/data-vars="--at:\d+(;--k:\d+)?"/);
+      expect(svg.match(/class="dg-hl"/g)!.length).toBe(nodes.length);
+    }
   });
 
   it("makes thumbnails decorative and keeps internal references unique", () => {
@@ -96,23 +102,66 @@ describe("diagrams", () => {
     for (const [, ref] of svg.matchAll(/url\(#([^)]+)\)/g)) expect(svg).toContain(`id="${ref}"`);
   });
 
-  it("keeps every compact label at 11 px or more on a 375 px phone (the drawing renders about 294 px wide)", () => {
-    const PHONE = 294;
+  it("keeps every compact label at 11 px on the smallest phones (320 px: the drawing renders about 270 px wide)", () => {
+    // 13 units at scale 270 / 320 is 10.97 px: 11.0 px rounded (audit C-45); a 375 px phone shows it 294 px wide.
+    const PHONE = 270;
     const siteCss = readFileSync(new URL("../../src/styles/diagram.css", import.meta.url), "utf8");
-    for (const d of DIAGRAMS) {
+    for (const { d, locale } of DRAWINGS.filter((x) => x.v === "compact")) {
       // as the site inlines it (no <style>, no style attributes: the global diagram.css applies) and as a standalone file
-      const inlined = diagramSvg(d.id, "compact");
-      const file = readFileSync(new URL(`../../src/assets/diagrams/${d.id}-compact.svg`, import.meta.url), "utf8");
+      const inlined = diagramSvg(d.id, "compact", { locale });
+      const file = readFileSync(new URL(`../../src/assets/diagrams/${d.id}-compact${locale === "ar" ? "-ar" : ""}.svg`, import.meta.url), "utf8");
       for (const [how, svg, css, inline] of [
         ["inlined", inlined, siteCss, false],
         ["standalone", file, /<style>([\s\S]*?)<\/style>/.exec(file)?.[1] ?? "", true],
       ] as const) {
         const width = Number(/viewBox="0 0 ([\d.]+) /.exec(svg)?.[1]);
         const texts = textSizes(svg, css, inline);
-        expect(texts.length, `${d.id} ${how}`).toBeGreaterThan(10);
-        for (const t of texts) expect((t.size * PHONE) / width, `${d.id} ${how}: "${t.text}" at ${t.size}/${width}`).toBeGreaterThanOrEqual(11);
+        expect(texts.length, `${d.id} ${locale} ${how}`).toBeGreaterThan(10);
+        for (const t of texts) expect((t.size * PHONE) / width, `${d.id} ${locale} ${how}: "${t.text}" at ${t.size}/${width}`).toBeGreaterThanOrEqual(10.95);
       }
     }
+  });
+
+  it("draws the STA figure in Arabic on Arabic pages: right to left, Arabic labels, its own ids (audit HM-41)", () => {
+    const d = DIAGRAMS.find((x) => x.id === "sta-tourism-assistants")!;
+    expect(d.ar).toBeTruthy();
+    for (const v of VARIANTS) {
+      const ar = diagramSvg(d.id, v, { locale: "ar" });
+      const en = diagramSvg(d.id, v, { locale: "en" });
+      expect(ar).toMatch(/^<svg[^>]*class="dg dg-[a-z]+ dg-ar"/);
+      expect(ar).toMatch(/^<svg[^>]*lang="ar"/);
+      expect(ar).not.toMatch(/Audience gate|Visitors|96 tools/i);
+      expect(en).not.toMatch(/dg-ar|lang="ar"/);
+      for (const [, id] of ar.matchAll(/\sid="([^"]+)"/g)) expect(id).toMatch(/-ar(-|$)/);
+    }
+    const wide = diagramSvg(d.id, "wide", { locale: "ar" });
+    for (const label of ["طبقة الصلاحيات", "وكيل واحد", "الموافقة البشرية", "قبل أي حجز أو طلب", "بحث في وثائق الهيئة", "96 أداة · 27 منها للزوار", "«نورة» · عربي · إنجليزي"]) expect(wide).toContain(label);
+    // the drawing names what the profile names: approval before any booking or order, a search with citations, no
+    // separate "LLM" box (R7-03, R7-22)
+    const en = diagramSvg(d.id, "wide", { locale: "en" });
+    expect(en).toContain("before any booking");
+    expect(en).toMatch(/Search over the authority(&apos;|')s documents/);
+    expect(en).not.toMatch(/>LLM</);
+    // the site's diagram grammar sets these drawings right to left, in Plex Arabic
+    const siteCss = readFileSync(new URL("../../src/styles/diagram.css", import.meta.url), "utf8");
+    expect(siteCss).toMatch(/\.dg\.dg-ar\{direction:rtl\}/);
+    expect(siteCss).toMatch(/\.dg-ar \.dg-t,\.dg-ar \.dg-tab\{font-family:"IBM Plex Sans Arabic"/);
+  });
+
+  it("draws every case-study system wide, compact and as a thumbnail; the orchestration pattern as a thumbnail", () => {
+    for (const d of DIAGRAMS) expect(Object.keys(d.files).sort(), d.id).toEqual(d.id === "agent-orchestration" ? ["thumb"] : ["compact", "thumb", "wide"]);
+  });
+
+  it("numbers the callouts in reading order and lists one note per number", () => {
+    for (const d of DIAGRAMS) expect(d.callouts.map((c) => c.n)).toEqual(d.callouts.map((_, i) => i + 1));
+    const as = DIAGRAMS.find((x) => x.id === "arabsstock-assistant")!;
+    expect(as.callouts.map((c) => c.term?.en)).toEqual(["Orchestrator", "Evaluation", "Specialised agents", "Semantic search", "AI services", "Media pipelines"]);
+    // the compact drawing reads top to bottom: platform, assistant, indexing, serving, media pipelines last (C-43)
+    const compact = diagramSvg("arabsstock-assistant", "compact");
+    const y = (label: string) => Number(new RegExp(`<text [^>]*\\by="([\\d.]+)"[^>]*class="dg-tab"[^>]*>${label}<`).exec(compact)?.[1]);
+    expect(y("ASSISTANT")).toBeGreaterThan(0);
+    expect(y("ASSISTANT")).toBeLessThan(y("INDEXING"));
+    expect(y("MODEL SERVING")).toBeLessThan(y("MEDIA PIPELINES"));
   });
 
   it("translates the accessible title and description on Arabic pages", () => {

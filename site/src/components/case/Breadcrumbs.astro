@@ -1,6 +1,12 @@
 ---
-/** Back button + breadcrumb trail "Work / <short title>" (pages.css §1). The BreadcrumbList JSON-LD is in lib/jsonld.ts. */
+/**
+ * Back button + breadcrumb trail "Work / <short title>" (pages.css §1). The BreadcrumbList JSON-LD is in lib/jsonld.ts.
+ * The current title goes through BidiText: in Arabic each Latin name ("Empoweromics", "logic-controls.com") is its own
+ * isolate, which case.css keeps whole, so a long title loses a whole name to its ellipsis, never the start of one
+ * (audit R7-AR-04).
+ */
 import Icon from "~/components/ui/Icon.astro";
+import BidiText from "~/components/ui/BidiText.astro";
 import { messages, type Locale } from "~/lib/i18n";
 import { homeAnchor } from "~/lib/site";
 
@@ -19,7 +25,7 @@ const back = homeAnchor("work", locale, false);
   <nav class="crumbs" aria-label={m.a11y.breadcrumb}>
     <ol>
       <li><a href={back}>{m.nav.work}</a></li>
-      <li><span aria-current="page">{current}</span></li>
+      <li><span aria-current="page"><BidiText text={current} locale={locale} /></span></li>
     </ol>
   </nav>
 </div>

@@ -25,16 +25,6 @@ export function contextDetail(cs: CaseStudy, locale: Locale): string | undefined
   return parts.length > 1 ? parts.slice(1).join(locale === "ar" ? "، " : ", ") : undefined;
 }
 
-/** Logo key of the organisation for the single-colour mask (.mask--<key>), when the design has one. */
-// (Tabaqat's mark is a wordmark of its name, which the meta card already prints, so it is left out.)
-const MONO = new Set(["globant", "wakeb", "arabsstock", "empoweromics", "mdp", "aestheticspro", "buid"]);
-export function monoLogoOf(cs: CaseStudy): string | undefined {
-  const role = roleOf(cs);
-  if (!role) return undefined;
-  const key = role.logo.file ?? role.id;
-  return MONO.has(key) ? key : undefined;
-}
-
 /** Card / bar accent per case study (design: ArabsStock coral, Wakeb saffron, Empoweromics sky, freelance teal …). */
 const ACCENT: Record<string, Accent> = {
   "sta-tourism-assistants": "teal",
@@ -247,16 +237,25 @@ const TECH_KIND: Record<string, ArchNodeKind> = {
   "axe-core": "quality",
 };
 
-export const techKind = (tech: string): ArchNodeKind => TECH_KIND[tech] ?? "service";
+/**
+ * A stack item: a product name (one string in both languages) or, for a concept that reads in Arabic ("LLM evaluation"
+ * / «تقييم النماذج اللغوية»), a localized pair. Its kind and colour come from the English name.
+ */
+export type StackItem = string | L10n;
+const stackKey = (tech: StackItem): string => (typeof tech === "string" ? tech : tech.en);
+/** The item's label on a page in `locale`. */
+export const stackLabel = (tech: StackItem, locale: Locale): string => (typeof tech === "string" ? tech : tech[locale]);
+
+export const techKind = (tech: StackItem): ArchNodeKind => TECH_KIND[stackKey(tech)] ?? "service";
 
 /** Chip colour for a tech name (chip--<accent>, or neutral). */
-export function techAccent(tech: string): Accent | "neutral" {
+export function techAccent(tech: StackItem): Accent | "neutral" {
   return KIND_ACCENT[techKind(tech)];
 }
 
-export function stackGroups(cs: CaseStudy): { kind: ArchNodeKind; items: string[] }[] {
-  const groups = new Map<ArchNodeKind, string[]>();
-  for (const t of cs.stack) {
+export function stackGroups(cs: CaseStudy): { kind: ArchNodeKind; items: StackItem[] }[] {
+  const groups = new Map<ArchNodeKind, StackItem[]>();
+  for (const t of cs.stack as readonly StackItem[]) {
     const k = techKind(t);
     // agents/orchestration share one row, and so do service/infra plumbing pieces with few items
     const key: ArchNodeKind = k === "agent" ? "orchestrator" : k;

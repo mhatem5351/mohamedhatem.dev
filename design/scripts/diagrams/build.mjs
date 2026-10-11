@@ -11,8 +11,10 @@ import fs from "node:fs";
 import zlib from "node:zlib";
 import { createRequire } from "node:module";
 import { Diagram, css, CATS, TOK, contrast, DESIGN, FONT } from "./lib.mjs";
-import { SPECS } from "./specs.mjs";
+import { SPECS, SPECS_AR } from "./specs.mjs";
 import { CAPTIONS, ORDER, LEGEND } from "./captions.mjs";
+
+const LEGEND_AR = Object.fromEntries(Object.entries(LEGEND).map(([k, v]) => [k, v.ar]));
 
 const STRICT = process.argv.includes("--strict");
 const OUT = new URL("assets/diagrams/", DESIGN);
@@ -48,19 +50,25 @@ const optimise = (svg) => (svgo ? svgo.optimize(svg, SVGO_CONFIG).data : svg);
 const VARIANTS = [["wide", ""], ["compact", "-compact"], ["thumb", "-thumb"]];
 const results = [];
 let warnings = 0;
+// English variants for every diagram; Arabic ones (-ar, right to left, Arabic labels) where SPECS_AR has them.
 for (const id of ORDER) {
-  const spec = SPECS[id]; const cap = CAPTIONS[id];
-  if (!spec || !cap) throw new Error(`missing spec or captions for ${id}`);
-  for (const [variant, suffix] of VARIANTS) {
-    if (!spec[variant]) continue;
-    const desc = variant === "thumb" ? cap.desc.short.en : cap.desc.long.en;
-    const d = new Diagram(spec[variant], { id, variant, title: cap.title.en, desc });
-    const raw = d.render();
-    for (const w of d.warn) { console.warn(`  warn ${id}/${variant}: ${w}`); warnings++; }
-    const svg = optimise(raw);
-    const file = `${id}${suffix}.svg`;
-    fs.writeFileSync(new URL(file, OUT), svg);
-    results.push({ id, variant, file, svg, w: spec[variant].w, h: spec[variant].h, bytes: Buffer.byteLength(svg), gzip: zlib.gzipSync(svg, { level: 9 }).length, br: zlib.brotliCompressSync(svg).length });
+  const cap = CAPTIONS[id];
+  if (!SPECS[id] || !cap) throw new Error(`missing spec or captions for ${id}`);
+  for (const locale of ["en", "ar"]) {
+    const spec = locale === "en" ? SPECS[id] : SPECS_AR[id];
+    if (!spec) continue;
+    for (const [variant, suffix] of VARIANTS) {
+      if (!spec[variant]) continue;
+      const desc = variant === "thumb" ? cap.desc.short[locale] : cap.desc.long[locale];
+      const d = new Diagram(spec[variant], { id, variant, title: cap.title[locale], desc, legendLabels: locale === "ar" ? LEGEND_AR : undefined });
+      const raw = d.render();
+      const tag = `${id}/${variant}${locale === "ar" ? "/ar" : ""}`;
+      for (const w of d.warn) { console.warn(`  warn ${tag}: ${w}`); warnings++; }
+      const svg = optimise(raw);
+      const file = `${id}${suffix}${locale === "ar" ? "-ar" : ""}.svg`;
+      fs.writeFileSync(new URL(file, OUT), svg);
+      results.push({ id, variant, locale, pid: d.pid, file, svg, w: spec[variant].w, h: spec[variant].h, bytes: Buffer.byteLength(svg), gzip: zlib.gzipSync(svg, { level: 9 }).length, br: zlib.brotliCompressSync(svg).length });
+    }
   }
 }
 
@@ -87,19 +95,21 @@ const SPEC_COMMENT = `/*
  *            solid = request / call; dashed (4 5) = batch, background or monitoring.
  *            Open chevron heads (5.5 x 8) drawn as paths whose tip touches the target outline; no <marker>
  *            ids, so many diagrams can share a page. Optional mono 12 px labels on the same pill.
- * Callouts   20 px saffron-fill discs with a page-background ring, mono 700 12 px numerals; numbered in reading order
- *            and listed under the figure (diagrams.json -> callouts, EN + AR).
+ * Callouts   20 px discs in the solid accent (gold by night, lapis by day) with a page-background ring, mono 700 12 px
+ *            numerals in the on-accent colour; numbered in reading order (top to bottom in the compact drawing) and
+ *            listed under the figure (diagrams.json -> callouts, EN + AR).
  * Legend     generated from the kinds and edge types actually used; nodes row, then links row.
- * Text floor sublabels, tabs, edge labels and legend 12, titles 13 in every variant (callout numerals 12, compact
- *            13): shown at scale 0.917 or more, no label renders under 11 CSS px. A 375 px phone shows the compact
- *            drawing about 294 px wide (scale 0.92); the site shows the wide one only from a 64.25rem canvas. The
+ * Text floor sublabels, tabs, edge labels and legend 12, titles 13 (wide, thumb); 13 and 14 in the compact
+ *            variant, so no label renders under 11 CSS px even on a 320 px phone (the drawing about 270 px wide,
+ *            scale 0.844); the site shows the wide one only from a 64.25rem canvas. No edge runs through a tab. The
  *            pills and callout rings take the page background, not the canvas, so a transparent canvas
  *            (--dg-canvas: transparent) never lets a border or an edge run through their text.
  * Theming    every colour is var(--color-*, <hex>) through local --_* properties; an internal
  *            prefers-color-scheme block supplies dark hex fallbacks when the file is opened standalone.
  *            Inline in the page and the site tokens (and its [data-theme]) win.
- * Direction  diagrams are LTR and English on every page (direction:ltr + unicode-bidi:isolate on the root);
- *            only captions, callouts and descriptions are translated.
+ * Direction  diagrams are LTR and English (direction:ltr + unicode-bidi:isolate on the root), except the ones with an
+ *            Arabic variant (*-ar.svg, class dg-ar): mirrored to read right to left, Arabic labels in IBM Plex Sans
+ *            Arabic (titles and tabs 600, the rest 400, never letter-spaced), widths measured by measure-ar.mjs.
  * Motion     opt-in: add class "dg-play" to the <svg> (or an ancestor) and one request travels the main path per
  *            loop: a pulse per hop in the colour of the node it reaches (--i hop index, --L path length; 0.72 s
  *            per hop, 0.5 s on thumbnails, loop = hop / 0.12); each node it reaches lights up as it lands (.dg-hl
@@ -126,7 +136,7 @@ for (const theme of ["light", "dark"]) {
     ["edge label on canvas", T("muted"), T("bg"), 4.5],
     ["thumb caption on canvas", T("ink-2"), T("bg"), 4.5],
     ["edge stroke on canvas", T("line-input"), T("bg"), 3],
-    ["callout numeral on disc", T("on-saffron"), T("saffron-fill"), 4.5],
+    ["callout numeral on disc", T("on-accent"), T("accent-solid"), 4.5],
     ...["teal", "saffron", "coral", "sky", "sage", "slate"].map((c) => [`${c} glyph on well`, T(c), T(`${c}-tint`), 3]),
   ];
   for (const [label, fg, bg, min] of checks) {
@@ -139,13 +149,14 @@ const failed = audit.filter((a) => !a.ok);
 // ---------------------------------------------------------------- diagrams.json
 const json = {
   generated: "design/scripts/diagrams/build.mjs",
-  note: "Diagrams are LTR and English on every page (wrap them in dir=\"ltr\"); only title, caption, callouts and desc are translated. Inline the SVG for theming; <img> works but follows the OS colour scheme only.",
+  note: "Diagrams are LTR and English (wrap them in dir=\"ltr\"); title, caption, callouts and desc are translated. Diagrams with an `ar` entry also have Arabic drawings (*-ar.svg: mirrored, right to left, Arabic labels) for Arabic pages. Inline the SVG for theming; <img> works but follows the OS colour scheme only.",
   legend: LEGEND,
   diagrams: ORDER.map((id) => {
     const c = CAPTIONS[id];
-    const files = {};
-    for (const r of results.filter((x) => x.id === id)) files[r.variant] = { file: `assets/diagrams/${r.file}`, viewBox: `0 0 ${r.w} ${r.h}`, bytes: r.bytes, gzip: r.gzip };
-    return { id, context: c.context, title: c.title, caption: c.caption, desc: c.desc, callouts: c.callouts, files, ids: { wide: `dg-${id}-w`, compact: `dg-${id}-c`, thumb: `dg-${id}-t` } };
+    const files = (locale) => Object.fromEntries(results.filter((x) => x.id === id && x.locale === locale).map((r) => [r.variant, { file: `assets/diagrams/${r.file}`, viewBox: `0 0 ${r.w} ${r.h}`, bytes: r.bytes, gzip: r.gzip }]));
+    const ids = (locale) => Object.fromEntries(results.filter((x) => x.id === id && x.locale === locale).map((r) => [r.variant, r.pid]));
+    const ar = SPECS_AR[id] ? { ar: { files: files("ar"), ids: ids("ar") } } : {};
+    return { id, context: c.context, title: c.title, caption: c.caption, desc: c.desc, callouts: c.callouts, files: files("en"), ids: { wide: `dg-${id}-w`, compact: `dg-${id}-c`, thumb: `dg-${id}-t` }, ...ar };
   }),
 };
 fs.writeFileSync(new URL("diagrams.json", OUT), JSON.stringify(json, null, 2) + "\n");
@@ -176,7 +187,11 @@ const specimen = new Diagram({
 // ---------------------------------------------------------------- preview page
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const ctx = (parts) => parts.map((p) => `<bdi>${esc(p)}</bdi>`).join(" · ");
-const svgOf = (id, v) => results.find((r) => r.id === id && r.variant === v)?.svg ?? "";
+const svgEn = (id, v) => results.find((r) => r.id === id && r.variant === v && r.locale === "en")?.svg ?? "";
+const svgOf = (id, v) => {
+  const ar = results.find((r) => r.id === id && r.variant === v && r.locale === "ar")?.svg;
+  return ar ? `<div class="loc-en">${svgEn(id, v)}</div><div class="loc-ar">${ar}</div>` : svgEn(id, v);
+};
 const fig = (id) => {
   const c = CAPTIONS[id];
   return `
@@ -250,6 +265,7 @@ h2.section{font:600 var(--text-lg)/var(--lh-snug) var(--font-display);margin:0 0
 figure{margin:0}
 .dgf-art{container-type:inline-size;border:1px solid var(--color-line);border-radius:var(--radius-lg);background:var(--color-bg);overflow:hidden}
 .dgf-art svg{display:block;width:100%;height:auto}
+html:not([lang="ar"]) .loc-ar,html[lang="ar"] .loc-en{display:none}
 .dgf-wide{display:none}
 .dgf-compact{max-width:26rem;margin-inline:auto}
 @container (min-width: 880px){.dgf-wide{display:block}.dgf-compact{display:none}}
@@ -302,7 +318,7 @@ figcaption{display:grid;gap:1rem;margin-block-start:1.25rem;max-width:48rem}
     <h2 class="section" id="c-h" data-i18n="ui.cards">Case-study cards (thumbnails)</h2>
     <div class="cards">${ORDER.map(card).join("")}</div>
   </section>
-${ORDER.map(fig).join("\n")}
+${ORDER.filter((id) => SPECS[id].wide).map(fig).join("\n")}
   </main>
 </div>
 <script>

@@ -17,7 +17,9 @@
  *   (src/scripts/site.ts). Clicks before the loader runs are queued.
  * - Config comes from data attributes here (no inline script: strict CSP). Contact details come from profile.ts,
  *   never from the model.
- * - Without JavaScript, a <details> card offers email and WhatsApp instead.
+ * - Without JavaScript, a <details> card offers email and WhatsApp instead. With JavaScript but no chat (its code
+ *   failed to load, e.g. a page opened before a deploy whose chunks are gone), the same offer shows as a small card
+ *   when an "Ask" button gets no panel within a few seconds (data-chat-fallback; ~/scripts/site.ts, audit R7-RES-04).
  *
  * Integration status: the coordinator finalises this file once the Worker's /api/chat is live
  * (e.g. Turnstile key and avatar). Tests mock window.MHChat (tests/e2e/chat.spec.ts).
@@ -61,6 +63,16 @@ const avatarImg = await getImage({ src: avatar, width: 96, height: 96, format: "
   data-launcher={launcher ? undefined : "off"}
 >
 </div>
+<section class="chat-fallback" hidden data-chat-fallback tabindex="-1" aria-labelledby="chat-fallback-text">
+  <p id="chat-fallback-text">{m.chat.errors.unavailable}</p>
+  <p class="chat-noscript__links">
+    <a href={mailtoHref(locale)}>{m.chat.contactEmail}</a>
+    <a href={whatsappHref(locale)}>{m.chat.contactWhatsApp}</a>
+  </p>
+  <button class="chat-fallback__close" type="button" data-chat-fallback-close aria-label={m.common.close} title={m.common.close}>
+    <Icon name="close" size="sm" />
+  </button>
+</section>
 <noscript>
   <details class="chat-noscript">
     <summary class="chat-noscript__launcher">

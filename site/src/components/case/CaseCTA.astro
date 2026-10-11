@@ -8,7 +8,8 @@ import Ltr from "~/components/ui/Ltr.astro";
 import type { CaseStudy } from "@content/profile.ts";
 import { format, messages, tr, type Locale } from "~/lib/i18n";
 import { noBreakHtml } from "~/lib/nobreak";
-import { contact, homeAnchor, mailtoHref } from "~/lib/site";
+import { bidiUnits } from "~/lib/bidi";
+import { CV_PDF, contact, homeAnchor, mailtoHref, profile } from "~/lib/site";
 import { askQuestion } from "~/lib/case";
 
 interface Props {
@@ -19,10 +20,14 @@ const { locale, cs } = Astro.props;
 const m = messages(locale);
 const q = askQuestion(cs, locale);
 const email = contact("email").display;
+/** A short Latin name in an Arabic title never splits at its space (A-20). */
+const glue = (t: string) => bidiUnits(t, locale).map((u) => u.text).join("");
+/** "Download my CV (PDF)" at the end of a read (R7-25), where the copy has that line. */
+const ctaCv = (m.work.page as { ctaCv?: string }).ctaCv;
 ---
 <div class="cta-band">
   <p class="eyebrow">{m.work.page.ctaEyebrow}</p>
-  <h3 class="cta-band__title" set:html={noBreakHtml(format(m.work.page.ctaTitle, { title: tr(cs.shortTitle, locale) }))} />
+  <h3 class="cta-band__title" set:html={noBreakHtml(glue(format(m.work.page.ctaTitle, { title: tr(cs.shortTitle, locale) })))} />
   <p class="cta-band__text">{m.work.page.ctaBody}</p>
   <button class="ask-bar" type="button" data-open-chat data-question={q} aria-haspopup="dialog" data-chat-avoid>
     <Icon name="ask" size="md" class="ask-bar__icon" />
@@ -34,6 +39,14 @@ const email = contact("email").display;
       <Icon name="mail" />
       {m.work.page.ctaContact}
     </a>
+    {
+      ctaCv && (
+        <a class="cta-band__cv" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf" data-open-on-touch>
+          <Icon name="download" />
+          {ctaCv}
+        </a>
+      )
+    }
     <span class="cta-band__mail">
       {m.work.page.ctaWrite}{" "}<a href={mailtoHref(locale)}><Ltr>{email}</Ltr></a>
     </span>
