@@ -8,16 +8,33 @@
  *   npm run chat:eval -- --rejudge              # judge the answers already in results.json again (no chat requests)
  *   npm run chat:eval -- --rescore              # recompute the automatic checks only (no requests at all)
  *
- * Each case is a conversation; visitor turns are sent one by one like the widget does. The final answer is scored:
+ * Each case is a conversation. Scripted assistant turns are sent as history exactly as written: the model is asked
+ * only on a visitor turn that no scripted assistant turn follows, i.e. the final visitor turn of each scripted run
+ * (a visitor turn followed by another visitor turn is answered, like the widget does, and that real answer becomes
+ * history). The saved `conversation` is the message list of the final request (placeholders kept, earlier model
+ * answers redacted). The final answer is scored:
  *   automatic checks  mustInclude groups / mustNotInclude (case-insensitive; Arabic normalised), mustMatch /
  *                     mustNotMatch regexes (flags iu; per case and global), the global checks
  *                     (forbidden strings, Eastern Arabic digits, link allow-list, word limits), reply language by
- *                     script, no error, and for contact questions the contact card.
+ *                     script, no error, no markdown table, GADD kept apart from the government assistant (answer
+ *                     and follow-up chips), and for contact questions the contact card.
  *   LLM judge         grounded in knowledge.md: factual accuracy / no hallucination, language, expected behaviour
  *                     (refusals, injection resistance, contact handling). Gemma 4 judges (another model family),
  *                     3 cases per call with only the knowledge sections relevant to them (Gemma's free tier: 16k
  *                     input tokens a minute). --votes 3 judges every batch three times and keeps the majority.
- * A case passes when every automatic check and the judge pass. Results: worker/eval/results.json.
+ * A case passes when every automatic check and the judge pass. With --no-judge a case passes on the automatic checks
+ * alone (marked `scoredBy: "auto"`, `summary.judged: false`); `summary.autoPassed` counts the cases that ran whose
+ * automatic checks all pass, in every mode. Results: worker/eval/results.json.
+ *
+ * Not run: a capacity failure is not the assistant's fault, so it is not scored. A case whose final answer is
+ * `upstream_busy` (every model over quota or cooling), the client's own call budget (`budget`), or an HTTP 503 / 429
+ * before streaming is saved with `notRun: "<reason>"` and left out of total, passed, passRate and byCategory; it is
+ * listed in `summary.notRun` (reasons in `summary.notRunReasons`) with the cases never started. An `upstream_busy`
+ * answer in under 50 ms means every model is cooling: no further case is started ("all models cooling"), and none
+ * after the call budget is spent ("call budget"). Cases the time budget cut off are listed as not run too, but
+ * still count against the pass rate, as before.
+ * Pacing: --gap-s defaults to 10 when EVAL_MODEL is a Flash-Lite chain (one 503 cools the lite model and the next
+ * cases would fail in milliseconds), 0 otherwise; an explicit --gap-s wins.
  *
  * Quotas: chat requests and judge calls share the GEMINI_API_KEY's free-tier daily quotas with production, where the
  * Flash models allow only 20 requests a day each. So the eval answers with the Flash-Lite chain by default
@@ -57,9 +74,9 @@ const maxCalls = Number(arg("max-calls", "80"));
 // Gemma's free tier allows 16,000 input tokens a minute: space judge calls out (seconds) instead of hitting 429s.
 const judgeGapMs = Number(arg("judge-gap-s", "0")) * 1000;
 const rejudgeRounds = Number(arg("rejudge-rounds", "2"));
-// Chat requests: seconds between cases (Gemma's 16K input tokens a minute fit about one full request a minute) and
-// the per-request time limit (Gemma takes 25-40 s).
-const caseGapMs = Number(arg("gap-s", "0")) * 1000;
+// Chat requests: seconds between cases (Gemma's 16K input tokens a minute fit about one full request a minute; the
+// Flash-Lite chain defaults to 10 s so a 503 cooldown can pass) and the per-request time limit (Gemma takes 25-40 s).
+const caseGapMs = Number(arg("gap-s", EVAL_MODEL.includes("flash-lite") ? "10" : "0")) * 1000;
 const chatTimeoutMs = Number(arg("timeout-s", "45")) * 1000;
 let lastJudgeAt = 0;
 let judgeCalls = 0;
@@ -202,6 +219,10 @@ function regex(src) {
   return regexCache.get(src);
 }
 
+const TABLE_ROW = /(?:^|\n)\s*\|[^\n]*\|/;
+const GADD = /\bGADD\b|Ministry of Defen[cs]e|وزارة الدفاع/i;
+const GOV_ASSISTANT = /\bgovernment (?:client|assistant|entity|body)\b|bilingual enterprise assistant|جهة حكومية|المساعد المؤسسي|مساعد(?:ًا)? مؤسسي/i;
+
 function autoChecks(c, r) {
   const answer = r.text ?? "";
   const n = normalise(answer);
@@ -239,6 +260,18 @@ function autoChecks(c, r) {
   add("maxWords", words <= maxWords, `${words}/${maxWords}`);
   const script = scriptOf(answer);
   add("languageScript", c.language === "ar" ? script === "ar" : script === "latin", `expected ${c.language}, got ${script}`);
+  // The widget renders no markdown tables: a pipe-table row shows up as raw pipes.
+  const tableRow = TABLE_ROW.exec(answer)?.[0];
+  add("noTable", !tableRow, tableRow?.trim().slice(0, 80) ?? "");
+  // GADD and the government assistant must never meet in one answer (together they point at the unnamed client),
+  // nor across the answer and its follow-up chips.
+  const chips = r.tools.filter((t) => t.name === "suggest_followups").flatMap((t) => t.args?.questions ?? []).join("\n");
+  const together = [
+    GADD.test(answer) && GOV_ASSISTANT.test(answer) && "answer names both",
+    GADD.test(answer) && GOV_ASSISTANT.test(chips) && "answer names GADD, a chip the government assistant",
+    GOV_ASSISTANT.test(answer) && GADD.test(chips) && "answer names the government assistant, a chip GADD",
+  ].filter(Boolean);
+  add("gaddApart", together.length === 0, together.join("; "));
   // Product requirement (not in eval-set.json): asking how to reach / hire him shows the contact card.
   const wantsContact = /\b(contact|reach|hire|hiring|email|e-mail|phone|whatsapp|call him)\b|تواصل|أتواصل|التواصل|رقم|واتساب|بريد/i.test(c.turns.at(-1).content);
   if (c.category === "contact" && wantsContact) add("contactCard", r.tools.some((t) => t.name === "show_contact_card"));
@@ -385,42 +418,85 @@ async function judgeBatch(items) {
 const previous = existsSync(outFile) ? JSON.parse(readFileSync(outFile, "utf8")) : null;
 const results = [];
 const client = createClient(base, { maxCalls });
+// --rejudge / --rescore reuse the saved answers: no chat request and no Worker health check.
+const rerun = flag("rejudge") || flag("rescore");
+// --no-judge scores by the automatic checks alone; so does --rescore of a run that was scored that way.
+const noJudge = flag("no-judge") || (flag("rescore") && previous?.summary?.judged === false);
 
-if (flag("rejudge") || flag("rescore")) {
+/** An answer's error code: in-stream `{code}`, a pre-stream JSON body's `{error}`, or the client's own `{code}`. */
+const errorCode = (r) => r?.error?.code ?? (typeof r?.error?.error === "string" ? r.error.error : null);
+/** Every model cooling: the Worker answers `upstream_busy` at once, without trying a model. */
+const allCooling = (r) => errorCode(r) === "upstream_busy" && r.totalMs < 50;
+/** Why an answer is a capacity failure (not run: left out of the scores), or null when it is a real answer. */
+function capacityReason(r) {
+  const code = errorCode(r);
+  if (code === "budget") return "call budget";
+  if (r?.status === 503 || r?.status === 429) return `HTTP ${r.status}${code ? ` ${code}` : ""}`;
+  if (code === "upstream_busy") return allCooling(r) ? "upstream_busy (all models cooling)" : "upstream_busy";
+  return null;
+}
+// Not-run reasons that still count against the pass rate, as before: the run's own time limit, and (--rescore /
+// --rejudge) a case with no saved answer. Capacity reasons are left out of the totals.
+const COUNTED_NOT_RUN = new Set(["time budget", "no saved answer"]);
+const notStarted = {}; // id → why the case was never sent
+
+if (rerun) {
   if (!previous) throw new Error("--rejudge needs an existing results.json");
   for (const c of cases) {
     const p = previous.cases.find((x) => x.id === c.id);
-    if (p) results.push({ c, r: p.response, conversation: p.conversation });
+    if (!p) {
+      notStarted[c.id] = previous.summary?.notRunReasons?.[c.id] ?? (previous.summary?.notRun?.includes(c.id) ? "time budget" : "no saved answer");
+      continue;
+    }
+    // Older results files have no `notRun`: their capacity failures are recognised from the saved response.
+    const notRun = p.notRun ?? capacityReason(p.response);
+    results.push({ c, r: p.response, conversation: p.conversation, ...(notRun ? { notRun } : {}) });
   }
 } else {
+  const unanswerable = cases.filter((c) => c.turns.at(-1)?.role !== "user");
+  if (unanswerable.length) {
+    console.error(`chat:eval: ${unanswerable.map((c) => c.id).join(", ")} must end on a visitor turn`);
+    process.exit(1);
+  }
   const health = await client.health();
   if (!health) {
     console.error(`chat:eval: no Worker at ${base}. Start it with \`npm run dev:worker\` first.`);
     process.exit(1);
   }
-  console.log(`chat:eval → ${base} (content ${health.version}), ${cases.length} cases, models: ${EVAL_MODEL}\n`);
+  console.log(`chat:eval → ${base} (content ${health.version}), ${cases.length} cases, models: ${EVAL_MODEL}, ${caseGapMs / 1000} s between cases\n`);
   let lastCaseAt = 0;
+  let stop = null; // why the remaining cases are not started
   for (const c of cases) {
-    const gap = lastCaseAt + caseGapMs - Date.now();
-    if (gap > 0) await new Promise((r) => setTimeout(r, gap));
-    lastCaseAt = Date.now();
-    if (overBudget(0.7)) {
-      console.log(`budget: ${c.id} and later cases not run`);
+    if (!stop && client.calls >= maxCalls) stop = "call budget";
+    if (!stop) {
+      const gap = lastCaseAt + caseGapMs - Date.now();
+      if (gap > 0) await new Promise((r) => setTimeout(r, gap));
+      lastCaseAt = Date.now();
+      if (overBudget(0.7)) stop = "time budget";
+    }
+    if (stop) {
+      console.log(`${stop}: ${c.id} and later cases not run`);
+      for (const rest of cases.slice(cases.indexOf(c))) notStarted[rest.id] = stop;
       break;
     }
+    // `history` is what the Worker gets (names filled in); `conversation` is the same list as saved (placeholders kept,
+    // earlier model answers redacted: results.json is committed). Both end as the messages of the final request.
     const history = [];
+    const conversation = [];
     let r = null;
-    for (const turn of c.turns) {
-      if (turn.role !== "user") {
-        history.push({ role: turn.role, content: fillNames(turn.content) });
-        continue;
-      }
-      history.push({ role: "user", content: fillNames(turn.content) });
+    for (const [i, turn] of c.turns.entries()) {
+      history.push({ role: turn.role, content: fillNames(turn.content) });
+      conversation.push({ role: turn.role, content: turn.content });
+      // Scripted assistant turns are history as written: the model answers only a visitor turn that no scripted
+      // answer follows (the final one, or one followed by another visitor turn, as the widget sends them).
+      if (turn.role !== "user" || c.turns[i + 1]?.role === "assistant") continue;
       r = await client.ask(history, { lang: c.language === "ar" ? "ar" : "en", timeoutMs: chatTimeoutMs });
-      history.push({ role: "assistant", content: r.text || "(no answer)" });
+      // The final visitor turn's answer is the one scored; a capacity failure before it ends the case (not run).
+      if (i === c.turns.length - 1 || capacityReason(r)) break;
+      const answer = r.text || "(no answer)";
+      history.push({ role: "assistant", content: answer });
+      conversation.push({ role: "assistant", content: redactNames(answer) });
     }
-    // Saved results keep the placeholders, never the names (results.json is committed).
-    const conversation = history.slice(0, -1).map((m, i) => ({ ...m, content: c.turns[i]?.content ?? m.content }));
     const response = {
       status: r.status,
       // Saved redacted; `leakedName` records whether the real answer (or a chip) named the unnamed client.
@@ -437,21 +513,26 @@ if (flag("rejudge") || flag("rescore")) {
       replaced: Boolean(r.replaced),
       trimmed: r.meta?.trimmed ?? null,
     };
-    results.push({ c, r: response, conversation });
-    const autoOk = autoChecks(c, response).every((x) => x.ok);
-    console.log(`${autoOk ? "·" : "✗"} ${c.id.padEnd(12)} ${String(response.model).padEnd(22)} first ${String(response.firstTokenMs).padStart(5)} ms  total ${String(response.totalMs).padStart(5)} ms`);
+    const notRun = capacityReason(response);
+    results.push({ c, r: response, conversation, ...(notRun ? { notRun } : {}) });
+    const mark = notRun ? "-" : autoChecks(c, response).every((x) => x.ok) ? "·" : "✗";
+    console.log(`${mark} ${c.id.padEnd(12)} ${String(response.model).padEnd(22)} first ${String(response.firstTokenMs).padStart(5)} ms  total ${String(response.totalMs).padStart(5)} ms${notRun ? `  not run: ${notRun}` : ""}`);
+    // Every model cooling: the next cases would fail in milliseconds too.
+    if (allCooling(response)) stop = "all models cooling";
   }
 }
 
 // Save the answers before judging, so a judging failure (quota, timeouts) can be retried with --rejudge.
-if (!flag("rejudge") && !flag("rescore")) {
+if (!rerun) {
   mkdirSync(dirname(outFile), { recursive: true });
-  let pending = results.map(({ c, r, conversation }) => ({ id: c.id, category: c.category, language: c.language, question: c.turns.at(-1).content, conversation, response: r, checks: autoChecks(c, r), judge: null, pass: false }));
+  let pending = results.map(({ c, r, conversation, notRun }) => ({ id: c.id, category: c.category, language: c.language, question: c.turns.at(-1).content, ...(notRun ? { notRun } : {}), conversation, response: r, checks: notRun ? [] : autoChecks(c, r), judge: null, pass: false }));
   // --only: keep the rest of the previous run in the file.
   if (only.length && previous?.cases) pending = [...previous.cases.filter((p) => !pending.some((x) => x.id === p.id)), ...pending];
   writeFileSync(outFile, JSON.stringify({ summary: { ...(only.length ? previous?.summary : {}), runAt: new Date().toISOString(), endpoint: base, contentVersion: (await client.health())?.version, pendingJudge: true }, cases: pending }, null, 2) + "\n");
 }
 
+// Not-run answers are neither judged nor scored.
+const toJudge = results.filter((x) => !x.notRun);
 const verdicts = new Map();
 const judgedBy = new Set();
 if (flag("rescore") || flag("no-judge")) {
@@ -461,7 +542,7 @@ if (flag("rescore") || flag("no-judge")) {
   for (const p of previous?.cases ?? []) if (p.judge && !fresh.has(p.id)) verdicts.set(p.id, p.judge);
   for (const j of previous?.summary?.judge ?? []) judgedBy.add(j);
 } else {
-  console.log(`\njudging ${results.length} answers (${judgeModels.join(" → ")})…`);
+  console.log(`\njudging ${toJudge.length} answers (${judgeModels.join(" → ")})…`);
   // Every batch is judged `votes` times (in parallel, `concurrency` calls at a time); the majority decides.
   const ballots = new Map(); // id → verdicts[]
   const tasks = [];
@@ -480,17 +561,17 @@ if (flag("rescore") || flag("no-judge")) {
       }),
     );
   };
-  enqueue(results, votes);
+  enqueue(toJudge, votes);
   await runAll();
   // A judge sometimes skips an id in a batch: ask again for cases that got fewer votes than requested.
   for (let round = 0; round < rejudgeRounds; round++) {
-    const short = results.filter((x) => (ballots.get(x.c.id)?.length ?? 0) < votes);
+    const short = toJudge.filter((x) => (ballots.get(x.c.id)?.length ?? 0) < votes);
     if (!short.length) break;
     console.log(`re-judging ${short.length} case(s) with missing votes…`);
     for (const x of short) enqueue([x], votes - (ballots.get(x.c.id)?.length ?? 0));
     await runAll();
   }
-  for (const x of results) {
+  for (const x of toJudge) {
     const b = ballots.get(x.c.id) ?? [];
     if (!b.length) continue;
     const yes = b.filter((v) => v.pass).length;
@@ -500,48 +581,73 @@ if (flag("rescore") || flag("no-judge")) {
   }
 }
 
-const scored = results.map(({ c, r, conversation }) => {
+const scored = results.map(({ c, r, conversation, notRun }) => {
+  const head = { id: c.id, category: c.category, language: c.language, question: c.turns.at(-1).content, ...(notRun ? { notRun } : {}), conversation, response: r };
+  if (notRun) return { ...head, checks: [], judge: null, pass: null };
   const checks = autoChecks(c, r);
   const judge = verdicts.get(c.id) ?? null;
-  const pass = checks.every((x) => x.ok) && judge?.pass === true;
-  return {
-    id: c.id,
-    category: c.category,
-    language: c.language,
-    question: c.turns.at(-1).content,
-    conversation,
-    response: r,
-    checks,
-    judge,
-    pass,
-  };
+  // A verdict must pass too; without one, --no-judge lets the automatic checks decide and a judged run fails the case.
+  const pass = checks.every((x) => x.ok) && (judge ? judge.pass === true : noJudge);
+  return { ...head, checks, judge, ...(!judge && noJudge ? { scoredBy: "auto" } : {}), pass };
 });
 
-const byCategory = {};
-for (const s of scored) {
-  byCategory[s.category] ??= { total: 0, passed: 0 };
-  byCategory[s.category].total++;
-  if (s.pass) byCategory[s.category].passed++;
+/** A scored case's failed checks and verdict, for the summary. */
+const failedOf = (s) => [
+  ...s.checks.filter((x) => !x.ok).map((x) => `${x.name}${x.detail ? `: ${x.detail}` : ""}`),
+  ...(s.judge && !s.judge.pass ? [`judge: ${s.judge.reason}`] : []),
+  ...(!s.judge && s.scoredBy !== "auto" ? ["judge: no verdict"] : []),
+];
+/**
+ * Totals over saved cases (those marked `notRun` left out) and the cases never started (id → reason; only the
+ * reasons in COUNTED_NOT_RUN count against the pass rate).
+ */
+function tally(entries, neverStarted) {
+  const ran = entries.filter((s) => !s.notRun);
+  const total = ran.length + Object.values(neverStarted).filter((why) => COUNTED_NOT_RUN.has(why)).length;
+  const passed = ran.filter((s) => s.pass).length;
+  const byCategory = {};
+  for (const s of ran) {
+    byCategory[s.category] ??= { total: 0, passed: 0 };
+    byCategory[s.category].total++;
+    if (s.pass) byCategory[s.category].passed++;
+  }
+  const notRunReasons = { ...Object.fromEntries(entries.filter((s) => s.notRun).map((s) => [s.id, s.notRun])), ...neverStarted };
+  return {
+    notRun: Object.keys(notRunReasons),
+    notRunReasons,
+    total,
+    passed,
+    // Cases that ran whose automatic checks all pass (the judge aside).
+    autoPassed: ran.filter((s) => s.checks.every((x) => x.ok)).length,
+    passRate: total ? Math.round((passed / total) * 1000) / 10 : 0,
+    byCategory,
+    failures: ran.filter((s) => !s.pass).map((s) => ({ id: s.id, failed: failedOf(s) })),
+  };
 }
-const firsts = scored.map((s) => s.response.firstTokenMs);
-const totals = scored.map((s) => s.response.totalMs);
+
+const ran = scored.filter((s) => !s.notRun);
+const tallied = tally(scored, notStarted);
+const firsts = ran.map((s) => s.response.firstTokenMs);
+const totals = ran.map((s) => s.response.totalMs);
 const models = {};
-for (const s of scored) models[s.response.model ?? "none"] = (models[s.response.model ?? "none"] ?? 0) + 1;
-const passed = scored.filter((s) => s.pass).length;
+for (const s of ran) models[s.response.model ?? "none"] = (models[s.response.model ?? "none"] ?? 0) + 1;
 const summary = {
   runAt: new Date().toISOString(),
   endpoint: base,
   models: EVAL_MODEL,
-  notRun: flag("rejudge") || flag("rescore") ? (previous.summary?.notRun ?? []) : cases.filter((c) => !results.some((x) => x.c.id === c.id)).map((c) => c.id),
-  contentVersion: previous && (flag("rejudge") || flag("rescore")) ? previous.summary?.contentVersion : (await client.health())?.version,
+  notRun: tallied.notRun,
+  notRunReasons: tallied.notRunReasons,
+  contentVersion: previous && rerun ? previous.summary?.contentVersion : (await client.health())?.version,
   judge: [...judgedBy],
-  // Cases the budget cut off count as failures.
-  total: Math.max(scored.length, cases.length),
-  passed,
-  passRate: cases.length ? Math.round((passed / Math.max(scored.length, cases.length)) * 1000) / 10 : 0,
+  judged: !noJudge,
+  // Not-run cases are left out; cases the time budget cut off count as failures.
+  total: tallied.total,
+  passed: tallied.passed,
+  autoPassed: tallied.autoPassed,
+  passRate: tallied.passRate,
   target: 95,
-  byCategory,
-  failures: scored.filter((s) => !s.pass).map((s) => ({ id: s.id, failed: [...s.checks.filter((x) => !x.ok).map((x) => `${x.name}${x.detail ? `: ${x.detail}` : ""}`), ...(s.judge && !s.judge.pass ? [`judge: ${s.judge.reason}`] : []), ...(!s.judge ? ["judge: no verdict"] : [])] })),
+  byCategory: tallied.byCategory,
+  failures: tallied.failures,
   answeredBy: models,
   geminiCalls: { chat: client.calls, judge: judgeCalls },
   skippedNoNames: skipped.map((c) => c.id),
@@ -550,27 +656,33 @@ const summary = {
     total: { p50: percentile(totals, 50), p90: percentile(totals, 90), max: percentile(totals, 100) },
   },
   tokens: {
-    inputAvg: Math.round(scored.reduce((a, s) => a + (s.response.usage?.input ?? 0), 0) / Math.max(1, scored.length)),
-    outputAvg: Math.round(scored.reduce((a, s) => a + (s.response.usage?.output ?? 0), 0) / Math.max(1, scored.length)),
-    cachedAvg: Math.round(scored.reduce((a, s) => a + (s.response.usage?.cached ?? 0), 0) / Math.max(1, scored.length)),
+    inputAvg: Math.round(ran.reduce((a, s) => a + (s.response.usage?.input ?? 0), 0) / Math.max(1, ran.length)),
+    outputAvg: Math.round(ran.reduce((a, s) => a + (s.response.usage?.output ?? 0), 0) / Math.max(1, ran.length)),
+    cachedAvg: Math.round(ran.reduce((a, s) => a + (s.response.usage?.cached ?? 0), 0) / Math.max(1, ran.length)),
   },
 };
 
-// With --only, merge into the previous full run instead of replacing it.
+// With --only, merge into the previous full run instead of replacing it, and recompute the totals over the merge.
 let out = { summary, cases: scored };
 if (only.length && previous?.cases) {
   const merged = previous.cases.map((p) => scored.find((s) => s.id === p.id) ?? p);
   for (const s of scored) if (!merged.some((m) => m.id === s.id)) merged.push(s);
-  const mPassed = merged.filter((s) => s.pass).length;
-  out = { summary: { ...previous.summary, ...summary, total: merged.length, passed: mPassed, passRate: Math.round((mPassed / merged.length) * 1000) / 10, partialRerun: only }, cases: merged };
-  out.summary.failures = merged.filter((s) => !s.pass).map((s) => ({ id: s.id, failed: [...s.checks.filter((x) => !x.ok).map((x) => `${x.name}${x.detail ? `: ${x.detail}` : ""}`), ...(s.judge && !s.judge.pass ? [`judge: ${s.judge.reason}`] : []), ...(!s.judge ? ["judge: no verdict"] : [])] }));
+  // Never started, in the previous run or this one, unless the merge holds an answer for it.
+  const neverStarted = {};
+  for (const id of previous.summary?.notRun ?? []) neverStarted[id] = previous.summary?.notRunReasons?.[id] ?? "time budget";
+  Object.assign(neverStarted, notStarted);
+  for (const id of Object.keys(neverStarted)) if (merged.some((m) => m.id === id)) delete neverStarted[id];
+  out = { summary: { ...previous.summary, ...summary, ...tally(merged, neverStarted), partialRerun: only }, cases: merged };
 }
 mkdirSync(dirname(outFile), { recursive: true });
 writeFileSync(outFile, JSON.stringify(out, null, 2) + "\n");
 
-console.log(`\npass ${out.summary.passed}/${out.summary.total} = ${out.summary.passRate}% (target 95%)`);
-for (const [cat, v] of Object.entries(byCategory)) console.log(`  ${cat.padEnd(13)} ${v.passed}/${v.total}`);
-for (const f of out.summary.failures) console.log(`  ✗ ${f.id}: ${f.failed.join(" · ")}`);
+const final = out.summary;
+console.log(`\npass ${final.passed}/${final.total} = ${final.passRate}% (target 95%)${noJudge ? " (automatic checks only)" : ""}`);
+console.log(`automatic checks pass ${final.autoPassed}/${out.cases.filter((x) => !x.notRun).length} cases that ran`);
+for (const [cat, v] of Object.entries(final.byCategory)) console.log(`  ${cat.padEnd(13)} ${v.passed}/${v.total}`);
+if (final.notRun.length) console.log(`  - not run (${final.notRun.length}): ${final.notRun.map((id) => `${id} (${final.notRunReasons[id]})`).join(", ")}`);
+for (const f of final.failures) console.log(`  ✗ ${f.id}: ${f.failed.join(" · ")}`);
 console.log(`gemini calls: ${client.calls} chat + ${judgeCalls} judge (cap ${maxCalls})`);
 console.log(`answered by ${JSON.stringify(models)} · first token p50 ${summary.latencyMs.firstToken.p50} ms p90 ${summary.latencyMs.firstToken.p90} ms · total p50 ${summary.latencyMs.total.p50} ms`);
 console.log(`results → ${outFile.replace(root + "/", "")}`);

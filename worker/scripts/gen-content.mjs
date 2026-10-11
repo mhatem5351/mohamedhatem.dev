@@ -24,6 +24,8 @@ import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+/** Characters of the knowledge base in KNOWLEDGE_COMPACT (models with a small tokens-per-minute quota). */
+const COMPACT_BUDGET = 33_000;
 const requireContent = process.argv.includes("--require-content");
 const quiet = process.argv.includes("--quiet");
 
@@ -56,7 +58,22 @@ if (knowledge.length < 500) fail("knowledge.md looks empty");
 if (!suggestions.en.length || !suggestions.ar.length) fail("suggestions.json needs English and Arabic suggestions");
 
 const version = createHash("sha256").update(systemPrompt).update("\0").update(knowledge).digest("hex").slice(0, 12);
-const knowledgeCompact = compactKnowledge(knowledge, 20_000);
+// Gemma's free tier allows 16,000 input tokens a minute: ~33,000 characters of knowledge keep the compact instruction
+// near 10k estimated tokens (worker/src/chat/gemini.ts estimateTokens), with room for a pasted job description.
+const knowledgeCompact = compactKnowledge(knowledge, COMPACT_BUDGET);
+// The facts the compact prompt's rules point to (audit R6-08: the case studies, education and fit guide were dropped).
+if (sources["knowledge.md"] === "content")
+  for (const needle of ["96 tools", "M.Sc. in Data Science", "Not in the sources", "GADD", "team of 7", "AWS Certified Machine Learning", "sta-tourism-assistants", "قاد هندسة الذكاء الاصطناعي"])
+    if (!knowledgeCompact.includes(needle)) fail(`KNOWLEDGE_COMPACT lost "${needle}": adjust compactKnowledge's priorities or the budget`);
+// Site pages the assistant may link to (links.ts): the fixed pages plus every case-study page in content/profile.ts.
+const sitePaths = await loadSitePaths();
+if (sources["knowledge.md"] === "content") {
+  for (const text of [knowledge, systemPrompt])
+    for (const m of text.matchAll(/https:\/\/(?:www\.)?mohamedhatem\.dev(\/[^\s)#?"'`]*)?/g)) {
+      const path = m[1] || "/";
+      if (sitePaths && !sitePaths.includes(path)) fail(`chat content links ${m[0]}, which is not a page of the site (content/profile.ts)`);
+    }
+}
 // Random, and kept across regenerations (so `npm test` or a content edit doesn't restart `wrangler dev` for nothing);
 // a fresh checkout or CI build gets a new one.
 const generatedFile = join(root, "worker", "src", "generated", "content.ts");
@@ -73,8 +90,10 @@ write(
   banner +
     `export const SYSTEM_PROMPT: string = ${JSON.stringify(systemPrompt)};\n` +
     `export const KNOWLEDGE: string = ${JSON.stringify(knowledge)};\n` +
-    `/** ≤ 20,000 characters (~5k tokens) of the knowledge base, for models with a small token-per-minute quota (Gemma: 16k). */\n` +
+    `/** ≤ ${COMPACT_BUDGET.toLocaleString("en")} characters of the knowledge base, for models with a small token-per-minute quota (Gemma: 16k). */\n` +
     `export const KNOWLEDGE_COMPACT: string = ${JSON.stringify(knowledgeCompact)};\n` +
+    `/** Paths of mohamedhatem.dev the assistant may link to (fixed pages + content/profile.ts case studies); null = unknown. */\n` +
+    `export const SITE_PATHS: readonly string[] | null = ${JSON.stringify(sitePaths)};\n` +
     `/** Random per build; appended to the system instruction and blocked in any answer (prompt-leak tripwire). */\n` +
     `export const CANARY: string = ${JSON.stringify(canary)};\n` +
     `/** CANARY plus any canary written in system-prompt.md: all blocked in answers. */\n` +
@@ -143,27 +162,81 @@ function write(rel, text) {
 }
 
 /**
- * The knowledge base's most important sections that fit in `budget` characters, in their original order:
- * identity/at a glance, contact, experience, "not stated", education, honours, certifications, then the rest by
- * priority (case studies and the Arabic terminology table last). Deterministic: no model involved.
+ * The knowledge base's most important parts that fit in `budget` characters, in their original order. Units are the
+ * "### " subsections of each "## " section (plus the section's own intro), so a long section such as the case studies
+ * can be kept in part: identity and contact, "not stated", the fit guide, education and certifications first, then
+ * the main roles, the STA case study (its 96/27 figure) and the government assistant's rules, the Arabic terminology,
+ * and the rest. A rule on a "## " title takes the whole section or nothing. Deterministic: no model involved.
  */
 function compactKnowledge(text, budget) {
   const parts = text.split(/^(?=## )/m);
   const head = parts[0].startsWith("## ") ? "" : parts.shift();
-  const priority = [/at a glance/i, /contact/i, /experience/i, /not stated/i, /education/i, /honou?r/i, /certification/i, /skills/i, /fit guide/i, /open.source/i, /teaching|mentor/i, /working style/i, /this website/i, /case stud/i, /terminology/i];
-  const rank = (p) => {
-    const title = p.split("\n")[0];
-    const i = priority.findIndex((re) => re.test(title));
-    return i === -1 ? priority.length : i;
-  };
+  const sections = parts.map((p, si) => p.split(/^(?=### )/m).map((t, ui) => ({ si, ui, t, title: t.split("\n")[0] })));
+  const rules = [
+    { sec: /at a glance/i },
+    { sec: /contact/i },
+    { sec: /not stated/i },
+    { sec: /fit guide/i },
+    { sec: /education/i },
+    { sec: /certification/i },
+    { sub: /· Globant ·/ },
+    { sub: /· Wakeb Data ·/ },
+    { sub: /· ArabsStock ·/ },
+    { sub: /^### 4\.1\b/ },
+    { sub: /^### 4\.4\b/ },
+    { sec: /terminology/i },
+    { sub: /Empoweromics ·|Tabaqat ·|AestheticsPro|Misria|Military Technical|British University|Freelance: Logic/ },
+    { sec: /honou?r/i },
+    { sec: /teaching|mentor/i },
+    { sub: /^### 4\.3\b/ },
+    { sub: /^### 4\.2\b/ },
+    { sec: /skills/i },
+    { sec: /working style/i },
+    { sec: /open.source/i },
+    { sec: /this website/i },
+    { sub: /^### 4\./ },
+    { sub: /Timeline/ },
+  ];
   const chosen = new Set();
   let size = head.length;
-  for (const p of [...parts].sort((a, b) => rank(a) - rank(b))) {
-    if (size + p.length > budget) continue;
-    chosen.add(p);
-    size += p.length;
+  /** Adds the units (and their section's intro) when they fit; all or nothing. */
+  const take = (units) => {
+    const add = new Set();
+    for (const u of units) for (const x of [sections[u.si][0], u]) if (!chosen.has(x)) add.add(x);
+    const c = [...add].reduce((n, u) => n + u.t.length, 0);
+    if (size + c > budget) return;
+    for (const u of add) chosen.add(u);
+    size += c;
+  };
+  for (const r of rules) {
+    if (r.sec) {
+      const s = sections.find((units) => r.sec.test(units[0].title));
+      if (s) take(s);
+    } else for (const s of sections) for (const u of s) if (u.ui > 0 && r.sub.test(u.title)) take([u]);
   }
-  return (head + parts.filter((p) => chosen.has(p)).join("")).trim();
+  return (head + sections.flat().filter((u) => chosen.has(u)).map((u) => u.t).join("")).trim();
+}
+
+/**
+ * The site's pages the assistant may link to: home, CV and privacy in both languages, and every case-study page
+ * (content/profile.ts → caseStudies[].slug, the same list site/src/pages/work/[slug].astro builds). Null when the
+ * profile can't be loaded (fixture runs): the link guard then allows only the paths written in the sources.
+ */
+async function loadSitePaths() {
+  const entry = join(root, "content", "profile.ts");
+  if (!existsSync(entry)) return null;
+  try {
+    const out = await build({ entryPoints: [entry], bundle: true, format: "esm", platform: "neutral", write: false, logLevel: "silent" });
+    const mod = await import(`data:text/javascript;base64,${Buffer.from(out.outputFiles[0].text).toString("base64")}`);
+    const slugs = (mod.profile ?? mod.default)?.caseStudies?.map((c) => c.slug).filter((x) => typeof x === "string" && /^[a-z0-9-]+$/.test(x)) ?? [];
+    if (!slugs.length) throw new Error("no case studies");
+    const pages = ["/", "/cv/", "/privacy/", ...slugs.map((slug) => `/work/${slug}/`)];
+    return [...pages, ...pages.map((p) => `/ar${p}`)];
+  } catch (e) {
+    if (requireContent) fail(`content/profile.ts could not be loaded for the link allow-list: ${e.message}`);
+    if (!quiet) console.warn(`gen-content: content/profile.ts could not be loaded (${e.message}); site links limited to the sources.`);
+    return null;
+  }
 }
 
 function fail(msg) {

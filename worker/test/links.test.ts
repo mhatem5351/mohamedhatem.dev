@@ -3,6 +3,7 @@ import { streamAnswer } from "../src/chat/answer";
 import { resetCooldowns } from "../src/chat/cooldown";
 import { profileFor } from "../src/chat/gemini";
 import { buildLinkCheck, LinkFilter } from "../src/chat/links";
+import { CONTENT_SOURCE, KNOWLEDGE, SITE_PATHS, SYSTEM_PROMPT } from "../src/generated/content";
 import { finalChunk, geminiSse, memorySink, textChunk } from "./helpers";
 
 const KB = `Contact: [hatem@mohamedhatem.dev](mailto:hatem@mohamedhatem.dev), WhatsApp https://wa.me/201142070946.
@@ -58,6 +59,42 @@ describe("link allow-list", () => {
     expect(new URL("/\t/evil.example/login", "https://mohamedhatem.dev/").origin).toBe("https://evil.example");
     // relative links that stay on the site are fine
     for (const ok of ["/cv/", "/ar/#contact", "cv/", "#work"]) expect(check(ok), ok).toBe(true);
+  });
+
+  it("on the site, only real pages: written in the sources, the fixed pages or the page list; never a guessed slug (R6-10)", () => {
+    const site = buildLinkCheck([`${KB} Case study: https://mohamedhatem.dev/work/sta-tourism-assistants/`], undefined, ["/work/arabsstock-assistant/", "/ar/work/arabsstock-assistant/"]);
+    for (const ok of [
+      "https://mohamedhatem.dev/",
+      "https://mohamedhatem.dev/#work",
+      "https://mohamedhatem.dev/ar/#contact",
+      "https://mohamedhatem.dev/cv/",
+      "https://mohamedhatem.dev/ar/cv",
+      "https://mohamedhatem.dev/work/sta-tourism-assistants/",
+      "https://mohamedhatem.dev/work/sta-tourism-assistants/#approach",
+      "https://www.mohamedhatem.dev/work/arabsstock-assistant/",
+      "/ar/work/arabsstock-assistant/",
+      "/cv/",
+      "#work",
+    ])
+      expect(site(ok), ok).toBe(true);
+    for (const bad of [
+      "https://mohamedhatem.dev/work/wakeb-chatbot/",
+      "https://mohamedhatem.dev/work/",
+      "https://mohamedhatem.dev/ar/work/sta-tourism-assistants-v2/",
+      "https://mohamedhatem.dev/admin/",
+      "/work/wakeb-chatbot/",
+      "work/arabsstock/",
+    ])
+      expect(site(bad), bad).toBe(false);
+  });
+
+  it("the Worker's own list: every case-study page in both languages, and every site link in the chat content, is a real page", () => {
+    if (CONTENT_SOURCE !== "content" || !SITE_PATHS) return; // fixture runs
+    const real = buildLinkCheck([KNOWLEDGE, SYSTEM_PROMPT], undefined, SITE_PATHS);
+    expect(SITE_PATHS.filter((p) => p.startsWith("/work/")).length).toBeGreaterThanOrEqual(8);
+    for (const p of SITE_PATHS) expect(real(`https://mohamedhatem.dev${p}`), p).toBe(true);
+    expect(real("https://mohamedhatem.dev/work/wakeb-chatbot/")).toBe(false);
+    for (const m of KNOWLEDGE.matchAll(/https:\/\/mohamedhatem\.dev\/work\/([a-z0-9-]+)\//g)) expect(SITE_PATHS, m[1]).toContain(`/work/${m[1]}/`);
   });
 
   it("the streaming filter judges a markdown link even when its target contains whitespace", () => {

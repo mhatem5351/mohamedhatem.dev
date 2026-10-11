@@ -27,7 +27,20 @@ export function cap(text: string, max: number): string {
 
 const ARABIC = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g;
 const LATIN = /[A-Za-z\u00C0-\u024F]/g;
-const ARABIC_WORD = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]{2,}/g;
+/** Words, not letters: runs of Arabic letters (punctuation such as «؟» is never a word) and runs of Latin letters. */
+const ARABIC_WORD = /[\u0621-\u063A\u0641-\u064A\u0671-\u06D3\u06FA-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFC][\u0621-\u065F\u0670-\u06D3\u06FA-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFC]*/g;
+const LATIN_WORD = /[A-Za-z\u00C0-\u024F][A-Za-z0-9\u00C0-\u024F'’-]*/g;
+/**
+ * Arabic grammar words: a message whose Arabic words include two of these is Arabic with English terms in it
+ * ("Can you tell me عن خبرة حاتم في RAG و vector databases؟"), not English quoting an Arabic phrase.
+ */
+const ARABIC_FUNCTION = new Set(["عن", "في", "من", "على", "إلى", "الى", "هل", "ما", "ماذا", "كيف", "لماذا", "متى", "أين", "و", "مع", "أو", "او", "هو", "هي", "لديه", "عنده", "عند", "لدى", "التي", "الذي", "كم", "اللي", "ايش", "وش", "إيه", "ايه", "فين"]);
+/**
+ * Arabizi (Arabic in Latin letters, with digits for Arabic sounds: 2 ء, 3 ع, 5 خ, 7 ح): a word of 4+ letters with one
+ * of those digits before a letter ("3ando", "delwa2ti", "7abibi"). "2fa", "b2b", "e2e", "html5" and "gpt4" don't count.
+ */
+const arabiziWord = (w: string) => /^[a-z2357]+$/.test(w) && /[2357][a-z]/.test(w) && (w.match(/[a-z]/g)?.length ?? 0) >= 4;
+const ARABIZI_COMMON = new Set(["howa", "hwa", "heya", "hia", "ana", "enta", "inta", "enty", "fein", "feen", "fen", "ezay", "izay", "ezzay", "eh", "leh", "keda", "kda", "msh", "mesh", "mish", "kam", "ya3ni", "bta3", "beta3", "betaa3", "3ayez", "3awez", "3ando", "3andoh", "delwa2ti", "delwa2ty", "dlwa2ty", "lsa", "lessa", "wala", "eih", "ahu", "ahoh", "momken", "3ayz", "ma3a", "fel", "bel", "el"]);
 
 const count = (text: string, re: RegExp) => text.match(re)?.length ?? 0;
 const mostlyArabic = (text: string) => {
@@ -35,13 +48,25 @@ const mostlyArabic = (text: string) => {
   return arabic > 0 && arabic * 2 >= count(text, LATIN);
 };
 
+/** True when a Latin-script message is Arabic written in Latin letters (Arabizi). */
+export function isArabizi(text: string): boolean {
+  const words = (text.match(/[A-Za-z0-9]+/g) ?? []).map((w) => w.toLowerCase());
+  const digitWords = words.filter(arabiziWord).length;
+  const common = words.filter((w) => ARABIZI_COMMON.has(w)).length;
+  return digitWords >= 2 || (digitWords >= 1 && common >= 2) || (words.length >= 3 && common >= 3 && common * 2 >= words.length);
+}
+
 /**
  * The language to answer in, from the visitor's own words rather than anything they pasted:
  *   1. the first or the last sentence/line is an Arabic sentence (2+ Arabic words, mostly Arabic script) → Arabic.
  *      "هل يناسب هذه الوظيفة؟" followed by a pasted English job description is answered in Arabic;
- *   2. otherwise the whole message is mostly Arabic script (Latin tech terms inside Arabic don't count against it) → Arabic;
- *   3. otherwise Latin script → "latin" (English, or whatever European language the visitor used);
- *   4. no letters at all → the page language.
+ *   2. counted in words (punctuation never counts): at least as many Arabic words as Latin ones → Arabic (ties go to
+ *      Arabic), the same rule as the chat widget's detector;
+ *   3. code-switched: 3+ Arabic words including 2 Arabic grammar words ("عن", "في", "و"…) → Arabic, so a question
+ *      built in Arabic around English terms is answered in Arabic, while English quoting an Arabic title stays Latin;
+ *   4. Arabizi (Egyptian or Gulf Arabic in Latin letters with 2/3/5/7 for Arabic sounds) → Arabic;
+ *   5. otherwise Latin script → "latin" (English, or whatever European language the visitor used);
+ *   6. no letters at all → the page language.
  */
 export function detectLang(text: string, pageLang: Lang | undefined): Lang | "latin" {
   const segments = text
@@ -49,16 +74,31 @@ export function detectLang(text: string, pageLang: Lang | undefined): Lang | "la
     .map((s) => s.trim())
     .filter((s) => count(s, ARABIC) + count(s, LATIN) > 0);
   const own = [segments[0], segments.at(-1)].filter((s): s is string => Boolean(s));
-  if (own.some((s) => count(s, ARABIC_WORD) >= 2 && mostlyArabic(s))) return "ar";
-  if (mostlyArabic(text)) return "ar";
-  if (count(text, LATIN) > 0) return "latin";
+  if (own.some((s) => (s.match(ARABIC_WORD) ?? []).filter((w) => w.length >= 2).length >= 2 && mostlyArabic(s))) return "ar";
+  const arabicWords = text.match(ARABIC_WORD) ?? [];
+  const latinWords = count(text, LATIN_WORD);
+  if (arabicWords.length > 0 && arabicWords.length >= latinWords) return "ar";
+  if (arabicWords.length >= 3 && arabicWords.filter((w) => ARABIC_FUNCTION.has(w)).length >= 2) return "ar";
+  if (latinWords > 0) return isArabizi(text) ? "ar" : "latin";
   return pageLang ?? "en";
+}
+
+/** The script an earlier answer was written in (for a fixed reply on a turn whose own language is unclear). */
+export function scriptLang(text: string): Lang {
+  const plain = text.replace(/\]\([^)]*\)/g, "]").replace(/https?:\/\/\S+|mailto:\S+/g, "");
+  return mostlyArabic(plain) ? "ar" : "en";
 }
 
 export interface ParsedChat {
   messages: ChatMessage[];
   pageLang: Lang | undefined;
   turnstileToken: string | undefined;
+  /**
+   * Optional request field `device: "phone"`, sent while the widget shows its phone layout (the bottom sheet): the
+   * Worker asks for shorter answers (prompt.ts PHONE_LINE). Any other value is ignored. Not yet in protocol.ts's
+   * ChatRequest, which the widget bundles: it goes there together with the widget change that sends it.
+   */
+  device?: "phone";
   /** Characters of the visitor's latest message (after sanitising and capping). */
   userChars: number;
   /** Set when the latest message was longer than {@link CHAT_LIMITS.maxLatestUserChars}: the characters kept. */
@@ -107,6 +147,13 @@ export function parseChatRequest(raw: unknown): ParseResult {
   const token = typeof body.turnstileToken === "string" && body.turnstileToken.length <= TURNSTILE_TOKEN_MAX ? body.turnstileToken : undefined;
   return {
     ok: true,
-    value: { messages, pageLang: lang, turnstileToken: token || undefined, userChars, ...(latestLength > userChars ? { trimmed: userChars } : {}) },
+    value: {
+      messages,
+      pageLang: lang,
+      turnstileToken: token || undefined,
+      userChars,
+      ...(body.device === "phone" ? { device: "phone" as const } : {}),
+      ...(latestLength > userChars ? { trimmed: userChars } : {}),
+    },
   };
 }

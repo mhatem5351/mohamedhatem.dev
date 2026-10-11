@@ -8,8 +8,8 @@ import { verifyTurnstile } from "../turnstile";
 import { CONFIDENTIAL, streamAnswer, type AnswerDeps, type Sink } from "./answer";
 import { CooldownStore } from "./cooldown";
 import { usesCompactPrompt } from "./gemini";
-import { asksAboutFit, wantsContact } from "./intent";
-import { detectLang, parseChatRequest } from "./parse";
+import { asksAboutClients, asksAboutFit, asksAboutGovAssistant, wantsContact } from "./intent";
+import { detectLang, parseChatRequest, scriptLang } from "./parse";
 import { systemInstruction, toContents } from "./prompt";
 import { CHAT_LIMITS, type Lang, type MetaEvent } from "./protocol";
 import { encodeEvent, PING } from "./sse";
@@ -47,7 +47,7 @@ export async function handleChat(req: Request, env: Env, ctx: ExecutionContext, 
   if (!body.ok) return reject(body.code === "too_large" ? 413 : 400, body.code);
   const parsed = parseChatRequest(parseJsonBytes(body.bytes));
   if (!parsed.ok) return reject(400, "bad_request");
-  const { messages, pageLang, turnstileToken, userChars, trimmed } = parsed.value;
+  const { messages, pageLang, turnstileToken, userChars, trimmed, device } = parsed.value;
 
   if (!env.GEMINI_API_KEY || !env.SESSION_SECRET || !env.TURNSTILE_SECRET) return reject(503, "unavailable");
 
@@ -95,8 +95,23 @@ export async function handleChat(req: Request, env: Env, ctx: ExecutionContext, 
   const latest = messages.at(-1)!.content;
   const reply = detectLang(latest, pageLang);
   const lang: Lang = reply === "ar" ? "ar" : "en";
+  // A fixed reply (confidentiality guard) on a turn whose own language is unclear ("latin": code-switched or short)
+  // follows the conversation: the script of the previous answer (audit R6-18).
+  const previousAnswer = messages.findLast((m) => m.role === "assistant")?.content;
+  const fixedLang: Lang = reply === "latin" && previousAnswer ? scriptLang(previousAnswer) : lang;
   const jd = asksAboutFit(latest);
-  const turn = { reply, pageLang, now: new Date(), jd, namesClient: (deps?.confidential ?? CONFIDENTIAL).mentions(latest) };
+  const turn = {
+    reply,
+    pageLang,
+    now: new Date(),
+    jd,
+    device,
+    namesClient: (deps?.confidential ?? CONFIDENTIAL).mentions(latest),
+    clients: asksAboutClients(latest),
+    govAssistant: asksAboutGovAssistant(latest),
+  };
+  // GADD and the government assistant never share an answer: which one this turn may mention (apart.ts).
+  const apart = turn.govAssistant || turn.namesClient ? "gov" : turn.clients ? "clients" : /wakeb|وكب/i.test(latest) ? "first" : null;
   const prompts = new Map<boolean, string>();
   const system = (model: string) => {
     const compact = usesCompactPrompt(model);
@@ -155,9 +170,10 @@ export async function handleChat(req: Request, env: Env, ctx: ExecutionContext, 
     cooldowns: new CooldownStore(cache, origin, (p) => ctx.waitUntil(p)),
     // An X-Model-Chain run (local evaluation) counts its Gemini calls: never retry.
     noRetry: override.length > 0,
-    lang,
+    lang: fixedLang,
     contactAllowed: wantsContact(latest),
     jd,
+    apart,
     ...deps,
   };
   const work = streamAnswer(system, contents, answerDeps, sink, abort.signal)

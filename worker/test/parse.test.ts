@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { cap, detectLang, parseChatRequest, sanitizeText } from "../src/chat/parse";
-import { COMPACT_PREFIX, neutraliseTags, systemInstruction, toContents, STABLE_PREFIX } from "../src/chat/prompt";
-import { CANARY } from "../src/generated/content";
+import { estimateRequestTokens, inputTokenLimit } from "../src/chat/gemini";
+import { cap, detectLang, isArabizi, parseChatRequest, sanitizeText, scriptLang } from "../src/chat/parse";
+import { COMPACT_PREFIX, neutraliseTags, PHONE_LINE, systemInstruction, toContents, STABLE_PREFIX } from "../src/chat/prompt";
+import { CANARY, CONTENT_SOURCE, KNOWLEDGE_COMPACT } from "../src/generated/content";
 
 describe("sanitizeText", () => {
   it("removes control, bidi-override, zero-width and Unicode tag characters", () => {
@@ -48,6 +49,23 @@ describe("detectLang", () => {
   it("an English question with a pasted Arabic block, or an Arabic greeting, stays Latin", () => {
     expect(detectLang("Hi\nمرحبا\nWhat does he do at Globant?", "ar")).toBe("latin");
     expect(detectLang("Can you translate this job title: مهندس ذكاء اصطناعي أول into English for me please?", "ar")).toBe("latin");
+  });
+  it("counts words, not letters: punctuation such as «؟» is never a word, ties go to Arabic", () => {
+    expect(detectLang("خبرته في RAG؟", "en")).toBe("ar");
+    expect(detectLang("RAG و vLLM", "en")).toBe("latin");
+  });
+  it("a question built in Arabic around English terms is Arabic (R6-18)", () => {
+    expect(detectLang("Can you tell me عن خبرة حاتم في RAG و vector databases؟", "en")).toBe("ar");
+  });
+  it("Arabizi (Arabic in Latin letters with 2/3/5/7) is answered in Arabic; tech tokens like e2e or b2b are not Arabizi", () => {
+    expect(detectLang("howa 3ando kam sana khebra we beyshtaghal fein delwa2ti?", "en")).toBe("ar");
+    expect(isArabizi("ana 3ayez a3raf howa beyshtaghal fein")).toBe(true);
+    for (const t of ["Has he built b2b or e2e test suites?", "Does he know GPT-4, S3, k8s and HTML5?", "Is 2FA enabled on the contact form?", "Tell me about Ana, the assistant"])
+      expect(detectLang(t, "en"), t).toBe("latin");
+  });
+  it("the script of an earlier answer (for a fixed reply on an unclear turn)", () => {
+    expect(scriptLang("يقود حاتم هندسة الذكاء الاصطناعي في Globant.")).toBe("ar");
+    expect(scriptLang("He leads the AI engineering at Globant ([case study](https://mohamedhatem.dev/ar/work/sta-tourism-assistants/)).")).toBe("en");
   });
   it("no letters → page language", () => {
     expect(detectLang("👍 ?", "ar")).toBe("ar");
@@ -136,14 +154,36 @@ describe("prompt assembly", () => {
     expect(s).toContain(CANARY);
     expect(s.slice(STABLE_PREFIX.length)).toContain("2026-10-09");
     expect(s.slice(STABLE_PREFIX.length)).toContain("Write this answer in Arabic");
-    expect(systemInstruction({ reply: "latin", pageLang: "ar", now: new Date() })).toContain("the language of the visitor's latest message");
+    const latin = systemInstruction({ reply: "latin", pageLang: "ar", now: new Date() });
+    expect(latin).toContain("the language the visitor's own words are written in");
+    // A request to translate into Arabic is still answered in the visitor's language (eval client-010).
+    expect(latin).toContain("a request to translate something into another language doesn't change it");
   });
 
-  it("the compact instruction (for Gemma's 16k tokens/min) stays under ~6k tokens and keeps the security rules", () => {
+  it("the compact instruction (for Gemma's 16k tokens/min) fits with a 6,000-character job description and keeps the security rules", () => {
     const compact = systemInstruction({ reply: "en", pageLang: "en", now: new Date() }, true);
     expect(compact.startsWith(COMPACT_PREFIX)).toBe(true);
     expect(compact).toContain(CANARY);
     expect(compact).toContain("<ui>");
-    expect(compact.length / 4).toBeLessThan(7000);
+    const jd = [{ role: "user" as const, parts: [{ text: "Requirements: Python, LangGraph, RAG in production. ".repeat(120).slice(0, 6000) }] }];
+    expect(estimateRequestTokens(compact, jd)).toBeLessThan(inputTokenLimit("gemma-4-31b-it"));
+  });
+
+  it("the compact knowledge keeps the facts its rules point to: 96/27, degrees, fit guide, GADD, team of 7, terminology (R6-08)", () => {
+    if (CONTENT_SOURCE !== "content") return; // fixture runs have no real knowledge base
+    for (const needle of ["96 tools", "27 of them visible", "M.Sc. in Data Science", "B.Eng.", "AWS Certified Machine Learning", "Not in the sources", "GADD", "team of 7", "sta-tourism-assistants", "4.4 Bilingual enterprise assistant", "قاد هندسة الذكاء الاصطناعي"])
+      expect(KNOWLEDGE_COMPACT, needle).toContain(needle);
+  });
+
+  it("a visitor on a phone gets a shorter-answer line after the cacheable prefix (R6-16)", () => {
+    const base = { reply: "en" as const, pageLang: "en" as const, now: new Date("2026-10-11T00:00:00Z") };
+    const phone = systemInstruction({ ...base, device: "phone" });
+    expect(phone).toContain(PHONE_LINE);
+    expect(systemInstruction(base)).not.toContain(PHONE_LINE);
+    expect(phone.split("# This conversation")[0]).toBe(systemInstruction(base).split("# This conversation")[0]);
+    const parsed = parseChatRequest({ messages: [{ role: "user", content: "hi" }], device: "phone" });
+    expect(parsed.ok && parsed.value.device).toBe("phone");
+    const other = parseChatRequest({ messages: [{ role: "user", content: "hi" }], device: "tablet" });
+    expect(other.ok && other.value.device).toBeUndefined();
   });
 });

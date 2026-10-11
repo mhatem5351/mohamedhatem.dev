@@ -1,5 +1,6 @@
-import { CANARIES, KNOWLEDGE, SYSTEM_PROMPT } from "../generated/content";
+import { CANARIES, KNOWLEDGE, SITE_PATHS, SYSTEM_PROMPT } from "../generated/content";
 import { FRIENDLY } from "../http";
+import { ApartFilter, type ApartMode } from "./apart";
 import { CONFIDENTIAL_FOLLOWUPS, CONFIDENTIAL_REPLY, ConfidentialMatcher } from "./confidential";
 import { DirectiveExtractor } from "./directive";
 import { CooldownStore, secondsToPacificMidnight } from "./cooldown";
@@ -12,19 +13,22 @@ import {
   meaningful,
   openStream,
   UpstreamError,
+  usesCompactPrompt,
   type Chunk,
   type Usage,
 } from "./gemini";
 import { buildFingerprints, OutputGuard } from "./guard";
-import { answerableFollowup } from "./intent";
+import { answerableFollowup, keepsClientsApart } from "./intent";
 import { buildLinkCheck, buildPhoneFormats, LinkFilter, PhoneFilter } from "./links";
-import { COMPACT_RULES, CONFIDENTIAL_HINT, JD_RULES, REMINDERS, SECURITY_RULES, UI_DIRECTIVE, type GeminiContent } from "./prompt";
+import { CLIENTS_HINT, COMPACT_RULES, CONFIDENTIAL_HINT, GOV_ASSISTANT_HINT, JD_RULES, PHONE_LINE, REMINDERS, SECURITY_RULES, UI_DIRECTIVE, type GeminiContent } from "./prompt";
 import type { DoneEvent, ErrorCode, ErrorEvent, Lang, ToolEvent, ToolName } from "./protocol";
+import { TableFilter } from "./tables";
 
 /**
  * One answer, streamed: picks the fastest healthy model, relays the text through the UI-directive extractor, the
- * link guard, the phone-number canonicaliser and the output guard, then sends the validated UI events and exactly
- * one `done` or `error` event.
+ * table-to-bullets filter, the GADD / government-assistant separation, the link guard, the phone-number canonicaliser
+ * and the output guard, then sends the
+ * validated UI events and exactly one `done` or `error` event.
  *
  * Model chain: [primary, ...fallbacks] minus the models known to be cooling down and the models whose free tier
  * can't take this request's input tokens in a minute (Gemma: 16K), at most {@link MAX_ATTEMPTS} Gemini requests per
@@ -72,6 +76,8 @@ export interface AnswerDeps {
   jd?: boolean;
   /** Names to keep out of answers (tests inject their own). */
   confidential?: ConfidentialMatcher;
+  /** Keep GADD and the government assistant apart in this answer (apart.ts); null: the turn touches neither. */
+  apart?: ApartMode | null;
 }
 
 /**
@@ -119,15 +125,15 @@ const RETRYABLE = new Set<ErrorCode>(["upstream_busy", "upstream_error", "timeou
  * the global scope (isolate startup, ~4 ms) rather than inside the first request's 10 ms CPU budget.
  */
 const FINGERPRINTS = buildFingerprints(
-  [SYSTEM_PROMPT, SECURITY_RULES, UI_DIRECTIVE, REMINDERS, COMPACT_RULES, JD_RULES, CONFIDENTIAL_HINT].join("\n\n"),
+  [SYSTEM_PROMPT, SECURITY_RULES, UI_DIRECTIVE, REMINDERS, COMPACT_RULES, JD_RULES, CONFIDENTIAL_HINT, CLIENTS_HINT, GOV_ASSISTANT_HINT, PHONE_LINE].join("\n\n"),
   KNOWLEDGE,
 );
 export function promptFingerprints(): Map<string, number> {
   return FINGERPRINTS;
 }
 
-/** URLs the answer may link to: the ones written in the knowledge base and the instructions, plus the site. */
-const LINK_CHECK = buildLinkCheck([KNOWLEDGE, SYSTEM_PROMPT]);
+/** URLs the answer may link to: the ones written in the knowledge base and the instructions, plus the site's pages. */
+const LINK_CHECK = buildLinkCheck([KNOWLEDGE, SYSTEM_PROMPT], undefined, SITE_PATHS ?? []);
 /** The owner's phone number as the knowledge base writes it (any other spelling of it is rewritten to this). */
 const PHONE_FORMATS = buildPhoneFormats([KNOWLEDGE, SYSTEM_PROMPT]);
 /** The unnamed client's hashed names (built once per isolate). */
@@ -169,10 +175,20 @@ export async function streamAnswer(
   // Fresh per model attempt: a retry after an early stop starts the pipeline again from an empty answer.
   let guard = new OutputGuard(CANARIES, promptFingerprints(), names);
   let directive = new DirectiveExtractor();
+  let tables = new TableFilter();
+  const newApart = () => (deps.apart ? new ApartFilter(deps.apart) : null);
+  let apart = newApart();
+  /** Tables as bullets, then (on turns that may mention GADD or the government assistant) the two kept apart. */
+  const shape = (text: string, final = false) => {
+    const t = final ? tables.push(text) + tables.flush() : tables.push(text);
+    return apart ? (final ? apart.push(t) + apart.flush() : apart.push(t)) : t;
+  };
   let links = new LinkFilter(LINK_CHECK);
   let phones = new PhoneFilter(PHONE_FORMATS);
   /** The next text replaces what the widget already shows (a retry after an early stop). */
   let replacing = false;
+  /** A retry after an early stop is running, and the widget still shows the cut answer. */
+  let retrying = false;
   const usage: Usage = { input: 0, output: 0, thoughts: 0, cached: 0 };
   const sentTools: ToolName[] = [];
   const trace: string[] = [];
@@ -270,8 +286,9 @@ export async function streamAnswer(
       blockReason = undefined;
       let last: Usage | undefined;
       const handle = (c: Chunk) => {
-        // model text → UI directive cut out → links checked → phone number canonical → output guard → browser
-        if (c.text) show(phones.push(links.push(directive.push(c.text))));
+        // model text → UI directive cut out → tables as bullets → GADD / government assistant apart → links checked →
+        // phone number canonical → output guard → browser
+        if (c.text) show(phones.push(links.push(shape(directive.push(c.text)))));
         if (c.finishReason) finishReason = c.finishReason;
         if (c.blockReason) blockReason = c.blockReason;
         if (c.usage) last = c.usage;
@@ -285,7 +302,7 @@ export async function streamAnswer(
       if (last) Object.assign(usage, last);
       if (signal.aborted) return result("aborted");
 
-      show(phones.push(links.push(directive.flush())));
+      show(phones.push(links.push(shape(directive.flush(), true))));
       show(phones.push(links.flush()));
       show(phones.flush());
       const tail = guard.flush();
@@ -295,15 +312,20 @@ export async function streamAnswer(
       const expected = finishReason === "STOP" || finishReason === "MAX_TOKENS" || SAFETY_REASONS.has(finishReason ?? "") || Boolean(blockReason);
       if (expected) break;
       trace.push(`${model}:finish-${(finishReason ?? "none").toLowerCase()}`);
-      const rest = pool.filter((m) => m !== model);
+      // Never retry on a weaker prompt: a cut full-prompt answer isn't asked again of a compact-prompt model (Gemma,
+      // audit R6-19), which would also wait up to 40 s for its first token.
+      const rest = pool.filter((m) => m !== model && (usesCompactPrompt(model) || !usesCompactPrompt(m)));
       if (retried || !rest.length || deadline - Date.now() < RETRY_MIN_MS) {
         cut = guard.answer.trim().length > 0;
         break;
       }
       retried = true;
       replacing = guard.started;
+      retrying = guard.started;
       guard = new OutputGuard(CANARIES, promptFingerprints(), names);
       directive = new DirectiveExtractor();
+      tables = new TableFilter();
+      apart = newApart();
       links = new LinkFilter(LINK_CHECK);
       phones = new PhoneFilter(PHONE_FORMATS);
       pool = rest;
@@ -311,6 +333,8 @@ export async function streamAnswer(
     }
 
     const visible = guard.answer.trim();
+    // The retry after an early stop gave nothing: the widget still shows the cut answer, which stays, marked as cut.
+    if (!visible && retrying && !guard.started) return done("length");
     if (blockReason || (SAFETY_REASONS.has(finishReason ?? "") && !visible)) return fail("safety");
     if (!visible) return fail("empty");
 
@@ -320,7 +344,7 @@ export async function streamAnswer(
     for (const ev of directive.events()) {
       if (ev.name === "show_contact_card" && !deps.contactAllowed) continue;
       if (ev.name === "suggest_followups") {
-        const questions = ev.args.questions.filter((q) => canaryFree(q) && !names.mentions(q) && answerableFollowup(q));
+        const questions = ev.args.questions.filter((q) => canaryFree(q) && !names.mentions(q) && answerableFollowup(q) && keepsClientsApart(visible, q));
         if (questions.length) tool({ name: "suggest_followups", args: { questions } });
         continue;
       }
@@ -331,11 +355,16 @@ export async function streamAnswer(
   } catch (e) {
     if (signal.aborted) return result("aborted");
     if (e instanceof Blocked) return e.message === "confidential" ? redact() : fail("blocked");
+    // The retry after an early stop failed before showing anything: the widget still shows the cut answer, which
+    // stays, marked as cut ("length"), instead of an error under visible text (audit R6-19).
+    if (retrying && !guard.started && !(e instanceof UpstreamError && e.kind === "aborted")) return done("length");
     // Failed mid-answer: the words the guard was still holding back belong to the partial answer the widget keeps.
     if (guard.answer) {
       const held = guard.flush();
       if (!held.ok) return held.reason === "confidential" ? redact() : fail("blocked");
       emit(held.emit);
+      // A retry that had replaced the cut answer and then failed: what it showed is kept, marked as cut.
+      if (retrying && !(e instanceof UpstreamError && e.kind === "aborted")) return done("length");
     }
     if (e instanceof UpstreamError) {
       if (e.kind === "aborted") return result("aborted");
