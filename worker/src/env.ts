@@ -10,6 +10,9 @@ export interface Env {
   /** Per chat session (keyed by the session nonce). */
   RL_CHAT_SESSION?: RateLimit;
   RL_CONTACT?: RateLimit;
+  /** CSP violation reports: per visitor IP, and per Cloudflare location for all visitors together. */
+  RL_CSP?: RateLimit;
+  RL_CSP_GLOBAL?: RateLimit;
   /** Workers Analytics Engine (anonymous counts and latency only). */
   EVENTS?: AnalyticsEngineDataset;
 

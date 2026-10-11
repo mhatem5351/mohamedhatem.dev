@@ -1,0 +1,51 @@
+mohamedhatem.dev: licence
+
+This repository holds two kinds of material under different terms. The code may be reused under the MIT License
+below. The content (who Mohamed Hatem is and what he has done, and how that is shown) is not licensed for reuse.
+If a file is not clearly code, treat it as content.
+
+1. Code: MIT License
+--------------------
+
+Covers the source code and configuration: the TypeScript, JavaScript, Astro components, CSS and build, test and
+deployment scripts under site/ (src/components, src/layouts, src/lib, src/pages, src/scripts, src/styles, src/views,
+integrations, scripts, tests), worker/ (src, scripts, test), chat-widget/, design/scripts/ and the design token files
+(design/tokens.*), and the configuration files at the repository root and in each package. It does not cover the
+content listed in section 2, even where that content sits in the same folders.
+
+Copyright (c) 2026 Mohamed Hatem
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+2. Content: all rights reserved
+-------------------------------
+
+Copyright (c) 2026 Mohamed Hatem. All rights reserved. No licence is granted to copy, modify or republish:
+
+- the site's text and data: content/ (profile, CV, case studies, interface copy in English and Arabic, and the
+  assistant's knowledge base and instructions), the generated CV PDFs and the llms.txt files;
+- the photographs and the avatar (design/assets/photo, design/assets/avatar, site/src/assets/photo,
+  site/public/mohamed-hatem.jpg), the "MH" monogram and brand artwork (design/assets/brand, site/public icons), the
+  sharing images, the diagrams, the hero graph artwork and the showcase images;
+- the design documents and prototypes (design/DESIGN.md, design/HANDOFF.md, design/prototypes).
+
+3. Third-party material (not covered by sections 1 or 2)
+--------------------------------------------------------
+
+- Company logos (design/assets/logos, site/src/assets/logos, site/public/logos) are trademarks of their owners. They
+  appear only to name the companies Mohamed Hatem has worked for or with, and are not licensed by this repository.
+- Product screenshots of client work (site/src/assets/screens, design/assets/showcase) are published with the
+  client's approval for this portfolio only; their content belongs to the client.
+- The fonts are under the SIL Open Font License 1.1: see site/src/assets/fonts/licenses/.
+- Dependencies installed from npm keep their own licences.

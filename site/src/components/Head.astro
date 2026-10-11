@@ -106,7 +106,14 @@ const alternates = indexable
     }
   })();
 </script>
+{/*
+  Indexable pages allow large image previews in Search and Discover (the default is a small thumbnail); the 404 pages
+  are noindex. Controls that only work with JavaScript carry data-js-only: the <noscript> rule hides them when scripts
+  don't run (its hash goes into the page's CSP like any inline style) and is inert when they do.
+*/}
 {indexable ? <link rel="canonical" href={canonical} /> : <meta name="robots" content="noindex" />}
+{indexable && <meta name="robots" content="max-image-preview:large" />}
+<noscript><style is:inline>[data-js-only]{display:none!important}</style></noscript>
 {alternates.map((a) => <link rel="alternate" hreflang={a.hreflang} href={a.href} />)}
 <Font cssVariable="--font-face-display" preload={locale === "en" || latinOnArabicCase} />
 <Font cssVariable="--font-face-sans" preload={locale === "en" || latinOnArabicCase || !!preloadFonts.sans} />

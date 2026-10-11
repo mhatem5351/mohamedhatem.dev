@@ -2,6 +2,8 @@
  * Search and sharing: permanent redirects (dist/_redirects, served by scripts/serve.mjs and by Workers static assets),
  * the home H1 naming him, per-page sharing-card descriptions, UTF-8 text files and sitemap dates.
  */
+import { readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { profile } from "@content/profile.ts";
 import { en } from "@content/i18n/en.ts";
 import { expect, test } from "./fixtures";
@@ -25,6 +27,17 @@ test.describe("URLs @desktop-only", () => {
     ["/work/", "/#work"],
     ["/ar/work", "/ar/#work"],
     ["/ar/work/", "/ar/#work"],
+    // URLs people and tools guess (postbuild/redirects.mjs → ALIASES).
+    ["/sitemap.xml", "/sitemap-index.xml"],
+    ["/resume", "/cv/"],
+    ["/ar/resume/", "/ar/cv/"],
+    ["/cv.pdf", "/cv/Mohamed-Hatem-CV.pdf"],
+    ["/ar/cv.pdf", "/cv/Mohamed-Hatem-CV-ar.pdf"],
+    ["/security.txt", "/.well-known/security.txt"],
+    ["/en", "/"],
+    ["/en/", "/"],
+    ["/en/cv/", "/cv/"],
+    ["/en/work/tabaqat-gis/", "/work/tabaqat-gis/"],
   ];
   for (const [from, to] of cases)
     test(`${from} → ${to} (301)`, async ({ request }) => {
@@ -49,7 +62,45 @@ test.describe("URLs @desktop-only", () => {
   });
 
   test("text files for crawlers declare UTF-8", async ({ request }) => {
-    for (const f of ["/robots.txt", "/llms.txt", "/llms-full.txt"]) expect((await request.get(f)).headers()["content-type"], f).toBe("text/plain; charset=utf-8");
+    for (const f of ["/robots.txt", "/llms.txt", "/llms-full.txt", "/.well-known/security.txt"])
+      expect((await request.get(f)).headers()["content-type"], f).toBe("text/plain; charset=utf-8");
+  });
+
+  test("the guessed URLs' targets answer 200 (no redirect chain into a 404)", async ({ request }) => {
+    for (const to of ["/sitemap-index.xml", "/cv/Mohamed-Hatem-CV.pdf", "/cv/Mohamed-Hatem-CV-ar.pdf", "/.well-known/security.txt"])
+      expect((await request.get(to, { maxRedirects: 0 })).status(), to).toBe(200);
+  });
+
+  test("the 404 pages' own URLs answer 404, not 200 (no soft 404)", async ({ request }) => {
+    for (const [path, lang] of [["/404", "en"], ["/ar/404", "ar"]] as const) {
+      const res = await request.get(path, { maxRedirects: 0 });
+      expect(res.status(), path).toBe(404);
+      expect(await res.text(), path).toContain(`<html lang="${lang}"`);
+    }
+    const html = await request.get("/404.html", { maxRedirects: 0 });
+    expect(html.status()).toBe(307);
+    expect(html.headers()["location"]).toBe("/404");
+  });
+
+  test("security.txt (RFC 9116) names a contact and an expiry at least 30 days away", async ({ request }) => {
+    const txt = await (await request.get("/.well-known/security.txt")).text();
+    expect(txt).toMatch(/^Contact: mailto:hatem@mohamedhatem\.dev$/m);
+    expect(txt).toMatch(/^Preferred-Languages: en, ar$/m);
+    const expires = Date.parse(txt.match(/^Expires: (.+)$/m)?.[1] ?? "");
+    expect(expires - Date.now()).toBeGreaterThan(30 * 86_400_000);
+  });
+
+  test("the IndexNow key file serves the key", async ({ request }) => {
+    const key = readdirSync(fileURLToPath(new URL("../../public/", import.meta.url))).find((f) => /^[0-9a-f]{32}\.txt$/.test(f))!.slice(0, -4);
+    const res = await request.get(`/${key}.txt`);
+    expect(res.status()).toBe(200);
+    expect(await res.text()).toBe(key);
+  });
+
+  test("indexable pages allow large image previews; 404 pages stay noindex", async ({ request }) => {
+    for (const path of ["/", "/ar/", "/work/sta-tourism-assistants/", "/ar/cv/"])
+      expect(await (await request.get(path)).text(), path).toContain('<meta name="robots" content="max-image-preview:large">');
+    expect(await (await request.get("/no-such-page/")).text()).toContain('<meta name="robots" content="noindex">');
   });
 
   test("every sitemap URL has a <lastmod>", async ({ request }) => {
