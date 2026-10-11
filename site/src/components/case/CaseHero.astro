@@ -13,6 +13,7 @@ import LogoTile from "~/components/ui/LogoTile.astro";
 import Ltr from "~/components/ui/Ltr.astro";
 import type { CaseStudy } from "@content/profile.ts";
 import { messages, tr, type Locale } from "~/lib/i18n";
+import { noBreakHtml } from "~/lib/nobreak";
 import { askQuestion, contextDetail, eyebrowParts, monoLogoOf, periodInfo, roleOf, techAccent } from "~/lib/case";
 
 interface Props {
@@ -34,7 +35,11 @@ const isLatin = (s: string) => !/[؀-ۿ]/.test(s);
 const employment = role ? m.experience.employmentType[role.employmentType] : m.work.freelance;
 const mode = role?.workMode ? m.experience.workMode[role.workMode] : undefined;
 const figures = cs.figures.length >= 2 ? cs.figures.slice(0, 4) : [];
+/** A date range with each end unbreakable ("Sep 2024" / "سبتمبر 2024" never splits from its year; C-18, A-20). */
+const dateUnits = (text: string) => text.split(/(\s+[–—-]\s+)/);
 const question = askQuestion(cs, locale);
+/** A short role ("AI Engineer", "Data Scientist") moves to the next line whole; a long one wraps word by word (C-36). */
+const shortRole = eb.role.trim().split(/\s+/).length <= 2 || eb.role.length <= 18;
 ---
 <section class="cs-hero" aria-labelledby="cs-title">
   <div class="cs-hero__bg" aria-hidden="true"></div>
@@ -47,13 +52,13 @@ const question = askQuestion(cs, locale);
           <LogoTile file={logo.file} monogram={logo.monogram} size={32} class="cs-hero__logo" loading="eager" />
           <span class="cs-hero__line">
             <span class="cs-hero__unit">{isLatin(eb.company) ? <span lang="en">{eb.company}</span> : <span>{eb.company}</span>}&nbsp;<span class="sep" aria-hidden="true">/</span></span>
-            <span>{eb.role}&nbsp;<span class="sep" aria-hidden="true">/</span></span>
+            <span class:list={[shortRole && "cs-hero__unit"]}>{eb.role}&nbsp;<span class="sep" aria-hidden="true">/</span></span>
             <span class="cs-hero__unit"><Ltr>{eb.years}</Ltr></span>
             {cs.depth === "brief" && <span class="cs-hero__brief">{m.work.page.briefTag}</span>}
           </span>
         </p>
-        <h1 class="cs-hero__title" id="cs-title">{tr(cs.title, locale)}</h1>
-        <p class="cs-hero__summary">{tr(cs.summary, locale)}</p>
+        <h1 class="cs-hero__title" id="cs-title" set:html={noBreakHtml(tr(cs.title, locale))} />
+        <p class="cs-hero__summary" set:html={noBreakHtml(tr(cs.summary, locale))} />
         <div class="cs-hero__actions" data-dock-after>
           <button class="btn btn--secondary" type="button" data-open-chat data-question={question} aria-haspopup="dialog" data-chat-avoid>
             <Icon name="ask" />
@@ -99,8 +104,8 @@ const question = askQuestion(cs, locale);
         <div class="cs-meta__row">
           <dt>{m.work.labels.period}</dt>
           <dd>
-            {period.isRolePeriod ? period.main : <Ltr>{period.main}</Ltr>}
-            {period.small && <small>{period.isRolePeriod ? <Ltr>{period.small}</Ltr> : period.small}</small>}
+            {period.isRolePeriod ? period.main : <Ltr>{dateUnits(period.main).map((p, i) => (i % 2 ? p : <span class="cs-meta__date">{p}</span>))}</Ltr>}
+            {period.small && <small>{period.isRolePeriod ? <Ltr>{dateUnits(period.small).map((p, i) => (i % 2 ? p : <span class="cs-meta__date">{p}</span>))}</Ltr> : period.small}</small>}
           </dd>
         </div>
         {
@@ -127,7 +132,7 @@ const question = askQuestion(cs, locale);
 
     {
       figures.length > 0 && (
-        <dl class:list={["metrics", "cs-facts"]}>
+        <dl class:list={["metrics", "cs-facts", `cs-facts--${figures.length}`]}>
           {figures.map((f) => (
             <div class="metric">
               <dt class="metric__label">{tr(f.label, locale)}</dt>

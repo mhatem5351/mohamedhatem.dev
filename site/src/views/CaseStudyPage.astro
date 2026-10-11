@@ -9,8 +9,8 @@
  * the facts come from. Brief case studies (implementation details not public) are
  * compact and say so: a "Brief" tag in the eyebrow, no key-facts strip, then the problem, what I did and the outcome
  * next to a note card (why the page is short, where the facts come from, ask my AI), and the component view only
- * when it has more than three parts (a three-box capability view adds nothing to the text). Both end with the next
- * case study and a CTA band. All copy: content/profile.ts, content/i18n (m.work.*), diagrams.json.
+ * when it has more than five parts (a generic users-assistant-model view adds nothing to the text, audit HM-22). Both
+ * end with the next case study and a CTA band. All copy: content/profile.ts, content/i18n (m.work.*), diagrams.json.
  */
 import Base from "~/layouts/Base.astro";
 import "~/styles/case.css";
@@ -26,8 +26,9 @@ import Decision from "~/components/case/Decision.astro";
 import NextCase from "~/components/case/NextCase.astro";
 import CaseCTA from "~/components/case/CaseCTA.astro";
 import Icon from "~/components/ui/Icon.astro";
+import BidiText from "~/components/ui/BidiText.astro";
 import type { CaseStudy } from "@content/profile.ts";
-import { format, formatYears, messages, tr, type Locale } from "~/lib/i18n";
+import { dirOf, format, formatYears, messages, tr, type Locale } from "~/lib/i18n";
 import { PATHS, homeAnchor, nextCaseStudy } from "~/lib/site";
 import { caseStudyJsonLd } from "~/lib/jsonld";
 import { KIND_ACCENT, askQuestion, companyOf, decisionOf, diagramsOf, edgesOf, nodesByKind, roleOf, sourcesText, stackGroups, techAccent, tocOf } from "~/lib/case";
@@ -48,8 +49,8 @@ const toc = tocOf(cs, locale);
 const groups = nodesByKind(cs);
 const edges = edgesOf(cs, locale);
 const question = askQuestion(cs, locale);
-/** Brief pages draw the component view only when it says more than the text (more than three parts). */
-const briefFigure = brief && cs.architecture.nodes.length > 3;
+/** Brief pages draw the component view only when it says more than the text (more than five parts; HM-22). */
+const briefFigure = brief && cs.architecture.nodes.length > 5;
 /** logic-controls.com: the live site is figure 1 and the component view moves into the architecture section. */
 const siteShots = !mainDiagram && cs.slug === "logic-controls-website";
 const accent = (a: string) => (a === "neutral" ? undefined : `accent-${a}`);
@@ -219,11 +220,11 @@ const ogAlt = format(m.meta.ogImageAltCase, {
                         <ul class="arch-list__items" role="list">
                           {g.nodes.map((n) => (
                             <li>
-                              <span dir="auto">{tr(n.label, locale)}</span>
+                              <BidiText text={tr(n.label, locale)} locale={locale} />
                               {n.note && (
                                 <small>
                                   {" "}
-                                  · <span dir="auto">{tr(n.note, locale)}</span>
+                                  · <BidiText text={tr(n.note, locale)} locale={locale} />
                                 </small>
                               )}
                             </li>
@@ -242,8 +243,14 @@ const ogAlt = format(m.meta.ogImageAltCase, {
                         <ul class="arch-list__items" role="list">
                           {edges.map((e) => (
                             <li>
-                              {format(m.work.page.connection, { from: e.from, to: e.to })}
-                              {e.label && <small> ({e.label})</small>}
+                              {m.work.page.connection.split(/(\{from\}|\{to\})/).filter(Boolean).map((bit) =>
+                                bit === "{from}" || bit === "{to}" ? (
+                                  <bdi dir={dirOf(locale)}><BidiText text={bit === "{from}" ? e.from : e.to} locale={locale} /></bdi>
+                                ) : (
+                                  bit
+                                ),
+                              )}
+                              {e.label && <small> (<BidiText text={e.label} locale={locale} />)</small>}
                             </li>
                           ))}
                         </ul>
@@ -366,8 +373,12 @@ const ogAlt = format(m.meta.ogImageAltCase, {
 
 <script>
   // TOC: current section (aria-current) for the rail and the mobile bar, % read, and closing the mobile panel on
-  // navigation. Plain links work without this.
+  // navigation; the rail steps aside while an in-article figure that breaks out over it passes (case.css). Plain links
+  // work without this.
   const links = [...document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")];
+  const railBox = document.querySelector<HTMLElement>(".toc-rail__inner");
+  const wideFigs = [...document.querySelectorAll<HTMLElement>(".cs-prose > .fig--dg")];
+  const desk = matchMedia("(min-width: 64rem)");
   if (links.length) {
     const ids = [...new Set(links.map((a) => a.dataset.tocLink!))];
     const sections = ids.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
@@ -379,6 +390,17 @@ const ogAlt = format(m.meta.ogImageAltCase, {
     let raf = 0;
     const update = () => {
       raf = 0;
+      if (railBox && wideFigs.length) {
+        const r = railBox.getBoundingClientRect();
+        railBox.toggleAttribute(
+          "data-covered",
+          desk.matches &&
+            wideFigs.some((f) => {
+              const b = f.getBoundingClientRect();
+              return b.top < r.bottom + 16 && b.bottom > r.top - 16;
+            }),
+        );
+      }
       const line = innerHeight * 0.3;
       let active = sections[0];
       for (const s of sections) if (s.getBoundingClientRect().top <= line) active = s;

@@ -4,6 +4,7 @@
  *
  *   default export async ({ dist, site })   used by scripts/postbuild.mjs after `astro build`
  *   node scripts/postbuild/cv-pdf.mjs [--dist <dir>] [--no-downloads]
+ *   CV_PDF_NO_DOWNLOADS=1 npm run build      (a branch or worktree build: leave the owner's Downloads copy alone)
  *
  * 1. Serves <dist> with scripts/serve.mjs on a free port and opens /cv/ and /ar/cv/ in headless Chromium (light
  *    theme, print media), waits for the fonts, prints A4 with the page's own @page rules (12 mm × 13 mm margins).
@@ -11,14 +12,19 @@
  *    for the page's variable fonts just before printing: Chromium embeds variable fonts as Type 3 fonts, which split
  *    words in copied text and defeat search in Preview and Quick Look; static ones embed as TrueType. The build fails
  *    if a Type 3 font is left.
- * 2. Sets the document metadata Chromium leaves empty (pdf-lib): Author, Subject, Keywords and Creator, keeping the
+ * 2. Rewrites the Arabic text layer (scripts/lib/pdf-rtl-text.mjs) so every reader extracts and searches it the same
+ *    way: Chromium maps a joined letter pair (ص+ر, lam-alef…) or a letter with its mark to several characters, which
+ *    Chrome's, Firefox's and MuPDF's readers put backwards (مصر → مرص) while Preview reads them right; afterwards each
+ *    glyph stands for one character. The page looks exactly the same.
+ * 3. Sets the document metadata Chromium leaves empty (pdf-lib): Author, Subject, Keywords and Creator, keeping the
  *    title, the language and the tag tree. Applicant-tracking systems and document managers show these fields.
- * 3. Checks each PDF: at most 2 pages (fails the build otherwise), real text (Chromium embeds fonts as text, so it
+ * 4. Checks each PDF: at most 2 pages (fails the build otherwise), real text (Chromium embeds fonts as text, so it
  *    stays selectable and searchable; a PDF with no text objects fails), still tagged, with its language and author,
  *    and the sidebar's page breaks (scripts/lib/pdf-text.mjs reads each page's text): every sidebar heading shares a
  *    page with its first entry, and a section the sheet keeps whole (Education, Awards, Languages, Open to) is on one
- *    page, heading included.
- * 4. Writes site/public/cv/Mohamed-Hatem-CV.pdf and Mohamed-Hatem-CV-ar.pdf (next build's /cv/ shows their size)
+ *    page, heading included. Right-to-left text: no run left that readers would read differently, every run's text
+ *    found in the sheet's own text (a reversed word is not), and the words in SEARCH_WORDS found.
+ * 5. Writes site/public/cv/Mohamed-Hatem-CV.pdf and Mohamed-Hatem-CV-ar.pdf (next build's /cv/ shows their size)
  *    and the same files into <dist>/cv/, then copies the English one to the owner's Downloads folder.
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -30,6 +36,7 @@ import { chromium } from "playwright";
 import { startServer } from "../serve.mjs";
 import { loadContent } from "../lib/content.mjs";
 import { pdfPagesText, sectionBreakProblems } from "../lib/pdf-text.mjs";
+import { normalizeRtlRuns, rtlTextProblems } from "../lib/pdf-rtl-text.mjs";
 
 const SITE = fileURLToPath(new URL("../../", import.meta.url));
 const MAX_PAGES = 2;
@@ -38,6 +45,8 @@ const FILES = [
   { path: "/ar/cv/", file: "Mohamed-Hatem-CV-ar.pdf", lang: "ar" },
 ];
 const OWNER_COPY = join(homedir(), "Downloads", "Mohamed_Hatem_CV_AI_Team_Lead.pdf");
+/** Words a reader of the Arabic CV searches for; each must be found in the PDF's text (when the sheet has it). */
+const SEARCH_WORDS = { ar: ["مصر", "القاهرة", "سبتمبر", "الهيئة", "السعودية", "للسياحة", "الذكاء", "الاصطناعي", "قائد", "فريق", "الخبرات"] };
 
 /** Page objects in a PDF ("/Type /Page", not "/Type /Pages"). */
 export function countPages(buf) {
@@ -93,7 +102,7 @@ export async function withMetadata(buf, lang) {
   return Buffer.from(await doc.save({ useObjectStreams: false }));
 }
 
-export default async function cvPdf({ dist, site = SITE, downloads = true } = {}) {
+export default async function cvPdf({ dist, site = SITE, downloads = !process.env.CV_PDF_NO_DOWNLOADS } = {}) {
   if (!dist || !existsSync(join(dist, "cv", "index.html"))) throw new Error(`cv-pdf: no built CV page in ${dist}`);
   const server = await startServer({ dir: dist, port: 0, quiet: true });
   const port = server.address().port;
@@ -133,8 +142,11 @@ export default async function cvPdf({ dist, site = SITE, downloads = true } = {}
           keep: sec.classList.contains("cv-sec--keep"),
         })),
       );
+      // The sheet's own text, for the right-to-left check below.
+      const source = await page.evaluate(() => document.querySelector(".sheet")?.innerText ?? "");
       const raw = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true, tagged: true, outline: false });
-      const buf = await withMetadata(raw, f.lang);
+      const rtl = await normalizeRtlRuns(raw);
+      const buf = await withMetadata(rtl.buf, f.lang);
       const pages = (await PDFDocument.load(buf, { updateMetadata: false })).getPageCount();
       if (pages < 1 || pages > MAX_PAGES) throw new Error(`cv-pdf: ${f.path} prints to ${pages} pages (max ${MAX_PAGES})`);
       if (!hasText(buf)) throw new Error(`cv-pdf: ${f.path} has no text layer`);
@@ -146,16 +158,18 @@ export default async function cvPdf({ dist, site = SITE, downloads = true } = {}
       if (sections.length < 5) throw new Error(`cv-pdf: ${f.path}: found ${sections.length} sidebar sections, expected the CV's six`);
       const breaks = sectionBreakProblems(await pdfPagesText(buf), sections);
       if (breaks.length) throw new Error(`cv-pdf: ${f.path}: ${breaks.join("; ")}`);
+      const text = await rtlTextProblems(buf, { source, words: SEARCH_WORDS[f.lang] ?? [] });
+      if (text.length) throw new Error(`cv-pdf: ${f.path}: the right-to-left text would not read back: ${text.join("; ")}`);
       writeFileSync(join(publicDir, f.file), buf);
       copyFileSync(join(publicDir, f.file), join(distDir, f.file));
-      results.push({ ...f, pages, kb: Math.round(buf.length / 1024) });
+      results.push({ ...f, pages, kb: Math.round(buf.length / 1024), rtl: rtl.rewritten });
     }
     await context.close();
   } finally {
     await browser.close();
     server.close();
   }
-  for (const r of results) console.log(`cv-pdf: ${r.path} → cv/${r.file} (${r.pages} pages, ${r.kb} KB)`);
+  for (const r of results) console.log(`cv-pdf: ${r.path} → cv/${r.file} (${r.pages} pages, ${r.kb} KB${r.rtl ? `, ${r.rtl} right-to-left runs re-encoded` : ""})`);
   if (downloads && existsSync(join(homedir(), "Downloads"))) {
     copyFileSync(join(site, "public", "cv", FILES[0].file), OWNER_COPY);
     console.log(`cv-pdf: copied the English CV to ${OWNER_COPY} (${Math.round(statSync(OWNER_COPY).size / 1024)} KB)`);

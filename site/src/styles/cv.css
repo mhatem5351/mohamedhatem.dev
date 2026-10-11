@@ -139,8 +139,6 @@
   :lang(ar) .skill-g p { line-height: 1.6; }
   /* Short sidebar sections stay whole: a heading is never left without its entries. */
   .cv-sec--keep { break-inside: avoid; }
-  .cert-hero { padding: 2.2mm 2.6mm; border-radius: 2mm; background: #FAEDDB; border: 1px solid #E8CEAA; }
-  .cert-hero b { color: #131D36; }
 
   .cv-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1mm 4mm; margin-block-start: 5mm; padding-block-start: 2.5mm; border-block-start: 1px solid var(--line); font-family: var(--font-mono); font-size: 7.8pt; color: var(--muted); break-inside: avoid; }
   .cv-foot:lang(ar), :lang(ar) .cv-foot { font-family: var(--font-sans); font-size: 8.2pt; }
@@ -169,12 +167,18 @@
 /* ------------------------------------------------------------- print + PDF */
 @page { size: A4; margin: 12mm 13mm 12mm; }
 @media print {
+  /* Paper is light whatever the screen theme (audit D-01): the dark theme's `color-scheme: dark` (tokens.css, and the
+     color-scheme meta) otherwise paints the @page margins in the browser's dark canvas colour, a black frame around
+     every printed page, even with background graphics off. Unlayered, so it beats the token layer. */
+  :root, :root:not([data-theme="light"]) { color-scheme: light only !important; }
   html, body, .cv-page { background: #fff !important; }
   .cv-bar, .skip-link, .cv-after, [data-mh-chat], .chat-noscript, #live { display: none !important; }
   .cv-page main { padding: 0; }
   .sheet { width: auto; margin: 0; padding: 0; border: 0; border-radius: 0; box-shadow: none; font-size: 9.1pt; background: #fff; }
   .sheet:lang(ar) { font-size: 9.4pt; }
   .sheet a { color: inherit !important; text-decoration: none !important; }
+  /* The case-study links stay links on paper and in the PDF (audit D-19): lapis, a hairline underline. */
+  .sheet a.job__case { color: #2B51AA !important; text-decoration: underline !important; text-decoration-thickness: .1mm !important; text-underline-offset: .6mm; }
   .cv-grid { grid-template-columns: minmax(0, 1fr) 54mm; }
   .job__head, .job li, .skill-g, .earlier__row, .side-list li, .cv-sec--keep { break-inside: avoid; }
   .job__head, .job li:first-child, .cv-h { break-after: avoid; }
@@ -261,7 +265,9 @@
   /* Tablets (40–75rem) read the sheet scaled too (it was the smallest text there: 12 px body at 744 px, audit CV-05):
      ~13.6 px body, and never wider than the window. */
   @media screen and (min-width: 40rem) and (max-width: 74.99rem) {
-    .sheet { zoom: 1.12; width: min(210mm, (100% - 2 * var(--space-gutter)) / 1.12); }
+    /* `zoom` scales the sheet's lengths but not its percentages (Chromium and WebKit alike), so only the gutters are
+       divided: the sheet's visible edges then sit on the page gutters, flush with the line under it (audit D-04). */
+    .sheet { zoom: 1.12; width: min(210mm, 100% - 2 * var(--space-gutter) / 1.12); }
     .cv-after { width: min(210mm * 1.12, 100% - 2 * var(--space-gutter)); }
   }
 }
@@ -271,5 +277,46 @@
   @media (min-width: 48rem) and (max-width: 79.99rem) {
     .cv-bar .cv-bar__contact { width: var(--btn-h); padding: 0; }
     .cv-bar .cv-bar__contact .cv-bar__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  }
+}
+
+/* ---------- round 6: the CV between phone and desktop, small print, the dark page ---------- */
+@layer components {
+  /* Tablets and small laptops (40-64rem, audit D-02): one column on screen, as on phones; the two-column print grid
+     left the experience column at 190-300 px there (role heads over 3-5 lines). From 48rem the sidebar's sections sit
+     in two balanced columns under the experience (Education and Skills, then the rest). Print is unchanged. */
+  @media screen and (min-width: 40rem) and (max-width: 63.99rem) {
+    .cv-grid { grid-template-columns: minmax(0, 1fr); }
+    .cv-side { margin-block-start: 5mm; }
+  }
+  @media screen and (min-width: 48rem) and (max-width: 63.99rem) {
+    .cv-side { columns: 2; column-gap: 7mm; }
+    .cv-side > .cv-sec { break-inside: avoid; }
+  }
+  /* Small print on phones and tablets (audit D-05): the 7.8-8 pt labels times zoom 1.12 measured 11.65-11.95 px, under
+     the site's 12 px floor; 8.1 pt reads 12.1 px. Screen only: print and the PDF keep their sizes. */
+  @media screen and (max-width: 74.99rem) {
+    .cv-contact, .cv-h, .skill-g b, .side-list em, .cv-foot, .job__when, .earlier__row em, .job__award, .job__where { font-size: 8.1pt; }
+  }
+  /* Touch screens: the case-study links get a 44 px target without moving the line (audit D-06). Not positioned, so
+     the PDF's text order is untouched (and print never has a coarse pointer). */
+  @media (pointer: coarse) {
+    .sheet .job__case { display: inline-block; padding-block: 3.5mm; margin-block: -3.5mm; padding-inline: 1.5mm; margin-inline: -1.5mm; }
+  }
+  /* Skill-group labels keep their case: uppercase turned "LLMs & agents" into the acronym "LLMS" (audit D-15). */
+  .skill-g b { text-transform: none; letter-spacing: .02em; }
+  /* A degree's dates and "(expected)" on one line, as two runs (each keeps its own direction in Arabic; audit D-20):
+     in the logo grid the dates take an auto column and "(expected)" the rest of the row. */
+  .edu-list > li > em { display: inline-block; }
+  .edu-list > li > em + em { margin-inline-start: .35em; }
+  .sheet .edu-list__logo { grid-template-columns: var(--cv-logo) auto minmax(0, 1fr); }
+  .edu-list__logo > :not(.cv-logo) { grid-column: 2 / -1; }
+  .sheet .edu-list__logo > em { grid-column: 2; grid-row: 3; }
+  .sheet .edu-list__logo > em + em { grid-column: 3; margin-inline-start: 0; }
+  /* The dark theme, on screen only (audit D-17): the paper is warm ivory instead of the site's brightest white, with a
+     softer edge, so the A4 sheet doesn't glare out of the lapis-night page. Print and the PDF stay #FFF. Ink, muted
+     and lapis keep AA on it (design/scripts/check-contrast.mjs). */
+  @media screen {
+    :root:not([data-theme="light"]) .sheet { background: #F4F0E7; border-color: rgb(255 255 255 / .06); box-shadow: 0 30px 80px -20px rgb(0 0 0 / .6); }
   }
 }

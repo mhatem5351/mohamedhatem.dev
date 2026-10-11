@@ -1,0 +1,18 @@
+---
+/**
+ * A localized label in the page's direction, with only its other-script runs isolated (src/lib/bidi.ts, audit A-01):
+ * on Arabic pages each Latin run ("vLLM", "Brave Search") and number range is a `<bdi dir="ltr">`, on English pages
+ * each Arabic run a `<bdi dir="rtl">`. Use it instead of `dir="auto"` or a bare <bdi>, which flip a whole Arabic
+ * phrase to left-to-right when it starts with a Latin word.
+ */
+import { bidiParts } from "~/lib/bidi";
+import type { Locale } from "~/lib/i18n";
+
+interface Props {
+  text: string;
+  locale: Locale;
+}
+const { text, locale } = Astro.props;
+const parts = bidiParts(text, locale);
+---
+{parts.map((p) => (p.dir ? <bdi dir={p.dir}>{p.text}</bdi> : p.text))}

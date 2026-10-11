@@ -71,12 +71,12 @@
         "ar": "مساعد ArabsStock: نظام من 14 وكيلًا مبني على LangGraph وخدمات الذكاء الاصطناعي في المنصة"
       },
       "caption": {
-        "en": "The ArabsStock Assistant routes platform requests through a LangGraph orchestrator to 14 specialised agents, backed by semantic search on Pinecone, containerized model-serving endpoints and media pipelines.",
+        "en": "The ArabsStock Assistant routes platform requests through a LangGraph orchestrator to 14 specialised agents, backed by semantic search on Pinecone, containerised model-serving endpoints and media pipelines.",
         "ar": "يوجّه مساعد ArabsStock طلبات المنصة عبر منسّق LangGraph إلى 14 وكيلًا متخصصًا، مدعومًا ببحث دلالي على Pinecone ونقاط خدمة نماذج داخل حاويات ومسارات لمعالجة الوسائط."
       },
       "desc": {
         "long": {
-          "en": "Architecture diagram. Top: media pipelines take raw video and audio through quality optimisation and metadata enrichment, then deliver it to the ArabsStock platform (photos, videos, vectors and audio). Below the platform are three systems. Assistant: platform requests go to a LangGraph orchestrator, which routes them to 14 specialised agents grouped by capability: AI image generation, content moderation, semantic search, integrated AI services and database operations. Semantic search queries the Pinecone vector index; database operations use the platform database. An LLM agent evaluation workflow monitors response accuracy, agent routing and reliability. Indexing: platform assets go through automated batch ingestion and OpenAI embeddings into the Pinecone vector index, covering millions of assets. Model serving: five containerized FastAPI microservices serve image search, sound generation, instrument classification, BPM detection and audio watermarking to the platform.",
+          "en": "Architecture diagram. Top: media pipelines take raw video and audio through quality optimisation and metadata enrichment, then deliver it to the ArabsStock platform (photos, videos, vectors and audio). Below the platform are three systems. Assistant: platform requests go to a LangGraph orchestrator, which routes them to 14 specialised agents grouped by capability: AI image generation, content moderation, semantic search, integrated AI services and database operations. Semantic search queries the Pinecone vector index; database operations use the platform database. An LLM agent evaluation workflow monitors response accuracy, agent routing and reliability. Indexing: platform assets go through automated batch ingestion and OpenAI embeddings into the Pinecone vector index, covering millions of assets. Model serving: five containerised FastAPI microservices serve image search, sound generation, instrument classification, BPM detection and audio watermarking to the platform.",
           "ar": "مخطط معماري. في الأعلى: مسارات معالجة الوسائط تنقل الفيديو والصوت الخام عبر تحسين الجودة وإثراء البيانات الوصفية، ثم تسلّمها إلى منصة ArabsStock (صور وفيديو ورسوم متجهة وصوت). تحت المنصة ثلاثة أنظمة. المساعد: تصل طلبات المنصة إلى منسّق LangGraph الذي يوجّهها إلى 14 وكيلًا متخصصًا مجمّعين حسب القدرة: توليد الصور بالذكاء الاصطناعي، والإشراف على المحتوى، والبحث الدلالي، وخدمات الذكاء الاصطناعي المدمجة، وعمليات قواعد البيانات. يستعلم البحث الدلالي فهرس المتجهات في Pinecone، وتعمل عمليات قواعد البيانات على قاعدة بيانات المنصة. ويراقب مسار لتقييم وكلاء LLM دقة الإجابات وتوجيه الوكلاء والاعتمادية. الفهرسة: تمر أصول المنصة عبر إدخال آلي على دفعات وتضمينات OpenAI إلى فهرس المتجهات في Pinecone، لتغطي ملايين الأصول. خدمة النماذج: خمس خدمات FastAPI مصغّرة داخل حاويات تقدّم للمنصة البحث بالصور وتوليد الأصوات وتصنيف الآلات الموسيقية وكشف الإيقاع (BPM) والعلامات المائية الصوتية."
         },
         "short": {
@@ -127,7 +127,7 @@
             "en": "AI services",
             "ar": "خدمات الذكاء الاصطناعي"
           },
-          "en": "Model-serving endpoints for image search, sound generation, instrument classification, BPM detection and audio watermarking, each a containerized FastAPI microservice.",
+          "en": "Model-serving endpoints for image search, sound generation, instrument classification, BPM detection and audio watermarking, each a containerised FastAPI microservice.",
           "ar": "نقاط خدمة نماذج للبحث بالصور وتوليد الأصوات وتصنيف الآلات الموسيقية وكشف الإيقاع (BPM) والعلامات المائية الصوتية، كلٌّ منها خدمة FastAPI مصغّرة داخل حاوية."
         },
         {
@@ -144,20 +144,20 @@
         "wide": {
           "file": "assets/diagrams/arabsstock-assistant.svg",
           "viewBox": "0 0 1120 760",
-          "bytes": 23375,
-          "gzip": 5420
+          "bytes": 23464,
+          "gzip": 5416
         },
         "compact": {
           "file": "assets/diagrams/arabsstock-assistant-compact.svg",
           "viewBox": "0 0 320 1624",
-          "bytes": 23651,
-          "gzip": 5430
+          "bytes": 23594,
+          "gzip": 5415
         },
         "thumb": {
           "file": "assets/diagrams/arabsstock-assistant-thumb.svg",
           "viewBox": "0 0 400 250",
-          "bytes": 11526,
-          "gzip": 2878
+          "bytes": 11619,
+          "gzip": 2892
         }
       },
       "ids": {
@@ -185,16 +185,16 @@
         "ar": "روبوت محادثة متعدد الوكلاء: LangGraph غير متزامن بالكامل بستة وكلاء متخصصين"
       },
       "caption": {
-        "en": "A fully async, bilingual multi-agent chatbot: LangGraph hands off between six specialised agents with Command-based edgeless routing, on Qwen served by vLLM on A100 GPUs, with hybrid retrieval, web search over MCP and node-level caching.",
+        "en": "A fully async, bilingual multi-agent chatbot: LangGraph hands off between six specialised agents, routing through LangGraph Command instead of fixed edges, on Qwen served by vLLM on A100 GPUs, with hybrid retrieval, web search over MCP and node-level caching.",
         "ar": "روبوت محادثة ثنائي اللغة متعدد الوكلاء وغير متزامن بالكامل: ينقل LangGraph التحكم بين ستة وكلاء متخصصين بتوجيه قائم على Command دون حواف ثابتة، فوق نموذج Qwen الذي يخدّمه vLLM على معالجات A100، مع استرجاع هجين وبحث في الويب عبر MCP وتخزين مؤقت على مستوى العُقد."
       },
       "desc": {
         "long": {
-          "en": "Architecture diagram. A user writes in Arabic or English. Requests pass through Nginx, a reverse proxy, to Dockerized FastAPI services; key internal APIs use gRPC. Inside a fully async LangGraph graph, Command-based routing with no static edges hands control between six specialised agents, built as modular subgraphs. The graph calls four back ends: the Qwen LLM served with vLLM on A100 GPUs; hybrid retrieval that combines vector and BM25 search with LLM reranking; Brave Search through MCP; and a SQLite node-level cache.",
+          "en": "Architecture diagram. A user writes in Arabic or English. Requests pass through Nginx, a reverse proxy, to Dockerised FastAPI services; key internal APIs use gRPC. Inside a fully async LangGraph graph, routing through LangGraph Command instead of fixed edges hands control between six specialised agents, built as modular subgraphs. The graph calls four back ends: the Qwen LLM served with vLLM on A100 GPUs; hybrid retrieval that combines vector and BM25 search with LLM reranking; Brave Search through MCP; and a SQLite node-level cache.",
           "ar": "مخطط معماري. يكتب المستخدم بالعربية أو الإنجليزية. تمر الطلبات عبر Nginx، وهو وكيل عكسي، إلى خدمات FastAPI داخل حاويات Docker، وتستخدم الواجهات الداخلية الأساسية gRPC. داخل رسم LangGraph غير متزامن بالكامل، ينقل التوجيه القائم على Command، دون حواف ثابتة، التحكم بين ستة وكلاء متخصصين مبنيين كرسوم فرعية قابلة للتركيب. ويستدعي الرسم أربع خدمات خلفية: نموذج Qwen الذي يخدّمه vLLM على معالجات A100، واسترجاعًا هجينًا يجمع بحث المتجهات وBM25 مع إعادة ترتيب بواسطة LLM، وBrave Search عبر MCP، وذاكرة تخزين مؤقت على مستوى العُقد مبنية على SQLite."
         },
         "short": {
-          "en": "Simplified diagram: Command-based routing in LangGraph hands off between six agents, which call Qwen on vLLM, hybrid retrieval, MCP tools and a node cache.",
+          "en": "Simplified diagram: routing through LangGraph Command instead of fixed edges hands off between six agents, which call Qwen on vLLM, hybrid retrieval, MCP tools and a node cache.",
           "ar": "مخطط مبسّط: توجيه قائم على Command في LangGraph ينقل التحكم بين ستة وكلاء يستدعون Qwen عبر vLLM والاسترجاع الهجين وأدوات MCP وذاكرة تخزين مؤقت للعُقد."
         }
       },
@@ -205,7 +205,7 @@
             "en": "Services",
             "ar": "الخدمات"
           },
-          "en": "Dockerized FastAPI services behind Nginx; key internal APIs moved from REST to gRPC to cut latency between services.",
+          "en": "Dockerised FastAPI services behind Nginx; key internal APIs moved from REST to gRPC to cut latency between services.",
           "ar": "خدمات FastAPI داخل حاويات Docker خلف Nginx، مع نقل واجهات داخلية أساسية من REST إلى gRPC لتقليل زمن الاستجابة بين الخدمات."
         },
         {
@@ -214,7 +214,7 @@
             "en": "Routing",
             "ar": "التوجيه"
           },
-          "en": "Command-based and edgeless: control moves between agents through LangGraph Command instead of fixed graph edges.",
+          "en": "Routing through LangGraph Command instead of fixed edges: control moves between the agents at run time.",
           "ar": "قائم على Command ودون حواف ثابتة: ينتقل التحكم بين الوكلاء عبر Command في LangGraph بدلًا من حواف ثابتة في الرسم البياني."
         },
         {
@@ -267,20 +267,20 @@
         "wide": {
           "file": "assets/diagrams/wakeb-multi-agent-chatbot.svg",
           "viewBox": "0 0 1120 432",
-          "bytes": 20123,
-          "gzip": 4562
+          "bytes": 20281,
+          "gzip": 4596
         },
         "compact": {
           "file": "assets/diagrams/wakeb-multi-agent-chatbot-compact.svg",
           "viewBox": "0 0 320 1088",
-          "bytes": 20157,
-          "gzip": 4526
+          "bytes": 20114,
+          "gzip": 4522
         },
         "thumb": {
           "file": "assets/diagrams/wakeb-multi-agent-chatbot-thumb.svg",
           "viewBox": "0 0 400 250",
-          "bytes": 13168,
-          "gzip": 3129
+          "bytes": 13283,
+          "gzip": 3160
         }
       },
       "ids": {
@@ -328,7 +328,7 @@
             "en": "Delivery",
             "ar": "التسليم"
           },
-          "en": "CI/CD and containerized deployments with Docker, Git and shell-scripted automation, across development and production.",
+          "en": "CI/CD and containerised deployments with Docker, Git and shell-scripted automation, across development and production.",
           "ar": "CI/CD ونشر عبر الحاويات باستخدام Docker وGit وأتمتة بسكربتات shell، في بيئتي التطوير والإنتاج."
         },
         {
@@ -381,20 +381,20 @@
         "wide": {
           "file": "assets/diagrams/llm-serving-a100.svg",
           "viewBox": "0 0 1120 352",
-          "bytes": 17289,
-          "gzip": 4289
+          "bytes": 17227,
+          "gzip": 4276
         },
         "compact": {
           "file": "assets/diagrams/llm-serving-a100-compact.svg",
           "viewBox": "0 0 320 912",
-          "bytes": 16687,
-          "gzip": 4173
+          "bytes": 16471,
+          "gzip": 4140
         },
         "thumb": {
           "file": "assets/diagrams/llm-serving-a100-thumb.svg",
           "viewBox": "0 0 400 250",
-          "bytes": 9033,
-          "gzip": 2692
+          "bytes": 9123,
+          "gzip": 2701
         }
       },
       "ids": {
@@ -475,20 +475,20 @@
         "wide": {
           "file": "assets/diagrams/hybrid-rag.svg",
           "viewBox": "0 0 1120 296",
-          "bytes": 12596,
+          "bytes": 12671,
           "gzip": 3253
         },
         "compact": {
           "file": "assets/diagrams/hybrid-rag-compact.svg",
           "viewBox": "0 0 320 648",
-          "bytes": 12794,
-          "gzip": 3276
+          "bytes": 12737,
+          "gzip": 3261
         },
         "thumb": {
           "file": "assets/diagrams/hybrid-rag-thumb.svg",
           "viewBox": "0 0 400 250",
-          "bytes": 8516,
-          "gzip": 2394
+          "bytes": 8606,
+          "gzip": 2407
         }
       },
       "ids": {
@@ -571,20 +571,20 @@
         "wide": {
           "file": "assets/diagrams/empoweromics-message-routing.svg",
           "viewBox": "0 0 1120 584",
-          "bytes": 19297,
-          "gzip": 4509
+          "bytes": 19379,
+          "gzip": 4517
         },
         "compact": {
           "file": "assets/diagrams/empoweromics-message-routing-compact.svg",
           "viewBox": "0 0 320 1064",
-          "bytes": 17186,
-          "gzip": 4388
+          "bytes": 17129,
+          "gzip": 4373
         },
         "thumb": {
           "file": "assets/diagrams/empoweromics-message-routing-thumb.svg",
           "viewBox": "0 0 400 250",
-          "bytes": 11814,
-          "gzip": 2881
+          "bytes": 11904,
+          "gzip": 2894
         }
       },
       "ids": {
@@ -613,16 +613,16 @@
       },
       "caption": {
         "en": "Two assistants for the Saudi Tourism Authority (STA) run on one LangGraph agent: Noura, for visitors in Arabic and English, and an internal staff assistant. An audience gate sets which tools and knowledge each session may use; typed tools return cards, every action waits for the user's approval, and answers show their sources.",
-        "ar": "يعمل مساعدان للهيئة السعودية للسياحة (STA) على وكيل LangGraph واحد: «نورة» للزوار بالعربية والإنجليزية، و«مساعد الموظفين» الداخلي. تحدد بوابة الجمهور الأدوات والمعرفة المتاحة لكل جلسة، وتعيد الأدوات المحددة الأنواع نتائجها في بطاقات، وينتظر كل إجراء موافقة المستخدم، وتعرض الإجابات مصادرها."
+        "ar": "يعمل مساعدان للهيئة السعودية للسياحة (STA) على وكيل LangGraph واحد: «نورة» للزوار بالعربية والإنجليزية، و«مساعد الموظفين» الداخلي. تحدد طبقة الصلاحيات الأدوات والمعرفة المتاحة لكل جلسة، وتعيد الأدوات المحددة الأنواع نتائجها في بطاقات، وينتظر كل إجراء موافقة المستخدم، وتعرض الإجابات مصادرها."
       },
       "desc": {
         "long": {
           "en": "Architecture diagram. Two audiences come in: visitors, who use Noura in Arabic or English, and the authority's staff, who use the staff assistant. Both pass through an audience gate, which decides which tools and which knowledge the session may use, so a visitor never reaches staff tools or data. The gate hands the request to one LangGraph agent. The agent calls typed tools that return cards: 96 tools, 27 of them visible to visitors. Look-up tools (destinations and events, visas and weather) are called directly. Tools that change something (itineraries, and staff requests such as meeting rooms, leave and office coffee orders) are reached only through human approval: each action waits for the user's approval before it runs. The agent also calls an LLM and retrieval, which answers from the authority's own documents and tourism content and shows the sources. Evaluation checks answer quality and retrieval in the background.",
-          "ar": "مخطط معماري. يدخل جمهوران: الزوار الذين يستخدمون «نورة» بالعربية أو الإنجليزية، وموظفو الهيئة الذين يستخدمون «مساعد الموظفين». يمر الطرفان عبر بوابة الجمهور التي تحدد الأدوات والمعرفة التي يحق للجلسة استخدامها، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم. تسلّم البوابة الطلب إلى وكيل LangGraph واحد. يستدعي الوكيل أدوات محددة الأنواع تعيد نتائجها في بطاقات: 96 أداة، منها 27 متاحة للزوار. تُستدعى أدوات الاستعلام (الوجهات والفعاليات، والتأشيرات والطقس) مباشرةً، أما الأدوات التي تغيّر شيئًا (خطط الرحلات، وطلبات الموظفين مثل حجز قاعات الاجتماعات والإجازات وطلبات قهوة المكتب) فلا يُوصَل إليها إلا عبر الموافقة البشرية: ينتظر كل إجراء موافقة المستخدم قبل تنفيذه. ويستدعي الوكيل أيضًا نموذجًا لغويًا كبيرًا (LLM) والاسترجاعَ الذي يجيب من وثائق الهيئة ومحتواها السياحي ويعرض المصادر. وتُقيَّم جودة الإجابات والاسترجاع في الخلفية."
+          "ar": "مخطط معماري. يدخل جمهوران: الزوار الذين يستخدمون «نورة» بالعربية أو الإنجليزية، وموظفو الهيئة الذين يستخدمون «مساعد الموظفين». يمر الطرفان عبر طبقة الصلاحيات التي تحدد الأدوات والمعرفة التي يحق للجلسة استخدامها، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم. تسلّم الطبقة الطلب إلى وكيل LangGraph واحد. يستدعي الوكيل أدوات محددة الأنواع تعيد نتائجها في بطاقات: 96 أداة، منها 27 متاحة للزوار. تُستدعى أدوات الاستعلام (الوجهات والفعاليات، والتأشيرات والطقس) مباشرةً، أما الأدوات التي تغيّر شيئًا (خطط الرحلات، وطلبات الموظفين مثل حجز قاعات الاجتماعات والإجازات وطلبات قهوة المكتب) فلا يُوصَل إليها إلا عبر الموافقة البشرية: ينتظر كل إجراء موافقة المستخدم قبل تنفيذه. ويستدعي الوكيل أيضًا نموذجًا لغويًا كبيرًا (LLM) والاسترجاعَ الذي يجيب من وثائق الهيئة ومحتواها السياحي ويعرض المصادر. وتُقيَّم جودة الإجابات والاسترجاع في الخلفية."
         },
         "short": {
           "en": "Simplified diagram: visitors and staff pass an audience gate to one agent, which calls a set of 96 tools, 27 of them for visitors; actions wait for human approval.",
-          "ar": "مخطط مبسّط: يمر الزوار والموظفون عبر بوابة الجمهور إلى وكيل واحد يستدعي 96 أداة، منها 27 للزوار، وتنتظر الإجراءات الموافقة البشرية."
+          "ar": "مخطط مبسّط: يمر الزوار والموظفون عبر طبقة الصلاحيات إلى وكيل واحد يستدعي 96 أداة، منها 27 للزوار، وتنتظر الإجراءات الموافقة البشرية."
         }
       },
       "callouts": [
@@ -630,7 +630,7 @@
           "n": 1,
           "term": {
             "en": "Audience gate",
-            "ar": "بوابة الجمهور"
+            "ar": "طبقة الصلاحيات"
           },
           "en": "Decides which tools and which knowledge each session may use, so a visitor never reaches staff tools or data.",
           "ar": "تحدد الأدوات والمعرفة التي يحق لكل جلسة استخدامها، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم."
@@ -685,20 +685,20 @@
         "wide": {
           "file": "assets/diagrams/sta-tourism-assistants.svg",
           "viewBox": "0 0 1120 464",
-          "bytes": 20187,
-          "gzip": 5141
+          "bytes": 20263,
+          "gzip": 5162
         },
         "compact": {
           "file": "assets/diagrams/sta-tourism-assistants-compact.svg",
           "viewBox": "0 0 320 1104",
-          "bytes": 20411,
-          "gzip": 5161
+          "bytes": 20354,
+          "gzip": 5145
         },
         "thumb": {
           "file": "assets/diagrams/sta-tourism-assistants-thumb.svg",
           "viewBox": "0 0 400 250",
-          "bytes": 12974,
-          "gzip": 3216
+          "bytes": 13067,
+          "gzip": 3231
         }
       },
       "ids": {

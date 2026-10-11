@@ -5,8 +5,9 @@
  * RTL. It is already text, so it doubles as its own text alternative.
  */
 import Icon from "~/components/ui/Icon.astro";
+import BidiText from "~/components/ui/BidiText.astro";
 import type { CaseStudy } from "@content/profile.ts";
-import { format, messages, tr, type Locale } from "~/lib/i18n";
+import { dirOf, format, messages, tr, type Locale } from "~/lib/i18n";
 import { KIND_ACCENT, KIND_ICON, edgesOf, nodesByKind } from "~/lib/case";
 
 interface Props {
@@ -27,8 +28,8 @@ const accentClass = (a: string) => (a === "neutral" ? undefined : `accent-${a}`)
 <figure class:list={["fig", className]} id={anchor} aria-labelledby={capId}>
   <div class="fig-panel">
     <div class="fig-panel__bar">
-      <span class="fig-panel__id" dir="ltr">Fig. {n}</span>
-      <span class="fig-panel__title">{tr(cs.shortTitle, locale)}</span>
+      <span class="fig-panel__id">{locale === "ar" ? format(m.work.page.figure, { n }) : `Fig. ${n}`}</span>
+      <span class="fig-panel__title"><BidiText text={tr(cs.shortTitle, locale)} locale={locale} /></span>
       <span class="fig-panel__kind">{viewLabel}</span>
     </div>
     <div class="fig-panel__canvas fig-panel__canvas--html">
@@ -47,8 +48,8 @@ const accentClass = (a: string) => (a === "neutral" ? undefined : `accent-${a}`)
                       <Icon name={KIND_ICON[g.kind]} />
                     </span>
                     <span>
-                      <span class="cv-node__t" dir="auto">{tr(node.label, locale)}</span>
-                      {node.note && <span class="cv-node__s" dir="auto">{tr(node.note, locale)}</span>}
+                      <span class="cv-node__t"><BidiText text={tr(node.label, locale)} locale={locale} /></span>
+                      {node.note && <span class="cv-node__s"><BidiText text={tr(node.note, locale)} locale={locale} /></span>}
                     </span>
                   </li>
                 ))}
@@ -65,10 +66,10 @@ const accentClass = (a: string) => (a === "neutral" ? undefined : `accent-${a}`)
               {edges.map((e) => (
                 <li>
                   <span class="sr-only">{format(m.work.page.connection, { from: e.from, to: e.to })}</span>
-                  <span aria-hidden="true" dir="auto">{e.from}</span>
+                  <bdi class="cv-edges__end" aria-hidden="true" dir={dirOf(locale)}><BidiText text={e.from} locale={locale} /></bdi>
                   <Icon name="arrow-right" />
-                  <span aria-hidden="true" dir="auto">{e.to}</span>
-                  {e.label && <small>({e.label})</small>}
+                  <bdi class="cv-edges__end" aria-hidden="true" dir={dirOf(locale)}><BidiText text={e.to} locale={locale} /></bdi>
+                  {e.label && <small>(<BidiText text={e.label} locale={locale} />)</small>}
                 </li>
               ))}
             </ul>

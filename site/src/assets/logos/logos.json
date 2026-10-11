@@ -276,7 +276,7 @@
           "webp": "tiles/mtc-160.webp"
         }
       },
-      "tileBackground": "#F2F0EC"
+      "tileBackground": "#131D36"
     },
     "tabaqat": {
       "name": "Tabaqat",
@@ -324,7 +324,7 @@
           "webp": "tiles/uqu-160.webp"
         }
       },
-      "tileBackground": "#F2F0EC"
+      "tileBackground": "#131D36"
     }
   }
 }

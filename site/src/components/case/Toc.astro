@@ -35,7 +35,7 @@ const num = (i: number) => String(i + 1).padStart(2, "0");
             {entries.map((e, i) => (
               <li>
                 <a href={`#${e.id}`} data-toc-link={e.id}>
-                  <span class="toc__num" dir="ltr">{num(i)}</span>
+                  <span class="toc__num">{num(i)}</span>
                   <span>{e.label}</span>
                 </a>
               </li>
@@ -59,7 +59,7 @@ const num = (i: number) => String(i + 1).padStart(2, "0");
             {entries.map((e, i) => (
               <li>
                 <a href={`#${e.id}`} data-toc-link={e.id}>
-                  <span class="toc__num" dir="ltr">{num(i)}</span>
+                  <span class="toc__num">{num(i)}</span>
                   <span>{e.label}</span>
                 </a>
               </li>
