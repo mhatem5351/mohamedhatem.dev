@@ -71,7 +71,7 @@ test.describe("full case studies", () => {
 });
 
 test.describe("home: selected work", () => {
-  test("brief case studies are in More work, the rest in the grid; /#craft lands on the logic-controls.com card", async ({ page, isMobile }) => {
+  test("featured case studies are in the grid, the rest (the briefs, then logic-controls.com) in More work; /#craft lands on the logic-controls.com card", async ({ page, isMobile }) => {
     await page.goto("/");
     const more = page.locator(".more-work");
     // Phones: More work waits behind its "Show more work" button.
@@ -81,8 +81,14 @@ test.describe("home: selected work", () => {
       await toggle.tap();
       await expect(toggle).toHaveAttribute("aria-expanded", "true");
     }
+    const rx = (t: string) => new RegExp(t.slice(0, 20).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     for (const cs of brief) await expect(more.getByRole("link", { name: cs.title.en })).toBeVisible();
-    for (const cs of full) await expect(page.locator(".work-list").getByRole("link", { name: new RegExp(cs.title.en.slice(0, 20).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) })).toBeVisible();
+    // Round 6 (HM-14): the freelance site is a full case study but no longer in the featured grid.
+    for (const cs of full.filter((c) => c.featured)) await expect(page.locator(".work-list").getByRole("link", { name: rx(cs.title.en) })).toBeVisible();
+    for (const cs of full.filter((c) => !c.featured)) {
+      await expect(more.getByRole("link", { name: rx(cs.title.en) })).toBeVisible();
+      await expect(page.locator(".work-list").getByRole("link", { name: rx(cs.title.en) })).toHaveCount(0);
+    }
     await expect(more).toContainText(en.work.readBrief);
     await expect(page.locator("#craft")).toContainText("logic-controls.com");
     await expect(page.locator("#craft a.stretched")).toHaveAttribute("href", "/work/logic-controls-website/");
@@ -91,14 +97,20 @@ test.describe("home: selected work", () => {
   test("cards in a row line up: eyebrows, titles and the Read cue @desktop-only", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/#work");
-    const rows = await page.evaluate(() =>
+    // Per card: its own top (its row), then the tops of its eyebrow, title and Read cue.
+    const lists = await page.evaluate(() =>
       [".work-list > .work:not(.work--feature)", ".more-work__list > .work"].map((sel) =>
-        [...document.querySelectorAll(sel)].map((c) => ["eyebrow", "work__title", "work__cta"].map((k) => Math.round(c.querySelector(`.${k}`)!.getBoundingClientRect().top))),
+        [...document.querySelectorAll(sel)].map((c) => [c, ...["eyebrow", "work__title", "work__cta"].map((k) => c.querySelector(`.${k}`)!)].map((e) => Math.round(e.getBoundingClientRect().top))),
       ),
     );
-    for (const cards of rows) {
-      expect(cards.length).toBe(3);
-      for (const c of cards) expect(c).toEqual(cards[0]);
+    expect(lists[0]!.length).toBe(3);
+    expect(lists[1]!.length).toBe(profile.caseStudies.filter((c) => !c.featured).length);
+    for (const cards of lists) {
+      // Cards that share a row line up their eyebrows, titles and Read cues; each list has a row of two or more.
+      const rows = new Map<number, number[][]>();
+      for (const c of cards) rows.set(c[0]!, [...(rows.get(c[0]!) ?? []), c]);
+      expect(Math.max(...[...rows.values()].map((r) => r.length))).toBeGreaterThanOrEqual(2);
+      for (const row of rows.values()) for (const c of row) expect(c).toEqual(row[0]);
     }
   });
 

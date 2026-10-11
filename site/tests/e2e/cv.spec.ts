@@ -161,9 +161,11 @@ test.describe("CV", () => {
       for (const li of await page.locator(".sheet .job li").allInnerTexts()) expect(li).not.toMatch(/GADD|Ministry of Defense|وزارة الدفاع/);
     });
 
-    test(`${path}: Open to lists the three roles in order, then the three work arrangements`, async ({ page }) => {
+    test(`${path}: Open to lists the two roles in order, then the three work arrangements`, async ({ page }) => {
       await page.goto(path);
-      expect(profile.cv.openTo.roles.map((r) => r.en)).toEqual(["AI/ML Team Lead", "Senior AI / LLM Engineer", "MLOps Engineer"]);
+      // One list everywhere (round 6, HM-13): the site's About uses the same roles.
+      expect(profile.cv.openTo.roles.map((r) => r.en)).toEqual(["AI/ML Team Lead", "Senior AI / LLM Engineer"]);
+      expect(profile.basics.openTo.roles).toEqual(profile.cv.openTo.roles);
       expect(profile.cv.openTo.arrangements.map((a) => a.en)).toEqual(["Remote", "Relocation to the Gulf or Europe", "Hybrid in Cairo"]);
       const block = page.locator(".cv-side .cv-sec").last();
       await expect(block).toHaveAttribute("aria-labelledby", "cv-open");

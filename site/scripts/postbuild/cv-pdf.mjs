@@ -83,9 +83,11 @@ export async function withMetadata(buf, lang) {
   const b = profile.basics;
   const doc = await PDFDocument.load(buf, { updateMetadata: false });
   doc.setAuthor(b.name[lang]);
+  // "AI Team Lead at Globant · Agentic LLM systems, RAG, LLM serving": never "multi-agent" beside Globant (round 6,
+  // HM-01). The keywords are skills, not a claim about one role, so "multi-agent systems" (ArabsStock, Wakeb) stays.
   doc.setSubject(`${b.headline[lang]} · ${m.cv.focus}`);
   // pdf-lib joins keywords with spaces; one comma-separated string keeps multi-word keywords readable.
-  doc.setKeywords([[b.name.en, b.name.ar, b.title.en, "CV", "LLM", "multi-agent systems", "LangGraph", "RAG", "vLLM", "MLOps"].join(", ")]);
+  doc.setKeywords([[b.name.en, b.name.ar, b.title.en, "CV", "LLM", "agentic AI", "generative AI", "multi-agent systems", "LangGraph", "RAG", "vLLM", "MLOps"].join(", ")]);
   doc.setCreator("mohamedhatem.dev");
   // No object streams: every object stays readable in the file (page objects, /Lang, the tag tree), as Chromium wrote it.
   return Buffer.from(await doc.save({ useObjectStreams: false }));

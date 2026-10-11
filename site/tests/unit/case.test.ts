@@ -94,9 +94,12 @@ describe("screens gallery", () => {
     expect(text).not.toMatch(/in production|launched|بيئة الإنتاج/i);
     expect(text).not.toMatch(/led the project/i);
     expect(sta.contribution.en).toMatch(/^Led the AI engineering/);
-    // The only figure: 96 tools, 27 visible to visitors, behind one agent.
-    expect(sta.figures.map((f) => f.value.en)).toEqual(["1", "96", "27"]);
-    const numbers = new Set(text.match(/\b\d+\b/g)!.filter((n) => !/^(19|20)\d\d$/.test(n)));
+    // The only figure: 96 tools, 27 visible to visitors, behind one agent; then the one outcome, Noura's UAT
+    // acceptance (round 6, HM-20: the tool count leads, not a lone "1").
+    expect(sta.figures.map((f) => f.value.en)).toEqual(["96", "27", "Sep 2026"]);
+    expect(sta.figures[0]!.label.en).toMatch(/one LangGraph agent/);
+    // Page dates (published / updated, YYYY-MM-DD) are metadata, not figures: only the text's own numbers count.
+    const numbers = new Set(text.replace(/"\d{4}-\d{2}-\d{2}"/g, '""').match(/\b\d+\b/g)!.filter((n) => !/^(19|20)\d\d$/.test(n)));
     for (const n of numbers) expect(["1", "2", "96", "27", "01", "02", "04", "06", "08", "10", "10x"]).toContain(n);
     // No provider or infrastructure names.
     expect(text).not.toMatch(/Azure|OpenAI|pgvector|Kubernetes|Langfuse|Entra|Qdrant|Helm/i);

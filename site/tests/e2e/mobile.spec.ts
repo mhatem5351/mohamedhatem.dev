@@ -143,7 +143,7 @@ test.describe("phones: the first screen (HERO-01..03, HERO-02)", () => {
         await expect(page.locator(".hero__lede--short")).toBeVisible();
         await expect(page.locator(".hero__lede--long")).toBeHidden();
         expect(parseFloat(await page.locator(".hero__title").evaluate((e) => getComputedStyle(e).fontSize))).toBeLessThanOrEqual(32.5);
-        // The proof (metrics, "Shipped at") before the graph, starting within the second screen.
+        // The proof (metrics, "Worked at") before the graph, starting within the second screen.
         const metrics = (await box(page, ".metrics"))!;
         const art = (await box(page, ".hero__art"))!;
         expect(metrics.top).toBeLessThan(art.top);

@@ -42,7 +42,8 @@ const title = `mohamedhatem.dev${localePath(PATHS.cv, locale).replace(/\/$/, "")
       <span>{m.language.switchTo}</span>
       <span class="sr-only" lang={locale}>, {m.language.switchToLabel}</span>
     </a>
-    <button class="btn btn--ghost btn--sm btn--collapse" type="button" data-copy="url" data-copied={m.cv.linkCopied} data-copy-failed={m.common.copyFailed}>
+    {/* data-js-only: hidden when scripts don't run (Head.astro's noscript rule; round 6, RES-01). */}
+    <button class="btn btn--ghost btn--sm btn--collapse" type="button" data-js-only data-copy="url" data-copied={m.cv.linkCopied} data-copy-failed={m.common.copyFailed}>
       <Icon name="link" />
       <span class="cv-bar__label">{m.cv.copyLink}</span>
     </button>
@@ -63,7 +64,7 @@ const title = `mohamedhatem.dev${localePath(PATHS.cv, locale).replace(/\/$/, "")
       <Icon name="user-plus" />
       <span class="cv-bar__label">{m.cv.addContact}</span>
     </a>
-    <button class="btn btn--ghost btn--sm btn--collapse cv-bar__print" type="button" data-print>
+    <button class="btn btn--ghost btn--sm btn--collapse cv-bar__print" type="button" data-js-only data-print>
       <Icon name="print" />
       <span class="cv-bar__label">{m.cv.print}</span>
     </button>

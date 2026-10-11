@@ -3,10 +3,16 @@
  * The CV sheet (design/prototypes/cv.html .sheet), generated from content/profile.ts only:
  * header (monogram, name, title · employer · focus, contact row, stripe), summary (profile.cv.summary),
  * Experience (the main roles with their cvBullets; non-primary roles that ended before every main role are condensed
- * under "Earlier roles"; a role's client, where one is named, on its own line under the role head), and a sidebar with
- * Education (status-aware: an in-progress degree shows "(expected)" and is never described as held), Skills
- * (profile.cv.skills), Certifications (AWS featured), Awards, Languages and Open to (profile.cv.openTo). Two A4 pages
- * in print, both languages.
+ * under "Earlier roles", a part-time one labelled so; a role's client, where one is named, on its own line under the
+ * role head), and a sidebar with Education (status-aware: an in-progress degree shows "(expected)" and is never
+ * described as held), Skills (profile.cv.skills), Certifications (those marked onCv, as plain entries: "AWS Certified
+ * Machine Learning – Specialty (2022)"), Awards, Languages and Open to (profile.cv.openTo). The header's place line
+ * says where he works from and where he would move. Two A4 pages in print, both languages.
+ *
+ * Direction (round 6, A-01): a localized label is isolated in the page's direction, with only its Latin runs isolated
+ * left to right (<bdi dir="ltr">), so "vLLM على NVIDIA A100" never reads as "NVIDIA A100 على vLLM"; a label with no
+ * Arabic letters (a tool name, "AWS (SageMaker, EC2, …)") is one left-to-right isolate. Never a bare <bdi> (dir auto),
+ * which would turn an Arabic phrase that starts with a Latin word into a left-to-right run.
  *
  * Logos: every role and every degree has its organisation's tile (design/assets/logos/tiles, the same tiles as the
  * site's experience trace) in a narrow column at the start of its first line; the bullets' rings sit in that column
@@ -69,7 +75,8 @@ const contacts = [
   { icon: "linkedin", href: link("linkedin").href, text: link("linkedin").display.replace(/^linkedin\.com\//, "") },
   { icon: "github", href: link("github").href, text: link("github").display },
 ];
-const place = `${t(b.location.city)}${sep}${t(b.location.country)} · ${m.experience.workMode.remote}`;
+/** "Cairo, Egypt · Remote or relocation (Gulf, Europe)": relocation up front for Gulf and European recruiters (HM-13). */
+const place = `${t(b.location.city)}${sep}${t(b.location.country)} · ${m.cv.arrangements}`;
 
 /** Logo tiles (src/assets/logos/tiles) as 64 px JPEGs on white: crisp at about 4 mm on paper, small in the PDF. */
 const tiles = import.meta.glob<{ default: ImageMetadata }>("../../assets/logos/tiles/*-160.webp", { eager: true });
@@ -163,11 +170,23 @@ const unit = (name: string): string => {
   return m ? `${nb(m[1]!)} ${nb(m[2]!)}` : nb(name);
 };
 const units = (names: readonly string[], joiner: string): string => names.map(unit).join(esc(joiner));
-const org = (r: Role): string => units(t(r.company).split(" · "), " · ");
+/**
+ * Two organisations of one role read "A and B" on the CV ("The British University in Dubai and Umm Al-Qura
+ * University"; Arabic "… دبي وجامعة أم القرى"), so no line ends on a dangling "·" (HM-35). Each name stays whole.
+ */
+const orgJoiner = locale === "ar" ? " و" : " and ";
+const org = (r: Role): string => units(t(r.company).split(" · "), orgJoiner);
 
-/** Text with its Latin runs isolated on the Arabic sheet ("… (GADD)" keeps its brackets around the abbreviation). */
+const ARABIC = /[\u0600-\u06FF]/;
+/** The isolate direction of a label, from its content: Arabic letters make it the page's (right-to-left) direction. */
+const dirOf = (x: string): "rtl" | "ltr" => (locale === "ar" && ARABIC.test(x) ? "rtl" : "ltr");
+/** Text with its Latin runs isolated left to right on the Arabic sheet ("… (GADD)" keeps its brackets around it). */
 const isolateLatin = (x: string): string =>
-  locale === "ar" ? esc(x).replace(/[A-Za-z][A-Za-z0-9&.\-]*(?: [A-Za-z0-9&.\-]+)*/g, (run) => `<bdi>${run}</bdi>`) : esc(x);
+  locale === "ar" ? esc(x).replace(/[A-Za-z][A-Za-z0-9&.\-]*(?: [A-Za-z0-9&.\-]+)*/g, (run) => `<bdi dir="ltr">${run}</bdi>`) : esc(x);
+/** A label as one isolate in its own direction (see the header comment), Latin runs inside an Arabic label kept LTR. */
+const label = (x: string): string => `<bdi dir="${dirOf(x)}">${dirOf(x) === "rtl" ? isolateLatin(x) : esc(x)}</bdi>`;
+/** Certifications on the CV: the ones marked onCv, each a plain entry with its year after the name (HM-10, HM-23). */
+const certs = profile.certifications.filter((c) => c.onCv);
 
 /** The footer sentence with its domain as a link (the PDF keeps it clickable). */
 const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
@@ -246,8 +265,10 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
               earlier.map((r) => (
                 <div class:list={["earlier__row", roleLogo.get(r.id) && "earlier__row--logo"]}>
                   {roleLogo.get(r.id) && <img class="cv-logo" src={roleLogo.get(r.id)} alt="" width="15" height="15" loading="eager" decoding="async" />}
+                  {/* A part-time role says so (HM-24): 2022 doesn't read as four jobs at once beside a full-time one. */}
                   <span>
                     <b>{t(r.title)}</b> · <span class="earlier__org" set:html={org(r)} />
+                    {r.employmentType === "part-time" && <> · <span class="earlier__type">{m.experience.employmentType["part-time"]}</span></>}
                   </span>
                   <em>{formatPeriod(r.period, locale)}</em>
                   <p set:html={r.cvBullets.map((f) => html(factRuns(f))).join(" ")} />
@@ -294,7 +315,7 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
           profile.cv.skills.map((g) => (
             <div class="skill-g">
               <b>{t(g.label)}</b>
-              <p>{g.items.flatMap((item, i) => [...(i > 0 ? [sep] : []), <bdi>{t(item)}</bdi>])}</p>
+              <p set:html={g.items.map((item) => label(t(item))).join(esc(sep))} />
             </div>
           ))
         }
@@ -304,17 +325,13 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
         <h2 class="cv-h" id="cv-cert">{m.cv.sections.certifications}</h2>
         <ul class="side-list">
           {
-            [...profile.certifications]
-              .sort((a, c) => Number(c.featured) - Number(a.featured))
-              .map((c) => (
-                <li class:list={[c.featured && "cert-hero"]}>
-                  <b lang="en" set:html={html(runs(t(c.name)))} />
-                  <em>
-                    <bdi>{t(c.issuer)}</bdi>
-                    {c.issued && ` · ${parseIso(c.issued).y}`}
-                  </em>
-                </li>
-              ))
+            certs.map((c) => (
+              <li>
+                {/* An LTR isolate inside the line, so the Arabic sheet keeps it at the column's start (right). */}
+                <b lang="en" set:html={`<bdi dir="ltr">${html(runs(c.issued ? `${t(c.name)} (${parseIso(c.issued).y})` : t(c.name)))}</bdi>`} />
+                <em set:html={label(t(c.issuer))} />
+              </li>
+            ))
           }
         </ul>
       </section>
@@ -326,7 +343,7 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
             profile.honors.map((h) => (
               <li>
                 <b>{t(h.title)}</b>
-                <span><bdi>{t(h.issuer)}</bdi></span>
+                <span set:html={label(t(h.issuer))} />
               </li>
             ))
           }

@@ -590,8 +590,13 @@ export interface Certification {
   readonly logo: Logo | null;
   /** Issue date at the precision the sources agree on, or `null` if not stated. */
   readonly issued: IsoMonth | IsoYear | null;
-  /** Shown prominently (only the AWS certification). */
+  /**
+   * Shown prominently. None is since round 6 (HM-10): the AWS certification (2022) is a plain entry, never in a
+   * highlight box or a summary.
+   */
   readonly featured: boolean;
+  /** Listed on the CV (the CV keeps only the AWS certification; the site lists them all; round 6, HM-23). */
+  readonly onCv: boolean;
   /** Provenance. */
   readonly source: Sources;
 }
@@ -677,8 +682,8 @@ export interface Cv {
   /** Skills summary, one line per group. */
   readonly skills: readonly CvSkillLine[];
   /**
-   * "Open to" on the CV: a short list, strongest first (the first role leads the block). CV only: the site's About
-   * section, llms.txt and the assistant use the fuller `basics.openTo`.
+   * "Open to" on the CV: the roles of `basics.openTo` (one list everywhere), team lead first, then the arrangements in
+   * three short lines (the site's About splits relocation by region).
    */
   readonly openTo: {
     /** Roles, in order. */
@@ -730,44 +735,61 @@ function l(en: string, ar: string): L10n {
 /* Data                                                                                                         */
 /* ------------------------------------------------------------------------------------------------------------ */
 
+/**
+ * The roles he is open to, team lead first: one list for the site's About, the CV, llms.txt and the assistant
+ * (round 6, HM-13: "AI/ML Team Lead or Senior AI / LLM Engineer, remote, relocation to the Gulf or Europe, or hybrid in
+ * Cairo").
+ */
+const OPEN_TO_ROLES: readonly L10n[] = [
+  l("AI/ML Team Lead", "قائد فريق ذكاء اصطناعي / تعلّم آلة"),
+  l("Senior AI / LLM Engineer", "مهندس ذكاء اصطناعي أول (LLM)"),
+];
+
 const basics: Basics = {
   name: l("Mohamed Hatem", "محمد حاتم"),
   fullName: l("Mohamed Hatem Radwan", "محمد حاتم رضوان"),
   shortName: l("Hatem", "حاتم"),
-  title: l("AI Team Lead", "قائد فريق الذكاء الاصطناعي"),
+  title: l("AI Team Lead", "قائد فريق ذكاء اصطناعي"),
   employer: "Globant",
   employerUrl: "https://www.globant.com",
-  headline: l("AI Team Lead at Globant", "قائد فريق الذكاء الاصطناعي في Globant"),
+  headline: l("AI Team Lead at Globant", "قائد فريق ذكاء اصطناعي في Globant"),
   tagline: l(
-    "I build multi-agent LLM systems that hold up in production, in Arabic and English.",
-    "أبني أنظمة LLM متعددة الوكلاء تصمد في بيئة الإنتاج، بالعربية والإنجليزية.",
+    "I build agentic LLM systems in Arabic and English, from the agent graph down to the GPU.",
+    "أبني أنظمة LLM وكيلية بالعربية والإنجليزية، من مخطط الوكلاء حتى وحدات GPU.",
   ),
+  // Round 6 (HM-05, HM-08): the Saudi Tourism Authority and the team of 7 on the first screen; the multi-agent work
+  // comes after "Before that", so it never reads as the Globant work.
+  // The person chip right above the headline states the role, so the lede starts with the experience (it keeps the
+  // hero lede at four lines at 1440 px).
   intro: l(
-    "AI Team Lead at Globant with 7 years in data and AI. I built a 14-agent assistant for the stock-media platform ArabsStock and, at Wakeb Data, a 6-agent bilingual chatbot whose self-hosted models I ran on A100 GPUs.",
-    "قائد فريق الذكاء الاصطناعي في Globant، بخبرة 7 سنوات في البيانات والذكاء الاصطناعي. بنيت مساعدًا من 14 وكيلًا لمنصة ArabsStock للصور ومقاطع الفيديو المرخّصة، وفي Wakeb Data روبوت محادثة ثنائي اللغة من 6 وكلاء، وتولّيت تشغيل نماذجه ذاتية الاستضافة على وحدات A100.",
+    "7 years in data and AI, now leading a team of 7 on the Saudi Tourism Authority's AI assistants. Before that, I built a 14-agent assistant for ArabsStock and, at Wakeb Data, a 6-agent bilingual chatbot on self-hosted A100 GPUs.",
+    "خبرة 7 سنوات في البيانات والذكاء الاصطناعي، وأقود اليوم فريقًا من 7 أعضاء يعمل على المساعدَين الذكيَّين للهيئة السعودية للسياحة. وقبل ذلك بنيت مساعدًا من 14 وكيلًا لمنصة ArabsStock، وفي Wakeb Data روبوت محادثة ثنائي اللغة من 6 وكلاء على نماذج ذاتية الاستضافة بوحدات A100.",
   ),
   introShort: l(
-    "7 years in data and AI. I built a 14-agent assistant for ArabsStock and a 6-agent chatbot on self-hosted A100s.",
-    "خبرة 7 سنوات في البيانات والذكاء الاصطناعي. بنيت مساعدًا من 14 وكيلًا لمنصة ArabsStock، وروبوت محادثة من 6 وكلاء بنماذج ذاتية الاستضافة على A100.",
+    "Leading a team of 7 on the Saudi Tourism Authority's AI assistants. Earlier: 14- and 6-agent LLM systems.",
+    "أقود فريقًا من 7 أعضاء يعمل على المساعدَين الذكيَّين للهيئة السعودية للسياحة، وقبل ذلك بنيت أنظمة LLM من 14 وكيلًا و6 وكلاء.",
   ),
   bio: [
+    // Round 6 (HM-01): the Globant paragraph opens with the approved STA sentence; "multi-agent … in production" is
+    // said only of the work before Globant. The team of 7 is Mohamed's own figure (2026-10-11); nothing else about it.
     fact(
-      "I'm an AI Team Lead at Globant, based in Cairo. I design, ship and run production LLM systems: multi-agent orchestration, retrieval, self-hosted model serving, and the evaluation and monitoring that keep them honest. At Globant I lead the AI engineering for the Saudi Tourism Authority's assistants: Noura for visitors and an assistant for staff.",
-      "أعمل قائدًا لفريق الذكاء الاصطناعي في Globant، وأقيم في القاهرة. أصمّم أنظمة النماذج اللغوية الكبيرة وأطلقها وأشغّلها في بيئة الإنتاج: تنسيق الوكلاء المتعددين، والاسترجاع، وخدمة النماذج ذاتية الاستضافة، والتقييم والمراقبة اللذين يضمنان موثوقية إجاباتها. وفي Globant أقود هندسة الذكاء الاصطناعي لمساعدَي الهيئة السعودية للسياحة: «نورة» للزوار، ومساعد للموظفين.",
+      "I'm an AI Team Lead at Globant, based in Cairo. I lead a team of 7 and the AI engineering on the Saudi Tourism Authority (STA) project: an agentic LLM runtime (LangGraph) with retrieval, human-approval gates and evaluation, serving Noura, the public visitor assistant, and an internal staff assistant, in Arabic and English. Before Globant, I designed, shipped and ran multi-agent LLM systems in production, with retrieval, self-hosted model serving, and the evaluation and monitoring that keep them honest.",
+      "أعمل قائدًا لفريق ذكاء اصطناعي في Globant، وأقيم في القاهرة. أقود فريقًا من 7 أعضاء وهندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA): بيئة تشغيل على LangGraph لوكيل ذكي قائم على النماذج اللغوية، تجمع الاسترجاع ونقاط الموافقة البشرية والتقييم، وتخدم «نورة»، المساعد الافتراضي للزوار، ومساعدًا داخليًا للموظفين، بالعربية والإنجليزية. وقبل Globant صمّمت أنظمة LLM متعددة الوكلاء وأطلقتها وشغّلتها في بيئة الإنتاج، مع الاسترجاع وخدمة النماذج ذاتية الاستضافة والتقييم والمراقبة اللذين يضمنان موثوقية إجاباتها.",
+      "mohamed",
       "github",
       "linkedin",
-      "mohamed",
     ),
     fact(
-      "I came to AI through data. I started in 2020 writing SQL for a payments company, moved into data science, then built AI platforms in production. Before Globant I architected a 14-agent assistant for ArabsStock and, at Wakeb Data, a 6-agent bilingual chatbot whose Qwen models I served with vLLM on A100 GPUs.",
-      "دخلت مجال الذكاء الاصطناعي من باب البيانات: بدأت عام 2020 بكتابة SQL لشركة مدفوعات رقمية، ثم انتقلت إلى علم البيانات، ثم إلى بناء منصات ذكاء اصطناعي تعمل في بيئة الإنتاج. قبل انضمامي إلى Globant صمّمت مساعدًا من 14 وكيلًا لمنصة ArabsStock، وفي Wakeb Data بنيت روبوت محادثة ثنائي اللغة من 6 وكلاء، وتولّيت خدمة نماذج Qwen الخاصة به عبر vLLM على وحدات A100.",
+      "I came to AI through data: I started in 2020 writing SQL for a payments company, moved into data science, then built AI platforms in production. At ArabsStock I architected a 14-agent assistant, and at Wakeb Data a 6-agent bilingual chatbot whose Qwen models I served with vLLM on A100 GPUs.",
+      "دخلت مجال الذكاء الاصطناعي من باب البيانات: بدأت عام 2020 بكتابة SQL لشركة مدفوعات رقمية، ثم انتقلت إلى علم البيانات، ثم إلى بناء منصات ذكاء اصطناعي تعمل في بيئة الإنتاج. صمّمت في ArabsStock مساعدًا من 14 وكيلًا، وبنيت في Wakeb Data روبوت محادثة ثنائي اللغة من 6 وكلاء، وتولّيت تشغيل نماذج Qwen الخاصة به عبر vLLM على وحدات A100.",
       "github",
       "cv",
       "linkedin",
     ),
+    // The AWS certification is listed under Certifications only (round 6, HM-10).
     fact(
-      "Most of what I ship works in Arabic and English. I work remotely with teams in the Gulf and the US. I earned the AWS Certified Machine Learning – Specialty in 2022 and I'm completing an M.Sc. in Data Science at Cairo University (expected 2027).",
-      "معظم ما أطلقه يعمل بالعربية والإنجليزية. أعمل عن بُعد مع فرق في الخليج والولايات المتحدة. حصلت على شهادة AWS Certified Machine Learning – Specialty عام 2022، وأستكمل حاليًا ماجستير علم البيانات في جامعة القاهرة (التخرج المتوقع عام 2027).",
+      "Most of what I ship works in Arabic and English. I work remotely with teams in the Gulf and the US, and I'm completing an M.Sc. in Data Science at Cairo University (expected 2027).",
+      "معظم ما أطلقه يعمل بالعربية والإنجليزية. أعمل عن بُعد مع فرق في الخليج والولايات المتحدة، وأستكمل حاليًا ماجستير علم البيانات في جامعة القاهرة (التخرج المتوقع عام 2027).",
       "github",
       "cv",
       "mohamed",
@@ -847,13 +869,8 @@ const basics: Basics = {
     },
   ],
   openTo: {
-    roles: [
-      l("AI/ML Team Lead", "قائد فريق ذكاء اصطناعي / تعلّم آلة"),
-      l("Senior AI Engineer", "مهندس أول للذكاء الاصطناعي"),
-      l("MLOps Engineer", "مهندس MLOps"),
-      l("AI Agents / LLM Engineer", "مهندس وكلاء ذكاء اصطناعي / LLM"),
-      l("ML Engineer", "مهندس تعلّم آلة"),
-    ],
+    // Round 6 (HM-13): one list everywhere (site, CV, llms.txt): the CV's `cv.openTo` reuses these roles.
+    roles: OPEN_TO_ROLES,
     arrangements: [
       { id: "remote", label: l("Remote, from Cairo", "عن بُعد من القاهرة") },
       {
@@ -862,11 +879,11 @@ const basics: Basics = {
         detail: l("Saudi Arabia, UAE, Qatar and nearby", "السعودية والإمارات وقطر والدول المجاورة"),
       },
       { id: "relocate-europe", label: l("Relocation to Europe", "الانتقال إلى أوروبا") },
-      { id: "cairo-onsite", label: l("Hybrid or on-site in Cairo", "هجين أو حضوري في القاهرة") },
+      { id: "cairo-onsite", label: l("Hybrid in Cairo", "عمل هجين في القاهرة") },
     ],
     line: l(
-      "Open to AI/ML Team Lead, Senior AI Engineer, MLOps, AI Agents / LLM Engineer and ML Engineer roles: remote, hybrid or on-site in Cairo, or relocating to the Gulf or Europe.",
-      "منفتح على أدوار قائد فريق ذكاء اصطناعي أو تعلّم آلة، ومهندس أول للذكاء الاصطناعي، ومهندس MLOps، ومهندس وكلاء ذكاء اصطناعي أو LLM، ومهندس تعلّم آلة: عن بُعد، أو بنظام هجين أو حضوري في القاهرة، أو بالانتقال إلى الخليج أو أوروبا.",
+      "Open to AI/ML Team Lead or Senior AI / LLM Engineer roles: remote, relocation to the Gulf or Europe, or hybrid in Cairo.",
+      "أرحّب بأدوار قائد فريق ذكاء اصطناعي / تعلّم آلة أو مهندس ذكاء اصطناعي أول (LLM): عن بُعد، أو بالانتقال إلى الخليج أو أوروبا، أو بنظام هجين في القاهرة.",
     ),
     source: ["mohamed", "linkedin"],
   },
@@ -885,10 +902,28 @@ const metrics: readonly Metric[] = [
     evidence: ["role:mdp", "role:globant"],
     source: ["github"],
   },
+  // Round 6 (HM-05, HM-31): the Saudi Tourism Authority on the strip, with its one approved figure (it replaces the
+  // A100 tile, which named hardware, not a result). Each agent count names its company, so nothing next to this
+  // tile reads as the STA work.
+  {
+    id: "sta-tools",
+    value: same("96"),
+    label: l(
+      "tools behind one agent for the Saudi Tourism Authority, 27 for visitors",
+      "أداة خلف وكيل واحد للهيئة السعودية للسياحة، منها 27 للزوار",
+    ),
+    detail: l(
+      "Noura, the visitor assistant, and a staff assistant run on one LangGraph agent; 27 of its 96 tools are visible to visitors.",
+      "يعمل مساعدا الهيئة، «نورة» للزوار ومساعد الموظفين، على وكيل LangGraph واحد، و27 من أدواته الـ96 متاحة للزوار.",
+    ),
+    featured: true,
+    evidence: ["case:sta-tourism-assistants", "role:globant"],
+    source: ["mohamed"],
+  },
   {
     id: "arabsstock-agents",
     value: same("14"),
-    label: l("agents in one LangGraph assistant", "وكيلًا في مساعد واحد على LangGraph"),
+    label: l("agents in ArabsStock's LangGraph assistant", "وكيلًا في مساعد ArabsStock على LangGraph"),
     detail: l(
       "The ArabsStock Assistant: semantic search, AI image generation, database operations and content moderation.",
       "مساعد ArabsStock: بحث دلالي، وتوليد صور بالذكاء الاصطناعي، وعمليات قواعد بيانات، وإشراف على المحتوى.",
@@ -900,10 +935,10 @@ const metrics: readonly Metric[] = [
   {
     id: "wakeb-agents",
     value: same("6"),
-    label: l("agents in a bilingual production chatbot", "وكلاء في روبوت محادثة ثنائي اللغة في بيئة الإنتاج"),
+    label: l("agents in Wakeb Data's bilingual production chatbot", "وكلاء في روبوت محادثة ثنائي اللغة لدى Wakeb Data، في بيئة الإنتاج"),
     detail: l(
       "Fully async, Arabic and English, on Qwen served with vLLM on A100 GPUs.",
-      "غير متزامن بالكامل، بالعربية والإنجليزية، ويعمل على Qwen الذي يخدمه vLLM على وحدات A100.",
+      "بمعالجة غير متزامنة بالكامل، بالعربية والإنجليزية، على Qwen المستضاف عبر vLLM على وحدات A100.",
     ),
     featured: true,
     evidence: ["case:wakeb-bilingual-chatbot", "role:wakeb"],
@@ -912,7 +947,7 @@ const metrics: readonly Metric[] = [
   {
     id: "assets-indexed",
     value: l("Millions", "ملايين"),
-    label: l("of stock assets made searchable", "من الأصول الرقمية صارت قابلة للبحث"),
+    label: l("of ArabsStock media files made searchable", "من ملفات الوسائط في ArabsStock مفهرسة للبحث الذكي"),
     detail: l(
       "Semantic search (OpenAI embeddings + Pinecone) and visual-similarity search over ArabsStock's photos, videos and vector graphics.",
       "بحث دلالي (تضمينات OpenAI مع Pinecone) وبحث بالتشابه البصري في صور ArabsStock ومقاطع الفيديو والرسومات المتجهة.",
@@ -924,7 +959,7 @@ const metrics: readonly Metric[] = [
   {
     id: "gpu-serving",
     value: same("A100"),
-    label: l("GPUs serving Qwen through vLLM", "وحدات GPU تخدم Qwen عبر vLLM"),
+    label: l("GPUs serving Qwen through vLLM", "وحدات GPU تشغّل Qwen عبر vLLM"),
     detail: l(
       "Serving configuration, GPU allocation, model versions, health checks and automated restarts across multiple production GPU servers.",
       "إعدادات الخدمة، وتخصيص وحدات GPU، وإصدارات النماذج، وفحوص الحالة، وإعادة التشغيل التلقائي على عدة خوادم GPU في بيئة الإنتاج.",
@@ -939,7 +974,7 @@ const metrics: readonly Metric[] = [
     label: l("real-estate developers' data unified", "من المطوّرين العقاريين توحّدت بياناتهم"),
     detail: l(
       "Each with its own schema, merged to scale Empoweromics' real-time e-map.",
-      "لكلٍّ منهم مخطط بيانات مختلف، ودُمجت بياناتهم جميعًا لدعم توسّع الخريطة الإلكترونية الفورية في Empoweromics.",
+      "لكلٍّ منهم مخطط بيانات مختلف، ودُمجت بياناتهم جميعًا لدعم توسّع الخريطة الإلكترونية المحدثة لحظيًا في Empoweromics.",
     ),
     featured: false,
     evidence: ["case:empoweromics-ml", "role:empoweromics"],
@@ -965,14 +1000,14 @@ const experience: readonly Role[] = [
     company: same("Globant"),
     companyUrl: "https://www.globant.com",
     logo: { file: "globant", monogram: "G" },
-    title: l("AI Team Lead", "قائد فريق الذكاء الاصطناعي"),
+    title: l("AI Team Lead", "قائد فريق ذكاء اصطناعي"),
     employmentType: "full-time",
     period: { start: "2026-04", end: null },
     location: l("Remote, from Cairo", "عن بُعد من القاهرة"),
     workMode: "remote",
     summary: l(
-      "Leading AI engineering on the Saudi Tourism Authority (STA) project.",
-      "قيادة هندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA).",
+      "Leading a team of 7 and the AI engineering on the Saudi Tourism Authority (STA) project.",
+      "قيادة فريق من 7 أعضاء وهندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA).",
     ),
     bullets: [
       // Confirmed by Mohamed (2026-10-10) from the project documents: one agentic LangGraph runtime (not multi-agent)
@@ -981,7 +1016,15 @@ const experience: readonly Role[] = [
       factB(
         ["Saudi Tourism Authority (STA) project", "مشروع الهيئة السعودية للسياحة (STA)"],
         "Leading AI engineering on the Saudi Tourism Authority (STA) project: an agentic LLM runtime (LangGraph) with retrieval, human-approval gates and evaluation, serving Noura, the public visitor assistant, and an internal staff assistant, in Arabic and English.",
-        "قيادة هندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA): بيئة تشغيل وكيلية للنماذج اللغوية (LangGraph) تجمع الاسترجاع وبوابات الموافقة البشرية والتقييم، وتخدم «نورة»، المساعدة العامة للزوار، ومساعدًا داخليًا للموظفين، بالعربية والإنجليزية.",
+        "قيادة هندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA): بيئة تشغيل على LangGraph لوكيل ذكي قائم على النماذج اللغوية، تجمع الاسترجاع ونقاط الموافقة البشرية والتقييم، وتخدم «نورة»، المساعد الافتراضي للزوار، ومساعدًا داخليًا للموظفين، بالعربية والإنجليزية.",
+        "mohamed",
+      ),
+      // Round 6 (HM-08): the team of 7 is Mohamed's figure (2026-10-11); no team practices, hiring or reports beyond
+      // it. The rest is the CV's approved second bullet (one agent, the tool counts, the approval rule, the UAT).
+      factB(
+        ["team of 7", "فريق من 7 أعضاء"],
+        "Leading a team of 7; the runtime is one LangGraph agent behind 96 tools (27 visible to visitors), with human approval before every action. Noura was accepted in the client's UAT in September 2026.",
+        "قيادة فريق من 7 أعضاء، وتقوم بيئة التشغيل على وكيل LangGraph واحد مزوّد بـ96 أداة، منها 27 متاحة للزوار، مع موافقة بشرية قبل أي إجراء. واعتمد العميل «نورة» في اختبار القبول في سبتمبر 2026.",
         "mohamed",
       ),
     ],
@@ -991,19 +1034,20 @@ const experience: readonly Role[] = [
       factB(
         ["Saudi Tourism Authority (STA) project", "مشروع الهيئة السعودية للسياحة (STA)"],
         "Leading AI engineering on the Saudi Tourism Authority (STA) project: an agentic LLM runtime with retrieval and evaluation for Noura, the visitor assistant, and a staff assistant, in Arabic and English.",
-        "قيادة هندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA): بيئة تشغيل وكيلية للنماذج اللغوية تجمع الاسترجاع والتقييم، وتخدم «نورة» مساعدة الزوار ومساعدًا للموظفين، بالعربية والإنجليزية.",
+        "قيادة هندسة الذكاء الاصطناعي في مشروع الهيئة السعودية للسياحة (STA): بيئة تشغيل لوكيل ذكي قائم على النماذج اللغوية، تجمع الاسترجاع والتقييم، وتخدم «نورة»، المساعد الافتراضي للزوار، ومساعدًا للموظفين، بالعربية والإنجليزية.",
         "mohamed",
       ),
       // Approved for the CV by Mohamed (2026-10-10), from the STA case study: one agent (never "multi-agent"), the
       // tool counts, the approval rule and the UAT acceptance (never "in production" or "launched").
+      // Round 6 (HM-08): led by the team of 7 (the CV summary bolds it, so this line keeps its own receipt).
       factB(
-        ["One LangGraph agent behind 96 tools", "وكيل واحد على LangGraph مزوّد بـ96 أداة"],
-        "One LangGraph agent behind 96 tools (27 visible to visitors), with human approval before every action; Noura was accepted in the client's UAT in September 2026.",
-        "وكيل واحد على LangGraph مزوّد بـ96 أداة، منها 27 متاحة للزوار، مع موافقة بشرية قبل أي إجراء، واعتماد «نورة» في اختبار القبول لدى العميل في سبتمبر 2026.",
+        ["one LangGraph agent behind 96 tools", "وكيل LangGraph واحد مزوّد بـ96 أداة"],
+        "Leading a team of 7; the runtime is one LangGraph agent behind 96 tools (27 visible to visitors), with human approval before every action. Noura was accepted in the client's UAT in September 2026.",
+        "قيادة فريق من 7 أعضاء، وتقوم بيئة التشغيل على وكيل LangGraph واحد مزوّد بـ96 أداة، منها 27 متاحة للزوار، مع موافقة بشرية قبل أي إجراء. واعتمد العميل «نورة» في اختبار القبول في سبتمبر 2026.",
         "mohamed",
       ),
     ],
-    tech: ["LangGraph", l("Agentic LLM runtime", "بيئة تشغيل وكيلية للنماذج اللغوية"), l("Retrieval", "الاسترجاع"), l("Human-approval gates", "بوابات الموافقة البشرية"), l("Evaluation", "التقييم")],
+    tech: ["LangGraph", l("Agentic LLM runtime", "بيئة تشغيل لوكيل ذكي"), l("Retrieval", "الاسترجاع"), l("Human-approval gates", "نقاط الموافقة البشرية"), l("Evaluation", "التقييم")],
     caseStudies: ["sta-tourism-assistants"],
     honors: [],
     primary: true,
@@ -1013,7 +1057,7 @@ const experience: readonly Role[] = [
     id: "wakeb",
     company: same("Wakeb Data"),
     logo: { file: "wakeb", monogram: "W" },
-    title: l("Senior AI & MLOps Engineer", "مهندس أول للذكاء الاصطناعي وMLOps"),
+    title: l("Senior AI & MLOps Engineer", "مهندس ذكاء اصطناعي وMLOps أول"),
     employmentType: "full-time",
     period: { start: "2024-09", end: "2026-04" },
     location: l("Giza, Egypt", "الجيزة، مصر"),
@@ -1026,7 +1070,7 @@ const experience: readonly Role[] = [
       factB(
         ["6-agent bilingual (Arabic/English) chatbot", "روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء"],
         "Architected and deployed a 6-agent bilingual (Arabic/English) chatbot in LangGraph: fully async, built from modular subgraphs, with agents routed by LangGraph's Command instead of fixed edges.",
-        "تصميم روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء على LangGraph ونشره: غير متزامن بالكامل، ومبني من مخططات فرعية معيارية، ويتنقّل بين وكلائه عبر Command بدلًا من الحواف الثابتة.",
+        "تصميم روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء على LangGraph ونشره، بمعالجة غير متزامنة بالكامل ومخططات فرعية معيارية، مع توجيه بين وكلائه عبر Command بدلًا من الحواف الثابتة.",
         "cv",
         "linkedin",
         "github",
@@ -1090,7 +1134,7 @@ const experience: readonly Role[] = [
       factB(
         ["6-agent bilingual (Arabic/English) LangGraph chatbot", "روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء"],
         "Architected and deployed a fully async 6-agent bilingual (Arabic/English) LangGraph chatbot on Qwen, served with vLLM on NVIDIA A100 GPUs.",
-        "تصميم روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء على LangGraph ونشره، غير متزامن بالكامل، على Qwen الذي يخدمه vLLM على وحدات NVIDIA A100.",
+        "تصميم روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء على LangGraph ونشره، بمعالجة غير متزامنة بالكامل، على Qwen المستضاف عبر vLLM على وحدات NVIDIA A100.",
         "cv", "linkedin", "github",
       ),
       factB(
@@ -1105,11 +1149,13 @@ const experience: readonly Role[] = [
         "بناء بحث هجين لخطوط RAG (متجهي مع BM25 وإعادة ترتيب بنموذج لغوي)، مع تخزين مؤقت للعُقد وBrave Search عبر MCP، ونشره كخدمات FastAPI في Docker خلف Nginx.",
         "cv", "linkedin", "github",
       ),
+      // Round 6 (HM-03): the government assistant stays off the CV, which names this role's client (GADD) right above
+      // the bullets: the two must never sit in the same block. The site keeps it as a brief case study.
       factB(
         ["AIP semantic search v2", "الإصدار الثاني من البحث الدلالي لمشروع AIP"],
-        "Designed AIP semantic search v2, built a bilingual enterprise assistant for a Saudi government client with LLM evaluation, and moved key APIs from REST to gRPC.",
-        "تصميم الإصدار الثاني من البحث الدلالي لمشروع AIP، وبناء مساعد مؤسسي ثنائي اللغة لجهة حكومية سعودية مع تقييم للنماذج اللغوية، ونقل واجهات أساسية من REST إلى gRPC.",
-        "cv", "linkedin", "mohamed",
+        "Designed AIP semantic search v2 (accuracy, speed, image search), built the Wakeb Papers Research Agent with agent memory, and moved key APIs from REST to gRPC.",
+        "تصميم الإصدار الثاني من البحث الدلالي لمشروع AIP (الدقة والسرعة والبحث بالصور)، وتطوير Wakeb Papers Research Agent بذاكرة للوكيل، ونقل واجهات أساسية من REST إلى gRPC.",
+        "cv", "linkedin", "github",
       ),
     ],
     tech: [
@@ -1131,8 +1177,8 @@ const experience: readonly Role[] = [
     caseStudies: ["wakeb-bilingual-chatbot", "aip-semantic-search", "gov-bilingual-assistant"],
     honors: [],
     primary: true,
-    // Named by Mohamed (2026-10-10) for the CV, at the role level only. It is not attached to any project or bullet;
-    // the bilingual government assistant's client stays unnamed ("a Saudi government client").
+    // Named by Mohamed (2026-10-10) for the CV, at the role level only. It is not attached to any project or bullet,
+    // and the bilingual government assistant (whose client stays unnamed) is not in this role's CV block at all.
     client: {
       name: l("Saudi Ministry of Defense (GADD)", "وزارة الدفاع السعودية (GADD)"),
       source: ["mohamed"],
@@ -1299,7 +1345,7 @@ const experience: readonly Role[] = [
       factB(
         ["3,008+ real-estate developers", "أكثر من 3,008 من المطوّرين العقاريين"],
         "Designed a data integration system that merged data from 3,008+ real-estate developers, each with its own schema, to scale the company's real-time e-map.",
-        "تصميم نظام لتكامل البيانات يدمج بيانات أكثر من 3,008 من المطوّرين العقاريين، لكلٍّ منهم مخطط بيانات مختلف، لدعم توسّع الخريطة الإلكترونية الفورية للشركة.",
+        "تصميم نظام لتكامل البيانات يدمج بيانات أكثر من 3,008 من المطوّرين العقاريين، لكلٍّ منهم مخطط بيانات مختلف، لدعم توسّع الخريطة الإلكترونية المحدثة لحظيًا للشركة.",
         "linkedin",
         "github",
       ),
@@ -1328,12 +1374,6 @@ const experience: readonly Role[] = [
         "github",
       ),
       fact(
-        "Trained a deep-learning model in PyTorch that infers gender from Arabic names, to sharpen client targeting and campaign personalisation.",
-        "تدريب نموذج تعلّم عميق بـPyTorch يستنتج الجنس من الأسماء العربية، لتحسين استهداف العملاء وتخصيص الحملات.",
-        "cv",
-        "linkedin",
-      ),
-      fact(
         "Designed ETL from Cosmos DB (NoSQL) to Microsoft SQL Server, scheduled with Azure Functions.",
         "تصميم عمليات ETL لنقل البيانات من Cosmos DB (NoSQL) إلى Microsoft SQL Server، مجدولة عبر Azure Functions.",
         "cv",
@@ -1346,7 +1386,7 @@ const experience: readonly Role[] = [
         ["3,008+ real-estate developers", "أكثر من 3,008 من المطوّرين العقاريين"],
         "Unified data from 3,008+ real-estate developers, each with its own schema, to scale the company's real-time e-map.",
         // "لكل" without shadda and tanween here: the PDF's text layer copied the marks as U+0000 (audit cvpdf-13).
-        "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، لكل منهم مخطط بيانات مختلف، لدعم توسّع الخريطة الإلكترونية الفورية للشركة.",
+        "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، لكل منهم مخطط بيانات مختلف، لدعم توسّع الخريطة الإلكترونية المحدثة لحظيًا للشركة.",
         "linkedin", "github",
       ),
       factB(
@@ -1355,9 +1395,10 @@ const experience: readonly Role[] = [
         "بناء نماذج لمراحل دورة حياة العميل (7 مراحل) لترتيب أولويات الوسطاء، وتصنيف لرسائل WhatsApp نصًا وصورة يوجّهها إلى القسم المختص.",
         "cv", "linkedin",
       ),
+      // Round 6 (HM-25): the name-to-gender model is no longer listed (a sensitive-attribute inference).
       fact(
-        "Built Smart Search (fuzzy lookup over misspelled or partial Arabic/English names) and a PyTorch model inferring gender from Arabic names.",
-        "بناء Smart Search (بحث تقريبي يتحمّل الأخطاء الإملائية والأسماء الناقصة بالعربية والإنجليزية)، ونموذج PyTorch يستنتج الجنس من الأسماء العربية.",
+        "Built Smart Search: fuzzy lookup over misspelled or partial Arabic/English names.",
+        "بناء Smart Search: بحث تقريبي يتحمّل الأخطاء الإملائية والأسماء الناقصة بالعربية والإنجليزية.",
         "cv", "linkedin",
       ),
       fact(
@@ -1562,22 +1603,22 @@ const caseStudies: readonly CaseStudy[] = [
     shortTitle: l("STA: Noura and the staff assistant", "هيئة السياحة: نورة ومساعد الموظفين"),
     context: l("Globant, for the Saudi Tourism Authority (STA)", "Globant، لصالح الهيئة السعودية للسياحة"),
     roleId: "globant",
-    contribution: l("Led the AI engineering (AI Team Lead)", "قيادة هندسة الذكاء الاصطناعي (قائد فريق الذكاء الاصطناعي)"),
+    contribution: l("Led the AI engineering (AI Team Lead)", "قيادة هندسة الذكاء الاصطناعي (قائد فريق ذكاء اصطناعي)"),
     period: { start: "2026-04", end: null },
     published: "2026-10-10",
-    updated: "2026-10-10",
+    updated: "2026-10-11",
     summary: l(
       "Led the AI engineering for two Saudi Tourism Authority assistants on one LangGraph agent: Noura for visitors and a staff assistant, in Arabic and English.",
       "قيادة هندسة الذكاء الاصطناعي لمساعدَين للهيئة السعودية للسياحة على وكيل LangGraph واحد: «نورة» للزوار ومساعد للموظفين، بالعربية والإنجليزية.",
     ),
     problem: l(
       "The Saudi Tourism Authority wanted two assistants: Noura, a public travel assistant for visitors, and an internal assistant for its staff. Both had to answer from the authority's own content, in Arabic and English, and a visitor could never reach staff tools or data.",
-      "أرادت الهيئة السعودية للسياحة مساعدَين: «نورة»، مساعدة سفر عامة للزوار، ومساعدًا داخليًا لموظفيها. وكان على كليهما أن يجيب من محتوى الهيئة نفسها بالعربية والإنجليزية، دون أن يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم.",
+      "أرادت الهيئة السعودية للسياحة مساعدَين: «نورة»، المساعدَ الافتراضي للزوار، ومساعدًا داخليًا لموظفيها. وكان على كليهما أن يجيب من محتوى الهيئة نفسها بالعربية والإنجليزية، دون أن يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم.",
     ),
     approach: [
       fact(
         "One agent, two audiences: a single LangGraph agent serves both assistants, and an audience gate decides which tools and knowledge each session can use, so a visitor never reaches staff tools or data.",
-        "وكيل واحد لجمهورين: وكيل LangGraph واحد يخدم المساعدَين، وبوابة للجمهور تحدّد الأدوات والمعرفة المتاحة لكل جلسة، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم.",
+        "وكيل واحد لجمهورين: وكيل LangGraph واحد يخدم المساعدَين، وطبقة صلاحيات تحدّد الأدوات والمعرفة المتاحة لكل جلسة حسب نوع المستخدم، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم.",
         "mohamed",
       ),
       fact(
@@ -1609,16 +1650,16 @@ const caseStudies: readonly CaseStudy[] = [
     architecture: {
       caption: l(
         "Capability view: one LangGraph agent serves visitors and staff; an audience gate decides what each session may use, answers come from the authority's own content with their sources, and every action waits for a person's approval.",
-        "عرض للقدرات: وكيل LangGraph واحد يخدم الزوار والموظفين، وبوابة الجمهور تحدّد ما يتاح لكل جلسة، والإجابات تأتي من محتوى الهيئة مع مصادرها، وكل إجراء ينتظر موافقة بشرية.",
+        "عرض للقدرات: وكيل LangGraph واحد يخدم الزوار والموظفين، وطبقة الصلاحيات تحدّد ما يتاح لكل جلسة، والإجابات تأتي من محتوى الهيئة مع مصادرها، وكل إجراء ينتظر موافقة بشرية.",
       ),
       nodes: [
         { id: "visitors", label: l("Visitors (Noura)", "الزوار (نورة)"), kind: "user" },
         { id: "staff", label: l("Staff (staff assistant)", "الموظفون (مساعد الموظفين)"), kind: "user" },
         {
           id: "gate",
-          label: l("Audience gate", "بوابة الجمهور"),
+          label: l("Audience gate", "طبقة الصلاحيات"),
           kind: "quality",
-          note: l("Tools and knowledge per audience", "الأدوات والمعرفة لكل جمهور"),
+          note: l("Tools and knowledge per audience", "الأدوات والمعرفة حسب نوع المستخدم"),
         },
         {
           id: "agent",
@@ -1653,7 +1694,7 @@ const caseStudies: readonly CaseStudy[] = [
     outcome: [
       fact(
         "One agent serves both Noura and the staff assistant, kept apart by the audience gate.",
-        "وكيل واحد يخدم «نورة» ومساعد الموظفين، وتفصل بينهما بوابة الجمهور.",
+        "وكيل واحد يخدم «نورة» ومساعد الموظفين، وتفصل بينهما طبقة الصلاحيات.",
         "mohamed",
       ),
       fact(
@@ -1667,10 +1708,12 @@ const caseStudies: readonly CaseStudy[] = [
         "mohamed",
       ),
     ],
+    // Round 6 (HM-20): the tool count leads (a lone "1" read as small beside the other cards' 14 and 6), and the one
+    // outcome, Noura's UAT acceptance, joins the strip. Same approved facts, nothing new.
     figures: [
-      { value: same("1"), unit: l("agent", "وكيل"), label: l("serving both assistants", "يخدم المساعدَين"), source: ["mohamed"] },
-      { value: same("96"), unit: l("tools", "أداة"), label: l("typed, all called by that one agent", "منظّمة يستدعيها هذا الوكيل وحده"), source: ["mohamed"] },
+      { value: same("96"), unit: l("tools", "أداة"), label: l("typed, behind one LangGraph agent", "منظّمة خلف وكيل LangGraph واحد"), source: ["mohamed"] },
       { value: same("27"), label: l("of them visible to visitors", "منها متاحة للزوار"), source: ["mohamed"] },
+      { value: l("Sep 2026", "سبتمبر 2026"), label: l("Noura accepted in the client's UAT", "اعتماد «نورة» في اختبار القبول لدى العميل"), source: ["mohamed"] },
     ],
     stack: ["LangGraph", "Python", "FastAPI", "RAG", "LLM evaluation", "React", "TypeScript"],
     links: [],
@@ -1753,7 +1796,7 @@ const caseStudies: readonly CaseStudy[] = [
     depth: "full",
     title: l(
       "ArabsStock Assistant: 14 agents and AI search over millions of assets",
-      "مساعد من 14 وكيلًا وبحث ذكي في ملايين الأصول لمنصة ArabsStock",
+      "مساعد من 14 وكيلًا وبحث ذكي في ملايين ملفات الوسائط لمنصة ArabsStock",
     ),
     shortTitle: l("ArabsStock Assistant: 14 agents", "مساعد ArabsStock من 14 وكيلًا"),
     context: l("ArabsStock, an Arab stock-media platform", "ArabsStock، منصة عربية للصور ومقاطع الفيديو المرخّصة"),
@@ -1761,31 +1804,33 @@ const caseStudies: readonly CaseStudy[] = [
     contribution: l("Architecture and build (AI Engineer)", "التصميم المعماري والبناء (مهندس ذكاء اصطناعي)"),
     period: { start: "2023-04", end: "2024-12" },
     published: "2026-10-10",
-    updated: "2026-10-10",
+    updated: "2026-10-11",
     summary: l(
       "Architected a 14-agent LangGraph assistant for ArabsStock and the semantic and visual search over millions of its photos, videos and vector graphics.",
       "تصميم مساعد من 14 وكيلًا على LangGraph لمنصة ArabsStock، وبحث دلالي وبصري في ملايين الصور ومقاطع الفيديو والرسومات المتجهة.",
     ),
     problem: l(
       "ArabsStock is an Arab library of millions of royalty-free photos, videos and vector graphics. The platform needed one assistant for very different jobs (finding assets, generating images, running database operations, moderating content) and search that finds assets by meaning and by visual similarity.",
-      "ArabsStock مكتبة عربية تضم ملايين الصور ومقاطع الفيديو والرسومات المتجهة. احتاجت المنصة إلى مساعد واحد يؤدي مهام مختلفة تمامًا (العثور على الأصول، وتوليد الصور، وتنفيذ عمليات قواعد البيانات، والإشراف على المحتوى)، وإلى بحث يجد الأصول بمعناها وبتشابهها البصري.",
+      "ArabsStock مكتبة عربية تضم ملايين الصور ومقاطع الفيديو والرسومات المتجهة. احتاجت المنصة إلى مساعد واحد يؤدي مهام مختلفة تمامًا (العثور على المحتوى، وتوليد الصور، وتنفيذ عمليات قواعد البيانات، والإشراف على المحتوى)، وإلى بحث يجد المحتوى بمعناه وبتشابهه البصري.",
     ),
     approach: [
+      // Round 6 (HM-15): the "why", from the problem as the sources state it (very different jobs) and the routing the
+      // diagram shows. No reason beyond the sources.
       fact(
-        "Split the work across 14 specialised agents orchestrated with LangGraph: semantic search, AI image generation, database operations, content moderation and other platform AI services.",
-        "توزيع العمل على 14 وكيلًا متخصصًا ينسّقها LangGraph: البحث الدلالي، وتوليد الصور، وعمليات قواعد البيانات، والإشراف على المحتوى، وخدمات ذكاء اصطناعي أخرى على المنصة.",
+        "Why 14 agents: the jobs were very different (semantic search, AI image generation, database operations, content moderation and other platform AI services), so each got a specialised agent, and one LangGraph orchestrator routes every request.",
+        "لماذا 14 وكيلًا: كانت المهام مختلفة تمامًا (البحث الدلالي، وتوليد الصور، وعمليات قواعد البيانات، والإشراف على المحتوى، وخدمات ذكاء اصطناعي أخرى على المنصة)، فخُصّص لكل منها وكيل متخصص، ومنسّق LangGraph واحد يوجّه كل طلب إلى وكيله.",
         "cv",
         "linkedin",
       ),
       fact(
         "Built the semantic search pipeline: OpenAI embeddings into a Pinecone index, filled by automated batch ingestion across millions of assets.",
-        "بناء خط البحث الدلالي: تضمينات OpenAI تُخزَّن في فهرس Pinecone، يغذّيه إدخال آلي على دفعات لملايين الأصول.",
+        "بناء خط البحث الدلالي: تضمينات OpenAI تُخزَّن في فهرس Pinecone، يغذّيه إدخال آلي على دفعات لملايين ملفات الوسائط.",
         "cv",
         "linkedin",
       ),
       fact(
         "Added visual-similarity search, so users can find visually similar assets across the library.",
-        "إضافة بحث بالتشابه البصري يتيح للمستخدم العثور على أصول متشابهة بصريًا في المكتبة كلها.",
+        "إضافة بحث بالتشابه البصري يتيح للمستخدم العثور على محتوى متشابه بصريًا في المكتبة كلها.",
         "linkedin",
         "cv",
       ),
@@ -1876,7 +1921,8 @@ const caseStudies: readonly CaseStudy[] = [
       // The role's own dates, counted inclusively like LinkedIn ("1 yr 9 mos").
       { value: same("21"), unit: l("months", "شهرًا"), label: l("Apr 2023 – Dec 2024, full-time and remote", "أبريل 2023 – ديسمبر 2024، بدوام كامل وعن بُعد"), source: ["linkedin", "cv"] },
     ],
-    stack: ["LangGraph", "OpenAI API", "Pinecone", "Python", "FastAPI", "PostgreSQL", "Docker", "vLLM", "NVIDIA A100"],
+    // vLLM and NVIDIA A100 stay in the role's LinkedIn tags but not here: this page has no story for them (HM-32).
+    stack: ["LangGraph", "OpenAI API", "Pinecone", "Python", "FastAPI", "PostgreSQL", "Docker"],
     links: [],
     source: ["cv", "linkedin", "github"],
   },
@@ -1894,14 +1940,14 @@ const caseStudies: readonly CaseStudy[] = [
     roleId: "wakeb",
     contribution: l(
       "Architecture, build and model serving (Senior AI & MLOps Engineer)",
-      "التصميم المعماري والبناء وخدمة النماذج (مهندس أول للذكاء الاصطناعي وMLOps)",
+      "التصميم المعماري والبناء وخدمة النماذج (مهندس ذكاء اصطناعي وMLOps أول)",
     ),
     period: { start: "2024-09", end: "2026-04" },
     published: "2026-10-10",
-    updated: "2026-10-10",
+    updated: "2026-10-11",
     summary: l(
       "Architected a fully async 6-agent LangGraph chatbot in Arabic and English, and ran its Qwen models on vLLM across production A100 servers.",
-      "تصميم روبوت محادثة غير متزامن من 6 وكلاء على LangGraph بالعربية والإنجليزية، وتشغيل نماذج Qwen عبر vLLM على خوادم A100 في بيئة الإنتاج.",
+      "تصميم روبوت محادثة من 6 وكلاء على LangGraph بالعربية والإنجليزية بمعالجة غير متزامنة، وتشغيل نماذج Qwen عبر vLLM على خوادم A100 في بيئة الإنتاج.",
     ),
     problem: l(
       "The chatbot had to answer in Arabic and English, run on self-hosted models on A100 GPU servers, ground its answers in documents and live web results, and guide users through multi-turn service configuration. In production, the model servers had to recover on their own when something failed.",
@@ -1910,7 +1956,7 @@ const caseStudies: readonly CaseStudy[] = [
     approach: [
       fact(
         "Six specialised LangGraph agents built from modular subgraphs. LangGraph's Command routes between them instead of fixed edges, and the whole graph is async.",
-        "ستة وكلاء متخصصين على LangGraph، مبنيّون من مخططات فرعية معيارية، مع توجيه ديناميكي بينهم عبر Command من دون حواف ثابتة، والمخطط كله غير متزامن.",
+        "ستة وكلاء متخصصين على LangGraph، مبنيّون من مخططات فرعية معيارية، مع توجيه ديناميكي بينهم عبر Command من دون حواف ثابتة، ومعالجة غير متزامنة في المخطط كله.",
         "cv",
         "linkedin",
       ),
@@ -1942,7 +1988,7 @@ const caseStudies: readonly CaseStudy[] = [
     architecture: {
       caption: l(
         "Component view: async LangGraph agents call self-hosted Qwen on vLLM, retrieve through hybrid search with LLM reranking, and reach the web through MCP; FastAPI services sit behind Nginx.",
-        "عرض للمكوّنات: وكلاء LangGraph غير متزامنين يستدعون Qwen ذاتي الاستضافة على vLLM، ويسترجعون عبر بحث هجين مع إعادة ترتيب بنموذج لغوي، ويصلون إلى الويب عبر MCP، فيما تعمل خدمات FastAPI خلف Nginx.",
+        "عرض للمكوّنات: وكلاء LangGraph يعملون بمعالجة غير متزامنة ويستدعون Qwen ذاتي الاستضافة على vLLM، ويسترجعون عبر بحث هجين مع إعادة ترتيب بنموذج لغوي، ويصلون إلى الويب عبر MCP، فيما تعمل خدمات FastAPI خلف Nginx.",
       ),
       nodes: [
         { id: "users", label: l("Users (Arabic / English)", "المستخدمون (عربي / إنجليزي)"), kind: "user" },
@@ -1952,14 +1998,14 @@ const caseStudies: readonly CaseStudy[] = [
           id: "graph",
           label: l("LangGraph orchestration", "تنسيق LangGraph"),
           kind: "orchestrator",
-          note: l("Command-based routing, async", "توجيه عبر Command، غير متزامن"),
+          note: l("Command-based routing, async", "توجيه عبر Command، ومعالجة غير متزامنة"),
         },
         { id: "agents", label: l("6 specialised agents", "6 وكلاء متخصصين"), kind: "agent", note: l("Modular subgraphs", "مخططات فرعية معيارية") },
         { id: "cache", label: l("SQLite node cache", "تخزين مؤقت للعُقد (SQLite)"), kind: "data" },
         { id: "hybrid", label: l("Hybrid search: vector + BM25", "بحث هجين: متجهي + BM25"), kind: "retrieval" },
         { id: "rerank", label: l("LLM reranker", "إعادة ترتيب بنموذج لغوي"), kind: "retrieval" },
-        { id: "mcp", label: l("Brave Search via MCP", "Brave Search عبر MCP"), kind: "service" },
-        { id: "vllm", label: l("vLLM serving Qwen", "vLLM يخدم Qwen"), kind: "model" },
+        { id: "mcp", label: l("Brave Search via MCP", "البحث في الويب: Brave Search عبر MCP"), kind: "service" },
+        { id: "vllm", label: l("vLLM serving Qwen", "تشغيل Qwen عبر vLLM"), kind: "model" },
         {
           id: "gpus",
           label: l("A100 GPU servers", "خوادم A100"),
@@ -1983,7 +2029,7 @@ const caseStudies: readonly CaseStudy[] = [
     outcome: [
       fact(
         "Deployed to production as a fully async, bilingual Arabic/English system.",
-        "النشر في بيئة الإنتاج نظامًا غير متزامن بالكامل وثنائي اللغة (عربي/إنجليزي).",
+        "النشر في بيئة الإنتاج نظامًا ثنائي اللغة (عربي/إنجليزي) بمعالجة غير متزامنة بالكامل.",
         "cv",
         "linkedin",
       ),
@@ -2001,7 +2047,7 @@ const caseStudies: readonly CaseStudy[] = [
       ),
     ],
     figures: [
-      { value: same("6"), label: l("specialised agents, fully async, in LangGraph", "وكلاء متخصصين على LangGraph، غير متزامن بالكامل"), source: ["cv", "linkedin", "github"] },
+      { value: same("6"), label: l("specialised agents, fully async, in LangGraph", "وكلاء متخصصين على LangGraph، في مخطط غير متزامن بالكامل"), source: ["cv", "linkedin", "github"] },
       { value: same("A100"), label: l("GPU servers running Qwen through vLLM", "خوادم GPU تشغّل Qwen عبر vLLM"), source: ["cv", "linkedin"] },
       { value: same("AR + EN"), label: l("in one bilingual chatbot", "في روبوت محادثة واحد ثنائي اللغة"), source: ["cv", "linkedin"] },
     ],
@@ -2011,20 +2057,20 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "gov-bilingual-assistant",
-    order: 6,
+    order: 5,
     featured: false,
     depth: "brief",
     title: l(
       "A bilingual enterprise assistant with answer-quality monitoring",
       "مساعد مؤسسي ثنائي اللغة مع مراقبة لجودة الإجابات",
     ),
-    shortTitle: l("Bilingual assistant, Saudi government", "مساعد ثنائي اللغة لجهة حكومية سعودية"),
+    shortTitle: l("Bilingual assistant, government client", "مساعد ثنائي اللغة لجهة حكومية"),
     context: l("Wakeb Data, for a Saudi government client (not named)", "Wakeb Data، لجهة حكومية سعودية (غير مسمّاة)"),
     roleId: "wakeb",
     contribution: l("Built the assistant", "بناء المساعد"),
     period: { start: "2024-09", end: "2026-04" },
     published: "2026-10-10",
-    updated: "2026-10-10",
+    updated: "2026-10-11",
     summary: l(
       "Built a bilingual enterprise assistant (Arabic/English) for a Saudi government client, with LLM evaluation and observability on answer quality.",
       "بناء مساعد مؤسسي ثنائي اللغة (عربي/إنجليزي) لجهة حكومية سعودية، مع تقييم للنماذج اللغوية ومراقبة لجودة الإجابات.",
@@ -2094,14 +2140,14 @@ const caseStudies: readonly CaseStudy[] = [
     contribution: l("Data integration and ML models (Data Scientist)", "تكامل البيانات ونماذج تعلّم الآلة (عالم بيانات)"),
     period: { start: "2022-01", end: "2023-03" },
     published: "2026-10-10",
-    updated: "2026-10-10",
+    updated: "2026-10-11",
     summary: l(
       "Unified data from 3,008+ real-estate developers, built lead-prioritisation and WhatsApp-routing models, and shipped typo-tolerant client search.",
       "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، وبناء نماذج لترتيب أولويات العملاء وتوجيه رسائل WhatsApp وبحث يتسامح مع الأخطاء الإملائية.",
     ),
     problem: l(
       "Empoweromics runs a real-time e-map for real estate. Its data came from 3,008+ developers, each with its own schema. Brokers needed to know which leads to chase, inbound WhatsApp messages (text and images) had to reach the right department, and staff had to find clients even when a name was misspelled.",
-      "تدير Empoweromics خريطة إلكترونية فورية للعقارات، وتأتي بياناتها من أكثر من 3,008 من المطوّرين العقاريين لكلٍّ منهم مخطط بيانات مختلف. احتاج الوسطاء إلى معرفة العملاء الأجدر بالمتابعة، واحتاجت رسائل WhatsApp الواردة (نصوصًا وصورًا) إلى الوصول للقسم المختص، واحتاج الفريق إلى إيجاد العملاء حتى مع الأخطاء الإملائية في الأسماء.",
+      "تدير Empoweromics خريطة إلكترونية للعقارات محدثة لحظيًا، وتأتي بياناتها من أكثر من 3,008 من المطوّرين العقاريين لكلٍّ منهم مخطط بيانات مختلف. احتاج الوسطاء إلى معرفة العملاء الأجدر بالمتابعة، واحتاجت رسائل WhatsApp الواردة (نصوصًا وصورًا) إلى الوصول للقسم المختص، واحتاج الفريق إلى إيجاد العملاء حتى مع الأخطاء الإملائية في الأسماء.",
     ),
     approach: [
       fact(
@@ -2129,12 +2175,6 @@ const caseStudies: readonly CaseStudy[] = [
         "linkedin",
       ),
       fact(
-        "A PyTorch model that infers gender from Arabic names, for targeting.",
-        "نموذج PyTorch يستنتج الجنس من الأسماء العربية، لتحسين الاستهداف.",
-        "cv",
-        "linkedin",
-      ),
-      fact(
         "ETL from Cosmos DB to SQL Server, scheduled with Azure Functions.",
         "عمليات ETL من Cosmos DB إلى SQL Server، مجدولة عبر Azure Functions.",
         "cv",
@@ -2143,21 +2183,19 @@ const caseStudies: readonly CaseStudy[] = [
     ],
     architecture: {
       caption: l(
-        "Component view: developer data is unified for the e-map; ETL moves data from Cosmos DB to SQL Server; separate models serve brokers, campaigns, client lookup and message routing.",
-        "عرض للمكوّنات: توحيد بيانات المطوّرين للخريطة الإلكترونية، وETL ينقل البيانات من Cosmos DB إلى SQL Server، ونماذج مستقلة تخدم الوسطاء والحملات والبحث عن العملاء وتوجيه الرسائل.",
+        "Component view: developer data is unified for the e-map; ETL moves data from Cosmos DB to SQL Server; separate models serve brokers, client lookup and message routing.",
+        "عرض للمكوّنات: توحيد بيانات المطوّرين للخريطة الإلكترونية، وETL ينقل البيانات من Cosmos DB إلى SQL Server، ونماذج مستقلة تخدم الوسطاء والبحث عن العملاء وتوجيه الرسائل.",
       ),
       nodes: [
         { id: "developers", label: l("3,008+ developer data sources", "بيانات أكثر من 3,008 من المطوّرين العقاريين"), kind: "data" },
         { id: "integration", label: l("Schema integration", "توحيد المخططات"), kind: "pipeline" },
-        { id: "emap", label: l("Real-time e-map", "الخريطة الإلكترونية الفورية"), kind: "user" },
+        { id: "emap", label: l("Real-time e-map", "الخريطة الإلكترونية المحدثة لحظيًا"), kind: "user" },
         { id: "cosmos", label: same("Cosmos DB"), kind: "data" },
         { id: "etl", label: l("ETL (Azure Functions)", "ETL (Azure Functions)"), kind: "pipeline" },
         { id: "sql", label: same("SQL Server"), kind: "data" },
         { id: "lifecycle", label: l("Lifecycle-stage models", "نماذج مراحل العميل"), kind: "model" },
         { id: "brokers", label: l("Brokers", "الوسطاء"), kind: "user" },
-        { id: "gender", label: l("Name-to-gender model (PyTorch)", "نموذج استنتاج الجنس من الاسم (PyTorch)"), kind: "model" },
-        { id: "campaigns", label: l("Targeting and campaigns", "الاستهداف والحملات"), kind: "user" },
-        { id: "smart-search", label: l("Smart Search (fuzzy)", "Smart Search (تقريبي)"), kind: "retrieval" },
+        { id: "smart-search", label: l("Smart Search (fuzzy)", "بحث تقريبي (Smart Search)"), kind: "retrieval" },
         { id: "clients", label: l("Client records", "سجلات العملاء"), kind: "data" },
         { id: "whatsapp", label: l("WhatsApp inbox", "رسائل WhatsApp"), kind: "user" },
         { id: "classifier", label: l("Text + image classifier", "مصنِّف النصوص والصور"), kind: "model" },
@@ -2169,7 +2207,6 @@ const caseStudies: readonly CaseStudy[] = [
         { from: "cosmos", to: "etl" },
         { from: "etl", to: "sql" },
         { from: "lifecycle", to: "brokers", label: l("lead priority", "أولوية العميل") },
-        { from: "gender", to: "campaigns" },
         { from: "smart-search", to: "clients" },
         { from: "whatsapp", to: "classifier" },
         { from: "classifier", to: "departments" },
@@ -2178,7 +2215,7 @@ const caseStudies: readonly CaseStudy[] = [
     outcome: [
       fact(
         "Data from 3,008+ developers unified so the real-time e-map could scale.",
-        "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين لتتمكن الخريطة الإلكترونية الفورية من التوسع.",
+        "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين لتتمكن الخريطة الإلكترونية المحدثة لحظيًا من التوسع.",
         "linkedin",
         "github",
       ),
@@ -2201,8 +2238,9 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "logic-controls-website",
-    order: 5,
-    featured: true,
+    // Round 6 (HM-14): in "More work", after the AI briefs; the case-study page stays.
+    order: 8,
+    featured: false,
     depth: "full",
     title: l(
       "logic-controls.com: a 4-language site, accessible and tested end to end",
@@ -2303,7 +2341,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "aip-semantic-search",
-    order: 7,
+    order: 6,
     featured: false,
     depth: "brief",
     title: l("AIP semantic search, version 2", "الإصدار الثاني من البحث الدلالي لمشروع AIP"),
@@ -2365,7 +2403,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "tabaqat-gis",
-    order: 8,
+    order: 7,
     featured: false,
     depth: "brief",
     title: l("GIS data pipelines and map serving", "خطوط بيانات GIS وخدمة الخرائط"),
@@ -2483,8 +2521,8 @@ const projects: readonly Project[] = [
     featured: true,
     year: 2026,
     description: l(
-      "Measures how consistently an LLM answers when the same question is paraphrased, misspelled, padded with noise, reordered or given distractors.",
-      "يقيس مدى ثبات إجابة النموذج اللغوي حين يُطرح السؤال نفسه بصياغة أخرى، أو بأخطاء إملائية، أو مع ضوضاء، أو بترتيب مختلف، أو مع معلومات تشتّت الانتباه.",
+      "Measures how consistently an LLM answers when the same question is paraphrased, misspelled, padded with noise, reordered or given distractors. Result (gpt-4o-mini): regex correctness 1.00, yet mean consistency 0.49, mostly the same answer worded differently.",
+      "يقيس مدى ثبات إجابة النموذج اللغوي حين يُطرح السؤال نفسه بصياغة أخرى، أو بأخطاء إملائية، أو مع ضوضاء، أو بترتيب مختلف، أو مع معلومات تشتّت الانتباه. النتيجة (gpt-4o-mini): صحة 1.00 وفق التعبيرات النمطية، لكن متوسط الثبات 0.49، ومعظم ذلك من صياغة الإجابة نفسها بكلمات مختلفة.",
     ),
     highlights: [
       fact(
@@ -2547,8 +2585,8 @@ const projects: readonly Project[] = [
     featured: true,
     year: 2022,
     description: l(
-      "Arabic sentiment classification on about 455k tweets and reviews, comparing recurrent models (BiGRU, BiLSTM), CNNs on AraVec embeddings and classical ML.",
-      "تصنيف المشاعر في نحو 455 ألف تغريدة ومراجعة عربية، مع مقارنة نماذج تكرارية (BiGRU وBiLSTM)، وشبكات CNN على تضمينات AraVec، ونماذج تعلّم آلة تقليدية.",
+      "Arabic sentiment classification on about 455k tweets and reviews, comparing recurrent models (BiGRU, BiLSTM), CNNs on AraVec embeddings and classical ML. Result: a BiGRU (2 layers) at 0.816 accuracy, against a 0.595 baseline.",
+      "تصنيف المشاعر في نحو 455 ألف تغريدة ومراجعة عربية، مع مقارنة نماذج تكرارية (BiGRU وBiLSTM)، وشبكات CNN على تضمينات AraVec، ونماذج تعلّم آلة تقليدية. النتيجة: BiGRU من طبقتين بدقة 0.816، مقابل 0.595 لخط الأساس.",
     ),
     highlights: [
       fact(
@@ -2686,10 +2724,14 @@ const skills: readonly SkillGroup[] = [
     title: l("LLMs & agents", "النماذج اللغوية والوكلاء"),
     summary: l(
       "Multi-agent orchestration in production, from 6 to 14 agents.",
-      "تنسيق الوكلاء المتعددين في بيئة الإنتاج، من 6 وكلاء إلى 14 وكيلًا.",
+      "أنظمة متعددة الوكلاء في بيئة الإنتاج، من 6 وكلاء إلى 14 وكيلًا.",
     ),
     skills: [
       { name: same("LangGraph"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot", "role:globant", "project:staged-llm-evaluator"], source: ["cv", "linkedin", "github", "mohamed"] },
+      // Round 6 (HM-17): "agentic AI" is in his LinkedIn About and the STA runtime; generative AI is the image and sound
+      // generation at ArabsStock and the LLM systems themselves.
+      { name: l("Agentic AI", "الذكاء الاصطناعي الوكيلي"), evidence: ["role:globant", "case:arabsstock-assistant", "case:wakeb-bilingual-chatbot"], source: ["linkedin", "mohamed"] },
+      { name: l("Generative AI", "الذكاء الاصطناعي التوليدي"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin"] },
       { name: l("Multi-agent systems", "الأنظمة متعددة الوكلاء"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
       { name: same("LangChain"), evidence: [], source: ["cv", "linkedin"] },
       { name: same("OpenAI API"), evidence: ["role:arabsstock", "project:staged-llm-evaluator", "project:prompt-reliability-harness"], source: ["cv", "linkedin", "github"] },
@@ -2698,7 +2740,10 @@ const skills: readonly SkillGroup[] = [
       { name: l("Agent memory", "ذاكرة الوكلاء"), evidence: ["role:wakeb"], source: ["cv", "linkedin"] },
       { name: l("Prompt engineering", "هندسة الموجّهات"), evidence: ["project:prompt-reliability-harness"], source: ["cv"] },
       { name: same("Azure OpenAI"), evidence: [], source: ["github"] },
-      { name: l("Whisper, BLIP", "Whisper وBLIP"), evidence: [], source: ["cv"] },
+      { name: same("Hugging Face Transformers"), evidence: ["project:text-summarization"], source: ["github"] },
+      // Two skills, not "Whisper وBLIP": a Latin-led Arabic phrase reads backwards in an isolate (round 6, A-01).
+      { name: same("Whisper"), evidence: [], source: ["cv"] },
+      { name: same("BLIP"), evidence: [], source: ["cv"] },
     ],
   },
   {
@@ -2706,7 +2751,7 @@ const skills: readonly SkillGroup[] = [
     title: l("Retrieval & search", "الاسترجاع والبحث"),
     summary: l(
       "RAG and semantic search, from hybrid BM25 + dense retrieval to visual search over millions of assets.",
-      "RAG والبحث الدلالي، من الاسترجاع الهجين (BM25 مع المتجهات) إلى البحث البصري في ملايين الأصول.",
+      "RAG والبحث الدلالي، من الاسترجاع الهجين (BM25 مع المتجهات) إلى البحث البصري في ملايين ملفات الوسائط.",
     ),
     skills: [
       { name: l("RAG pipelines", "خطوط RAG"), evidence: ["case:wakeb-bilingual-chatbot", "project:rag-answering-service", "role:globant"], source: ["cv", "linkedin", "github"] },
@@ -2802,7 +2847,11 @@ const skills: readonly SkillGroup[] = [
   {
     id: "cloud",
     title: l("Cloud", "الحوسبة السحابية"),
-    summary: l("AWS Certified ML – Specialty (2022); Athena on AWS at Tabaqat; Functions and Cosmos DB on Azure at Empoweromics.", "شهادة AWS Certified ML – Specialty عام 2022، وAthena على AWS في Tabaqat، وFunctions وCosmos DB على Azure في Empoweromics."),
+    // The AWS certification is listed under Certifications only (round 6, HM-10).
+    summary: l(
+      "Athena on AWS at Tabaqat; Functions and Cosmos DB on Azure at Empoweromics; Cloudflare Workers for logic-controls.com and this site.",
+      "Athena على AWS في Tabaqat، وFunctions وCosmos DB على Azure في Empoweromics، وCloudflare Workers لموقع logic-controls.com ولهذا الموقع.",
+    ),
     skills: [
       { name: same("AWS (SageMaker, EC2, S3, Athena, EKS)"), evidence: ["case:tabaqat-gis"], source: ["cv", "linkedin"] },
       { name: same("Azure (Functions, Cosmos DB, DevOps)"), evidence: ["role:empoweromics"], source: ["cv", "linkedin"] },
@@ -2899,7 +2948,8 @@ const certifications: readonly Certification[] = [
     issuer: l("Amazon Web Services", "Amazon Web Services"),
     logo: { file: "aws", monogram: "AWS" },
     issued: "2022",
-    featured: true,
+    featured: false,
+    onCv: true,
     source: ["cv", "linkedin", "github"],
   },
   {
@@ -2909,6 +2959,7 @@ const certifications: readonly Certification[] = [
     logo: null,
     issued: "2021-10",
     featured: false,
+    onCv: false,
     source: ["linkedin"],
   },
   {
@@ -2918,6 +2969,7 @@ const certifications: readonly Certification[] = [
     logo: null,
     issued: "2022-05",
     featured: false,
+    onCv: false,
     source: ["linkedin"],
   },
   {
@@ -2927,6 +2979,7 @@ const certifications: readonly Certification[] = [
     logo: null,
     issued: null,
     featured: false,
+    onCv: false,
     source: ["linkedin"],
   },
   {
@@ -2936,6 +2989,7 @@ const certifications: readonly Certification[] = [
     logo: { file: "aws", monogram: "AWS" },
     issued: null,
     featured: false,
+    onCv: false,
     source: ["linkedin"],
   },
 ];
@@ -2957,19 +3011,37 @@ const honors: readonly Honor[] = [
 ];
 
 const cvData: Cv = {
+  // Round 6 (HM-09, HM-01, HM-08, HM-10): Globant and the STA project first, in the approved wording, with the team of
+  // 7; "multi-agent … in production" only after "Before Globant"; the AWS certification under Certifications only.
   summary: l(
-    "AI Team Lead with 7 years in data and AI, designing, shipping and running production LLM systems: multi-agent orchestration (LangGraph), RAG and hybrid search, self-hosted model serving (vLLM on NVIDIA A100) and LLM evaluation. Built a 14-agent assistant for ArabsStock and a 6-agent bilingual Arabic/English chatbot at Wakeb Data. AWS Certified Machine Learning – Specialty (2022).",
-    "قائد فريق ذكاء اصطناعي بخبرة 7 سنوات في البيانات والذكاء الاصطناعي، يصمّم أنظمة النماذج اللغوية الكبيرة ويطلقها ويشغّلها في بيئة الإنتاج: تنسيق الوكلاء المتعددين (LangGraph)، وRAG والبحث الهجين، وخدمة النماذج ذاتية الاستضافة (vLLM على NVIDIA A100)، وتقييم النماذج اللغوية. بنى مساعدًا من 14 وكيلًا لمنصة ArabsStock، وروبوت محادثة ثنائي اللغة من 6 وكلاء في Wakeb Data. حاصل على شهادة AWS Certified Machine Learning – Specialty عام 2022.",
+    "AI Team Lead at Globant with 7 years in data and AI, leading a team of 7 on the Saudi Tourism Authority (STA) project. Leads its AI engineering: an agentic LLM runtime (LangGraph) with retrieval, human-approval gates and evaluation, serving Noura, the public visitor assistant, and an internal staff assistant, in Arabic and English. Before Globant, designed, shipped and ran multi-agent LLM systems in production: a 14-agent assistant for ArabsStock and a 6-agent Arabic/English chatbot on self-hosted Qwen (vLLM on NVIDIA A100) at Wakeb Data.",
+    "قائد فريق ذكاء اصطناعي في Globant بخبرة 7 سنوات في البيانات والذكاء الاصطناعي، يقود فريقًا من 7 أعضاء في مشروع الهيئة السعودية للسياحة (STA)، ويقود هندسة الذكاء الاصطناعي فيه: بيئة تشغيل على LangGraph لوكيل ذكي قائم على النماذج اللغوية، تجمع الاسترجاع ونقاط الموافقة البشرية والتقييم، وتخدم «نورة»، المساعد الافتراضي للزوار، ومساعدًا داخليًا للموظفين، بالعربية والإنجليزية. وقبل Globant صمّم أنظمة LLM متعددة الوكلاء وأطلقها وشغّلها في بيئة الإنتاج: مساعدًا من 14 وكيلًا لمنصة ArabsStock، وروبوت محادثة بالعربية والإنجليزية من 6 وكلاء على Qwen ذاتي الاستضافة عبر vLLM على NVIDIA A100 في Wakeb Data.",
   ),
   summaryStrong: [
     l("7 years in data and AI", "بخبرة 7 سنوات في البيانات والذكاء الاصطناعي"),
+    l("team of 7", "فريقًا من 7 أعضاء"),
+    l("Saudi Tourism Authority (STA) project", "مشروع الهيئة السعودية للسياحة (STA)"),
     l("14-agent assistant", "مساعدًا من 14 وكيلًا"),
-    l("6-agent bilingual Arabic/English chatbot", "روبوت محادثة ثنائي اللغة من 6 وكلاء"),
+    l("6-agent Arabic/English chatbot", "روبوت محادثة بالعربية والإنجليزية من 6 وكلاء"),
   ],
   skills: [
     {
       label: l("LLMs & agents", "النماذج اللغوية والوكلاء"),
-      items: [same("LangGraph"), same("LangChain"), l("Multi-agent systems", "الأنظمة متعددة الوكلاء"), same("MCP"), same("OpenAI API"), same("Qwen"), l("Prompt engineering", "هندسة الموجّهات")],
+      // Round 6 (HM-17): Generative AI, Agentic AI, Azure OpenAI and Hugging Face Transformers, each sourced (see the
+      // site's skills: LinkedIn About, the ArabsStock generation work, the GitHub profile, Text-Summarization-NLP).
+      items: [
+        l("Generative AI", "الذكاء الاصطناعي التوليدي"),
+        l("Agentic AI", "الذكاء الاصطناعي الوكيلي"),
+        same("LangGraph"),
+        same("LangChain"),
+        l("Multi-agent systems", "الأنظمة متعددة الوكلاء"),
+        same("MCP"),
+        same("OpenAI API"),
+        same("Azure OpenAI"),
+        same("Qwen"),
+        same("Hugging Face Transformers"),
+        l("Prompt engineering", "هندسة الموجّهات"),
+      ],
       source: ["cv", "linkedin", "github"],
     },
     {
@@ -3002,19 +3074,12 @@ const cvData: Cv = {
       items: [same("AWS (SageMaker, EC2, S3, Athena, EKS)"), same("Azure (Functions, Cosmos DB)"), same("Cloudflare Workers")],
       source: ["cv", "linkedin", "logic-controls"],
     },
-    {
-      label: l("Frontend", "الواجهات الأمامية"),
-      items: [same("TypeScript"), same("Astro"), same("Tailwind CSS"), same("WCAG 2.2 AA"), l("Arabic RTL", "العربية RTL")],
-      source: ["logic-controls", "github"],
-    },
+    // No Frontend line on the CV since round 6 (HM-14): the site's toolbox keeps it, with the logic-controls.com work.
   ],
-  // Mohamed's CV wording (2026-10-10): three roles, team lead first, and three arrangements.
+  // Round 6 (HM-13): the same roles as the site (basics.openTo) and three arrangements: "AI/ML Team Lead or Senior
+  // AI / LLM Engineer, remote, relocation to the Gulf or Europe, or hybrid in Cairo".
   openTo: {
-    roles: [
-      l("AI/ML Team Lead", "قائد فريق ذكاء اصطناعي / تعلّم آلة"),
-      l("Senior AI / LLM Engineer", "مهندس أول للذكاء الاصطناعي / LLM"),
-      l("MLOps Engineer", "مهندس MLOps"),
-    ],
+    roles: OPEN_TO_ROLES,
     arrangements: [
       l("Remote", "عن بُعد"),
       l("Relocation to the Gulf or Europe", "الانتقال إلى الخليج أو أوروبا"),
@@ -3022,8 +3087,9 @@ const cvData: Cv = {
     ],
     source: ["mohamed"],
   },
-  fileName: l("Mohamed-Hatem-CV.pdf", "Mohamed-Hatem-CV-Arabic.pdf"),
-  updated: "2026-10-10",
+  // The file name a recruiter's downloads folder or ATS shows: name and role (round 6, HM-39).
+  fileName: l("Mohamed-Hatem-AI-Team-Lead-CV.pdf", "Mohamed-Hatem-AI-Team-Lead-CV-Arabic.pdf"),
+  updated: "2026-10-11",
 };
 
 /** The profile the whole site renders from. */
@@ -3041,7 +3107,7 @@ export const profile: Profile = {
   site: {
     url: "https://mohamedhatem.dev",
     published: "2026-10-10",
-    updated: "2026-10-10",
+    updated: "2026-10-11",
     repo: "https://github.com/mhatem5351/mohamedhatem.dev",
     defaultLocale: "en",
     sections: ["work", "experience", "projects", "skills", "education", "about", "assistant", "contact"],

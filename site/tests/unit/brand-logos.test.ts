@@ -8,7 +8,7 @@ const SOURCES = readFileSync(fileURLToPath(new URL("../../../design/assets/logos
 type File = { file: string; aspect: number; height: number; width: number };
 const logos = Object.entries(brand.logos as Record<string, { name: string; symbolOnly: boolean; files: { light: File; dark: File } }>);
 
-describe('"Shipped at" logos (design/assets/logos/brand)', () => {
+describe('"Worked at" logos (design/assets/logos/brand)', () => {
   it("lists the six employers in order, each with a file per theme that exists", () => {
     expect(logos.map(([k]) => k)).toEqual(["globant", "wakeb", "arabsstock", "empoweromics", "tabaqat", "mdp"]);
     for (const [key, e] of logos)

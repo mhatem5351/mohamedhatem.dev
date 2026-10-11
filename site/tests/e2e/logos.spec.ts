@@ -1,5 +1,5 @@
 /**
- * Company logos: the "Shipped at" row shows each company's official logo in its real colours, the right file for the
+ * Company logos: the "Worked at" row shows each company's official logo in its real colours, the right file for the
  * page's theme (dark by default), named by its alt text; the work cards carry the company's tile beside the eyebrow
  * (the employer's for client work, Logic Controls for the freelance site).
  */
@@ -8,7 +8,7 @@ import { expect, test, useTheme } from "./fixtures";
 const NAMES = ["Globant", "Wakeb Data", "ArabsStock", "Empoweromics", "Tabaqat"];
 
 for (const theme of ["dark", "light"] as const) {
-  test(`"Shipped at" shows the official logos for the ${theme} page, named and loaded`, async ({ page }) => {
+  test(`"Worked at" shows the official logos for the ${theme} page, named and loaded`, async ({ page }) => {
     if (theme === "light") await useTheme(page, "light");
     await page.goto("/", { waitUntil: "networkidle" });
     const row = page.locator(".logos__list");

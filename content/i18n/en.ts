@@ -28,9 +28,9 @@ export const en = {
     siteName: "Mohamed Hatem",
     titleSeparator: " · ",
     home: {
-      title: "Mohamed Hatem · AI Team Lead, LLM & Multi-Agent Systems",
+      title: "Mohamed Hatem · AI Team Lead, Agentic LLM Systems",
       description:
-        "AI Team Lead at Globant with 7 years in data and AI. Multi-agent LangGraph systems, RAG and vLLM serving on A100s, in Arabic and English.",
+        "AI Team Lead at Globant, 7 years in data and AI, leading a team of 7 on the Saudi Tourism Authority's assistants. Agentic LLM systems, RAG, LLM serving.",
     },
     caseStudy: {
       /** Filled with the case study's `shortTitle`. */
@@ -39,7 +39,7 @@ export const en = {
     cv: {
       title: "CV · Mohamed Hatem, AI Team Lead",
       description:
-        "CV of Mohamed Hatem, AI Team Lead at Globant: 7 years in data and AI, multi-agent LLM systems, RAG and vLLM serving. Read it here or download the PDF.",
+        "CV of Mohamed Hatem, AI Team Lead at Globant: 7 years in data and AI, agentic LLM systems, RAG and LLM serving. Read it here or download the PDF.",
     },
     notFound: {
       title: "Page not found · Mohamed Hatem",
@@ -51,7 +51,7 @@ export const en = {
         "What mohamedhatem.dev collects and what it doesn't: the AI assistant, the contact form, cookieless analytics and the one optional session cookie.",
     },
     /** og:image:alt of each sharing card: it describes the card in the link preview (scripts/og.mjs draws them). */
-    ogImageAlt: "Mohamed Hatem, AI Team Lead at Globant, builds multi-agent LLM systems for production",
+    ogImageAlt: "Mohamed Hatem, AI Team Lead at Globant: agentic LLM systems, RAG and LLM serving, in Arabic and English",
     ogImageAltCase: "Case study card: {title}. {role}, {company}, {years}.",
     ogImageAltCv: "CV card: Mohamed Hatem, AI Team Lead at Globant, Cairo. {summary}",
     ogImageAltPrivacy: "Privacy card: what mohamedhatem.dev collects, what it doesn't, and where your messages go.",
@@ -119,7 +119,7 @@ export const en = {
     greeting: "Hi, I'm",
     availability: "Open to new roles",
     /** After the availability in the hero meta line; links to the About facts (roles and work arrangements). */
-    arrangements: "remote, in Cairo, or relocating to the Gulf or Europe",
+    arrangements: "remote, relocation to the Gulf or Europe, or hybrid in Cairo",
     /** Phones: the availability line above the headline ("Open to new roles · remote or relocation"). */
     arrangementsShort: "remote or relocation",
     localTime: "{time} in Cairo",
@@ -155,13 +155,13 @@ export const en = {
     title: "The scale, in numbers",
     lead: "Every figure is sourced from my CV, LinkedIn or public code. Where a client hasn't published a number, I describe what the system does instead.",
     /** Label of the employer logo row under the metric strip. */
-    logosLabel: "Shipped at",
+    logosLabel: "Worked at",
   },
 
   /** Home section 01: what I build (capability cards). */
   capabilities: {
     eyebrow: "What I build",
-    title: "Production AI, from the agent graph down to the GPU.",
+    title: "Production AI: agents, retrieval, serving and evaluation.",
     lead: "I own the whole path: how agents route, what they retrieve, where the model runs, and how we know the answers are right.",
     agents: {
       title: "Multi-agent LLM systems",
@@ -185,7 +185,7 @@ export const en = {
     },
     bilingual: {
       title: "Arabic and English",
-      body: "Most of what I have shipped is bilingual: Arabic and English in the same product, from retrieval and search to the interface.",
+      body: "Most of what I have shipped is bilingual: Arabic and English in the same product, from retrieval and search to the right-to-left interface.",
       stack: "Arabic NLP · RTL interfaces · bilingual search",
     },
     frontend: {
@@ -202,8 +202,8 @@ export const en = {
 
   work: {
     eyebrow: "Selected work",
-    title: "Systems I've built and run",
-    lead: "Work since 2020, from multi-agent assistants to data pipelines. Client details stay at the level each employer allows.",
+    title: "Systems I've built and led",
+    lead: "Work since 2020, from agentic assistants to data pipelines. Client details stay at the level each employer allows.",
     moreTitle: "More work",
     /** Phones: "More work" sits behind this disclosure. */
     moreToggle: "Show more work ({count})",
@@ -268,13 +268,13 @@ export const en = {
       connections: "Connections",
       connection: "{from} to {to}",
       sourcesTitle: "Where these facts come from",
-      sourcesBody: "Everything on this page comes from {sources}. Nothing is estimated: where no figure is public, the page describes what the system does.",
+      sourcesBody: "No figure here is estimated: where a client hasn't published a number, the page describes what the system does. Sources: {sources}.",
       sources: {
         cv: "my CV",
         linkedin: "my LinkedIn profile",
         github: "my GitHub profile and repositories",
         "logic-controls": "the Logic Controls project and its public repository",
-        mohamed: "details I confirmed for this site",
+        mohamed: "project details approved for publication",
       },
       ctaEyebrow: "Questions about this build?",
       ctaTitle: "Ask my AI about “{title}”.",
@@ -293,7 +293,7 @@ export const en = {
       briefSources: "From {sources}.",
       whatIDid: "What I did",
       /** Under the gallery heading: where the screens come from, never how they were captured. */
-      screensCredit: "Screens from the apps, with personal data removed.",
+      screensCredit: "Screens from the apps, shown with the client's approval, with personal data removed.",
       /** A screen's link to its full-size view ({alt} = the screen's text alternative). */
       enlarge: "Enlarge: {alt}",
       /** Closes the full-size view of a screen. */
@@ -437,7 +437,7 @@ export const en = {
     title: "Education & certifications",
     degrees: "Education",
     certifications: "Certifications",
-    honors: "Honours",
+    honors: "Awards",
     languages: "Languages",
     coursework: "Coursework",
     earned: "Earned {date}",
@@ -483,8 +483,10 @@ export const en = {
     /** Label of a role's client line (profile.ts Role.client), followed by ": " and the client's name. */
     client: "Client",
     backToSite: "Back to the portfolio",
-    /** Focus line in the CV header, after the title and employer. */
-    focus: "Multi-agent LLM systems, RAG, LLM serving",
+    /** Focus line in the CV header, after the title and employer (never "multi-agent" beside Globant: round 6, HM-01). */
+    focus: "Agentic LLM systems, RAG, LLM serving",
+    /** The CV header's place line, after "Cairo, Egypt · ": how he works and where he would move (round 6, HM-13). */
+    arrangements: "Remote or relocation (Gulf, Europe)",
     /** Short label of the download button on narrow screens. */
     pdfShort: "PDF",
     /** Touch screens: the PDF opens in the browser's viewer (it has its own share and save). */
@@ -502,7 +504,7 @@ export const en = {
   assistant: {
     eyebrow: "AI assistant",
     title: "Ask about my work",
-    lead: "My assistant has read my CV, LinkedIn and GitHub. Ask it about my experience, or paste a job description to check the fit. It answers in English or Arabic.",
+    lead: "My assistant has read my CV, LinkedIn and GitHub. Ask it about my experience, or paste a public job posting to check the fit. It answers in English or Arabic.",
     howItWorks:
       "How it works: one knowledge file, a Cloudflare Worker and Google Gemini. No vector database; the whole profile fits in the model's context.",
     open: "Start a conversation",
@@ -522,7 +524,7 @@ export const en = {
     /** The floating launcher drawn as Hatem (site/src/scripts/chat-avatar.ts): its name, and its comic speech bubble. */
     avatar: {
       name: "Ask Hatem's AI assistant",
-      hi: "Hi, I'm Hatem!",
+      hi: "Hi!",
       text: "Ask my AI assistant about my work.",
       hide: "Hide message",
     },
@@ -534,7 +536,7 @@ export const en = {
     suggestionsTitle: "Try asking",
     inputLabel: "Your question",
     placeholder: "Ask about Hatem's experience…",
-    jdHint: "Tip: paste a job description and ask “Is he a fit?”",
+    jdHint: "Tip: paste a public job posting and ask “Is he a fit?”",
     send: "Send",
     stop: "Stop",
     retry: "Try again",
@@ -617,6 +619,8 @@ export const en = {
       },
       honeypot: "Leave this field empty",
       turnstile: "This form is protected by Cloudflare Turnstile.",
+      /** Without JavaScript (a <noscript> note above Send; round 6, RES-01): the spam check can't run. */
+      noJs: "The form needs JavaScript for its spam check. Without it, email {email} or use WhatsApp.",
       submit: "Send message",
       sending: "Sending…",
     },
@@ -653,7 +657,7 @@ export const en = {
     copyright: "© {year} Mohamed Hatem",
     lastUpdated: "Last updated {date}",
     backToTop: "Back to top",
-    summary: "AI Team Lead at Globant. Multi-agent LLM systems, RAG and LLM serving. Cairo, working remotely.",
+    summary: "AI Team Lead at Globant. Agentic LLM systems, RAG and LLM serving, in Arabic and English. Cairo, working remotely.",
     columns: {
       site: "Site",
       elsewhere: "Elsewhere",
@@ -712,6 +716,7 @@ export const en = {
         title: "Analytics",
         body: [
           "Visits are counted with Cloudflare Web Analytics, which uses no cookies and doesn't build a profile of you or follow you across sites.",
+          "If your browser blocks something on a page because of the site's security policy, it may send an automatic report. The site keeps only a count of which rule and which page, nothing about you.",
         ],
       },
       questions: {
@@ -734,9 +739,11 @@ export const en = {
   /** Sharing images (site/scripts/og.mjs) and machine-readable summaries (llms.txt). */
   seo: {
     /** Focus areas on the home sharing image, shown as "A · B · C". */
-    ogFocus: ["Multi-agent LLM systems", "RAG", "LLM serving"],
+    ogFocus: ["Agentic LLM systems", "RAG", "LLM serving"],
+    /** The home sharing card's small client line (for the OG generator; round 6, HM-33). */
+    ogClient: "Saudi Tourism Authority assistants",
     /** The CV's sharing card (the meta description reads as a page summary, not as text on an image). */
-    ogCvSummary: "7\u00a0years in data and AI: multi-agent LLM systems, RAG and vLLM serving on A100 GPUs.",
+    ogCvSummary: "7\u00a0years in data and AI: agentic LLM systems, RAG and self-hosted LLM serving.",
   },
 
   /**
@@ -747,7 +754,7 @@ export const en = {
     /** Label under the home-screen icon (manifest `short_name`, iOS `apple-mobile-web-app-title`): at most ~12 characters. */
     shortName: "M. Hatem",
     /** Install dialog description. {name}: `basics.name`; {headline}: `basics.headline`. */
-    description: "{name}, {headline}: multi-agent LLM systems, RAG and LLM serving.",
+    description: "{name}, {headline}: agentic LLM systems, RAG and LLM serving.",
     /** Long-press shortcuts on the installed icon (`shortName` where the launcher has little room). */
     shortcuts: {
       ask: { name: "Ask my AI assistant", shortName: "Ask AI" },
