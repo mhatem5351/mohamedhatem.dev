@@ -90,7 +90,7 @@ for (const lang of ["", "/ar"]) {
       await expect(logo, slug).toHaveCount(1);
       await expect.poll(() => logo.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), { message: slug }).toBe(true);
       const r = await logo.evaluate((img: HTMLImageElement) => {
-        const name = img.nextElementSibling!.getBoundingClientRect();
+        const name = img.nextElementSibling!.firstElementChild!.getBoundingClientRect(); // the company, first in the line
         const box = img.getBoundingClientRect();
         const rtl = getComputedStyle(img.parentElement!).direction === "rtl";
         return {
@@ -99,7 +99,8 @@ for (const lang of ["", "/ar"]) {
           first: img.parentElement!.firstElementChild === img,
           // inline-start of the name: left of it in English, right of it in Arabic, on the same line
           before: rtl ? box.left >= name.right - 1 : box.right <= name.left + 1,
-          sameLine: Math.abs(box.top + box.height / 2 - (name.top + name.height / 2)) < 4,
+          // on the company's line (a long role may wrap below it, beside the tile)
+          sameLine: name.top < box.bottom && name.bottom > box.top,
         };
       });
       expect(r.src, slug).toMatch(tile);

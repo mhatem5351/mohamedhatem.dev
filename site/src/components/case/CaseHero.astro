@@ -45,12 +45,12 @@ const question = askQuestion(cs, locale);
       <div class="cs-hero__copy">
         <p class="eyebrow">
           <LogoTile file={logo.file} monogram={logo.monogram} size={32} class="cs-hero__logo" loading="eager" />
-          {isLatin(eb.company) ? <span lang="en">{eb.company}</span> : <span>{eb.company}</span>}
-          <span class="sep" aria-hidden="true">/</span>
-          <span>{eb.role}</span>
-          <span class="sep" aria-hidden="true">/</span>
-          <Ltr>{eb.years}</Ltr>
-          {cs.depth === "brief" && <span class="cs-hero__brief">{m.work.page.briefTag}</span>}
+          <span class="cs-hero__line">
+            <span class="cs-hero__unit">{isLatin(eb.company) ? <span lang="en">{eb.company}</span> : <span>{eb.company}</span>}&nbsp;<span class="sep" aria-hidden="true">/</span></span>
+            <span>{eb.role}&nbsp;<span class="sep" aria-hidden="true">/</span></span>
+            <span class="cs-hero__unit"><Ltr>{eb.years}</Ltr></span>
+            {cs.depth === "brief" && <span class="cs-hero__brief">{m.work.page.briefTag}</span>}
+          </span>
         </p>
         <h1 class="cs-hero__title" id="cs-title">{tr(cs.title, locale)}</h1>
         <p class="cs-hero__summary">{tr(cs.summary, locale)}</p>

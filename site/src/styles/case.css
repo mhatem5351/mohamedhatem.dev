@@ -265,8 +265,6 @@ a.co { text-decoration: none; }
 
 /* Hero: the eyebrow keeps Latin runs (company, years) isolated in Arabic */
 .cs-hero .eyebrow bdi { unicode-bidi: isolate; }
-/* The organisation's logo tile leads the eyebrow (inline-start: left in English, right in Arabic), as on the work cards. */
-.cs-hero .eyebrow { flex-wrap: wrap; row-gap: .25rem; }
 .cs-hero__logo { display: block; flex: none; width: 2rem; height: 2rem; border-radius: .5rem; object-fit: cover; box-shadow: 0 0 0 1px var(--color-line); }
 .cs-hero__links { display: flex; flex-wrap: wrap; gap: .75rem; }
 
@@ -399,9 +397,15 @@ a.co { text-decoration: none; }
 .shots .fig__caption { justify-items: center; text-align: center; }
 }
 @layer components {
-/* Eyebrow parts wrap as whole units on phones (never "WAKEB / DATA"). */
-.cs-hero__copy > .eyebrow { display: flex; flex-wrap: wrap; gap: .25rem .625rem; }
-.cs-hero__copy > .eyebrow > * { white-space: nowrap; }
+/* Eyebrow: the organisation's logo tile leads (inline-start: left in English, right in Arabic), as on the work cards,
+   then one line of text beside it. The company and the years never break ("WAKEB / DATA"), each "/" stays with the
+   part before it, and a long role wraps word by word, hanging beside the tile instead of leaving the company alone. */
+.cs-hero__copy > .eyebrow { display: flex; align-items: center; gap: .625rem; }
+.cs-hero__copy > .eyebrow > :not(.cs-hero__line) { flex: none; }
+.cs-hero__line { min-width: 0; line-height: 1.6; }
+.cs-hero__line .sep { margin-inline-end: .25rem; }
+.cs-hero__unit { white-space: nowrap; }
+.cs-hero__line .cs-hero__brief { margin-inline-start: .25rem; vertical-align: middle; }
 .fig-panel__id { white-space: nowrap; flex: none; }
 }
 @layer components {
