@@ -60,8 +60,10 @@ export const MATRIX_ROWS: readonly MatrixRow[] = [
   { key: "hybrid", group: "retrieval", cells: { wakeb: "case:wakeb-bilingual-chatbot" } },
   { key: "semantic", group: "retrieval", cells: { wakeb: "case:aip-semantic-search", arabsstock: "case:arabsstock-assistant" } },
   // Serving and MLOps
-  { key: "serving", group: "serving", cells: { wakeb: "case:wakeb-bilingual-chatbot", arabsstock: "role:arabsstock" } },
-  { key: "fastapi", group: "serving", cells: { wakeb: "case:wakeb-bilingual-chatbot", arabsstock: "case:arabsstock-assistant", oss: "project:rag-answering-service" } },
+  // Self-hosted serving is Wakeb's (ArabsStock's role lists neither vLLM nor GPUs; round 7, HM-32).
+  { key: "serving", group: "serving", cells: { wakeb: "case:wakeb-bilingual-chatbot" } },
+  // FastAPI is in the STA case study's stack (round 7, R7-18).
+  { key: "fastapi", group: "serving", cells: { globant: "case:sta-tourism-assistants", wakeb: "case:wakeb-bilingual-chatbot", arabsstock: "case:arabsstock-assistant", oss: "project:rag-answering-service" } },
   { key: "docker", group: "serving", cells: { wakeb: "role:wakeb", arabsstock: "role:arabsstock", earlier: "case:logic-controls-website" } },
   { key: "prefect", group: "serving", cells: { tabaqat: "case:tabaqat-gis" } },
   // Quality

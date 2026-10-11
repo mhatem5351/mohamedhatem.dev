@@ -23,8 +23,8 @@
  *   - the greeting: a wave, a 2 px float (composited), the mouth talking while the bubble's words appear, a blink;
  *   - hover or keyboard focus: a wave, the float while it lasts, a blink, and the bubble (on demand, wherever it is);
  *   - the header's avatar blinks twice after the panel opens and talks while an answer streams in.
- * The bubble's × hides it for the session (sessionStorage), so does opening the chat. Escape hides it; it stays while
- * hovered or focused (WCAG 1.4.13); it hides when page focus lands under it (2.4.11). site.ts sets data-hush on the
+ * The bubble's × hides it for the session (sessionStorage), so does opening the chat. Escape hides it, wherever focus
+ * is; it stays while hovered or focused (WCAG 1.4.13); it hides when page focus lands under it (2.4.11). site.ts sets data-hush on the
  * host while it would cover a [data-chat-avoid] element, and the host's data-dodge (site.ts) and data-aside (chat.ts)
  * hide it with the launcher. Its words are a visual teaser (aria-hidden), read once as the launcher's description.
  */
@@ -366,8 +366,11 @@ export function mountAvatar({ host, root, button }: ChatLauncher, copy: AvatarCo
   });
   // The bubble itself is a pointer shortcut to the launcher (keyboard users have the launcher, right below it).
   box.querySelector(".bbx")!.addEventListener("click", () => (window as Window & { MHChat?: { open(): void } }).MHChat?.open());
-  root.addEventListener("keydown", (e) => {
-    if ((e as KeyboardEvent).key === "Escape" && shown) hide(true);
+  // Escape dismisses the bubble wherever focus is, while the pointer still hovers the launcher too (WCAG 1.4.13
+  // "dismissible"; audits R7-A11Y-01, R7-CHROME-04): keyboard events from the shadow root reach the document as well.
+  // A hover doesn't bring it back until the pointer leaves and comes again.
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && shown) hide(true);
   });
   // Opening the chat ends the greeting for this session.
   document.addEventListener("mh:chat-state", (e) => {

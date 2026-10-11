@@ -84,7 +84,7 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
       <div class:list={["work__media", !diagramId && cs.slug === "logic-controls-website" && "work__media--shot"]} dir="ltr" data-motion={diagramId ? "dg-play" : undefined}>
         {diagramId ? (
           <>
-            <Fragment set:html={diagramSvg(diagramId, "thumb", { decorative: true, idSuffix: `card-${cs.slug}` })} />
+            <Fragment set:html={diagramSvg(diagramId, "thumb", { locale, decorative: true, idSuffix: `card-${cs.slug}` })} />
             <MotionToggle locale={locale} variant="corner" />
           </>
         ) : cs.slug === "logic-controls-website" ? (
@@ -105,27 +105,25 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
   <div class="work__body">
     <div class="work__meta">
       <LogoTile file={logo.file} monogram={logo.monogram} size={big ? 28 : 24} class="work__logo" />
-      <span class="eyebrow">
-        {company ? <span lang="en" class="latin">{company}</span> : <span>{m.work.freelance}</span>}
-        {
-          big && (
-            <>
-              <span class="sep" aria-hidden="true">/</span>
-              {role ? <span>{role.title[locale]}</span> : <span lang="en" class="latin">Logic Controls</span>}
-            </>
-          )
-        }
-        <span class="sep" aria-hidden="true">/</span>
-        <span>{yearsParts.map((part) => (part === "{years}" ? <Ltr>{years}</Ltr> : part))}</span>
+      {/* Company / role / years as a separator list: a "/" never ends a line or starts one (audit H-07). */}
+      <span class="eyebrow sep-list sep-list--slash">
+        <span class="sep-list__in">
+          {company ? <span lang="en" class="latin">{company}</span> : <span>{m.work.freelance}</span>}
+          {big && (role ? <span>{role.title[locale]}</span> : <span lang="en" class="latin">Logic Controls</span>)}
+          <span>{yearsParts.map((part) => (part === "{years}" ? <Ltr>{years}</Ltr> : part))}</span>
+        </span>
       </span>
     </div>
     <Heading class="work__title"><a class="stretched" href={href} set:html={title} /></Heading>
-    <p class="work__summary">{cs.summary[locale]}</p>
+    {/* Copy keeps its compounds, domains and ranges whole too ("6-agent", "logic-controls.com", "98–100"; R7-HOME-03). */}
+    <p class="work__summary" set:html={noBreakHtml(cs.summary[locale], "nowrap")} />
     {
       facts.length > 0 && (
         <ul class="work__facts">
           {facts.map((f) => (
-            <li>{f.text[locale]}</li>
+            <li>
+              <span set:html={noBreakHtml(f.text[locale], "nowrap")} />
+            </li>
           ))}
         </ul>
       )

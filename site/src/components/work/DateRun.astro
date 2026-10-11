@@ -2,9 +2,11 @@
 /**
  * A date or period inside possibly-Arabic text (HANDOFF.md 6.3): purely numeric runs ("2023–2024", "Aug 2022" on
  * English pages) are isolated LTR so the Arabic bidi algorithm can't reverse them; runs with Arabic month names
- * ("سبتمبر 2024 – أبريل 2026") are isolated with their natural, right-to-left direction, and a year range inside them
- * ("سبتمبر 2023 – 2027 (متوقع)") is isolated LTR again, so it reads "2023 – 2027" as everywhere else (DESIGN 4.3,
- * audit A-02).
+ * ("سبتمبر 2024 – أبريل 2026") are isolated with their natural, right-to-left direction. A bare year range in Arabic
+ * ("2023 – 2027 (متوقع)") is isolated LTR again, so it reads "2023 – 2027" as everywhere else (DESIGN 4.3, audit A-02).
+ * But a month range whose end is a bare year ("سبتمبر 2023 – 2027 (متوقع)") is one right-to-left run like every other
+ * month range: isolating its "2023 – 2027" put the end year next to the month ("سبتمبر 2027 – 2023", audit A-02 in
+ * round 7). Left in the RTL run, each year keeps its own digits' order and the start month and year read first.
  */
 import BidiText from "~/components/ui/BidiText.astro";
 
@@ -14,5 +16,17 @@ interface Props {
 }
 const { text, class: className } = Astro.props;
 const arabic = /[؀-ۿ]/.test(text);
+/** An Arabic month name and its year, then the range's dash: the start is a month, so the run reads right to left. */
+const monthStart = /[؀-ۿ]\s+\d{4}\s*[–—-]/.test(text);
 ---
-{arabic ? <bdi dir="rtl" class={className}><BidiText text={text} locale="ar" /></bdi> : <bdi dir="ltr" class={className}>{text}</bdi>}
+{
+  arabic ? (
+    monthStart ? (
+      <bdi dir="rtl" class={className}>{text}</bdi>
+    ) : (
+      <bdi dir="rtl" class={className}><BidiText text={text} locale="ar" /></bdi>
+    )
+  ) : (
+    <bdi dir="ltr" class={className}>{text}</bdi>
+  )
+}

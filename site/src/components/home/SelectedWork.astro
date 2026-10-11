@@ -20,7 +20,8 @@ const { locale } = Astro.props;
 const m = messages(locale);
 const { feature, grid, wide, more } = workLayout();
 /** The home page's former front-end showcase anchor (/#craft) now lands on the logic-controls.com card. */
-const anchorOf = (cs: { slug: string }) => (cs.slug === "logic-controls-website" ? "craft" : undefined);
+/** Each card is an anchor (the metric strip links to its proof; audit H-33); logic-controls.com keeps the old "#craft". */
+const anchorOf = (cs: { slug: string }) => (cs.slug === "logic-controls-website" ? "craft" : `work-${cs.slug}`);
 /** "More work" in rows of three, unless that would leave one card alone: an even count goes two by two (4 = 2 × 2). */
 const pairs = more.length % 3 === 1 && more.length % 2 === 0;
 ---
@@ -56,16 +57,14 @@ const pairs = more.length % 3 === 1 && more.length % 2 === 0;
 </section>
 
 <style>
-  /* Two-column tablets: an odd last grid card takes the full row instead of leaving a hole. */
+  /* Two-column tablets: an odd last grid card takes the full row instead of leaving a hole, its drawing in a wide band
+     above the text (side by side, the drawing filled 41 % of a tall media column; audit R7-HOME-06). */
   @media (min-width: 48rem) and (max-width: 63.99rem) {
     .work-list :global(.work--span-md) {
       grid-column: 1 / -1;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     }
     .work-list :global(.work--span-md .work__media) {
-      aspect-ratio: auto;
-      border-block-end: 0;
-      border-inline-end: 1px solid var(--color-line);
+      aspect-ratio: 16 / 7;
     }
   }
   .more-work {

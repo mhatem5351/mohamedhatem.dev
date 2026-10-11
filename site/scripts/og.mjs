@@ -167,8 +167,25 @@ function cards(locale) {
 
 /* ------------------------------------------------------------------ page */
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-/** Text as HTML. Arabic runs rely on the page's dir="rtl" and the browser's bidi algorithm, as on the site. */
-const isolate = (s) => esc(s);
+/**
+ * Text for a card, as HTML: escaped (Arabic runs rely on the page's dir="rtl" and the browser's bidi algorithm, as on
+ * the site), and on Arabic cards each short Latin name ("Cloudflare Workers", "WCAG 2.2 AA": up to three
+ * words and 24 characters) kept on one line, so a product name never splits across the card's lines (audits D-11,
+ * A-20). Longer Latin runs still wrap between words.
+ */
+const LATIN_RUN = /[A-Za-z0-9][A-Za-z0-9.+/&'-]*(?: [A-Za-z0-9][A-Za-z0-9.+/&'-]*)*/g;
+const isolate = (s, locale) => {
+  if (locale !== "ar") return esc(s);
+  let out = "";
+  let at = 0;
+  for (const m of String(s).matchAll(LATIN_RUN)) {
+    const run = m[0];
+    const short = run.length <= 24 && run.split(" ").length <= 3 && run.includes(" ");
+    out += esc(s.slice(at, m.index)) + (short ? `<span class="nw">${esc(run)}</span>` : esc(run));
+    at = m.index + run.length;
+  }
+  return out + esc(s.slice(at));
+};
 
 const PAGE_CSS = `
 *{box-sizing:border-box;margin:0;padding:0}
@@ -317,6 +334,14 @@ function layout() {
     };
     flow.style.top = `${top}px`;
     while (bottom() > 572 && (shrink(".title", 40) || shrink(".summary", 24))) {}
+    // Still too tall: the summary gives a line (it is the page's description too) before the chips go (audit D-11).
+    const summary = document.querySelector(".summary");
+    if (bottom() > 572 && summary) {
+      summary.style.display = "-webkit-box";
+      summary.style.webkitBoxOrient = "vertical";
+      summary.style.webkitLineClamp = "2";
+      summary.style.overflow = "hidden";
+    }
     if (bottom() > 572) document.querySelector(".chips")?.remove();
     const room = 568 - top - flow.getBoundingClientRect().height;
     flow.style.top = `${Math.round(top + Math.max(0, room) * 0.5)}px`;

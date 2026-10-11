@@ -2,17 +2,19 @@
 /**
  * 05 AI assistant (DESIGN.md 12.14b): what the assistant is, how it works (question → Worker → Gemini → answer),
  * and a faithful static preview of the real widget (welcome state only; never a fabricated answer).
- * The preview is decorative (aria-hidden) and opens the chat on click; keyboard and screen-reader users use the
- * "Start a conversation" button, which does the same.
+ * The preview is the panel's own anatomy (audit M-05): the drawn avatar the panel's header shows (the launcher's art,
+ * cropped on the face, with the online dot on it), title and subtitle, the welcome, the disclaimer line, the suggestion
+ * pills, and the composer with its separate send button, on the panel's radius. It is decorative (aria-hidden) and
+ * opens the chat on click; keyboard and screen-reader users use the "Start a conversation" button, which does the same.
  */
 import "~/styles/home-b.css";
-import { Image } from "astro:assets";
-import avatar from "~/assets/photo/mh-avatar-320.jpg";
+import avatarArt from "../../../../design/assets/avatar/mh-avatar.svg?raw";
 import BidiText from "~/components/ui/BidiText.astro";
 import Icon from "~/components/ui/Icon.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
 import suggestions from "@content/chat/suggestions.json";
 import { messages, type Locale } from "~/lib/i18n";
+import { noBreakHtml } from "~/lib/nobreak";
 import { link } from "~/lib/site";
 
 interface Props {
@@ -22,8 +24,13 @@ const { locale } = Astro.props;
 const m = messages(locale);
 const chips = suggestions[locale].slice(0, 4);
 const flow = [m.assistant.flow.question, m.assistant.flow.worker, m.assistant.flow.model, m.assistant.flow.answer];
+/** The panel header's avatar (chat-avatar.ts HEADER_SVG): the launcher's drawing cropped on the face, its own ids. */
+const face = avatarArt
+  .replace(/<!--[\s\S]*?-->|\n\s*/g, "")
+  .replaceAll("mha-", "mhp-")
+  .replace('viewBox="-14 -10 148 140"', 'viewBox="14 6 92 92"');
 ---
-<section class="section section--band" id="assistant" aria-labelledby="assistant-title">
+<section class="section" id="assistant" aria-labelledby="assistant-title">
   <div class="container assist">
     <div class="stack stack-lg">
       <SectionHeader variant="rule" index="06" eyebrow={m.assistant.eyebrow} title={m.assistant.title} titleId="assistant-title" />
@@ -34,7 +41,7 @@ const flow = [m.assistant.flow.question, m.assistant.flow.worker, m.assistant.fl
           flow.map((step) => (
             <li>
               <b>{step.title}</b>
-              <span>{step.detail}</span>
+              <span set:html={noBreakHtml(step.detail, "nowrap")} />
             </li>
           ))
         }
@@ -54,18 +61,16 @@ const flow = [m.assistant.flow.question, m.assistant.flow.worker, m.assistant.fl
     <div class="chat-preview-wrap">
       <div class="chat-preview" data-open-chat aria-hidden="true">
         <span class="chat-preview__head">
-          <Image src={avatar} alt="" width={36} height={36} densities={[1, 2]} loading="lazy" decoding="async" />
-          <span>
+          <span class="chat-preview__av"><Fragment set:html={face} /><i class="dot"></i></span>
+          <span class="chat-preview__who">
             <b>{m.chat.title}</b>
-            <small><i class="dot"></i>{m.chat.subtitle}</small>
+            <small>{m.chat.subtitle}</small>
           </span>
+          <i class="chat-preview__x"><Icon name="close" size="sm" /></i>
         </span>
         <span class="chat-preview__body">
-          <span class="chat-preview__msg">
-            <span class="icon-tile"><Icon name="ask" /></span>
-            <span>{m.chat.greeting}</span>
-          </span>
-          <span class="chat-preview__try">{m.chat.suggestionsTitle}</span>
+          <span class="chat-preview__msg">{m.chat.greeting}</span>
+          <span class="chat-preview__note">{m.chat.disclaimer}</span>
           <span class="chat-preview__chips">
             {/* In the page's direction, only the other script's runs isolated (lib/bidi.ts; audit A-01). */}
             {chips.map((c) => (
@@ -76,10 +81,9 @@ const flow = [m.assistant.flow.question, m.assistant.flow.worker, m.assistant.fl
           </span>
         </span>
         <span class="chat-preview__composer">
-          <span>{m.chat.placeholder}</span>
-          <i><Icon name="send" size="sm" /></i>
+          <span class="chat-preview__field">{m.chat.placeholder}</span>
+          <i class="chat-preview__go"><Icon name="arrow-up" size="sm" /></i>
         </span>
-        <span class="chat-preview__hint">{m.chat.jdHint}</span>
       </div>
     </div>
   </div>

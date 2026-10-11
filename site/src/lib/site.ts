@@ -17,6 +17,12 @@ export const SITE_URL = profile.site.url;
 export const TURNSTILE_SITE_KEY: string =
   import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || (import.meta.env.DEV ? "1x00000000000000000000BB" : "0x4AAAAAAFSgKXNi27pxPG5n");
 
+/**
+ * A value that may differ per language: a link (round 7, SEO-04: logic-controls.com's /en/ and /ar/ home pages) or a
+ * stack tag (R7-30: "LLM evaluation" / «تقييم النماذج اللغوية»), given as one string for both or one per locale.
+ */
+export const byLocale = (href: string | Readonly<Record<Locale, string>>, locale: Locale): string => (typeof href === "string" ? href : href[locale]);
+
 /** Absolute URL for a site path. */
 export const absolute = (path: string): string => new URL(path, SITE_URL).href;
 

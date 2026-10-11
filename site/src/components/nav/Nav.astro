@@ -122,7 +122,7 @@ const themeLabel = (mode: string) => `${m.theme.label}: ${mode}`;
         <div class="menu-sheet__row">
         <a class="lang-switch lang-switch--flush" href={otherHref} hreflang={other} lang={other}>
           <Icon name="globe" size="sm" />
-          <span>{m.language.switchTo}</span>
+          <span lang={other}>{m.language.switchTo}</span>
           <span class="sr-only" lang={locale}>
             , {m.language.switchToLabel}
           </span>

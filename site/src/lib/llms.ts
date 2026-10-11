@@ -4,7 +4,7 @@
  * English (the Arabic site is linked). Public facts only; the unnamed client stays unnamed.
  */
 import { formatPeriod, localePath } from "./i18n";
-import { CV_PDF, PATHS, absolute, caseStudies, contact, link, profile } from "./site";
+import { CV_PDF, PATHS, absolute, caseStudies, contact, byLocale, link, profile } from "./site";
 
 const en = "en" as const;
 const b = profile.basics;
@@ -44,8 +44,8 @@ function work(full: boolean): string[] {
       out.push(`  - Problem: ${c.problem.en}`);
       for (const f of c.approach) out.push(`  - Approach: ${f.text.en}`);
       for (const f of c.outcome) out.push(`  - Outcome: ${f.text.en}`);
-      out.push(`  - Stack: ${c.stack.join(", ")}`);
-      for (const l of c.links) out.push(`  - ${l.label.en}: ${l.href}`);
+      out.push(`  - Stack: ${(c.stack as readonly (string | Record<"en" | "ar", string>)[]).map((t) => byLocale(t, "en")).join(", ")}`);
+      for (const l of c.links) out.push(`  - ${l.label.en}: ${byLocale(l.href as string | Record<"en" | "ar", string>, "en")}`);
     }
   }
   out.push("");
@@ -55,7 +55,7 @@ function work(full: boolean): string[] {
 function openSource(full: boolean): string[] {
   const out = ["## Open source", ""];
   for (const p of profile.projects.filter((x) => full || x.featured)) {
-    out.push(`- [${p.name}](${p.repo}): ${p.description.en}${p.live ? ` Live: ${p.live}` : ""}`);
+    out.push(`- [${p.name}](${p.repo}): ${p.description.en}${p.live ? ` Live: ${byLocale(p.live as string | Record<"en" | "ar", string>, "en")}` : ""}`);
     if (full) for (const h of p.highlights) out.push(`  - ${h.text.en}`);
   }
   out.push("");
@@ -74,7 +74,11 @@ function education(): string[] {
 
 function skills(): string[] {
   const out = ["## Skills", ""];
-  for (const line of profile.cv.skills) out.push(`- ${line.label.en}: ${line.items.map((i) => i.en).join(", ")}`);
+  // Listed-only skills (a CV line's optional `alsoUsed`, round 7 HM-17) follow the evidenced ones.
+  for (const line of profile.cv.skills) {
+    const also = (line as { alsoUsed?: readonly { en: string }[] }).alsoUsed;
+    out.push(`- ${line.label.en}: ${line.items.map((i) => i.en).join(", ")}${also?.length ? `; also used: ${also.map((i) => i.en).join(", ")}` : ""}`);
+  }
   out.push("");
   return out;
 }

@@ -544,7 +544,7 @@ test.describe("phones: the CV (CV-01..03)", () => {
   });
 
   for (const [locale, path] of [["en", "/cv/"], ["ar", "/ar/cv/"]] as const)
-    test(`${locale}: the chat launcher never sits on the CV's line ends while it is read; it is there on load, on a scroll up and at the end`, async ({ page, isMobile }) => {
+    test(`${locale}: the chat launcher never sits on the CV's lines, on load or while it is read; it is back at the end`, async ({ page, isMobile }) => {
       test.skip(!isMobile, "phones");
       await page.addInitScript(() => sessionStorage.setItem("mh-chat:greet", "x")); // the greeting has its own tests
       await load(page, path, locale === "ar" ? "light" : "dark");
@@ -574,7 +574,9 @@ test.describe("phones: the CV (CV-01..03)", () => {
           await page.waitForTimeout(16);
         }
       };
-      await expect.poll(out, "on screen when the page opens").toBe(true);
+      // The first screen: never on a line of the sheet (round 7, R7-LEAD-02); it waits for a free spot.
+      await page.waitForTimeout(600);
+      expect(await covered(), "on load").toEqual([]);
       // Reading: scroll, rest (longer than the 1.2 s after which it comes back elsewhere), scroll on.
       for (let i = 0; i < 6; i++) {
         await scroll(300);
@@ -582,9 +584,10 @@ test.describe("phones: the CV (CV-01..03)", () => {
         expect(await covered(), `step ${i}`).toEqual([]);
         expect(await out(), `step ${i}: aside over the sheet`).toBe(false);
       }
-      // A small scroll up brings it back (its corner may cover a line then, as the header does while it is back).
+      // A small scroll up: still never on a line.
       await scroll(-80);
-      await expect.poll(out).toBe(true);
+      await page.waitForTimeout(600);
+      expect(await covered(), "after a scroll up").toEqual([]);
       // The end of the page: back, below the sheet.
       await page.evaluate(() => scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
       await expect.poll(out).toBe(true);

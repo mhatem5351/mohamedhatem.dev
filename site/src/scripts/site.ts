@@ -20,11 +20,12 @@ type ChatWindow = Window & {
   MHChatQueue?: OpenRequest[];
 };
 
+// First: the reveal on scroll fails open, so it must not depend on anything below (audit R7-RES-01).
+import "./reveal";
 import "./dock";
 
 const root = document.documentElement;
 const KEY = "mh-theme";
-const reduceMq = matchMedia("(prefers-reduced-motion: reduce)");
 
 // iOS Safari applies :active (the pressed states in components.css 21c) only when a touch listener exists.
 document.addEventListener("touchstart", () => {}, { passive: true });
@@ -89,6 +90,37 @@ addEventListener("storage", (e) => {
 });
 
 /* ------------------------------------------------------------------ chat */
+/**
+ * The chat didn't come (audit R7-RES-04): its code failed to load (a network fault, or a page opened before a deploy
+ * whose chunks are gone), so an "Ask" request got no panel within a few seconds. The page then offers what the no-JS
+ * visitor gets, email and WhatsApp, in a small card (ChatMount.astro [data-chat-fallback]); a panel that still opens
+ * later puts it away. Escape or its close button dismisses it, and focus goes back to the opener.
+ */
+const fallback = document.querySelector<HTMLElement>("[data-chat-fallback]");
+let fallbackTimer = 0;
+let fallbackOpener: HTMLElement | null = null;
+function hideFallback(refocus: boolean): void {
+  clearTimeout(fallbackTimer);
+  if (!fallback || fallback.hidden) return;
+  fallback.hidden = true;
+  if (refocus) fallbackOpener?.focus({ preventScroll: true });
+}
+function watchChat(): void {
+  if (!fallback) return;
+  clearTimeout(fallbackTimer);
+  const opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+  fallbackTimer = window.setTimeout(() => {
+    fallbackOpener = opener;
+    fallback.hidden = false;
+    fallback.focus({ preventScroll: true });
+  }, 4000);
+}
+if (fallback) {
+  fallback.querySelector("[data-chat-fallback-close]")?.addEventListener("click", () => hideFallback(true));
+  fallback.addEventListener("keydown", (e) => e.key === "Escape" && hideFallback(true));
+  document.addEventListener("mh:chat-state", (e) => (e as CustomEvent<{ open?: boolean }>).detail?.open && hideFallback(false));
+}
+
 /** Closes the mobile menu if it is open (set by the menu below): the chat can't open behind an inert page. */
 let closeMenu: () => void = () => {};
 function openChat(req: OpenRequest = {}): void {
@@ -96,8 +128,12 @@ function openChat(req: OpenRequest = {}): void {
   const w = window as ChatWindow;
   const go = () => {
     const chat = w.MHChat;
-    if (!chat?.open) return void (w.MHChatQueue ??= []).push(req);
+    if (!chat?.open) {
+      (w.MHChatQueue ??= []).push(req);
+      return watchChat();
+    }
     const wasOpen = chat.launcher?.button.getAttribute("aria-expanded") === "true";
+    if (!wasOpen) watchChat();
     chat.open(req);
     // The desktop panel is non-modal: a keyboard user who tabbed out of it gets back in with the page's own "Ask" button
     // or "/", straight to the composer (audit A11Y-01). (Opening it moves focus there already.)
@@ -479,61 +515,38 @@ if (avoidEls.length || hushEls.length || afterEl || launcherOff) {
 }
 
 /* ------------------------------------------------------------------ home: section scroll-spy */
+// Every section counts: one without a link of its own (What I build, About, the assistant, Skills, Education) keeps
+// the link of the last linked section before it, so the header always says where the reader is (audit H-32).
 const spyLinks = [...document.querySelectorAll<HTMLAnchorElement>(".nav__links a[data-section]")].filter((a) => a.getAttribute("href")?.startsWith("#"));
 if (spyLinks.length && "IntersectionObserver" in window) {
   const byId = new Map(spyLinks.map((a) => [a.dataset.section!, a]));
+  const sections = [...document.querySelectorAll<HTMLElement>("main > section[id]")];
+  /** Each section's link: its own, else the previous linked section's (none before the first, e.g. the hero). */
+  const linkOf = new Map<string, HTMLAnchorElement | undefined>();
+  let last: HTMLAnchorElement | undefined;
+  for (const sec of sections) {
+    last = byId.get(sec.id) ?? last;
+    linkOf.set(sec.id, last);
+  }
   const visible = new Set<string>();
   const io = new IntersectionObserver(
     (entries) => {
       for (const en of entries) en.isIntersecting ? visible.add(en.target.id) : visible.delete(en.target.id);
-      const order = [...byId.keys()];
-      const current = order.find((id) => visible.has(id));
-      for (const [id, a] of byId) id === current ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
+      const current = linkOf.get(sections.find((sec) => visible.has(sec.id))?.id ?? "");
+      for (const a of byId.values()) a === current ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
     },
     { rootMargin: "-45% 0px -50% 0px" },
   );
-  for (const id of byId.keys()) {
-    const el = document.getElementById(id);
-    if (el) io.observe(el);
-  }
+  for (const sec of sections) io.observe(sec);
 }
 
-/* ------------------------------------------------------------------ reveal on scroll */
-const reveal = document.querySelectorAll<HTMLElement>("[data-reveal]");
-if (reveal.length) {
-  if (reduceMq.matches || !("IntersectionObserver" in window)) for (const el of reveal) el.classList.add("is-in");
-  else {
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const en of entries)
-          if (en.isIntersecting) {
-            en.target.classList.add("is-in");
-            io.unobserve(en.target);
-          }
-      },
-      { rootMargin: "0px 0px -8% 0px" },
-    );
-    for (const el of reveal) io.observe(el);
-  }
-}
+/* Reveal on scroll: ./reveal.ts (imported first). */
 
 /* ------------------------------------------------------------------ PDFs on touch screens */
 // A PDF link marked data-open-on-touch opens in the browser's viewer on a phone (it has its own share and save) rather
 // than downloading an A4 file the phone can't show (audit CV-01). With a mouse it still downloads.
 if (matchMedia("(pointer: coarse)").matches)
   for (const a of document.querySelectorAll<HTMLAnchorElement>("a[download][data-open-on-touch]")) a.removeAttribute("download");
-
-/* ------------------------------------------------------------------ CSP violations: one report per page view */
-// The per-page policy is a <meta> tag, which can't report on its own (audit SEC-H01): the first violation of a page view
-// goes to the Worker, which keeps only the directive, the blocked host and the known page path.
-document.addEventListener(
-  "securitypolicyviolation",
-  (e) => {
-    const body = { documentURL: location.href, blockedURL: e.blockedURI, effectiveDirective: e.effectiveDirective, disposition: e.disposition };
-    navigator.sendBeacon?.("/api/csp-report", new Blob([JSON.stringify(body)], { type: "application/json" }));
-  },
-  { once: true },
-);
 
 /* ------------------------------------------------------------------ live Cairo time */
 const clocks = document.querySelectorAll<HTMLTimeElement>("time[data-cairo-time]");

@@ -107,7 +107,10 @@ test.describe("ranges and numbers in Arabic (A-02, A-04)", () => {
           };
           const a = at(m.index, 4);
           const b = at(m.index + m[0].length - 4, 4);
-          if (Math.abs(a.top - b.top) < 4) out.push({ text: m[0], ok: a.left < b.left });
+          // A bare year range reads left to right; a month range ("سبتمبر 2023 – 2027 (متوقع)") reads right to left
+          // like every other month range, its start month and year first (round 7, A-02).
+          const monthRange = /[؀-ۿ]\s+$/.test(t.data.slice(0, m.index));
+          if (Math.abs(a.top - b.top) < 4) out.push({ text: m[0], ok: monthRange ? a.left > b.left : a.left < b.left });
         }
       }
       return out;

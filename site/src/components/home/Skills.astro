@@ -11,6 +11,7 @@ import Icon from "~/components/ui/Icon.astro";
 import BidiText from "~/components/ui/BidiText.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
 import { dirOf, format, messages, pluralize, type Locale } from "~/lib/i18n";
+import { noBreakHtml } from "~/lib/nobreak";
 import { profile } from "~/lib/site";
 import { GROUP_ACCENT, MATRIX_COLUMNS, matrixGroups } from "~/lib/skills-matrix";
 
@@ -37,7 +38,7 @@ const GROUP_COLOR: Record<string, string> = {
   "ways-of-working": "sage",
 };
 ---
-<section class="section" id="skills" aria-labelledby="skills-title">
+<section class="section section--band" id="skills" aria-labelledby="skills-title">
   <div class="container">
     <SectionHeader index="07" eyebrow={m.skills.eyebrow} title={m.skills.title} titleId="skills-title" lede={m.skills.lead} />
 
@@ -136,7 +137,7 @@ const GROUP_COLOR: Record<string, string> = {
           profile.skills.map((g) => (
             <li class={`toolbox__group accent-${GROUP_COLOR[g.id] ?? "teal"}`}>
               <h4>{g.title[locale]}</h4>
-              <p class="toolbox__summary">{g.summary[locale]}</p>
+              <p class="toolbox__summary" set:html={noBreakHtml(g.summary[locale], "nowrap")} />
               <ul class="toolbox__list" role="list">
                 {g.skills.filter((s) => s.evidence.length > 0).map((s) => (
                   <li class="tool">
