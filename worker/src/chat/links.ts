@@ -1,26 +1,44 @@
 /**
- * Link guard: the answer may only link to URLs that appear in the knowledge base or the instructions (plus the site
- * itself). Runs on the streamed text; a markdown link or bare URL is held back until it is complete, then
+ * Link guard: the answer may only link to URLs that appear in the knowledge base or the instructions, and on the site
+ * itself only to real pages (the paths written in the sources plus the site's page list, `SITE_PATHS`, generated
+ * from content/profile.ts). Runs on the streamed text; a markdown link or bare URL is held back until it is complete,
+ * then
  *   allowed      → passed through unchanged;
  *   not allowed  → `[text](bad-url)` becomes `text`, a bare bad URL is dropped.
- * Catches the model "remembering" a URL slightly wrong (measured: `https://wa.co/201142070946` instead of wa.me) or
- * repeating a link a visitor tried to plant.
+ * Catches the model "remembering" a URL slightly wrong (measured: `https://wa.co/201142070946` instead of wa.me),
+ * guessing a page of the site (a case-study slug that may not exist, audit R6-10) or repeating a link a visitor tried
+ * to plant.
  */
 const URL_IN_TEXT = /\b(?:https?:\/\/[^\s<>()[\]"'`]+|mailto:[^\s<>()[\]"'`]+)/gi;
 const TRAILING_PUNCT = /[.,;:!?]+$/;
 
 export type LinkCheck = (url: string) => boolean;
 
-/** Builds the allow-list from texts that contain the trusted URLs (knowledge base, system prompt). */
-export function buildLinkCheck(sources: string[], siteOrigins: string[] = ["https://mohamedhatem.dev", "https://www.mohamedhatem.dev"]): LinkCheck {
-  const prefixes = new Map<string, Set<string>>(); // origin → path prefixes ("" = whole origin)
+/** The site's own pages that are always linkable (home, CV), in both languages. */
+export const BASE_SITE_PATHS = ["/", "/ar/", "/cv/", "/ar/cv/"];
+
+/**
+ * Builds the allow-list from texts that contain the trusted URLs (knowledge base, system prompt). Other origins: the
+ * written URLs and their sub-paths. The site (`siteOrigins`): exactly the pages written in the sources, the
+ * {@link BASE_SITE_PATHS} and `sitePaths` (with any #anchor or query), never a guessed path.
+ */
+export function buildLinkCheck(
+  sources: string[],
+  siteOrigins: string[] = ["https://mohamedhatem.dev", "https://www.mohamedhatem.dev"],
+  sitePaths: readonly string[] = [],
+): LinkCheck {
+  const prefixes = new Map<string, Set<string>>(); // origin → path prefixes
   const mails = new Set<string>();
   const phones = new Set<string>();
+  const pages = new Set<string>([...BASE_SITE_PATHS, ...sitePaths].map(pagePath));
   const add = (origin: string, path: string) => {
+    if (siteOrigins.includes(origin)) {
+      pages.add(pagePath(path));
+      return;
+    }
     if (!prefixes.has(origin)) prefixes.set(origin, new Set());
     prefixes.get(origin)!.add(path);
   };
-  for (const o of siteOrigins) add(o, "");
   for (const text of sources) {
     for (const m of text.matchAll(URL_IN_TEXT)) {
       const raw = m[0].replace(TRAILING_PUNCT, "");
@@ -53,14 +71,20 @@ export function buildLinkCheck(sources: string[], siteOrigins: string[] = ["http
     } catch {
       return false;
     }
-    if (!/^[a-z][a-z0-9+.-]*:/i.test(link)) return siteOrigins.includes(u.origin);
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(link)) return siteOrigins.includes(u.origin) && pages.has(pagePath(u.pathname));
     if (u.protocol !== "https:" && u.protocol !== "http:") return false;
+    if (siteOrigins.includes(u.origin)) return pages.has(pagePath(u.pathname));
     const paths = prefixes.get(u.origin);
     if (!paths) return false;
     const path = u.pathname.replace(/\/+$/, "");
     for (const p of paths) if (p === "" || path === p || path.startsWith(`${p}/`)) return true;
     return false;
   };
+}
+
+/** A site path compared without its trailing slash and case ("/cv" and "/CV/" are the page "/cv/"). */
+function pagePath(path: string): string {
+  return path.replace(/\/+$/, "").toLowerCase() || "/";
 }
 
 /** Longest a markdown link may take to complete before "[" is treated as plain text. */

@@ -584,6 +584,46 @@ describe("streamAnswer: SSE assembly with a mocked Gemini", () => {
       expect(sink.events.at(-1)!.data.finish).toBe("length");
     });
 
+    it("a retry that fails keeps the cut answer and ends it as cut, not with an error under visible text (R6-19)", async () => {
+      // The retry model is over quota.
+      const busy = async (url: string) =>
+        modelOf(url) === "primary" ? geminiSse([textChunk("At Wakeb Data, Hatem built a bilingual (Arabic/English"), finalChunk("OTHER")]) : geminiError(503);
+      const sink = memorySink();
+      const r = await streamAnswer("SYS", contents, deps(busy, { timeouts: { first: 2000, idle: 500, total: 20_000, ping: 50 } }), sink, new AbortController().signal);
+      expect(r.outcome).toBe("ok");
+      expect(sink.names()).not.toContain("error");
+      expect(shown(sink)).toBe("At Wakeb Data, Hatem built a bilingual (Arabic/English");
+      expect(sink.events.at(-1)!.data.finish).toBe("length");
+      // The retry model answers nothing at all (the 503 above put "fallback" on a cooldown: start afresh).
+      resetCooldowns();
+      const silent = async (url: string) => (modelOf(url) === "primary" ? geminiSse([textChunk("Cut here"), finalChunk("OTHER")]) : geminiSse([finalChunk("STOP")]));
+      const sink2 = memorySink();
+      await streamAnswer("SYS", contents, deps(silent, { timeouts: { first: 2000, idle: 500, total: 20_000, ping: 50 } }), sink2, new AbortController().signal);
+      expect(shown(sink2)).toBe("Cut here");
+      expect(sink2.events.at(-1)).toMatchObject({ event: "done", data: { finish: "length" } });
+      // The retry replaced the cut text, then stalled: what it showed stays, marked as cut.
+      resetCooldowns();
+      const stalls = async (url: string) =>
+        modelOf(url) === "primary" ? geminiSse([textChunk("Cut here"), finalChunk("OTHER")]) : geminiSse([textChunk("A fuller answer that then stalls")], { hangAfter: true });
+      const sink3 = memorySink();
+      await streamAnswer("SYS", contents, deps(stalls, { timeouts: { first: 2000, idle: 300, total: 20_000, ping: 50 } }), sink3, new AbortController().signal);
+      expect(shown(sink3)).toBe("A fuller answer that then stalls");
+      expect(sink3.names()).not.toContain("error");
+      expect(sink3.events.at(-1)).toMatchObject({ event: "done", data: { finish: "length" } });
+    });
+
+    it("a cut answer from a full-prompt model is never retried on a compact-prompt model (Gemma)", async () => {
+      const calls: string[] = [];
+      const fetcher = async (url: string) => {
+        calls.push(modelOf(url));
+        return geminiSse([textChunk("Cut"), finalChunk("OTHER")]);
+      };
+      const sink = memorySink();
+      await streamAnswer("SYS", contents, deps(fetcher, { fallbacks: ["gemma-4-31b-it"], timeouts: { first: 2000, idle: 500, total: 20_000, ping: 50 } }), sink, new AbortController().signal);
+      expect(calls).toEqual(["primary"]);
+      expect(sink.events.at(-1)!.data.finish).toBe("length");
+    });
+
     it("retries only once, and not without the time for it", async () => {
       const calls: string[] = [];
       const fetcher = async (url: string) => {
