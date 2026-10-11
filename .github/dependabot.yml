@@ -2,8 +2,9 @@
 # one pull request per directory, at most 3 open version-update pull requests per entry (major updates come one by
 # one). Security updates follow the repository's Dependabot settings (Settings → Advanced Security) and are not held
 # back by these limits.
-# Dependabot's runs get no Actions secrets, so CI skips only the keyed client-name check on its pull requests
-# (.github/workflows/ci.yml); they change only manifests, lockfiles and workflow pins.
+# Dependabot's runs get no Actions secrets; they read the Dependabot secret of the same name (CONFIDENTIAL_HMAC_KEY),
+# and without it CI skips only the keyed client-name check (.github/workflows/ci.yml). Its pull requests change only
+# manifests, lockfiles and workflow pins.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -29,6 +30,11 @@ updates:
     groups:
       site:
         update-types: [minor, patch]
+    # @astrojs/check 0.9 (astro check, in `npm test`) peers on TypeScript 5 or 6: TypeScript 7 fails `npm ci` with
+    # ERESOLVE (pull request #1). Lift this once @astrojs/check supports it.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: "deps(site)"
 
