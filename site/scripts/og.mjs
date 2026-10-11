@@ -13,7 +13,9 @@
  * Colours: the design tokens' dark values (../design/tokens.json), the site's default theme.
  *
  * Fast path: inputs (texts, templates, tokens, fonts, this script) are hashed into node_modules/.cache/mh-og/manifest.json; when nothing
- * changed and every PNG exists, the script exits in milliseconds.
+ * changed and every PNG on disk is the one this cache rendered (its own content hash is recorded too), the script exits
+ * in milliseconds. The output check matters because node_modules can be shared (git worktrees symlink it): another
+ * checkout may have rendered new cards into its own public/og/ and updated the manifest, leaving stale files here.
  *
  *   node scripts/og.mjs           render what changed
  *   node scripts/og.mjs --force   render everything
@@ -146,7 +148,7 @@ function cards(locale) {
       title: b.name[locale],
       // The meta description is a page summary ("Read it here or download the PDF"); the card has its own line.
       summary: m.seo.ogCvSummary,
-      chips: ["LangGraph", "RAG", "vLLM", "Python", "AWS ML Specialty"].map((s) => [s, chipCategory(s)]),
+      chips: ["LangGraph", "RAG", "vLLM", "Python", "LLM evaluation"].map((s) => [s, chipCategory(s)]),
       meta: [b.title[locale], b.employer, b.location.city[locale]],
     },
     {
@@ -333,6 +335,8 @@ for (const t of Object.values(TEMPLATES)) scriptHash.update(t.defs).update(t.dec
 for (const b of fontBytes) scriptHash.update(String(b.length));
 const base = scriptHash.digest("hex");
 const manifest = existsSync(MANIFEST) ? JSON.parse(readFileSync(MANIFEST, "utf8")) : {};
+/** Content hash of a rendered card, recorded with its input hash so the fast path only trusts its own output. */
+const pngHash = (buf) => createHash("sha256").update(buf).digest("hex").slice(0, 16);
 mkdirSync(OUT, { recursive: true });
 mkdirSync(CACHE, { recursive: true });
 
@@ -343,7 +347,7 @@ for (const locale of ["en", "ar"])
     if (ONLY && !ONLY.has(name)) continue;
     const hash = createHash("sha256").update(base).update(JSON.stringify(card)).digest("hex").slice(0, 16);
     const file = `${OUT}${name}.png`;
-    if (!FORCE && manifest[name] === hash && existsSync(file)) continue;
+    if (!FORCE && existsSync(file) && manifest[name] === `${hash}:${pngHash(readFileSync(file))}`) continue;
     jobs.push({ name, card, locale, hash, file });
   }
 
@@ -374,7 +378,7 @@ for (const job of jobs) {
   // coral separators, so the palette stays full).
   const png = await sharp(raw).png({ palette: true, quality: 100, colours: 256, compressionLevel: 9, adaptiveFiltering: false, effort: 10 }).toBuffer();
   writeFileSync(job.file, png);
-  manifest[job.name] = job.hash;
+  manifest[job.name] = `${job.hash}:${pngHash(png)}`;
   bytes += png.length;
   console.log(`og: ${job.name}.png ${(png.length / 1024).toFixed(0)} KB`);
 }

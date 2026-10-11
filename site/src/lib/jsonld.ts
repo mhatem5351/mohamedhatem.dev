@@ -26,6 +26,7 @@ import { datedByRole } from "./case";
 import { PRIVACY_UPDATED, SITE_PUBLISHED, HOME_UPDATED } from "./dates";
 import { format, localePath, messages, parseIso } from "./i18n";
 import { PATHS, absolute, caseStudyBySlug, contact, link, ogImage, profile } from "./site";
+import { versioned } from "./og-version";
 
 export const PERSON_ID = `${profile.site.url}/#person`;
 export const WEBSITE_ID = `${profile.site.url}/#website`;
@@ -195,7 +196,7 @@ export function caseStudyJsonLd(slug: string, locale: Locale): object[] {
     description: cs.summary[locale],
     genre: m.experience.caseStudy,
     inLanguage: LANG[locale],
-    image: absolute(ogImage(`work-${cs.slug}`, locale)),
+    image: absolute(versioned(ogImage(`work-${cs.slug}`, locale))),
     author: author(),
     publisher: { "@id": PERSON_ID },
     isPartOf: { "@id": WEBSITE_ID },

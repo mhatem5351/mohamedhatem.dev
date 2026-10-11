@@ -10,6 +10,7 @@
 import { Font } from "astro:assets";
 import { localePath, messages, otherLocale, type Locale } from "~/lib/i18n";
 import { absolute, ogImage as ogPath } from "~/lib/site";
+import { versioned } from "~/lib/og-version";
 import { analyticsToken } from "~/lib/env";
 
 export interface HeadProps {
@@ -61,7 +62,7 @@ const {
 const m = messages(locale);
 const other = otherLocale(locale);
 const canonical = absolute(localePath(path, locale));
-const og = absolute(ogPath(ogKey, locale));
+const og = absolute(versioned(ogPath(ogKey, locale)));
 const ogAlt = ogImageAlt ?? m.meta.ogImageAlt;
 const token = import.meta.env.PROD ? analyticsToken() : undefined;
 const arabicPreload = (preloadFonts.arabicWeights ?? [400, 600, 700]).map((weight) => ({ weight }));
