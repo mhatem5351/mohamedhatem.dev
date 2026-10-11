@@ -17,7 +17,7 @@
     "chat:eval": "node worker/scripts/chat-eval.mjs",
     "chat:e2e": "node worker/scripts/chat-e2e.mjs",
     "check:content": "tsx content/scripts/check-content.mjs",
-    "deploy:worker": "npm run check:content && node worker/scripts/gen-content.mjs --require-content && wrangler deploy",
+    "deploy:worker": "npm run check:content && node worker/scripts/gen-content.mjs --require-content && node site/scripts/keep-previous-assets.mjs && wrangler deploy && node site/scripts/keep-previous-assets.mjs --save",
     "widget:build": "node chat-widget/scripts/build.mjs",
     "widget:size": "node chat-widget/scripts/build.mjs --check",
     "widget:demo": "node chat-widget/scripts/build.mjs && node chat-widget/scripts/serve.mjs",
@@ -25,7 +25,8 @@
     "test:widget:unit": "vitest run --project widget",
     "build": "npm --prefix site run build",
     "deploy": "npm run build && npm run deploy:worker",
-    "indexnow": "node site/scripts/indexnow.mjs"
+    "indexnow": "node site/scripts/indexnow.mjs",
+    "deploy:seed-previous": "node site/scripts/keep-previous-assets.mjs --seed"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

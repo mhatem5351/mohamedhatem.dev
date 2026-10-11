@@ -8,17 +8,22 @@
  * Fails (exit 1) on:
  *   secrets          key patterns (AIza…, sk-…, ghp_…, github_pat_…), the names TURNSTILE_SECRET / SESSION_SECRET /
  *                    GEMINI_API_KEY, and the actual secret values from ../.env (compared by containment, never printed)
- *   honesty          the unnamed client (hashed word n-grams, as content/scripts/check-content.mjs), an M.Sc.
- *                    described as held, the Logic Controls owner featured (no Person besides Mohamed in JSON-LD)
+ *   honesty          the unnamed client (hashed word n-grams, as content/scripts/check-content.mjs) in every text
+ *                    file (HTML: the visible copy and the raw file, JSON-LD and scripts included) and in the CV PDFs'
+ *                    text layer (both reading orders of the Arabic), an M.Sc. described as held, the Logic Controls
+ *                    owner featured (no Person besides Mohamed in JSON-LD)
  *   CSP              not exactly one CSP <meta> per page; script-src/style-src missing or allowing 'unsafe-inline';
- *                    an inline <script>/<style> whose sha256 isn't listed; any style="" attribute
+ *                    an inline <script>/<style> whose sha256 isn't listed; any style="" attribute; a page without its
+ *                    Content-Security-Policy-Report-Only mirror in _headers (same fetch directives, reported to the
+ *                    Worker); _headers over the Workers limits (100 rules, 2,000 characters a line)
  *   pages            <html lang/dir> (Arabic under /ar/), <title>, meta description, canonical + hreflang en/ar/
  *                    x-default (not on 404 pages, which must be noindex), og:image file present, JSON-LD parses,
  *                    exactly one <h1>, internal links / src / srcset / #anchors resolve, no insecure http:// URLs
  *   files            _headers, _redirects, robots.txt, sitemap-index.xml, llms.txt, favicons and manifests are present;
  *                    _redirects has a 301 for every page's slash-less URL, for /work/ and for the guessed URLs, and
  *                    every target exists; text files declare UTF-8; every sitemap URL has a <lastmod> date;
- *                    .well-known/security.txt (RFC 9116) has a Contact and an Expires at least 30 days away; the
+ *                    .well-known/security.txt (RFC 9116) has a Contact and an Expires at least 30 days away, and a
+ *                    Policy pointing at the repository's SECURITY.md, which gives the same contact; the
  *                    IndexNow key file holds its own name; _headers reports CSP violations and sends CORP on /_astro/*
  *   robots meta      indexable pages allow large image previews (max-image-preview:large), 404 pages are noindex
  *   vCard            mohamed-hatem.vcf parses as a vCard 3.0 (BEGIN/END, VERSION, N, FN; CRLF, lines <= 75 octets, a
@@ -27,7 +32,8 @@
  *                    and shortcut targets exist; every page links its language's manifest and an
  *                    apple-mobile-web-app-title equal to that manifest's short_name
  *   structured data  one Person and one WebSite description on every page (same @id, same content); a WebSite node
- *                    wherever #website is referenced; Articles with full ISO datePublished / dateModified;
+ *                    wherever #website is referenced; Articles with full ISO datePublished / dateModified and their
+ *                    card in 16:9, 4:3 and 1:1 (files present);
  *                    codeRepository only on SoftwareSourceCode; og:image:alt describes each page's own card
  * Warnings (no failure): long titles/descriptions, pages not in the expected list.
  */
@@ -36,6 +42,8 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cspHash, elements, fileForPath, pageText, parsePolicy, tags, walk, withoutCode } from "./lib/html.mjs";
 import { allPages } from "./lib/pages.mjs";
+import { pdfPagesText } from "./lib/pdf-text.mjs";
+import { rtlRunsText } from "./lib/pdf-rtl-text.mjs";
 import { loadConfidential } from "../../worker/src/chat/confidential-node.mjs";
 
 const args = process.argv.slice(2);
@@ -101,8 +109,28 @@ for (const f of files) {
   for (const [re, label] of SECRET_PATTERNS) if (re.test(text)) fail(f, `possible secret: ${label}`);
   for (const [key, value] of SECRETS) if (text.includes(value)) fail(f, `contains the value of ${key} from .env`);
   const visible = f.endsWith(".html") ? pageText(text) : text;
-  if (mentionsUnnamedClient(visible)) fail(f, "names the unnamed client");
+  // The visible copy, and for HTML the raw file too: JSON-LD, other <script> content and attribute values aren't in
+  // pageText (audit SEC-04, round-6 E-4).
+  if (mentionsUnnamedClient(visible) || (f.endsWith(".html") && mentionsUnnamedClient(text))) fail(f, "names the unnamed client");
   const held = visible.match(HELD_MSC);
+  if (held) fail(f, `describes the M.Sc. as held: "${held[0]}"`);
+}
+
+// The CV PDFs' text layer, read the way PDF readers do (audit SEC-04, E-4). Arabic is drawn in visual order, so the
+// drawing-order text is also read with each Arabic word turned around, and with each stretch of Arabic words turned
+// around as a whole (the word order of a multi-word name), plus the right-to-left runs as readers extract them, in
+// both orders.
+const ARABIC_WORD = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+/g;
+const ARABIC_STRETCH = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+(?:\s+[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+)*/g;
+const turn = (w) => [...w].reverse().join("");
+for (const f of files.filter((x) => /^cv\/[^/]+\.pdf$/.test(x))) {
+  const buf = readFileSync(`${DIST}/${f}`);
+  const text = (await pdfPagesText(buf)).join("\n");
+  const { runs } = await rtlRunsText(buf);
+  const readings = [text, text.replace(ARABIC_WORD, turn), text.replace(ARABIC_STRETCH, turn), runs.join(" "), [...runs].reverse().join(" ")];
+  if (!text.trim()) fail(f, "the PDF has no text layer to check");
+  if (readings.some(mentionsUnnamedClient)) fail(f, "names the unnamed client (PDF text layer)");
+  const held = readings.map((t) => t.match(HELD_MSC)).find(Boolean);
   if (held) fail(f, `describes the M.Sc. as held: "${held[0]}"`);
 }
 
@@ -170,8 +198,37 @@ if (fileSet.has("_headers")) {
     [/^\/\.well-known\/security\.txt\s*\n\s+Content-Type: text\/plain; charset=utf-8/m, "UTF-8 text/plain for /.well-known/security.txt"],
   ])
     if (!re.test(h)) fail("_headers", `missing ${what}`);
-  if (/unsafe-inline/.test(h.replace(/^#.*$/gm, "").replace(/\/\*\.svg[\s\S]*?\n\n/, ""))) fail("_headers", "a page-level policy allows 'unsafe-inline'");
+  // The only 'unsafe-inline' allowed: the SVG rule, and style attributes in the Report-Only mirrors (which enforce
+  // nothing; postbuild/early-hints.mjs → MIRROR_ONLY explains the WebKit quirk).
+  const policies = h
+    .replace(/^#.*$/gm, "")
+    .replace(/\/\*\.svg[\s\S]*?\n\n/, "")
+    .replace(/^(\s+Content-Security-Policy-Report-Only:.*); style-src-attr 'unsafe-inline';/gm, "$1;");
+  if (/unsafe-inline/.test(policies)) fail("_headers", "a page-level policy allows 'unsafe-inline'");
+  // Workers static assets: at most 100 rules, 2,000 characters a line.
+  const lines = h.split(/\r?\n/);
+  const ruleCount = lines.filter((l) => /^\//.test(l)).length;
+  if (ruleCount > 100) fail("_headers", `${ruleCount} rules (Workers static assets allow 100)`);
+  for (const l of lines) if (l.length > 2000) fail("_headers", `a line is ${l.length} characters (Workers static assets allow 2,000): ${l.slice(0, 60)}…`);
 }
+
+/** dist/_headers as Map(exact path → Map(lowercased header → value)), for the per-page rules. */
+function headerRules(text) {
+  const rules = new Map();
+  let current = null;
+  for (const line of text.split(/\r?\n/)) {
+    if (!line.trim() || line.trimStart().startsWith("#")) continue;
+    if (!/^\s/.test(line)) {
+      current = new Map();
+      rules.set(line.trim(), current);
+    } else if (current) {
+      const i = line.indexOf(":");
+      current.set(line.slice(0, i).trim().toLowerCase(), line.slice(i + 1).trim());
+    }
+  }
+  return rules;
+}
+const pageHeaderRules = fileSet.has("_headers") ? headerRules(read("_headers")) : new Map();
 if (fileSet.has("robots.txt") && !/Sitemap: https:\/\/mohamedhatem\.dev\/sitemap-index\.xml/.test(read("robots.txt"))) fail("robots.txt", "no Sitemap line");
 
 /* ------------------------------------------------------------------ security.txt (RFC 9116) and the IndexNow key */
@@ -182,6 +239,11 @@ if (fileSet.has(SECURITY_TXT)) {
   if (!/^mailto:[^@\s]+@mohamedhatem\.dev$/.test(field("Contact") ?? "")) fail(SECURITY_TXT, `Contact is "${field("Contact")}" (expected a mailto: on the site's domain)`);
   if (field("Canonical") !== `${SITE}/${SECURITY_TXT}`) fail(SECURITY_TXT, `Canonical is "${field("Canonical")}"`);
   if (!field("Preferred-Languages")) fail(SECURITY_TXT, "no Preferred-Languages");
+  // The policy is the repository's SECURITY.md (GitHub shows it at /security/policy), with the same contact.
+  const policyFile = fileURLToPath(new URL("../../SECURITY.md", import.meta.url));
+  if (field("Policy") !== "https://github.com/mhatem5351/mohamedhatem.dev/security/policy") fail(SECURITY_TXT, `Policy is "${field("Policy")}"`);
+  if (!existsSync(policyFile)) fail("SECURITY.md", "missing at the repository root (security.txt's Policy)");
+  else if (!readFileSync(policyFile, "utf8").includes(`mailto:${(field("Contact") ?? "").replace(/^mailto:/, "")}`)) fail("SECURITY.md", "doesn't give security.txt's Contact address");
   const expires = Date.parse(field("Expires") ?? "");
   const days = (expires - Date.now()) / 86_400_000;
   if (!Number.isFinite(expires)) fail(SECURITY_TXT, "no valid Expires date");
@@ -279,6 +341,24 @@ for (const f of htmlFiles) {
       if (!scriptSrc?.includes(cspHash(s.body))) fail(f, `inline script not in script-src: ${s.body.trim().slice(0, 60)}…`);
     }
     for (const s of elements(html, "style")) if (s.body && !styleSrc?.includes(cspHash(s.body))) fail(f, `inline style not in style-src: ${s.body.trim().slice(0, 60)}…`);
+    // The Report-Only mirror of this <meta> (postbuild/early-hints.mjs, audit SEC-H01): the same script-src and
+    // style-src (so the browser reports exactly what the <meta> blocks), reported to the Worker, without the
+    // directives the enforced header policy already reports (counted once).
+    if (!is404) {
+      const ro = pageHeaderRules.get(path)?.get("content-security-policy-report-only");
+      if (!ro) fail(f, "no Content-Security-Policy-Report-Only mirror of the <meta> policy in _headers (postbuild/early-hints.mjs)");
+      else {
+        const mirror = parsePolicy(ro);
+        for (const d of ["default-src", "script-src", "style-src", "img-src", "connect-src", "frame-src"]) {
+          const a = [...(policy.get(d) ?? [])].sort().join(" ");
+          const b = [...(mirror.get(d) ?? [])].sort().join(" ");
+          if (a !== b) fail(f, `the Report-Only mirror's ${d} differs from the <meta> policy's`);
+        }
+        if ((mirror.get("report-uri") ?? []).join(" ") !== "/api/csp-report" || (mirror.get("report-to") ?? []).join(" ") !== "csp")
+          fail(f, "the Report-Only mirror doesn't report to /api/csp-report (report-uri + report-to csp)");
+        for (const d of ["base-uri", "form-action", "object-src"]) if (mirror.has(d)) fail(f, `the Report-Only mirror repeats ${d} (the header policy reports it already)`);
+      }
+    }
     const metaIndex = html.indexOf(metas[0].raw);
     const firstScript = html.search(/<script\b/i);
     if (firstScript >= 0 && firstScript < metaIndex) fail(f, "a script comes before the CSP <meta>");
@@ -339,8 +419,14 @@ for (const f of htmlFiles) {
       if (!entities.has(n["@id"])) entities.set(n["@id"], { body, f });
       else if (entities.get(n["@id"]).body !== body) fail(f, `${n["@id"]} differs from ${entities.get(n["@id"]).f}`);
     }
-    if (n["@type"] === "Article")
+    if (n["@type"] === "Article") {
       for (const k of ["datePublished", "dateModified"]) if (!/^\d{4}-\d{2}-\d{2}$/.test(n[k] ?? "")) fail(f, `Article ${k} is "${n[k]}" (expected YYYY-MM-DD)`);
+      // The card in 16:9, 4:3 and 1:1 (audit SEO-05; scripts/postbuild/og-ratios.mjs), each a file in the build.
+      const images = Array.isArray(n.image) ? n.image : [n.image];
+      if (images.length !== 3 || !/-4x3\.jpg(\?|$)/.test(images[1] ?? "") || !/-1x1\.jpg(\?|$)/.test(images[2] ?? "")) fail(f, "Article image is not the card in 16:9, 4:3 and 1:1");
+      for (const img of images)
+        if (typeof img !== "string" || !img.startsWith(`${SITE}/`) || !fileSet.has(fileForPath(new URL(img).pathname))) fail(f, `Article image missing from the build: ${img}`);
+    }
   }
   if (json.includes(`"@id":"${SITE}/#website"`) && !nodes.some((n) => n["@type"] === "WebSite")) fail(f, "JSON-LD refers to #website without a WebSite node");
   if (/"@type":"(?!SoftwareSourceCode)[^"]+"[^{}]*"codeRepository"/.test(json)) fail(f, "codeRepository outside a SoftwareSourceCode node");

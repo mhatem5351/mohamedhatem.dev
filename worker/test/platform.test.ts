@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanBlocked, cleanPage, parseCspReports } from "../src/csp-report";
+import { CSP_ISOLATE_DAILY_POINTS, cleanBlocked, cleanPage, parseCspReports, resetIsolatePoints, takeIsolatePoint } from "../src/csp-report";
 import { CHANNELS, renderContactPage, wantsHtml } from "../src/contact/page";
 import { PERMISSIONS_POLICY } from "../src/http";
 import worker from "../src/index";
@@ -115,14 +115,16 @@ function cspRequest(body: unknown, type = "application/reports+json", headers: R
 }
 type Point = { indexes: string[]; blobs: string[]; doubles: number[] };
 
-describe("POST /api/csp-report (SEC-H01)", () => {
+describe("POST /api/csp-report (SEC-H01, R7-SEC-01)", () => {
+  beforeEach(() => resetIsolatePoints());
+
   it("counts a Reporting API violation: directive, blocked host, page path; nothing about the visitor", async () => {
     const env = makeEnv();
     const res = await worker.fetch(cspRequest(REPORTING_API, "application/reports+json", { Origin: ORIGIN }), env, makeCtx());
     expect(res.status).toBe(204);
     expect(res.headers.get("Cache-Control")).toBe("no-store");
     expect(env.points).toEqual([
-      { indexes: ["csp"], blobs: ["csp", "script-src-elem", "evil.example", "/work/sta-tourism-assistants/", "enforce", "reporting-api", "", ""], doubles: [1] },
+      { indexes: ["csp"], blobs: ["csp", "script-src-elem", "evil.example", "/work/sta-tourism-assistants/", "enforce", "reporting-api", "", ""], doubles: [1, 1] },
     ]);
     const stored = JSON.stringify(env.points);
     for (const leak of ["198.51.100.9", "Mozilla", "secret", "email", "alert", "utm"]) expect(stored).not.toContain(leak);
@@ -139,6 +141,27 @@ describe("POST /api/csp-report (SEC-H01)", () => {
     ]);
   });
 
+  it("reads Safari's single report (a Reporting API report on its own, sent as application/csp-report)", async () => {
+    // Captured from WebKit (Playwright) on a local wrangler dev, for an inline script the page's <meta> refused.
+    const safari = {
+      type: "csp-violation",
+      url: "https://mohamedhatem.dev/cv/",
+      body: {
+        documentURL: "https://mohamedhatem.dev/cv/",
+        disposition: "report",
+        referrer: "",
+        effectiveDirective: "script-src-elem",
+        blockedURL: "inline",
+        originalPolicy: "default-src 'self'; script-src 'self'; report-uri /api/csp-report; report-to csp",
+        statusCode: 200,
+        sample: "",
+      },
+    };
+    const env = makeEnv();
+    expect((await worker.fetch(cspRequest(safari, "application/csp-report", { Origin: ORIGIN }), env, makeCtx())).status).toBe(204);
+    expect((env.points as Point[]).map((p) => p.blobs.slice(1, 6))).toEqual([["script-src-elem", "inline", "/cv/", "report", "reporting-api"]]);
+  });
+
   it("refuses foreign origins, other content types, oversized and unreadable bodies", async () => {
     const env = makeEnv();
     expect((await worker.fetch(cspRequest(LEGACY, "application/csp-report", { Origin: "https://evil.example" }), env, makeCtx())).status).toBe(403);
@@ -152,7 +175,7 @@ describe("POST /api/csp-report (SEC-H01)", () => {
     expect(env.points).toHaveLength(0);
   });
 
-  it("drops reports from other sites' pages, repeats in a batch, and anything over 5 per request", async () => {
+  it("writes ONE data point per request: the first violation from the site's pages, with the batch's distinct count", async () => {
     const env = makeEnv();
     const report = (path: string, directive = "img-src") => ({
       type: "csp-violation",
@@ -160,8 +183,48 @@ describe("POST /api/csp-report (SEC-H01)", () => {
     });
     const foreign = { type: "csp-violation", body: { ...report("/").body, documentURL: "https://other.example/" } };
     const batch = [foreign, report("/"), report("/"), ...["a", "b", "c", "d", "e", "f"].map((d) => report("/", `${d}-src`))];
-    expect((await worker.fetch(cspRequest(batch), env, makeCtx())).status).toBe(204);
-    expect(env.points).toHaveLength(5);
+    expect((await worker.fetch(cspRequest(batch, "application/reports+json", { Origin: ORIGIN }), env, makeCtx())).status).toBe(204);
+    expect(env.points).toEqual([
+      { indexes: ["csp"], blobs: ["csp", "img-src", "cdn.example", "/", "enforce", "reporting-api", "", ""], doubles: [1, 7] },
+    ]);
+  });
+
+  it("a report without an Origin counts only when it names one of the site's pages; dropped ones spend no limit", async () => {
+    const limiter = fakeLimiter(10);
+    const env = makeEnv({ RL_CSP: limiter as unknown as RateLimit });
+    const typed = { "csp-report": { ...LEGACY["csp-report"], "document-uri": "https://mohamedhatem.dev/wp-admin/x.php" } };
+    for (const headers of [{}, { Origin: "null" }] as Record<string, string>[]) expect((await worker.fetch(cspRequest(typed, "application/csp-report", headers), env, makeCtx())).status).toBe(204);
+    const foreign = { "csp-report": { ...LEGACY["csp-report"], "document-uri": "https://other.example/" } };
+    expect((await worker.fetch(cspRequest(foreign, "application/csp-report"), env, makeCtx())).status).toBe(204);
+    expect(env.points).toHaveLength(0);
+    expect(limiter.keys).toHaveLength(0);
+    // From the site's own pages (an allowed Origin), an unknown path is a real page view (a 404): counted as "other".
+    await worker.fetch(cspRequest(typed, "application/csp-report", { Origin: ORIGIN }), env, makeCtx());
+    expect((env.points as Point[]).map((p) => p.blobs[3])).toEqual(["other"]);
+    expect(limiter.keys).toHaveLength(1);
+  });
+
+  it("each isolate writes at most CSP_ISOLATE_DAILY_POINTS a UTC day", async () => {
+    const day = Date.parse("2026-10-11T12:00:00Z");
+    for (let i = 0; i < CSP_ISOLATE_DAILY_POINTS; i++) expect(takeIsolatePoint(day)).toBe(true);
+    expect(takeIsolatePoint(day)).toBe(false);
+    expect(takeIsolatePoint(day + 11 * 3600_000)).toBe(false); // 23:00 the same day
+    expect(takeIsolatePoint(day + 12 * 3600_000)).toBe(true); // 00:00 the next day
+    // Spent today: the endpoint still answers 204 and writes nothing.
+    resetIsolatePoints();
+    for (let i = 0; i < CSP_ISOLATE_DAILY_POINTS; i++) takeIsolatePoint();
+    const env = makeEnv();
+    expect((await worker.fetch(cspRequest(LEGACY, "application/csp-report"), env, makeCtx())).status).toBe(204);
+    expect(env.points).toHaveLength(0);
+  });
+
+  it("the limits keep the worst case well under 10 % of the account's 100,000 data points a day", () => {
+    const config = read("../../wrangler.jsonc");
+    const limitOf = (name: string) => Number(config.match(new RegExp(`"name": "${name}",[^}]*"limit": (\\d+), "period": (\\d+)`))?.[1]);
+    const periodOf = (name: string) => Number(config.match(new RegExp(`"name": "${name}",[^}]*"limit": \\d+, "period": (\\d+)`))?.[1]);
+    const perLocationPerDay = (limitOf("RL_CSP_GLOBAL") * 86_400) / periodOf("RL_CSP_GLOBAL");
+    expect(perLocationPerDay).toBeLessThanOrEqual(5_000);
+    expect(limitOf("RL_CSP")).toBeLessThanOrEqual(limitOf("RL_CSP_GLOBAL"));
   });
 
   it("rate limited per IP and per location: still 204 (a 429 would make the browser resend), nothing counted", async () => {

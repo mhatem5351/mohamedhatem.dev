@@ -210,17 +210,25 @@ own nonce-tagged style block. The page script's `fetch` (JSON, `Accept: applicat
 
 ### `POST /api/csp-report`
 
-Where browsers report violations of the site's **header** CSP (`site/public/_headers`: `report-to csp` with
-`Reporting-Endpoints: csp="/api/csp-report"`, plus `report-uri /api/csp-report` for older browsers). It accepts
-`application/reports+json` (the Reporting API's batched array), `application/csp-report` (report-uri) and
-`application/json` (one violation in the Reporting API body shape, e.g. from a page's `securitypolicyviolation`
-listener), ≤ 16 KB. Each violation becomes one Analytics Engine data point with three coarse facts: the directive,
-what was blocked (a keyword such as `inline`, or a host name, never a full URL) and the page (a known site path, else
-`other`; reports about other sites' pages are dropped). Never the IP, user agent, referrer, query string, sample or
-source line. At most 5 points per request, duplicates in a batch counted once; rate limited per IP (10/min) and per
-location (60/min). The answer is `204` whenever the report is readable, also when it is dropped (a `429` would only
-make the browser resend it); `403` for a foreign `Origin` (`Origin: null`, which report-uri may send, is judged by the
-page URL inside), `415`, `413`, `400`.
+Where browsers report CSP violations: those of the site's **header** policy (`site/public/_headers`: `report-to csp`
+with `Reporting-Endpoints: csp="/api/csp-report"`, plus `report-uri /api/csp-report` for older browsers) and those of
+each page's `<meta>` policy, mirrored into a per-page `Content-Security-Policy-Report-Only` header so the browser can
+report them (a `<meta>` policy can't; site/scripts/postbuild/early-hints.mjs). It accepts `application/reports+json`
+(the Reporting API's batched array), `application/csp-report` (report-uri, and Safari's single Reporting API report) and
+`application/json` (one violation in
+the Reporting API body shape, e.g. from a page's `securitypolicyviolation` listener), ≤ 16 KB. A request becomes at
+most **one** Analytics Engine data point, for its first violation, with three coarse facts: the directive, what was
+blocked (a keyword such as `inline`, or a host name, never a full URL) and the page (a known site path, else `other`;
+reports about other sites' pages are dropped), plus how many distinct violations the request held (`double2`). Never
+the IP, user agent, referrer, query string, sample or source line.
+
+The Analytics Engine allowance (100,000 data points a day on Workers Free) belongs to the whole account and is shared
+with the chat and contact events, so the endpoint's spend is bounded (audit R7-SEC-01): only a report that would be
+written counts against the limits, 2 a minute per IP and 3 a minute per Cloudflare location (worst case 4,320 points
+a day per location, 4.3 %), and each isolate writes at most 100 a UTC day, which holds a sustained flood to a few
+hundred. A report without an `Origin` (report-uri sends `Origin: null` or none) counts only when it names one of the
+site's pages. The answer is `204` whenever the report is readable, also when it is dropped (a `429` would only make
+the browser resend it); `403` for a foreign `Origin`, `415`, `413`, `400`.
 
 ### `GET /api/health`
 
@@ -418,15 +426,23 @@ GROUP BY day, model ORDER BY day;
 SELECT blob1 AS kind, blob2 AS outcome, SUM(_sample_interval) AS n
 FROM mh_events WHERE timestamp > NOW() - INTERVAL '7' DAY GROUP BY kind, outcome ORDER BY n DESC;
 
--- CSP violations (src/csp-report.ts: blob2 directive, blob3 blocked, blob4 page, blob5 disposition, blob6 format)
-SELECT blob2 AS directive, blob3 AS blocked, blob4 AS page, SUM(_sample_interval) AS n
+-- CSP violations (src/csp-report.ts: blob2 directive, blob3 blocked, blob4 page, blob5 disposition, blob6 format;
+-- one row per report, double2 = distinct violations in it)
+SELECT blob2 AS directive, blob3 AS blocked, blob4 AS page, blob5 AS disposition,
+       SUM(_sample_interval) AS reports, MAX(double2) AS max_in_one_report
 FROM mh_events WHERE index1 = 'csp' AND timestamp > NOW() - INTERVAL '7' DAY
-GROUP BY directive, blocked, page ORDER BY n DESC;
+GROUP BY directive, blocked, page, disposition ORDER BY reports DESC;
+
+-- the last day's Analytics Engine spend by kind (Workers Free: 100,000 data points a day for the whole account)
+SELECT index1 AS kind, SUM(_sample_interval) AS points
+FROM mh_events WHERE timestamp > NOW() - INTERVAL '1' DAY GROUP BY kind ORDER BY points DESC;
 ```
 
-Any row in the last query is worth a look: zero is normal. A `script-src`/`style-src` row can only come from a page
-script's report (the per-page `<meta>` policy can't report by itself); `frame-ancestors` means another site tried to
-frame a page.
+Any row in the CSP query is worth a look: zero is normal. `script-src`, `style-src` and the other fetch directives
+arrive with disposition `report`: they are the per-page `<meta>` policy's rules, which the browser reports through the
+Report-Only mirror of that policy (the `<meta>` itself blocked the same thing). `base-uri`, `form-action`, `object-src`
+and `frame-ancestors` come from the header policy (`enforce`); `frame-ancestors` means another site tried to frame a
+page.
 
 ## Configuration
 
@@ -444,7 +460,7 @@ frame a page.
 | `ALLOW_TURNSTILE_TEST` | `.dev.vars` only | `1` accepts Turnstile's test secret and test-key results; never set in production |
 | `MAIL` | `send_email` | destination `mhatem5351@gmail.com` (must be a verified Email Routing destination) |
 | `RL_CHAT`, `RL_CHAT_BURST`, `RL_CHAT_GLOBAL`, `RL_CHAT_SESSION`, `RL_CONTACT` | `ratelimits` | 8/60 s, 3/10 s, 60/60 s (verified requests only), 6/60 s per session, 3/60 s |
-| `RL_CSP`, `RL_CSP_GLOBAL` | `ratelimits` | CSP reports: 10/60 s per IP, 60/60 s per location |
+| `RL_CSP`, `RL_CSP_GLOBAL` | `ratelimits` | CSP reports that would be written: 2/60 s per IP, 3/60 s per location (one data point each) |
 | `EVENTS` | Analytics Engine | dataset `mh_events` |
 
 ## Deploy (phase 2, after the Astro build exists in `./dist`)
@@ -455,7 +471,14 @@ frame a page.
    its site key in the site build and its secret in the Worker.
 3. Secrets: `npx wrangler secret put GEMINI_API_KEY`, `… TURNSTILE_SECRET`, `… SESSION_SECRET`
    (`node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`).
-4. `npm run deploy:worker` (fails if `content/chat/*` is missing), after the site build.
+4. `npm run deploy:worker` (fails if `content/chat/*` is missing), after the site build. It wraps `wrangler deploy`
+   in `site/scripts/keep-previous-assets.mjs` (audit R7-RES-04): before the upload it copies the last deployed build's
+   hashed `/_astro` files into `dist/`, so pages opened before the deploy keep loading their chunks (the chat panel),
+   CSS and images; after a successful upload `--save` remembers this build's own files in `.wrangler/deploy-prev/`, so
+   only one previous build is kept (Cloudflare skips files it already holds). The first step also fetches the live `/`
+   and `/ar/` and fails if an `/_astro` file they use would be missing from the upload: the state was lost or never
+   seeded. Seed it once with `npm run deploy:seed-previous -- <dist of the deployed commit>` (builds are
+   deterministic, so a build of that commit works), or deploy anyway with `NO_LIVE_CHECK=1 npm run deploy:worker`.
 5. `www` → apex: a free **Redirect Rule** (`www.mohamedhatem.dev/*` → `https://mohamedhatem.dev/${1}`, 301) plus a
    proxied DNS record for `www`; the Worker only sees `/api/*`, so it can't do this redirect for pages.
 6. Site CSP must allow `https://challenges.cloudflare.com` in `script-src` and `frame-src` (Turnstile), and

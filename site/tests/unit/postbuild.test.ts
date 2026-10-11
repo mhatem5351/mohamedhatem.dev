@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { profile } from "@content/profile.ts";
 import { redirectRules } from "../../scripts/postbuild/redirects.mjs";
-import { linkHeader } from "../../scripts/postbuild/early-hints.mjs";
+import { linkHeader, reportOnlyPolicy } from "../../scripts/postbuild/early-hints.mjs";
 import { HOME_UPDATED, PRIVACY_UPDATED, lastModified } from "~/lib/dates";
 
 describe("_redirects rules", () => {
@@ -49,6 +49,24 @@ describe("Early Hints Link header", () => {
       <link rel="stylesheet" href="https://example.com/x.css">
       </head><body><link rel="stylesheet" href="/_astro/late.css"></body></html>`;
     expect(linkHeader(html)).toBe('</_astro/fonts/a.woff2>; rel=preload; as=font; type="font/woff2"; crossorigin, </_astro/Head.x.css>; rel=preload; as=style');
+  });
+});
+
+describe("CSP Report-Only mirror (SEC-H01)", () => {
+  const meta = (policy: string) => `<html><head><meta charset="utf-8"><meta http-equiv="content-security-policy" content="${policy}"></head></html>`;
+
+  it("copies the page's <meta> policy, hashes included, and reports it to the Worker", () => {
+    const policy =
+      "default-src 'self'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; form-action 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'sha256-abc='; style-src 'self' 'sha256-def='";
+    expect(reportOnlyPolicy(meta(policy))).toBe(
+      "default-src 'self'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; script-src 'self' 'sha256-abc='; style-src 'self' 'sha256-def='; style-src-attr 'unsafe-inline'; report-uri /api/csp-report; report-to csp",
+    );
+  });
+
+  it("leaves out what the enforced header policy already reports, and pages without one <meta>", () => {
+    const out = reportOnlyPolicy(meta("script-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"));
+    expect(out).toBe("script-src 'self'; style-src-attr 'unsafe-inline'; report-uri /api/csp-report; report-to csp");
+    expect(reportOnlyPolicy("<html><head></head></html>")).toBe("");
   });
 });
 
