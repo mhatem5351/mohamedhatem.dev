@@ -171,7 +171,7 @@ describe("GADD and the government assistant: per-turn hints (R6-01, R6-02)", () 
 });
 
 describe("contact card and follow-ups (AST-10)", () => {
-  const withCard = '<ui>{"contact":"general","section":"work","followups":["What is his notice period?","What skills are listed without projects?","What did he build with LangGraph?"]}</ui>';
+  const withCard = '<ui>{"contact":"general","section":"work","followups":["When can he start?","What skills are listed without projects?","What did he build with LangGraph?"]}</ui>';
 
   it("the contact card is dropped unless the visitor asked to reach or hire him", async () => {
     const fetcher = async () => geminiSse([textChunk(`AIP's figures aren't public.${withCard}`), finalChunk()]);
@@ -192,7 +192,7 @@ describe("contact card and follow-ups (AST-10)", () => {
       expect(wantsContact(q), q).toBe(true);
     for (const q of ["What has he built with LangGraph?", "By what percentage did AIP v2 improve accuracy?", "Who is the Saudi government client?", "How old is he?", "ما خبرته في RAG؟"])
       expect(wantsContact(q), q).toBe(false);
-    for (const q of ["What is his notice period?", "How many reports does he have?", "What skills are listed without projects?", "What does STA stand for?", "ما هو راتبه المتوقع؟"])
+    for (const q of ["When can he start?", "How many reports does he have?", "What skills are listed without projects?", "What does STA stand for?", "ما هو راتبه المتوقع؟"])
       expect(answerableFollowup(q), q).toBe(false);
     // The team of 7 at Globant is stated (round 6).
     for (const q of ["What did he build at Wakeb Data?", "How does he serve LLMs?", "ما خبرته في vLLM؟", "How big is his team?"]) expect(answerableFollowup(q), q).toBe(true);

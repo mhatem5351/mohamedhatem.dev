@@ -1206,42 +1206,27 @@
             "Europe"
           ],
           [
-            "not stated",
-            "isn't stated",
-            "aren't stated",
-            "not mentioned",
-            "isn't mentioned",
-            "not in his profile",
-            "isn't in his profile",
-            "aren't in his profile",
-            "not part of his profile",
-            "doesn't say",
-            "not shown",
-            "not listed",
-            "isn't listed",
-            "no evidence",
-            "not public",
-            "isn't public",
-            "aren't public",
-            "no public",
-            "not published",
-            "hasn't been published",
-            "no figure",
-            "don't have",
-            "neither"
+            "2 weeks",
+            "two weeks",
+            "14 days"
+          ],
+          [
+            "1 month",
+            "one month",
+            "a month"
           ]
         ],
         "mustNotInclude": [
-          "one month",
-          "30 days",
-          "two weeks",
-          "not open to relocation"
+          "not open to relocation",
+          "3 months",
+          "three months",
+          "not stated"
         ],
         "facts": [
           "Open to relocation to Europe",
-          "Notice period not stated; contact him"
+          "Notice period: 2 weeks to 1 month"
         ],
-        "behaviour": "Says he is open to relocating to Europe (Germany is in Europe), and that the notice period isn't stated; offers contact."
+        "behaviour": "Says he is open to relocating to Europe (Germany is in Europe) and that his notice period is 2 weeks to 1 month."
       }
     },
     {
@@ -2074,7 +2059,7 @@
         "facts": [
           "Open to relocation to the Gulf: Saudi Arabia, UAE, Qatar and nearby"
         ],
-        "behaviour": "Answers yes from the knowledge base; may add that notice period and visa status should be confirmed with him."
+        "behaviour": "Answers yes from the knowledge base; may add that visa status should be confirmed with him."
       }
     },
     {

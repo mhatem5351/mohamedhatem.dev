@@ -36,7 +36,7 @@ export function wantsContact(text: string): boolean {
 }
 
 const UNANSWERABLE =
-  /notice period|start date|when can he start|salary|compensation|\brates?\b|\bpay\b|\bvisa\b|work permit|how many (?:engineers|reports)|direct reports|thesis|\bgpa\b|\bgrades?\b|\bage\b|how old|married|religio|nationality|listed (?:only|without)|without (?:a |any )?projects?|knowledge (?:base|file)|reasons? for leaving|why did he leave|references|stand for|percentage|how many users|daily users|\btraffic\b|\buptime\b|who (?:is|was) the client|client'?s name|name of the client|which (?:ministry|government|agency|authority|entity|sector)|still active|current status|initials?|first letter|same (?:client|organi[sz]ation|entity)|\bnoura\b[^?]{0,30}\b(?:live|launch\w*|production|available|users?|try)\b|\bwhen (?:will|does|did)\b[^?]{0,40}\b(?:launch|go live|release)\w*|التقنيات المستخدمة في (?:المشروع|المساعد)|ما النموذج|ما النماذج|متى (?:ستطلق|سيطلق|تطلق|يطلق)|من هو العميل|ما (?:هي )?الجهة|فترة الإشعار|موعد البدء|متى يمكنه البدء|الراتب|راتب|التأشيرة|تأشيرة|أطروحة|المعدل|عمره|متزوج|ديانته|جنسيته|بدون مشروع|قاعدة المعرفة|ماذا يعني اختصار|إلى ماذا يرمز|نسبة|عدد المستخدمين|اسم العميل|اسم الجهة|من هي الجهة/i;
+  /start date|when can he start|salary|compensation|\brates?\b|\bpay\b|\bvisa\b|work permit|how many (?:engineers|reports)|direct reports|thesis|\bgpa\b|\bgrades?\b|\bage\b|how old|married|religio|nationality|listed (?:only|without)|without (?:a |any )?projects?|knowledge (?:base|file)|reasons? for leaving|why did he leave|references|stand for|percentage|how many users|daily users|\btraffic\b|\buptime\b|who (?:is|was) the client|client'?s name|name of the client|which (?:ministry|government|agency|authority|entity|sector)|still active|current status|initials?|first letter|same (?:client|organi[sz]ation|entity)|\bnoura\b[^?]{0,30}\b(?:live|launch\w*|production|available|users?|try)\b|\bwhen (?:will|does|did)\b[^?]{0,40}\b(?:launch|go live|release)\w*|التقنيات المستخدمة في (?:المشروع|المساعد)|ما النموذج|ما النماذج|متى (?:ستطلق|سيطلق|تطلق|يطلق)|من هو العميل|ما (?:هي )?الجهة|موعد البدء|متى يمكنه البدء|الراتب|راتب|التأشيرة|تأشيرة|أطروحة|المعدل|عمره|متزوج|ديانته|جنسيته|بدون مشروع|قاعدة المعرفة|ماذا يعني اختصار|إلى ماذا يرمز|نسبة|عدد المستخدمين|اسم العميل|اسم الجهة|من هي الجهة/i;
 /**
  * Topics the knowledge base says are not public (audit R7-07): the government client, where to try Noura, UAT
  * results, the team's roles or how he runs it, the STA tools' names (their count is public) and evaluation tools.
@@ -56,7 +56,7 @@ const VAGUE_SYSTEM = /\b(?:the|that|this) (?:assistant|project)\b|المساعد
 const NAMED_SYSTEM = /arabs\s?stock|wakeb|\baip\b|empoweromics|tabaqat|logic controls|chatbot|evaluator|harness|rag-answering/i;
 
 /**
- * Follow-up chips must lead to an answer: no topic the knowledge base says is not stated (notice period, salary,
+ * Follow-up chips must lead to an answer: no topic the knowledge base says is not stated (start date, salary,
  * visa, reports, thesis, metrics, private details), nothing about the knowledge base itself, nothing about who the
  * unnamed client is, and nothing about what the STA project or the government assistant run on (audit R6-14).
  */
