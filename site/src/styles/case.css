@@ -265,6 +265,9 @@ a.co { text-decoration: none; }
 
 /* Hero: the eyebrow keeps Latin runs (company, years) isolated in Arabic */
 .cs-hero .eyebrow bdi { unicode-bidi: isolate; }
+/* The organisation's logo tile leads the eyebrow (inline-start: left in English, right in Arabic), as on the work cards. */
+.cs-hero .eyebrow { flex-wrap: wrap; row-gap: .25rem; }
+.cs-hero__logo { display: block; flex: none; width: 2rem; height: 2rem; border-radius: .5rem; object-fit: cover; box-shadow: 0 0 0 1px var(--color-line); }
 .cs-hero__links { display: flex; flex-wrap: wrap; gap: .75rem; }
 
 /* Key facts strip (2-4 facts): two columns, four from 64rem whatever the count, so fewer facts keep their width

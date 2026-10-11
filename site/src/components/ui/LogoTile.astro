@@ -13,14 +13,16 @@ interface Props {
   monogram: string;
   size?: number;
   class?: string;
+  /** "eager" for a tile in the first screen (the case-study hero); lazy everywhere else. */
+  loading?: "lazy" | "eager";
 }
-const { file, monogram, size = 36, class: className } = Astro.props;
+const { file, monogram, size = 36, class: className, loading = "lazy" } = Astro.props;
 const tiles = import.meta.glob<{ default: ImageMetadata }>("../../assets/logos/tiles/*-160.webp", { eager: true });
 const src = file ? tiles[`../../assets/logos/tiles/${file}-160.webp`]?.default : undefined;
 ---
 {
   src ? (
-    <Image src={src} alt="" width={size} height={size} densities={[1, 2]} class={className} loading="lazy" decoding="async" />
+    <Image src={src} alt="" width={size} height={size} densities={[1, 2]} class={className} loading={loading} decoding="async" />
   ) : (
     <span class:list={[className, "logo-mono"]} aria-hidden="true">
       {monogram}

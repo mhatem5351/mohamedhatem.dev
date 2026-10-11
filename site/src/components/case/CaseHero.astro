@@ -1,6 +1,7 @@
 ---
 /**
- * Case-study hero (pages.css §2–3): breadcrumbs, eyebrow (organisation / role / years), H1, summary, actions,
+ * Case-study hero (pages.css §2–3): breadcrumbs, eyebrow (the organisation's logo tile, then organisation / role /
+ * years), H1, summary, actions,
  * the CaseMeta card (role, organisation, period + duration, where, stack) and the key-facts strip
  * (case.figures: 2–4 sourced facts, never estimated; omitted below 2, where one cell would only restate the summary).
  * The strip keeps four columns from 64rem, so two or three facts don't stretch across the page. The figure slot
@@ -8,6 +9,7 @@
  */
 import Breadcrumbs from "./Breadcrumbs.astro";
 import Icon from "~/components/ui/Icon.astro";
+import LogoTile from "~/components/ui/LogoTile.astro";
 import Ltr from "~/components/ui/Ltr.astro";
 import type { CaseStudy } from "@content/profile.ts";
 import { messages, tr, type Locale } from "~/lib/i18n";
@@ -25,6 +27,8 @@ const role = roleOf(cs);
 const eb = eyebrowParts(cs, locale);
 const period = periodInfo(cs, locale);
 const mono = monoLogoOf(cs);
+// The same tile as the work cards: the employer's for client work, Logic Controls for the freelance site.
+const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monogram } : { file: "logic-controls", monogram: "LC" };
 const detail = contextDetail(cs, locale);
 const isLatin = (s: string) => !/[؀-ۿ]/.test(s);
 const employment = role ? m.experience.employmentType[role.employmentType] : m.work.freelance;
@@ -40,6 +44,7 @@ const question = askQuestion(cs, locale);
     <div class="cs-hero__grid">
       <div class="cs-hero__copy">
         <p class="eyebrow">
+          <LogoTile file={logo.file} monogram={logo.monogram} size={32} class="cs-hero__logo" loading="eager" />
           {isLatin(eb.company) ? <span lang="en">{eb.company}</span> : <span>{eb.company}</span>}
           <span class="sep" aria-hidden="true">/</span>
           <span>{eb.role}</span>

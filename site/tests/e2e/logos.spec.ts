@@ -71,3 +71,40 @@ test("every work card carries its company's logo tile beside the eyebrow", async
   expect(tileOf(/GIS data pipelines/)).toMatch(/tabaqat/);
   expect(tileOf(/real-estate platform/)).toMatch(/empoweromics/);
 });
+
+const CASE_TILES: Record<string, RegExp> = {
+  "sta-tourism-assistants": /globant/,
+  "arabsstock-assistant": /arabsstock/,
+  "wakeb-bilingual-chatbot": /wakeb/,
+  "gov-bilingual-assistant": /wakeb/, // the employer, never the client
+  "aip-semantic-search": /wakeb/,
+  "empoweromics-ml": /empoweromics/,
+  "tabaqat-gis": /tabaqat/,
+  "logic-controls-website": /logic-controls/,
+};
+for (const lang of ["", "/ar"]) {
+  test(`every case study${lang ? " (Arabic)" : ""} opens with its company's logo before the company name`, async ({ page }) => {
+    for (const [slug, tile] of Object.entries(CASE_TILES)) {
+      await page.goto(`${lang}/work/${slug}/`);
+      const logo = page.locator(".cs-hero .eyebrow > img.cs-hero__logo");
+      await expect(logo, slug).toHaveCount(1);
+      await expect.poll(() => logo.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), { message: slug }).toBe(true);
+      const r = await logo.evaluate((img: HTMLImageElement) => {
+        const name = img.nextElementSibling!.getBoundingClientRect();
+        const box = img.getBoundingClientRect();
+        const rtl = getComputedStyle(img.parentElement!).direction === "rtl";
+        return {
+          src: img.getAttribute("src") ?? "",
+          alt: img.alt,
+          first: img.parentElement!.firstElementChild === img,
+          // inline-start of the name: left of it in English, right of it in Arabic, on the same line
+          before: rtl ? box.left >= name.right - 1 : box.right <= name.left + 1,
+          sameLine: Math.abs(box.top + box.height / 2 - (name.top + name.height / 2)) < 4,
+        };
+      });
+      expect(r.src, slug).toMatch(tile);
+      expect(r.alt, slug).toBe(""); // decorative: the eyebrow names the company
+      expect(r, slug).toMatchObject({ first: true, before: true, sameLine: true });
+    }
+  });
+}
