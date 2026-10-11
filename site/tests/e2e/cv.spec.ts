@@ -115,8 +115,9 @@ test.describe("CV", () => {
     test(`${path}: every role has its logo tile, loaded and decorative, on the role's line (mirrored in Arabic)`, async ({ page }) => {
       await page.goto(path, { waitUntil: "networkidle" });
       await page.waitForFunction(() => [...document.querySelectorAll<HTMLImageElement>(".sheet img.cv-logo")].every((i) => i.complete));
-      // One row per role: the main roles (with Tabaqat, which overlaps them) and the condensed "Earlier roles".
-      const rows = page.locator(".sheet .job:not(.job--brief), .sheet .earlier__row");
+      // One row per role: the main roles (with Tabaqat, which overlaps them) and the condensed "Earlier roles" (the
+      // Open source block reuses the earlier-row layout for repositories, which have no logo).
+      const rows = page.locator(".sheet .job:not(.job--brief), .sheet .job--brief .earlier__row");
       await expect(rows).toHaveCount(profile.experience.length);
       const logos = await rows.evaluateAll((els) =>
         els.map((row) => {
@@ -163,7 +164,7 @@ test.describe("CV", () => {
       for (const li of await page.locator(".sheet .job li").allInnerTexts()) expect(li).not.toMatch(/GADD|Ministry of Defense|وزارة الدفاع/);
     });
 
-    test(`${path}: Open to lists the two roles in order, then the three work arrangements`, async ({ page }) => {
+    test(`${path}: Open to lists the two roles in order, then the three work arrangements, then the notice period`, async ({ page }) => {
       await page.goto(path);
       // One list everywhere (round 6, HM-13): the site's About uses the same roles.
       expect(profile.cv.openTo.roles.map((r) => r.en)).toEqual(["AI/ML Team Lead", "Senior AI / LLM Engineer"]);
@@ -173,9 +174,27 @@ test.describe("CV", () => {
       await expect(block).toHaveAttribute("aria-labelledby", "cv-open");
       expect(await block.locator(".open-to__roles > span").allInnerTexts()).toEqual(profile.cv.openTo.roles.map((r) => r[locale]));
       expect(await block.locator(".open-to__ways > span").allInnerTexts()).toEqual(profile.cv.openTo.arrangements.map((a) => a[locale]));
+      // Round 7: the notice period, last, on its own line.
+      await expect(block.locator(".open-to__notice")).toHaveText(
+        locale === "en" ? "Notice period: 2 weeks to 1 month" : "فترة الإشعار: من أسبوعين إلى شهر",
+      );
       // One item per line.
       const tops = await block.locator(".open-to span").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
+      expect(tops).toHaveLength(profile.cv.openTo.roles.length + profile.cv.openTo.arrangements.length + 1);
       for (let i = 1; i < tops.length; i++) expect(tops[i]!).toBeGreaterThan(tops[i - 1]!);
+    });
+
+    test(`${path}: Open source lists the repositories with a result, each name linking to its repository (R7-06)`, async ({ page }) => {
+      await page.goto(path);
+      const rows = page.locator(".sheet .cv-oss .earlier__row");
+      await expect(rows).toHaveCount(profile.cv.openSource.length);
+      for (const [i, o] of profile.cv.openSource.entries()) {
+        const p = profile.projects.find((x) => x.id === o.id)!;
+        await expect(rows.nth(i).locator("b a")).toHaveAttribute("href", p.repo);
+        await expect(rows.nth(i).locator("b a")).toHaveText(p.name);
+        await expect(rows.nth(i).locator("p")).toHaveText(o.line[locale]);
+      }
+      await expect(rows.first().locator("p")).toContainText("0.49");
     });
   }
 
@@ -248,6 +267,11 @@ test.describe("CV", () => {
       const pages = await pdfPagesText(Buffer.from(await (await request.get(file)).body()));
       expect(pages.length, file).toBe(2);
       expect(sectionBreakProblems(pages, sections), file).toEqual([]);
+      // No main role is split across the pages (R7-04: ArabsStock's last bullet used to open page 2 alone, where a
+      // parser read it as part of the skills printed before it).
+      const roles = await page.locator(".cv-main .job:not(.job--brief)").allInnerTexts();
+      expect(roles.length).toBeGreaterThanOrEqual(4);
+      for (const r of roles) expect(pages.some((p) => contains(p, r)), `${file}: ${r.split("\n")[0]}`).toBe(true);
       // The text layer has the plain text (no no-break or zero-width characters from the line-break handling).
       expect(pages.join("")).not.toMatch(/[\u00A0\u2011\u2060\u200B]/);
       if (path === "/cv/") {

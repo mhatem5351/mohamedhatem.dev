@@ -27,7 +27,7 @@ export const ar: Messages = {
     home: {
       title: "محمد حاتم · قائد فريق ذكاء اصطناعي، أنظمة LLM وكيلية",
       description:
-        "قائد فريق ذكاء اصطناعي في Globant بخبرة 7 سنوات، يقود فريقًا من 7 أعضاء في مساعدَي الهيئة السعودية للسياحة. أنظمة LLM وكيلية، وRAG، وخدمة النماذج.",
+        "قائد فريق ذكاء اصطناعي في Globant، يقود فريقًا من 7 أعضاء يعمل على مساعدَي الهيئة السعودية للسياحة. خبرة 7 سنوات: أنظمة LLM وكيلية وRAG وخدمة النماذج.",
     },
     caseStudy: {
       title: "{title} · محمد حاتم",
@@ -109,9 +109,10 @@ export const ar: Messages = {
   hero: {
     greeting: "مرحبًا، أنا",
     availability: "أرحّب بفرص عمل جديدة",
-    arrangements: "عن بُعد، أو بالانتقال إلى الخليج أو أوروبا، أو بنظام هجين في القاهرة",
+    availabilityShort: "أرحّب بأدوار قيادة فرق الذكاء الاصطناعي",
+    arrangements: "قائد فريق ذكاء اصطناعي أو مهندس LLM أول · عن بُعد أو الانتقال إلى الخليج أو أوروبا",
     arrangementsShort: "عن بُعد أو في الخليج وأوروبا",
-    localTime: "{time} في القاهرة",
+    localTime: "{time} بتوقيت القاهرة",
     ctaAsk: "اسأل مساعدي الذكي",
     ctaContact: "تواصل معي",
     ctaWork: "تصفّح أعمالي",
@@ -132,6 +133,9 @@ export const ar: Messages = {
       guard: "حماية",
       evaluate: "تقييم",
       generate: "توليد",
+      tools: "الأدوات · MCP",
+      query: "السؤال",
+      answer: "الإجابة",
     },
   },
 
@@ -145,16 +149,18 @@ export const ar: Messages = {
   capabilities: {
     eyebrow: "ماذا أبني",
     title: "ذكاء اصطناعي جاهز للإنتاج: الوكلاء والاسترجاع وخدمة النماذج والتقييم.",
-    lead: "أتولّى المسار كاملًا: كيف تتوزّع المهام بين الوكلاء، وماذا تسترجع، وأين يعمل النموذج، وكيف نتأكد أن الإجابات صحيحة.",
+    lead: "أتولّى المسار كاملًا: كيف تتوزّع المهام بين الوكلاء، وما الذي يُسترجَع، وأين يعمل النموذج، وكيف نتأكد أن الإجابات صحيحة.",
     agents: {
-      title: "الأنظمة متعددة الوكلاء",
-      body: "تنسيق عبر LangGraph، بتوجيه عبر Command ومخططات فرعية مستقلة: من روبوت محادثة ثنائي اللغة من 6 وكلاء، إلى مساعد من 14 وكيلًا لمنصة للصور ومقاطع الفيديو المرخّصة.",
-      stack: "LangGraph · MCP · OpenAI API · Qwen · async Python",
+      title: "أنظمة LLM وكيلية",
+      body: "وكلاء LangGraph بأدوات محددة الأنواع وصلاحيات ونقاط موافقة بشرية: وكيل واحد يستدعي 96 أداة للهيئة السعودية للسياحة في Globant، وقبل ذلك روبوت محادثة ثنائي اللغة من 6 وكلاء في Wakeb Data، بتوجيه عبر Command بين مخططات فرعية مستقلة، ومساعد من 14 وكيلًا في ArabsStock.",
+      // A product name, not "async Python" (an English phrase on /ar/, R7-30) nor «Python غير المتزامن», whose two
+      // scripts the bidi algorithm sets apart on a right-to-left line.
+      stack: "LangGraph · MCP · OpenAI API · Qwen · asyncio",
     },
     retrieval: {
       title: "الاسترجاع والبحث",
       body: "استرجاع هجين يجمع البحث المتجهي وBM25 مع إعادة ترتيب بنموذج لغوي، وبحث دلالي وبصري في ملايين الصور ومقاطع الفيديو.",
-      stack: "Pinecone · OpenAI embeddings · BM25 · LLM reranking",
+      stack: "Pinecone · تضمينات OpenAI · BM25 · إعادة الترتيب بنموذج لغوي",
     },
     serving: {
       title: "خدمة النماذج وMLOps",
@@ -163,8 +169,8 @@ export const ar: Messages = {
     },
     evaluation: {
       title: "التقييم والمراقبة",
-      body: "تقييم النماذج اللغوية وتتبّعها ومراقبتها، لنعرف أن النموذج مصيب قبل أن يكتشف المستخدم أنه مخطئ.",
-      stack: "staged-llm-evaluator · prompt-reliability-harness · observability",
+      body: "تقييم النماذج اللغوية وتتبّعها ومراقبتها، لنكتشف خطأ النموذج قبل أن يكتشفه المستخدم.",
+      stack: "staged-llm-evaluator · prompt-reliability-harness · المراقبة والتتبّع",
     },
     bilingual: {
       title: "العربية والإنجليزية",
@@ -210,6 +216,7 @@ export const ar: Messages = {
     freelance: "عمل حر",
     architectureNote:
       "تعرض المخططات المكوّنات المذكورة في الأوصاف المنشورة للعمل، وهي مبسّطة وليست خرائط كاملة للأنظمة.",
+    architectureNoteApproved: "مخطط مبسّط للأجزاء المعتمدة للنشر، وليس خريطة كاملة للنظام.",
     briefNote: "تفاصيل تنفيذ هذا النظام غير منشورة، وهذا الملخص يغطي ما يمكن مشاركته.",
     noPublicFigure: "لا يوجد رقم منشور",
     legend: {
@@ -243,23 +250,25 @@ export const ar: Messages = {
       textDescription: "وصف نصي للمخطط",
       components: "المكوّنات",
       connections: "الروابط بين المكوّنات",
-      connection: "من {from} إلى {to}",
+      // «…» around the names: they are read as names, so no case ending applies (round 7, R7-29).
+      connection: "من «{from}» إلى «{to}»",
       sourcesTitle: "مصادر هذه المعلومات",
       sourcesBody: "لا رقم هنا تقديري؛ وحين لا ينشر العميل رقمًا تصف الصفحة ما يفعله النظام. المصادر: {sources}.",
       sources: {
         cv: "سيرتي الذاتية",
-        linkedin: "ملفي على LinkedIn",
-        github: "ملفي ومستودعاتي على GitHub",
-        "logic-controls": "مشروع Logic Controls ومستودعه العام",
+        linkedin: "LinkedIn",
+        github: "GitHub",
+        "logic-controls": "الموقع المنشور",
         mohamed: "تفاصيل المشروع المعتمدة للنشر",
       },
       ctaEyebrow: "أسئلة عن هذا العمل؟",
       ctaTitle: "اسأل مساعدي الذكي عن «{title}».",
       ctaBody: "يجيب من سيرتي الذاتية وملفاتي المنشورة، بالعربية أو الإنجليزية.",
       ctaContact: "تواصل معي",
+      ctaCv: "حمّل سيرتي الذاتية (PDF)",
       ctaWrite: "أو راسلني على",
       duringRole: "خلال العمل في {company}",
-      atRole: "خلال {years}",
+      atRole: "{years}",
       briefTag: "ملخص",
       briefTitle: "دراسة حالة مختصرة",
       briefSources: "المصدر: {sources}.",
@@ -432,12 +441,13 @@ export const ar: Messages = {
     timeZone: "المنطقة الزمنية",
     openTo: "الأدوار المستهدفة",
     workArrangements: "أنماط العمل",
+    noticePeriod: "فترة الإشعار",
     languages: "اللغات",
   },
 
   cv: {
     title: "السيرة الذاتية",
-    lead: "خبرتي باختصار، مولّدة من البيانات نفسها التي يعرضها هذا الموقع.",
+    lead: "خبرتي باختصار، من البيانات نفسها التي يعرضها هذا الموقع.",
     download: "تنزيل السيرة الذاتية",
     downloadPdf: "تنزيل PDF",
     downloadLabel: "تنزيل السيرة الذاتية لمحمد حاتم بصيغة PDF",
@@ -459,6 +469,10 @@ export const ar: Messages = {
       contact: "التواصل",
     },
     earlierRoles: "أدوار سابقة",
+    openSource: "مشروعات مفتوحة المصدر",
+    alsoUsed: "واستخدمت أيضًا",
+    noticePeriod: "فترة الإشعار: {period}",
+    atsNote: "لأنظمة التوظيف الإلكترونية (ATS) استخدم النسخة الإنجليزية (PDF).",
     client: "العميل",
     backToSite: "العودة إلى الموقع",
     focus: "أنظمة LLM وكيلية، وRAG، وخدمة النماذج اللغوية",
@@ -477,7 +491,7 @@ export const ar: Messages = {
     title: "اسأل عن عملي",
     lead: "قرأ مساعدي سيرتي الذاتية وملفيّ على LinkedIn وGitHub. اسأله عن خبرتي، أو الصق إعلان وظيفة منشورًا لتعرف مدى ملاءمتي له. يجيب بالعربية أو الإنجليزية.",
     howItWorks:
-      "كيف يعمل: ملف معرفة واحد، وCloudflare Worker، وGoogle Gemini. لا حاجة إلى قاعدة بيانات متجهية؛ فسياق النموذج يتّسع للملف الشخصي كاملًا.",
+      "كيف يعمل: ملف معرفة واحد، وCloudflare Worker، وGoogle Gemini. لا حاجة إلى قاعدة بيانات متجهية؛ فسياق النموذج يتّسع للملف الشخصي كاملًا. ويُختبر على مجموعة تقييم آلية من 132 حالة (الحقائق والسرية والعربية).",
     open: "ابدأ المحادثة",
     howBuilt: "كيف بُني",
     flowLabel: "كيف يعمل المساعد",
@@ -544,7 +558,7 @@ export const ar: Messages = {
   contact: {
     eyebrow: "تواصل",
     title: "لنتحدث",
-    lead: "تبحث عن مهندس لدور في الذكاء الاصطناعي أو LLM أو MLOps، أو تخطط لمشروع؟ أسرع طريقة للوصول إليّ هي WhatsApp أو البريد الإلكتروني، ورسائل النموذج أدناه تصل إلى بريدي مباشرة.",
+    lead: "تبحث عن قائد فريق ذكاء اصطناعي أو مهندس LLM أول، أو تخطط لمشروع؟ أسرع طريقة للوصول إليّ هي WhatsApp أو البريد الإلكتروني، ورسائل النموذج أدناه تصل إلى بريدي مباشرة.",
     localTime: "الساعة الآن {time} في القاهرة.",
     askFirst: { before: "أو", action: "اسأل مساعدي الذكي", after: "أولًا." },
     channels: {
@@ -553,10 +567,12 @@ export const ar: Messages = {
       linkedin: { title: "LinkedIn", action: "تواصل معي على LinkedIn" },
       github: { title: "GitHub", action: "اطّلع على شيفرتي" },
       vcard: { title: "أضف إلى جهات الاتصال", value: "احفظ بياناتي في هاتفك" },
+      cv: { title: "السيرة الذاتية", action: "حمّل سيرتي الذاتية (PDF)" },
     },
     copyEmail: "نسخ عنوان البريد",
     emailCopied: "تم نسخ عنوان البريد",
-    whatsappPrefill: "مرحبًا يا حاتم، وصلت إليك عبر موقع mohamedhatem.dev. ",
+    // Round 7 (R7-32): no name in the visitor's mouth («حاتم» alone reads as a father's name), and an idiomatic verb.
+    whatsappPrefill: "مرحبًا، تعرّفت عليك عبر موقع mohamedhatem.dev. ",
     emailSubject: "رسالة عبر موقع mohamedhatem.dev",
     form: {
       title: "أو أرسل رسالة",

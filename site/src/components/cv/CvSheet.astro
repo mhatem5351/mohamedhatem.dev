@@ -4,10 +4,12 @@
  * header (monogram, name, title · employer · focus, contact row, stripe), summary (profile.cv.summary),
  * Experience (the main roles with their cvBullets; non-primary roles that ended before every main role are condensed
  * under "Earlier roles", a part-time one labelled so; a role's client, where one is named, on its own line under the
- * role head), and a sidebar with Education (status-aware: an in-progress degree shows "(expected)" and is never
- * described as held), Skills (profile.cv.skills), Certifications (those marked onCv, as plain entries: "AWS Certified
- * Machine Learning – Specialty (2022)"), Awards, Languages and Open to (profile.cv.openTo). The header's place line
- * says where he works from and where he would move. Two A4 pages in print, both languages.
+ * role head), Open source (profile.cv.openSource: the LLM-evaluation repositories, with their one measured result),
+ * and a sidebar with Skills (profile.cv.skills; listed-only skills after "also used"), Education (status-aware: an
+ * in-progress degree shows "(expected)" and is never described as held), Certifications (those marked onCv, as plain
+ * entries: "AWS Certified Machine Learning – Specialty (2022)"), Awards, Languages and Open to (profile.cv.openTo, with
+ * the notice period). The header's place line says where he works from and where he would move. Two A4 pages in print,
+ * both languages; no role is split across them (scripts/postbuild/cv-pdf.mjs checks it).
  *
  * Direction (round 6, A-01): a localized label is isolated in the page's direction, with only its Latin runs isolated
  * left to right (<bdi dir="ltr">), so "vLLM على NVIDIA A100" never reads as "NVIDIA A100 على vLLM"; a label with no
@@ -72,7 +74,8 @@ const contacts = [
   { icon: "globe", href: home, text: link("website").display },
   { icon: "mail", href: mailtoHref(locale), text: contact("email").display },
   { icon: "whatsapp", href: whatsappHref(locale), text: contact("whatsapp").display },
-  { icon: "linkedin", href: link("linkedin").href, text: link("linkedin").display.replace(/^linkedin\.com\//, "") },
+  // The whole "linkedin.com/in/…" (round 7, R7-15): parsers look for it in the text, not in the link annotation.
+  { icon: "linkedin", href: link("linkedin").href, text: link("linkedin").display },
   { icon: "github", href: link("github").href, text: link("github").display },
 ];
 /** "Cairo, Egypt · Remote or relocation (Gulf, Europe)": relocation up front for Gulf and European recruiters (HM-13). */
@@ -188,6 +191,19 @@ const label = (x: string): string => `<bdi dir="${dirOf(x)}">${dirOf(x) === "rtl
 /** Certifications on the CV: the ones marked onCv, each a plain entry with its year after the name (HM-10, HM-23). */
 const certs = profile.certifications.filter((c) => c.onCv);
 
+/**
+ * Role dates with the year on both ends ("Mar 2022 – Nov 2022", not "Mar – Nov 2022"; round 7, R7-15): a parser reads
+ * each end on its own.
+ */
+const when = (r: Role) => formatPeriod(r.period, locale, { compact: false });
+/** A skill group's line: its core items, then the listed-only ones after "; also used: " (HM-17). */
+const listSep = locale === "ar" ? "؛ " : "; ";
+const skillLine = (g: (typeof profile.cv.skills)[number]): string =>
+  g.items.map((item) => label(t(item))).join(esc(sep)) +
+  (g.alsoUsed?.length ? esc(`${listSep}${m.cv.alsoUsed}: `) + g.alsoUsed.map((item) => label(t(item))).join(esc(sep)) : "");
+/** The CV's open-source block: each repository's name (a link) and year, then its line. */
+const oss = profile.cv.openSource.map((o) => ({ ...o, project: profile.projects.find((p) => p.id === o.id)! }));
+
 /** The footer sentence with its domain as a link (the PDF keeps it clickable). */
 const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
 ---
@@ -239,7 +255,7 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
                     </span>
                   ))}
                 </span>
-                <span class="job__when">{formatPeriod(r.period, locale)}</span>
+                <span class="job__when">{when(r)}</span>
                 {/* The arrow is the vector icon (mirrored in Arabic): a text arrow would need a fallback font, which
                     Chromium embeds in the PDF as Type 3 (unsearchable text; the build refuses it). */}
                 <span class="job__where">{where(r)}{caseOf(r) && <> · <a class="job__case" href={caseHref(caseOf(r)!.slug)} aria-label={`${m.experience.caseStudy}: ${t(caseOf(r)!.title)}`}>{m.experience.caseStudy}<Icon name="arrow-up-right" /></a></>}</span>
@@ -270,7 +286,7 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
                     <b>{t(r.title)}</b> · <span class="earlier__org" set:html={org(r)} />
                     {r.employmentType === "part-time" && <> · <span class="earlier__type">{m.experience.employmentType["part-time"]}</span></>}
                   </span>
-                  <em>{formatPeriod(r.period, locale)}</em>
+                  <em>{when(r)}</em>
                   <p set:html={r.cvBullets.map((f) => html(factRuns(f))).join(" ")} />
                 </div>
               ))
@@ -278,11 +294,41 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
           </div>
         </div>
       </section>
+
+      {/* Open source (round 7, R7-06): after the experience, the repositories with a measured result. Each row reads
+          name, year, line, like an earlier role. */}
+      <section class="cv-sec cv-oss" aria-labelledby="cv-oss">
+        <h2 class="cv-h" id="cv-oss">{m.cv.openSource}</h2>
+        <div class="earlier">
+          {
+            oss.map((o) => (
+              <div class="earlier__row">
+                <span><b><a href={o.project.repo} dir="ltr">{o.project.name}</a></b></span>
+                <em>{o.project.year}</em>
+                <p set:html={html(runs(t(o.line)))} />
+              </div>
+            ))
+          }
+        </div>
+      </section>
     </div>
 
-    {/* Education first: it stays whole (heading and every degree on one page), so it opens the sidebar on page 1 and
-        the skills, which may continue on page 2 group by group, follow it. */}
-    <aside class="cv-side" aria-label={`${m.cv.sections.education}, ${m.cv.sections.skills}, ${m.cv.sections.certifications}`}>
+    {/* Skills first (round 7, R7-15): every group on page 1, under one heading, so a parser never reads the last groups
+        as part of the role printed before them on page 2. Education stays whole (heading and every degree on one page)
+        and opens page 2's sidebar, before the certifications. */}
+    <aside class="cv-side" aria-label={`${m.cv.sections.skills}, ${m.cv.sections.education}, ${m.cv.sections.certifications}`}>
+      <section class="cv-sec" aria-labelledby="cv-skills">
+        <h2 class="cv-h" id="cv-skills">{m.cv.sections.skills}</h2>
+        {
+          profile.cv.skills.map((g) => (
+            <div class="skill-g">
+              <b>{t(g.label)}</b>
+              <p set:html={skillLine(g)} />
+            </div>
+          ))
+        }
+      </section>
+
       <section class="cv-sec cv-sec--keep" aria-labelledby="cv-edu">
         <h2 class="cv-h" id="cv-edu">{m.cv.sections.education}</h2>
         <ul class="side-list edu-list">
@@ -307,18 +353,6 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
             })
           }
         </ul>
-      </section>
-
-      <section class="cv-sec" aria-labelledby="cv-skills">
-        <h2 class="cv-h" id="cv-skills">{m.cv.sections.skills}</h2>
-        {
-          profile.cv.skills.map((g) => (
-            <div class="skill-g">
-              <b>{t(g.label)}</b>
-              <p set:html={g.items.map((item) => label(t(item))).join(esc(sep))} />
-            </div>
-          ))
-        }
       </section>
 
       <section class="cv-sec" aria-labelledby="cv-cert">
@@ -367,10 +401,12 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
       <section class="cv-sec cv-sec--keep" aria-labelledby="cv-open">
         <h2 class="cv-h" id="cv-open">{m.cv.sections.openTo}</h2>
         {/* Two groups, one item per line (no separator left dangling at a line end): the roles, team lead first, then
-            the work arrangements. CV-only data (profile.cv.openTo); the site's About uses basics.openTo. */}
+            the work arrangements; then the notice period (round 7). CV-only data (profile.cv.openTo); the site's About
+            uses basics.openTo. */}
         <ul class="side-list open-to">
           <li class="open-to__roles">{profile.cv.openTo.roles.map((r) => <span>{t(r)}</span>)}</li>
           <li class="open-to__ways">{profile.cv.openTo.arrangements.map((a) => <span>{t(a)}</span>)}</li>
+          <li class="open-to__notice"><span>{format(m.cv.noticePeriod, { period: t(b.openTo.noticePeriod) })}</span></li>
         </ul>
       </section>
     </aside>

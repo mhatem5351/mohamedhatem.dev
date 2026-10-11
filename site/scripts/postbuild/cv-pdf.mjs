@@ -20,9 +20,10 @@
  *    title, the language and the tag tree. Applicant-tracking systems and document managers show these fields.
  * 4. Checks each PDF: at most 2 pages (fails the build otherwise), real text (Chromium embeds fonts as text, so it
  *    stays selectable and searchable; a PDF with no text objects fails), still tagged, with its language and author,
- *    and the sidebar's page breaks (scripts/lib/pdf-text.mjs reads each page's text): every sidebar heading shares a
- *    page with its first entry, and a section the sheet keeps whole (Education, Awards, Languages, Open to) is on one
- *    page, heading included. Right-to-left text: no run left that readers would read differently, every run's text
+ *    and the page breaks (scripts/lib/pdf-text.mjs reads each page's text): every sidebar heading shares a page with
+ *    its first entry, a section the sheet keeps whole (Education, Awards, Languages, Open to) is on one page, heading
+ *    included, and so is every main role (round 7, R7-04: a role's last bullet alone at the top of page 2 reads, to a
+ *    parser, as part of whatever was printed before it). Right-to-left text: no run left that readers would read differently, every run's text
  *    found in the sheet's own text (a reversed word is not), and the words in SEARCH_WORDS found.
  * 5. Writes site/public/cv/Mohamed-Hatem-CV.pdf and Mohamed-Hatem-CV-ar.pdf (next build's /cv/ shows their size)
  *    and the same files into <dist>/cv/, then copies the English one to the owner's Downloads folder.
@@ -35,7 +36,7 @@ import { PDFDocument } from "pdf-lib";
 import { chromium } from "playwright";
 import { startServer } from "../serve.mjs";
 import { loadContent } from "../lib/content.mjs";
-import { pdfPagesText, sectionBreakProblems } from "../lib/pdf-text.mjs";
+import { contains, pdfPagesText, sectionBreakProblems } from "../lib/pdf-text.mjs";
 import { normalizeRtlRuns, rtlTextProblems } from "../lib/pdf-rtl-text.mjs";
 
 const SITE = fileURLToPath(new URL("../../", import.meta.url));
@@ -95,8 +96,9 @@ export async function withMetadata(buf, lang) {
   // "AI Team Lead at Globant · Agentic LLM systems, RAG, LLM serving": never "multi-agent" beside Globant (round 6,
   // HM-01). The keywords are skills, not a claim about one role, so "multi-agent systems" (ArabsStock, Wakeb) stays.
   doc.setSubject(`${b.headline[lang]} · ${m.cv.focus}`);
-  // pdf-lib joins keywords with spaces; one comma-separated string keeps multi-word keywords readable.
-  doc.setKeywords([[b.name.en, b.name.ar, b.title.en, "CV", "LLM", "agentic AI", "generative AI", "multi-agent systems", "LangGraph", "RAG", "vLLM", "MLOps"].join(", ")]);
+  // pdf-lib joins keywords with spaces; one comma-separated string keeps multi-word keywords readable. Round 7 (HM-17):
+  // the team-lead and evaluation words a screener searches for, each shown on the CV itself.
+  doc.setKeywords([[b.name.en, b.name.ar, b.title.en, "CV", "team leadership", "LLM", "agentic AI", "generative AI", "multi-agent systems", "LangGraph", "RAG", "LLM evaluation", "vLLM", "MLOps", "LLMOps"].join(", ")]);
   doc.setCreator("mohamedhatem.dev");
   // No object streams: every object stays readable in the file (page objects, /Lang, the tag tree), as Chromium wrote it.
   return Buffer.from(await doc.save({ useObjectStreams: false }));
@@ -142,6 +144,8 @@ export default async function cvPdf({ dist, site = SITE, downloads = !process.en
           keep: sec.classList.contains("cv-sec--keep"),
         })),
       );
+      // Each main role as printed (head, client line, bullets), for the check that no role is split across pages.
+      const roles = await page.evaluate(() => [...document.querySelectorAll(".cv-main .job:not(.job--brief)")].map((job) => job.innerText));
       // The sheet's own text, for the right-to-left check below.
       const source = await page.evaluate(() => document.querySelector(".sheet")?.innerText ?? "");
       const raw = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true, tagged: true, outline: false });
@@ -156,8 +160,11 @@ export default async function cvPdf({ dist, site = SITE, downloads = !process.en
       const meta = await PDFDocument.load(buf, { updateMetadata: false });
       if (!meta.getAuthor() || !meta.getSubject() || !meta.getTitle()) throw new Error(`cv-pdf: ${f.path} is missing its title, author or subject`);
       if (sections.length < 5) throw new Error(`cv-pdf: ${f.path}: found ${sections.length} sidebar sections, expected the CV's six`);
-      const breaks = sectionBreakProblems(await pdfPagesText(buf), sections);
+      const pagesText = await pdfPagesText(buf);
+      const breaks = sectionBreakProblems(pagesText, sections);
       if (breaks.length) throw new Error(`cv-pdf: ${f.path}: ${breaks.join("; ")}`);
+      const split = roles.filter((r) => !pagesText.some((p) => contains(p, r))).map((r) => r.split("\n")[0]);
+      if (split.length) throw new Error(`cv-pdf: ${f.path}: split across pages (shorten the role or the ones before it): ${split.join("; ")}`);
       const text = await rtlTextProblems(buf, { source, words: SEARCH_WORDS[f.lang] ?? [] });
       if (text.length) throw new Error(`cv-pdf: ${f.path}: the right-to-left text would not read back: ${text.join("; ")}`);
       writeFileSync(join(publicDir, f.file), buf);

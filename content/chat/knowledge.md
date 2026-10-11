@@ -25,13 +25,14 @@ answer.
 - **Experience:** **7 years** in data and AI, starting January 2020 as a SQL developer, then data science, then
   building AI platforms in production, and now leading a team of 7 at Globant.
 - **Based in:** Cairo, Egypt. Time zone Africa/Cairo: UTC+2, or UTC+3 during Egyptian summer time.
-- **Works with:** teams in the Gulf and the US, remotely, in English and Arabic.
+- **Has worked with:** teams in the Gulf and the US, remotely, in English and Arabic.
 - **Languages:** Arabic (native), English (professional working proficiency).
 - **Education:** M.Sc. in Data Science, Cairo University, in progress (2023 – 2027, expected; not yet awarded); Diploma in Artificial Intelligence, ITI with
   EPITA Paris (2021–2022); B.Eng. in Structural Engineering, Tanta University (2015–2020).
 - **Award:** Best Engineer of the Year at Empoweromics.
 - **Open to:** AI/ML Team Lead or Senior AI / LLM Engineer roles: remote, relocation to the Gulf or Europe, or
   hybrid in Cairo (details in section 1.1). This is the one list on his site and his CV.
+- **Notice period:** 2 weeks to 1 month (Arabic: «من أسبوعين إلى شهر»).
 
 **In one paragraph:** Hatem is an AI Team Lead at Globant, based in Cairo, leading a team of 7 on the Saudi Tourism
 Authority (STA) project. He is leading AI engineering on that project: an agentic LLM runtime (LangGraph) with
@@ -53,8 +54,11 @@ Share this when a visitor asks about availability, location, remote work or relo
 - **Relocation to the Gulf:** yes: Saudi Arabia, UAE, Qatar and nearby countries.
 - **Relocation to Europe:** yes.
 - **Hybrid in Cairo:** yes. (Fully on-site work isn't in his list; suggest asking him.)
-- **Not stated (suggest contacting him):** notice period, earliest start date, visa or work-authorisation status,
-  and anything about compensation.
+- **Notice period:** 2 weeks to 1 month (Arabic: «فترة الإشعار: من أسبوعين إلى شهر»). His site shows it beside "Open
+  to" (About, CV). Confirmed by Mohamed, October 2026.
+- **Not stated (suggest contacting him):** an exact start date, visa or work-authorisation status, and anything about
+  compensation. For visa or work authorisation, say it isn't on his profile and suggest asking him; never guess it
+  from his nationality or location.
 - He currently works full-time at Globant.
 
 ### Headline numbers (all sourced)
@@ -287,9 +291,11 @@ study has its own page on the site, linked below (English page, then the Arabic 
 - **Approach:** one agent, two audiences: a single LangGraph agent serves both assistants, and an audience gate
   decides which tools and knowledge each session can use. Tools answer with cards (destinations, events, visas,
   weather and trip plans for visitors; meeting rooms, leave and office requests for staff). Answers are grounded in
-  the authority's documents and tourism content, with their sources shown. A person approves every action (booking a
-  room, placing an order, building an itinerary). Arabic and English throughout, right to left and left to right, on
+  the authority's documents and tourism content, with their sources shown. The user confirms before anything changes
+  (booking a room, placing an order, building an itinerary). Arabic and English throughout, right to left and left to right, on
   desktop and phone. Answer quality and retrieval are measured by evaluations.
+- **Approval, precisely:** every booking or order waits for the user's confirmation. It is not a person approving
+  every tool call, so never say "human approval before every action".
 - **The one figure:** **96 tools behind the one agent, 27 of them visible to visitors.** No other number is public
   (tool names aren't public either).
 - **Outcome:** Noura (the visitor assistant) was accepted in the client's user-acceptance testing (UAT) in September
@@ -401,7 +407,9 @@ All on [github.com/mhatem5351](https://github.com/mhatem5351).
   the prompt; a standalone validator re-checks all artifacts without calling a model; judge evidence must be an exact
   quote from the output (unverifiable quality evidence is nulled, unverifiable safety findings are dropped); the
   retry stage never sees scores. Offline tests with a stubbed client run in GitHub Actions
-  on Python 3.11 and 3.13. Stack: Python, LangGraph, OpenAI API, pytest.
+  on Python 3.11 and 3.13; they check that the validator catches five kinds of tampering (a flipped verdict, a score
+  leaked into retry output, a paraphrased quote, a missing log record, parsing after the first model call). The
+  repository has no recorded run, so there is no result to quote. Stack: Python, LangGraph, OpenAI API, pytest.
 - **[prompt-reliability-harness](https://github.com/mhatem5351/prompt-reliability-harness)**: measures how consistently
   an LLM answers when the same question is paraphrased, misspelled, padded with noise, reordered or given
   distractors. Invariance and perturbation tests; exact, regex and embedding-similarity scoring; consistency and flip
@@ -524,7 +532,7 @@ that is a skill badge, not a certification.)
 - **End to end.** From data pipelines (Prefect, ETL, SQL) through models and agents to serving, APIs and, when needed,
   the frontend.
 - **Leads and teaches.** He is leading a team of 7 at Globant and has lectured and mentored at university level.
-- **Remote across regions.** He works remotely with teams in the Gulf and the US, in English and Arabic.
+- **Remote across regions.** He has worked remotely with teams in the Gulf and the US, in English and Arabic.
 
 Personality traits, management style and day-to-day preferences beyond this are not stated.
 
@@ -593,6 +601,8 @@ a team of 7).
   sends email through Cloudflare and is protected by Turnstile.
 - The assistant streams answers from Google Gemini through a Cloudflare Worker, grounded in this one knowledge file.
   No vector database is used; the whole profile fits in the model's context.
+- It is tested against an automated evaluation set of 132 cases (facts, confidentiality, Arabic), as the site says.
+  No pass rate is published; if asked for one, say it isn't published.
 - Source code: [github.com/mhatem5351/mohamedhatem.dev](https://github.com/mhatem5351/mohamedhatem.dev).
 - The home page opens with his headline, "I build agentic LLM systems in Arabic and English, from the agent graph down
   to the GPU." (Arabic: «أبني أنظمة LLM وكيلية بالعربية والإنجليزية، من مخطط الوكلاء حتى وحدات GPU.»), then a row of
@@ -606,10 +616,10 @@ and its assistant have Arabic names: الهيئة السعودية للسياح�
 
 | English | Arabic |
 | --- | --- |
-| AI Team Lead | قائد فريق الذكاء الاصطناعي |
+| AI Team Lead | قائد فريق ذكاء اصطناعي |
 | leading a team of 7 | يقود فريقًا من 7 أعضاء |
 | he leads the AI engineering (current role, present tense) | يقود هندسة الذكاء الاصطناعي |
-| Senior AI & MLOps Engineer | مهندس أول للذكاء الاصطناعي وMLOps |
+| Senior AI & MLOps Engineer | مهندس ذكاء اصطناعي وMLOps أول |
 | multi-agent system | نظام متعدد الوكلاء |
 | agent / agents | وكيل / وكلاء |
 | chatbot | روبوت محادثة |
@@ -622,6 +632,7 @@ and its assistant have Arabic names: الهيئة السعودية للسياح�
 | data pipeline | خط بيانات |
 | pipeline (processing) | خط معالجة |
 | open to (roles, arrangements) | يرحّب بـ (أدوار، ترتيبات عمل) |
+| notice period: 2 weeks to 1 month | فترة الإشعار: من أسبوعين إلى شهر |
 | bilingual | ثنائي اللغة |
 | Cairo University | جامعة القاهرة |
 | Tanta University | جامعة طنطا |
@@ -631,15 +642,17 @@ and its assistant have Arabic names: الهيئة السعودية للسياح�
 | Information Technology Institute (ITI) | معهد تكنولوجيا المعلومات (ITI) |
 | a Saudi government client (name confidential) | جهة حكومية سعودية (لا يُذكر اسمها حفاظًا على السرية) |
 | Saudi Tourism Authority (STA) | الهيئة السعودية للسياحة (STA) |
-| Noura, the public visitor assistant | «نورة»، المساعدة العامة للزوار |
+| Noura, the public visitor assistant | «نورة»، المساعد الافتراضي للزوار |
 | the staff assistant | مساعد الموظفين |
 | Saudi Ministry of Defense (GADD) | وزارة الدفاع السعودية (GADD) |
-| agentic LLM runtime | بيئة تشغيل وكيلية للنماذج اللغوية |
+| agentic LLM runtime (LangGraph) | بيئة تشغيل على LangGraph لوكيل ذكي قائم على النماذج اللغوية |
 | agentic LLM systems | أنظمة LLM وكيلية |
 | one agent, two audiences | وكيل واحد لجمهورين |
-| audience gate | بوابة الجمهور |
+| audience gate (the permission layer) | طبقة الصلاحيات |
+| typed tools | أدوات محددة الأنواع |
+| every booking or order waits for the user's confirmation | لا يُنفَّذ أي حجز أو طلب إلا بعد تأكيد المستخدم |
 | visible to visitors | متاحة للزوار |
-| human-approval gates | بوابات الموافقة البشرية |
+| human-approval gates | نقاط الموافقة البشرية |
 | user-acceptance testing (UAT) | اختبار قبول المستخدم (UAT) |
 | Noura was accepted in the client's UAT | اعتمد العميل «نورة» في اختبار قبول المستخدم (UAT) |
 | fully async | غير متزامن بالكامل |
@@ -676,7 +689,7 @@ Job-description assessments in Arabic use these labels: **الملاءمة ال�
 For each of these, answer that it isn't stated, and offer his email ([hatem@mohamedhatem.dev](mailto:hatem@mohamedhatem.dev))
 or WhatsApp ([+20 114 207 0946](https://wa.me/201142070946)).
 
-- Notice period, earliest start date, interview availability, working hours.
+- An exact start date, interview availability, working hours. (The notice period is known: 2 weeks to 1 month.)
 - Visa or work-authorisation status, travel. (Remote work, relocation to the Gulf or Europe, and hybrid work in Cairo
   are known: see section 1.1.)
 - Full-time vs contract vs freelance for new roles. (Known: he has worked full-time, part-time and freelance.)

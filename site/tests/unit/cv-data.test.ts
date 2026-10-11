@@ -40,14 +40,20 @@ describe("CV data (content/profile.ts)", () => {
     expect(gov.depth).toBe("brief");
   });
 
-  it("Open to: one list everywhere (site, CV, llms.txt): two roles led by the team-lead role, three arrangements on the CV", () => {
+  it("Open to: one list everywhere (site, CV, llms.txt): two roles led by the team-lead role, three arrangements on the CV, and the notice period", () => {
     expect(profile.cv.openTo.roles.map((r) => r.en)).toEqual(["AI/ML Team Lead", "Senior AI / LLM Engineer"]);
     expect(profile.cv.openTo.roles.map((r) => r.ar)).toEqual(["قائد فريق ذكاء اصطناعي / تعلّم آلة", "مهندس ذكاء اصطناعي أول (LLM)"]);
     expect(profile.basics.openTo.roles).toEqual(profile.cv.openTo.roles);
     expect(profile.cv.openTo.arrangements.map((a) => a.en)).toEqual(["Remote", "Relocation to the Gulf or Europe", "Hybrid in Cairo"]);
     expect(profile.cv.openTo.source).toEqual(["mohamed"]);
     expect(profile.basics.openTo.arrangements.map((a) => a.id)).toEqual(["remote", "relocate-gulf", "relocate-europe", "cairo-onsite"]);
-    expect(profile.basics.openTo.line.en).toBe("Open to AI/ML Team Lead or Senior AI / LLM Engineer roles: remote, relocation to the Gulf or Europe, or hybrid in Cairo.");
+    expect(profile.basics.openTo.line.en).toBe(
+      "Open to AI/ML Team Lead or Senior AI / LLM Engineer roles: remote, relocation to the Gulf or Europe, or hybrid in Cairo. Notice period: 2 weeks to 1 month.",
+    );
+    // Round 7: the notice period Mohamed confirmed, in both languages, and nothing about visas anywhere.
+    expect(profile.basics.openTo.noticePeriod).toEqual({ en: "2 weeks to 1 month", ar: "من أسبوعين إلى شهر" });
+    expect(profile.basics.openTo.line.ar).toContain("فترة الإشعار: من أسبوعين إلى شهر");
+    expect(JSON.stringify(profile)).not.toMatch(/\bvisa (?:status|sponsor\w*)|work (?:visa|permit|authori[sz]ation)|تأشيرة عمل/i);
   });
 
   it("lists only the AWS certification on the CV, as a plain entry (round 6, HM-10, HM-23)", () => {
@@ -62,7 +68,11 @@ describe("CV data (content/profile.ts)", () => {
 
   it("the Globant role keeps the STA wording and adds only the approved facts, with the team of 7", () => {
     const g = profile.experience.find((r) => r.id === "globant")!;
-    expect(g.cvBullets[0].text.en.startsWith("Leading AI engineering on the Saudi Tourism Authority (STA) project")).toBe(true);
+    // Round 7 (R7-14): the CV summary carries the approved STA clause; the first CV bullet adds the case study's facts.
+    expect(g.cvBullets[0].text.en.startsWith("Saudi Tourism Authority (STA) project:")).toBe(true);
+    expect(profile.cv.summary.en).toContain(
+      "the AI engineering: an agentic LLM runtime (LangGraph) with retrieval, human-approval gates and evaluation, serving Noura, the public visitor assistant, and an internal staff assistant, in Arabic and English.",
+    );
     expect(g.bullets[0]!.text.en).toBe(
       "Leading AI engineering on the Saudi Tourism Authority (STA) project: an agentic LLM runtime (LangGraph) with retrieval, human-approval gates and evaluation, serving Noura, the public visitor assistant, and an internal staff assistant, in Arabic and English.",
     );
@@ -73,6 +83,9 @@ describe("CV data (content/profile.ts)", () => {
     expect(all).toContain("Leading a team of 7");
     expect(all).toContain("فريق من 7 أعضاء");
     expect(all).not.toMatch(/\b(hire|hired|hiring|mentor\w*|reports to|direct reports|managed)\b/i);
+    // Round 7 (R7-03): the approval rule as the case study defines it, never "before every action".
+    expect(all).not.toMatch(/every action|any action|أي إجراء|كل إجراء/i);
+    expect(all).toContain("every booking or order waits for the user's confirmation");
   });
 
   it("never sets Globant or the STA work beside multi-agent or production claims (round 6, HM-01)", () => {

@@ -29,8 +29,9 @@ export const en = {
     titleSeparator: " · ",
     home: {
       title: "Mohamed Hatem · AI Team Lead, Agentic LLM Systems",
+      /** Round 7 (R7-13): the team of 7 and the 7 years in separate sentences. */
       description:
-        "AI Team Lead at Globant, 7 years in data and AI, leading a team of 7 on the Saudi Tourism Authority's assistants. Agentic LLM systems, RAG, LLM serving.",
+        "AI Team Lead at Globant, leading a team of 7 on the Saudi Tourism Authority's AI assistants. 7 years in data and AI: agentic LLM systems, RAG, LLM serving.",
     },
     caseStudy: {
       /** Filled with the case study's `shortTitle`. */
@@ -118,8 +119,16 @@ export const en = {
   hero: {
     greeting: "Hi, I'm",
     availability: "Open to new roles",
-    /** After the availability in the hero meta line; links to the About facts (roles and work arrangements). */
-    arrangements: "remote, relocation to the Gulf or Europe, or hybrid in Cairo",
+    /**
+     * Phones: the chip above the headline, on its own, with the roles (≤ 40 characters, one line on an iPhone SE; round
+     * 7, HM-13). Hero.astro shows `availability · arrangementsShort` there until it uses this.
+     */
+    availabilityShort: "Open to AI Team Lead / Senior LLM roles",
+    /**
+     * After the availability in the desktop hero meta line (one line at 1440 px): the roles, then where (round 7,
+     * HM-13: the roles on the first screen). Links to the About facts, which add hybrid in Cairo.
+     */
+    arrangements: "AI Team Lead / Senior LLM Engineer · remote or relocation (Gulf, Europe)",
     /** Phones: the availability line above the headline ("Open to new roles · remote or relocation"). */
     arrangementsShort: "remote or relocation",
     localTime: "{time} in Cairo",
@@ -147,6 +156,10 @@ export const en = {
       guard: "guard",
       evaluate: "evaluate",
       generate: "generate",
+      /** The graph's port and satellite labels (round 7, HM-37: Arabic on /ar/). */
+      tools: "tools · mcp",
+      query: "query",
+      answer: "answer",
     },
   },
 
@@ -163,9 +176,10 @@ export const en = {
     eyebrow: "What I build",
     title: "Production AI: agents, retrieval, serving and evaluation.",
     lead: "I own the whole path: how agents route, what they retrieve, where the model runs, and how we know the answers are right.",
+    /** Round 7 (R7-17): "agentic", with the current role's design; "multi-agent" stays with Wakeb and ArabsStock. */
     agents: {
-      title: "Multi-agent LLM systems",
-      body: "LangGraph orchestration with command-based routing and modular subgraphs: from a 6-agent bilingual chatbot to a 14-agent assistant for a stock-media platform.",
+      title: "Agentic LLM systems",
+      body: "LangGraph agents with typed tools, permissions and human-approval gates: one agent behind 96 tools for the Saudi Tourism Authority at Globant; before that, a 6-agent bilingual chatbot at Wakeb Data, routed with Command across modular subgraphs, and a 14-agent assistant at ArabsStock.",
       stack: "LangGraph · MCP · OpenAI API · Qwen · async Python",
     },
     retrieval: {
@@ -231,6 +245,8 @@ export const en = {
     freelance: "Freelance",
     architectureNote:
       "Diagrams show the components named in public descriptions of the work. They are simplified, not complete system maps.",
+    /** The note under a diagram of work whose details were approved for publication (the STA case study; HM-19). */
+    architectureNoteApproved: "A simplified diagram of the parts approved for publication, not a complete system map.",
     briefNote: "The implementation details of this system aren't public. This summary covers what can be shared.",
     noPublicFigure: "No public figure",
     legend: {
@@ -269,24 +285,27 @@ export const en = {
       connection: "{from} to {to}",
       sourcesTitle: "Where these facts come from",
       sourcesBody: "No figure here is estimated: where a client hasn't published a number, the page describes what the system does. Sources: {sources}.",
+      /** Joined as a list: "my CV, LinkedIn and GitHub" (round 7, HM-19: one "and"). */
       sources: {
         cv: "my CV",
-        linkedin: "my LinkedIn profile",
-        github: "my GitHub profile and repositories",
-        "logic-controls": "the Logic Controls project and its public repository",
+        linkedin: "LinkedIn",
+        github: "GitHub",
+        "logic-controls": "the live site",
         mohamed: "project details approved for publication",
       },
       ctaEyebrow: "Questions about this build?",
       ctaTitle: "Ask my AI about “{title}”.",
       ctaBody: "It answers from my CV and public profile, in English or Arabic.",
       ctaContact: "Contact me",
+      /** A link to the CV PDF beside "Contact me" at the end of a case study (round 7, R7-25). */
+      ctaCv: "Download my CV (PDF)",
       ctaWrite: "or write to",
       duringRole: "During the {company} role",
       /**
        * Card eyebrow years of work dated only by its role (several case studies from one role), in the cards' one
-       * "Company / years" pattern: "Wakeb Data / during 2024–2026".
+       * "Company / years" pattern: "Wakeb Data / 2024–2026" (round 7, R7-20: no "during").
        */
-      atRole: "during {years}",
+      atRole: "{years}",
       /** Brief case studies: a tag next to the eyebrow and the note card beside the text. */
       briefTag: "Brief",
       briefTitle: "A brief case study",
@@ -453,12 +472,14 @@ export const en = {
     timeZone: "Time zone",
     openTo: "Open to",
     workArrangements: "Work arrangements",
+    /** Beside "Open to" (round 7): its value is profile.basics.openTo.noticePeriod. */
+    noticePeriod: "Notice period",
     languages: "Languages",
   },
 
   cv: {
     title: "CV",
-    lead: "My experience in brief, generated from the same data as this site.",
+    lead: "My experience in brief, from the same data as this site.",
     download: "Download CV",
     downloadPdf: "Download PDF",
     downloadLabel: "Download Mohamed Hatem's CV as a PDF",
@@ -480,6 +501,14 @@ export const en = {
       contact: "Contact",
     },
     earlierRoles: "Earlier roles",
+    /** The CV's open-source block (round 7, R7-06). */
+    openSource: "Open source",
+    /** Before a skill group's listed-only skills: "…; also used: LangChain, Azure OpenAI" (round 7, HM-17). */
+    alsoUsed: "also used",
+    /** The notice period in the CV's Open to block (round 7). */
+    noticePeriod: "Notice period: {period}",
+    /** Under the PDF links: which file to give an applicant tracking system (round 7, HM-26; the Arabic page needs it). */
+    atsNote: "For applicant tracking systems, use the English PDF.",
     /** Label of a role's client line (profile.ts Role.client), followed by ": " and the client's name. */
     client: "Client",
     backToSite: "Back to the portfolio",
@@ -505,8 +534,9 @@ export const en = {
     eyebrow: "AI assistant",
     title: "Ask about my work",
     lead: "My assistant has read my CV, LinkedIn and GitHub. Ask it about my experience, or paste a public job posting to check the fit. It answers in English or Arabic.",
+    /** Round 7 (BM-02): how it is tested, with the set's real size (content/chat/eval-set.json) and no pass rate. */
     howItWorks:
-      "How it works: one knowledge file, a Cloudflare Worker and Google Gemini. No vector database; the whole profile fits in the model's context.",
+      "How it works: one knowledge file, a Cloudflare Worker and Google Gemini. No vector database; the whole profile fits in the model's context. Tested against an automated evaluation set of 132 cases (facts, confidentiality, Arabic).",
     open: "Start a conversation",
     howBuilt: "How it's built",
     flowLabel: "How the assistant works",
@@ -576,7 +606,8 @@ export const en = {
   contact: {
     eyebrow: "Contact",
     title: "Let's talk",
-    lead: "Hiring for an AI, LLM or MLOps role, or planning a project? WhatsApp and email are the quickest ways to reach me. The form sends straight to my inbox.",
+    /** Round 7 (HM-13): the same two roles as "Open to" (no MLOps). */
+    lead: "Hiring an AI Team Lead or a Senior LLM Engineer, or planning a project? WhatsApp and email are the quickest ways to reach me. The form sends straight to my inbox.",
     localTime: "It's {time} in Cairo right now.",
     /** Sentence after the lead with an inline button that opens the assistant. */
     askFirst: { before: "Or", action: "ask my AI", after: "first." },
@@ -587,6 +618,8 @@ export const en = {
       github: { title: "GitHub", action: "Read my code" },
       /** The vCard: name, title, email, WhatsApp number and links in one tap. */
       vcard: { title: "Add to contacts", value: "Save my details to your phone" },
+      /** The CV PDF in the channel list (round 7, R7-25). */
+      cv: { title: "CV", action: "Download my CV (PDF)" },
     },
     copyEmail: "Copy email address",
     emailCopied: "Email address copied",
