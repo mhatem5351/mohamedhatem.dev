@@ -601,7 +601,9 @@ test.describe("phones: the action dock (ERGO-01)", () => {
       if (!b?.width) return Infinity;
       return document.dir === "rtl" ? d.left - b.right : b.left - d.right;
     });
-  const shown = (page: Page) => page.locator("[data-dock]").evaluate((d) => !(d as HTMLElement).hidden && !d.hasAttribute("data-away") && getComputedStyle(d).visibility === "visible");
+  // Shown = in place and fully faded in (axe on a dock mid-fade would measure blended, lighter text).
+  const shown = (page: Page) =>
+    page.locator("[data-dock]").evaluate((d) => !(d as HTMLElement).hidden && !d.hasAttribute("data-away") && getComputedStyle(d).visibility === "visible" && getComputedStyle(d).opacity === "1");
 
   for (const [locale, path] of LOCALES)
     for (const theme of THEMES)
