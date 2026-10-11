@@ -626,6 +626,22 @@ test.describe("Arabic / RTL", () => {
     expect(req!.lang).toBe("ar");
   });
 
+  test("Arabic panel: the empty composer reads from the right; typed Latin text still runs left to right; Arabic type scale", async ({ page }) => {
+    await openDemo(page, "lang=ar");
+    await bubble(page).click();
+    await expect(dialog(page)).toBeVisible();
+    // An empty dir=auto field resolves to ltr: the placeholder follows the panel instead (audit A-03).
+    expect(await input(page).evaluate((el) => getComputedStyle(el).direction)).toBe("rtl");
+    await input(page).fill("What is his role?");
+    expect(await input(page).evaluate((el) => getComputedStyle(el).direction)).toBe("ltr");
+    await input(page).fill("");
+    expect(await input(page).evaluate((el) => getComputedStyle(el).direction)).toBe("rtl");
+    // DESIGN 4.3: Arabic headings 700 without tracking, a looser body (audit A-12).
+    const title = page.locator("[data-mh-chat] .ti");
+    expect(await title.evaluate((el) => [getComputedStyle(el).fontWeight, getComputedStyle(el).letterSpacing])).toEqual(["700", "normal"]);
+    expect(await dialog(page).evaluate((el) => parseFloat(getComputedStyle(el).lineHeight) / parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(1.75);
+  });
+
   test("an English question on the Arabic page is sent as English", async ({ page }) => {
     await openDemo(page, "lang=ar");
     await bubble(page).click();
