@@ -44,11 +44,10 @@ export function temporalCoverage(period: Period): string {
 }
 
 /**
- * The certifications the CV lists (round 6, HM-10: none is "featured" any more, so `featured` would leave
- * hasCredential empty). Today that is "AWS Certified Machine Learning – Specialty" (2022). Content from before
- * round 6 has no `onCv` and falls back to `featured`.
+ * The certifications the CV lists (round 6, HM-10: no certification is "featured" any more). Today that is
+ * "AWS Certified Machine Learning – Specialty" (2022).
  */
-export const onCv = (c: Certification): boolean => ("onCv" in c ? c.onCv === true : c.featured);
+export const onCv = (c: Certification): boolean => c.onCv === true;
 
 function organization(name: string, url?: string): Record<string, unknown> {
   return { "@type": "Organization", name, ...(url ? { url } : {}) };
