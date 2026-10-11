@@ -1,8 +1,13 @@
-// Content QA for mohamedhatem.dev. Run from the repo root:
-//   npx -y tsx content/scripts/check-content.mjs
+// Content QA for mohamedhatem.dev. Run from the repo root (tsx is a pinned devDependency; nothing is downloaded):
+//   npm run check:content
 // Exits 1 on any failure. Checks what the type checker can't: lengths, digits, banned words, cross-references,
-// JSON shape and secrets. (Type-check separately: npx -y -p typescript tsc --noEmit -p content/tsconfig.json)
-import { createHash } from "node:crypto";
+// JSON shape and secrets. (Type-check separately: npx --no-install tsc --noEmit -p content/tsconfig.json)
+//
+// The unnamed client's names are checked with keyed hashes, so this needs CONFIDENTIAL_HMAC_KEY (environment, else
+// the gitignored .env). Without it the check fails, except with CONFIDENTIAL_KEY_OPTIONAL=1: CI runs the keyed scan
+// before npm ci (worker/src/chat/confidential-node.mjs check-tree, so no installed package sees the key) and this
+// script after it without the key (CONFIDENTIAL_NAMES_CHECKED=1); every other check, the secret patterns included,
+// still runs here. As the pre-commit hook it also checks the staged version of each file, which is what gets committed.
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -10,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import { profile } from "../profile.ts";
 import { en } from "../i18n/en.ts";
 import { ar } from "../i18n/ar.ts";
+import { KEY_ENV, loadConfidential } from "../../worker/src/chat/confidential-node.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const errors = [];
@@ -188,39 +194,26 @@ for (const rx of evalSet.globalChecks?.mustNotMatch ?? [])
 
 // ---------- M.Sc. is never "held"; the unnamed client is never named ----------
 // The unnamed client's names (the Saudi government client of the Wakeb assistant) must not appear in this repository,
-// so they are checked by hash: every word and every 2- and 3-word sequence of each file is hashed and compared.
-// One list for the whole repository: worker/src/chat/confidential-hashes.json, which the Worker's output guard, the
-// site's build check (site/scripts/check-dist.mjs) and this script all read. `canonical` are the name forms this
-// check has always used; `variants` are generated from the gitignored _inputs/forbidden-names.txt (Arabic prefixes,
-// folded letters) by worker/scripts/confidential-hashes.mjs. Both are checked here.
-const CONFIDENTIAL_FILE = join(root, "..", "worker", "src", "chat", "confidential-hashes.json");
-let confidential = { canonical: [], variants: [] };
-try {
-  confidential = JSON.parse(readFileSync(CONFIDENTIAL_FILE, "utf8"));
-} catch (e) {
-  fail(`worker/src/chat/confidential-hashes.json can't be read (${e.message}): the unnamed-client check has no hashes`);
+// so they are checked by keyed hash (HMAC-SHA-256): every word, 2- and 3-word sequence (spaced and joined), spelled-out
+// letters, leetspeak, look-alike and invisible characters, reversed and base64 forms of each file. One list and one
+// matcher for the whole repository: worker/src/chat/confidential-hashes.json through worker/src/chat/confidential-core.mjs,
+// which the Worker's output guard, the git hooks and the site's build check use too. Fail closed: an unreadable or
+// weakened list (fewer than 7 canonical hashes), or a missing, malformed or wrong key, is an error.
+const confidential = loadConfidential({ optional: process.env.CONFIDENTIAL_KEY_OPTIONAL === "1" });
+if (confidential.error) fail(`unnamed-client check: ${confidential.error}`);
+if (confidential.skipped && process.env.CONFIDENTIAL_NAMES_CHECKED === "1") console.log("content check: the keyed name check ran in an earlier step (check-tree)");
+else if (confidential.skipped) {
+  const note = `the unnamed-client name check was skipped: ${confidential.skipped}. Secret patterns and every other check still ran.`;
+  console.warn(process.env.GITHUB_ACTIONS ? `::warning title=Name check skipped::${note}` : `content check: ${note}`);
 }
-const SHA256 = /^[0-9a-f]{64}$/;
-const canonical = Array.isArray(confidential.canonical) ? confidential.canonical : [];
-const variants = Array.isArray(confidential.variants) ? confidential.variants : [];
-// Fail closed: an empty or malformed list would let every file pass.
-if (canonical.length < 7) fail(`confidential-hashes.json has ${canonical.length} canonical hashes (expected at least 7): the unnamed-client check would be weakened`);
-for (const h of [...canonical, ...variants]) if (!SHA256.test(h)) fail(`confidential-hashes.json: not a SHA-256 hex digest: ${String(h).slice(0, 12)}…`);
-const FORBIDDEN_SHA256 = new Set([...canonical, ...variants]);
-/** True when `text` names the unnamed client (same logic can be reused on chatbot replies). */
-function mentionsUnnamedClient(text) {
-  const words = text.normalize("NFKC").toLowerCase().replace(/\p{M}/gu, "").split(/[^\p{L}\p{N}]+/u).filter(Boolean);
-  for (let i = 0; i < words.length; i++)
-    for (let n = 1; n <= 3 && i + n <= words.length; n++) {
-      const gram = words.slice(i, i + n).join(" ");
-      if (FORBIDDEN_SHA256.has(createHash("sha256").update(gram).digest("hex"))) return true;
-    }
-  return false;
-}
+/** True when `text` names the unnamed client (the Worker runs the same matcher on chatbot replies). */
+const mentionsUnnamedClient = (text) => confidential.matcher?.mentions(text) ?? false;
+/** True when `text` contains the key itself (it must never be committed). */
+const containsKey = (text) => confidential.containsKey?.(text) ?? false;
 const HELD_MSC = /\b(hold|holds|holding|has|completed|earned)\s+(an?\s+|his\s+|the\s+)?(m\.?\s?sc|master'?s)\b|حاصل على (درجة )?الماجستير|حصل على (درجة )?الماجستير/i;
 
 // ---------- secrets ----------
-const SECRET = /(AIza[0-9A-Za-z_-]{20,}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_\w{20,}|cfut_\w+|cfat_\w+|xox[bp]-\w+|(GEMINI_API_KEY|TURNSTILE_SECRET|GITHUB_TOKEN\w*)\s*=\s*\S+)/;
+const SECRET = /(AIza[0-9A-Za-z_-]{20,}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_\w{20,}|cfut_\w+|cfat_\w+|xox[bp]-\w+|(GEMINI_API_KEY|TURNSTILE_SECRET|GITHUB_TOKEN\w*|CONFIDENTIAL_HMAC_KEY)\s*=\s*\S+)/;
 function scan(dir) {
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
@@ -228,8 +221,9 @@ function scan(dir) {
     else if (/\.(ts|mjs|md|json)$/.test(name)) {
       const text = readFileSync(p, "utf8");
       const m = text.match(SECRET);
-      if (m) fail(`possible secret in ${p}: ${m[0].slice(0, 12)}…`);
+      if (m) fail(`possible secret in ${p}: ${m[0].slice(0, 4)}…`);
       if (mentionsUnnamedClient(text)) fail(`${p} names the unnamed client`);
+      if (containsKey(text)) fail(`${p} contains the value of ${KEY_ENV}`);
       // README.md and eval-set.json quote the wrong wording on purpose; check only what visitors or the bot read.
       const userFacing = /\.ts$/.test(name) || ["knowledge.md", "system-prompt.md", "suggestions.json"].includes(name);
       const held = userFacing ? text.match(HELD_MSC) : null;
@@ -242,19 +236,37 @@ scan(root);
 // The whole repository is public, not just content/: design prototypes, test fixtures and docs are checked too.
 // Code there reads env vars by name, so only key-shaped values and .env-style lines count (Turnstile's public test
 // secret 1x000…AA is allowed).
-const REPO_SECRET = /(AIza[0-9A-Za-z_-]{20,}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_\w{20,}|cfut_\w+|cfat_\w+|xox[bp]-\w+|^(GEMINI_API_KEY|TURNSTILE_SECRET|SESSION_SECRET|CLOUDFLARE_API_TOKEN|GITHUB_TOKEN\w*)=(?!1x0{20,}AA)[A-Za-z0-9_\-.]{16,})/m;
+const REPO_SECRET = /(AIza[0-9A-Za-z_-]{20,}|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_\w{20,}|cfut_\w+|cfat_\w+|xox[bp]-\w+|^(GEMINI_API_KEY|TURNSTILE_SECRET|SESSION_SECRET|CLOUDFLARE_API_TOKEN|CONFIDENTIAL_HMAC_KEY|GITHUB_TOKEN\w*)=(?!1x0{20,}AA)["']?[A-Za-z0-9_\-.]{16,})/m;
 const repo = join(root, "..");
 const BINARY = /\.(png|jpe?g|webp|avif|gif|ico|pdf|woff2?|ttf|otf|zip|gz)$/i;
 // Tracked files plus new ones not yet added (but not ignored ones such as _inputs/, .env or dist/), so a new file is
 // checked before its first commit too.
 const tracked = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], { cwd: repo, encoding: "utf8" }).split("\0").filter(Boolean);
+// A path that names the client is reported by count only (printing it would name the client).
+const namedPaths = tracked.filter((rel) => mentionsUnnamedClient(rel.replace(/[/_.-]+/g, " "))).length;
+if (namedPaths) fail(`${namedPaths} file path(s) name the unnamed client`);
+const shown = (rel) => (mentionsUnnamedClient(rel.replace(/[/_.-]+/g, " ")) ? "(a file whose path names the client)" : rel);
 for (const rel of tracked) {
   if (BINARY.test(rel) || rel.startsWith("content/")) continue;
   let text;
   try { text = readFileSync(join(repo, rel), "utf8"); } catch { continue; } // deleted in the work tree
   const m = text.match(REPO_SECRET);
-  if (m) fail(`possible secret in ${rel}: ${m[0].slice(0, 12)}…`);
-  if (mentionsUnnamedClient(text)) fail(`${rel} names the unnamed client`);
+  if (m) fail(`possible secret in ${rel}: ${m[0].slice(0, 4)}…`);
+  if (mentionsUnnamedClient(text)) fail(`${shown(rel)} names the unnamed client`);
+  if (containsKey(text)) fail(`${shown(rel)} contains the value of ${KEY_ENV}`);
+}
+
+// The staged version of each file is what a commit records, and it can differ from the file on disk (staged, then
+// edited): check it too. Outside a commit nothing is staged and this is a no-op.
+const staged = execFileSync("git", ["diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z"], { cwd: repo, encoding: "utf8" }).split("\0").filter(Boolean);
+for (const rel of staged) {
+  if (BINARY.test(rel)) continue;
+  let text;
+  try { text = execFileSync("git", ["show", `:${rel}`], { cwd: repo, encoding: "utf8", maxBuffer: 64 << 20 }); } catch { continue; }
+  const m = text.match(rel.startsWith("content/") ? SECRET : REPO_SECRET);
+  if (m) fail(`possible secret in the staged ${shown(rel)}: ${m[0].slice(0, 4)}…`);
+  if (mentionsUnnamedClient(text)) fail(`the staged ${shown(rel)} names the unnamed client`);
+  if (containsKey(text)) fail(`the staged ${shown(rel)} contains the value of ${KEY_ENV}`);
 }
 
 // ---------- report ----------

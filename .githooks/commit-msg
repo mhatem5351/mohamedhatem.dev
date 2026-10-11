@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks a commit message that names the unnamed client (keyed-hash check, like every tracked file; the repository is
+# public). Plain Node, no dependencies. Needs CONFIDENTIAL_HMAC_KEY (in the gitignored .env).
+exec node worker/src/chat/confidential-node.mjs check-message "$1"

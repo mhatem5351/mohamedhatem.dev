@@ -1,7 +1,9 @@
-# Checks on every push and pull request (free on public repositories). No secrets: nothing here calls Gemini,
-# Cloudflare or Turnstile; the Worker and widget tests mock them.
-#   checks      content QA (secrets, the unnamed client's hashed names, every tracked file), generated files up to
-#               date, type-check, Worker + widget unit tests, widget size budget
+# Checks on every push and pull request (free on public repositories). Nothing here calls Gemini, Cloudflare or
+# Turnstile; the Worker and widget tests mock them. One secret, used by one step only, before npm ci:
+# CONFIDENTIAL_HMAC_KEY, the key of the unnamed client's hashed names (worker/src/chat/confidential-hashes.json).
+#   checks      the keyed name check (every tracked file, before any package is installed), content QA (secrets,
+#               copy rules), generated files up to date, type-check, Worker + widget unit tests (a fixed test key),
+#               widget size budget
 #   widget-e2e  the chat widget in Chromium (desktop and mobile projects, mocked API, axe)
 #   site-unit   the site's unit tests
 # Actions are pinned to commit SHAs (tag in the comment); update both together.
@@ -35,9 +37,22 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+      # Before npm ci, so no installed package (install scripts, a tampered tsx) runs while the key is in the
+      # environment: plain Node and the repository's own dependency-free matcher only. GitHub withholds secrets from
+      # pull requests opened from forks and from Dependabot's runs; there the check is skipped with a warning
+      # (CONFIDENTIAL_KEY_OPTIONAL). Everywhere else a missing or wrong key fails the job.
+      - name: Unnamed-client name check (keyed hashes) over every tracked file
+        run: node worker/src/chat/confidential-node.mjs check-tree
+        env:
+          CONFIDENTIAL_HMAC_KEY: ${{ secrets.CONFIDENTIAL_HMAC_KEY }}
+          CONFIDENTIAL_KEY_OPTIONAL: ${{ (github.actor == 'dependabot[bot]' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)) && '1' || '' }}
       - run: npm ci
-      - name: Content QA (secrets, hashed client names, copy rules) over every tracked file
+      - name: Content QA (secrets, copy rules) over every tracked file
         run: npm run check:content
+        env:
+          # No key here: the keyed name check ran in the step above.
+          CONFIDENTIAL_KEY_OPTIONAL: "1"
+          CONFIDENTIAL_NAMES_CHECKED: "1"
       - name: Generate the Worker and widget content modules
         run: node worker/scripts/gen-content.mjs --require-content
       - run: npm run typecheck

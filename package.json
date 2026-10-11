@@ -16,7 +16,7 @@
     "chat:smoke": "node worker/scripts/chat-smoke.mjs",
     "chat:eval": "node worker/scripts/chat-eval.mjs",
     "chat:e2e": "node worker/scripts/chat-e2e.mjs",
-    "check:content": "npx -y tsx content/scripts/check-content.mjs",
+    "check:content": "tsx content/scripts/check-content.mjs",
     "deploy:worker": "npm run check:content && node worker/scripts/gen-content.mjs --require-content && wrangler deploy",
     "widget:build": "node chat-widget/scripts/build.mjs",
     "widget:size": "node chat-widget/scripts/build.mjs --check",
@@ -34,6 +34,7 @@
     "esbuild": "^0.28.2",
     "fflate": "^0.8.3",
     "happy-dom": "^20.14.6",
+    "tsx": "4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3",
     "wrangler": "^4.149.0"

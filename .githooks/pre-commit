@@ -1,4 +1,10 @@
 #!/bin/sh
 # Blocks commits that would publish a secret or the unnamed client's name (the repository is public).
 # Enable once per clone: git config core.hooksPath .githooks
-exec npx -y tsx content/scripts/check-content.mjs
+# tsx is pinned in package.json (devDependencies, locked in package-lock.json) and run from node_modules: nothing is
+# downloaded. The name check needs CONFIDENTIAL_HMAC_KEY (in the gitignored .env) and fails without it.
+if [ ! -x node_modules/.bin/tsx ]; then
+  echo "pre-commit: node_modules/.bin/tsx is missing; run npm ci first" >&2
+  exit 1
+fi
+exec node_modules/.bin/tsx content/scripts/check-content.mjs
