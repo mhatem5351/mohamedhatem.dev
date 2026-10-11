@@ -163,7 +163,9 @@ put("monogram.svg", monogramSVG());
 put("monogram-tile.svg", tileSVG(64, { hairline: true }));
 put("logo-lockup.svg", lockup("en"));
 put("logo-lockup-ar.svg", lockup("ar"));
-put("favicon.svg", faviconSVG());
+// The tab icon is the tile (ink square, paper mark, gold node), not the bare mark: the bare mark disappeared on dark
+// tab strips (audit D-10). Same pixels as favicon-32.png.
+put("favicon.svg", tileSVG(32, { title: false }));
 
 const t16 = await png(tileSVG(16, { title: false }), 16);
 const t32 = await png(tileSVG(32, { title: false }), 32);
