@@ -61,7 +61,9 @@ site/
 ├── scripts/
 │   ├── og.mjs              renders OG PNGs from the design's templates (Playwright), skips unchanged inputs
 │   ├── postbuild.mjs       runs postbuild/: relocate-404.mjs (ar/404.html), redirects.mjs (_redirects),
-│   │                       early-hints.mjs (Link headers), cv-pdf.mjs (+ lib/pdf-text.mjs: page-break check)
+│   │                       early-hints.mjs (Link + CSP Report-Only headers),
+│   │                       cv-pdf.mjs (+ lib/pdf-text.mjs: page-break check)
+│   ├── keep-previous-assets.mjs  deploy: keeps the last deployed build's /_astro files online one more deploy
 │   ├── subset-fonts.mjs    builds src/assets/fonts from design/assets/fonts (see "Fonts")
 │   ├── check-dist.mjs      static checks of the build (see "Tests")
 │   ├── check-budgets.mjs   performance budgets
@@ -250,6 +252,7 @@ more, and phone or dialog captures sit beside the rest (`screenGroups()` in `lib
   longer soft 404s (`/404.html` → 307 → `/404`).
 - **Early hints (`postbuild/early-hints.mjs`):** each page's stylesheets and preloaded fonts as a `Link` header in
   `dist/_headers`, so Cloudflare can send a 103 Early Hints response when the zone's (free) Early Hints setting is on.
+  The same per-page rule carries the CSP Report-Only mirror (see `public/_headers` below).
 - **Zone settings the repo can't set (free, in the dashboard):**
   - HTML gets an ETag (and so a 304 on repeat visits) only with Security → Settings → "Replace insecure JavaScript
     libraries" off. That feature parses HTML, and strips ETag and Content-Length, whenever the header CSP has no
@@ -262,7 +265,13 @@ more, and phone or dialog captures sit beside the rest (`screenGroups()` in `lib
   - A header CSP with `frame-ancestors 'none'`, `object-src`, `base-uri` and `form-action`. Script and style rules
     stay in the per-page meta, so the header can't weaken them. Its violations are reported to the Worker
     (`report-to csp` + `Reporting-Endpoints: csp="/api/csp-report"`, and `report-uri` for older browsers), which keeps
-    an anonymous counter (directive, blocked host, page path; worker/README.md). A `<meta>` policy can't report.
+    an anonymous counter (directive, blocked host, page path; worker/README.md).
+  - A `<meta>` policy can't report, so `postbuild/early-hints.mjs` gives every page a rule with a
+    `Content-Security-Policy-Report-Only` copy of its `<meta>` policy (same hashes, minus `base-uri`, `form-action` and
+    `object-src`, which the header policy reports already). The browser reports whatever the `<meta>` blocks, from the
+    first byte and without any script: violations while the HTML is parsed, an injected inline script, even the
+    page's own boot script if something rewrote it (audit SEC-H01). `check-dist.mjs` checks that each mirror matches
+    its page and that `_headers` stays within the Workers limits (100 rules, 2,000 characters a line).
   - `Cross-Origin-Resource-Policy: same-origin` on `/_astro/*` (scripts, styles, fonts, images) and `/logos/*`, so
     other sites can't embed them. The sharing cards, icons, the photo and the CV PDFs stay embeddable.
   - HSTS, Referrer-Policy, Permissions-Policy, `nosniff`, `X-Frame-Options: DENY` and COOP.
@@ -270,8 +279,8 @@ more, and phone or dialog captures sit beside the rest (`screenGroups()` in `lib
   - `Content-Type: text/plain; charset=utf-8` for `robots.txt`, `llms.txt`, `llms-full.txt` and
     `.well-known/security.txt` (Workers send `.txt` without a charset; one rule each, so the value replaces the
     default).
-- **`public/.well-known/security.txt` (RFC 9116):** the security contact (hatem@mohamedhatem.dev), languages and an
-  `Expires` less than a year ahead. `check-dist.mjs` fails the build when `Expires` is less than 30 days away: renew it
+- **`public/.well-known/security.txt` (RFC 9116):** the security contact (hatem@mohamedhatem.dev), languages, the
+  `Policy` (the repository's `SECURITY.md`: how to report, reply time, scope) and an `Expires` less than a year ahead. `check-dist.mjs` fails the build when `Expires` is less than 30 days away: renew it
   then (one line). Workers static assets upload and serve dot-directories.
 - **Without JavaScript:** everything reads, and the contact form still posts; the Worker answers that post with an
   HTML page (nothing is sent without Turnstile) that offers email and WhatsApp links prefilled with the visitor's text.

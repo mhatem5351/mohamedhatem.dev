@@ -38,10 +38,12 @@
     { "name": "RL_CHAT_SESSION", "namespace_id": "2605", "simple": { "limit": 6, "period": 60 } },
     // Contact form per IP: 3 a minute.
     { "name": "RL_CONTACT", "namespace_id": "2604", "simple": { "limit": 3, "period": 60 } },
-    // CSP violation reports (POST /api/csp-report): 10 a minute per IP, 60 a minute per location for everyone, so a
-    // flood can't spend the Analytics Engine budget (100,000 data points a day).
-    { "name": "RL_CSP", "namespace_id": "2606", "simple": { "limit": 10, "period": 60 } },
-    { "name": "RL_CSP_GLOBAL", "namespace_id": "2607", "simple": { "limit": 60, "period": 60 } },
+    // CSP violation reports (POST /api/csp-report): each written report is ONE Analytics Engine data point, and only
+    // reports that would be written count here: 2 a minute per IP, 3 a minute per location for everyone. Worst case
+    // 3 × 1,440 = 4,320 points a day per location (4.3 % of the account's 100,000 a day on Workers Free, shared with
+    // chat and contact), and the Worker also stops each isolate after 100 a UTC day (worker/src/csp-report.ts).
+    { "name": "RL_CSP", "namespace_id": "2606", "simple": { "limit": 2, "period": 60 } },
+    { "name": "RL_CSP_GLOBAL", "namespace_id": "2607", "simple": { "limit": 3, "period": 60 } },
   ],
   // Anonymous counts and latency only (no IP, no message text). Workers Free: 100,000 data points written a day.
   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "mh_events" }],

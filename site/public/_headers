@@ -21,7 +21,10 @@
 # Violations of the header policy are reported to the Worker (POST /api/csp-report, worker/src/csp-report.ts: an
 # anonymous counter, nothing about the visitor): report-to + Reporting-Endpoints (Chrome 96+, Safari 16.4+, Firefox
 # 149+; the path must start with "/"), and report-uri for older browsers (ignored wherever report-to works). A <meta>
-# policy can't report, so the per-page script and style rules stay silent here.
+# policy can't report, so the build appends one rule per page (scripts/postbuild/early-hints.mjs) with a
+# Content-Security-Policy-Report-Only copy of that page's <meta> policy (its hashes included, minus the directives this
+# header already reports): the browser then reports whatever the <meta> blocks, from the first byte of the page and
+# without any script. That rule also carries the page's Early Hints Link header.
 
 /*
   Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; report-uri /api/csp-report; report-to csp

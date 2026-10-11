@@ -170,7 +170,13 @@ test.describe("STA case study", () => {
       expect(article.inLanguage).toBe(locale);
       expect(article.about.producer.name).toBe("Globant");
       expect(article.about.sponsor.name).toBe(cs.client!.name[locale]);
-      expect(article.image).toContain(`work-${SLUG}`);
+      // The card in 16:9, 4:3 and 1:1 (SEO-05).
+      expect(article.image).toHaveLength(3);
+      for (const [i, re] of [/\.png\?v=/, /-4x3\.jpg\?v=/, /-1x1\.jpg\?v=/].entries()) {
+        expect(article.image[i]).toContain(`/og/work-${SLUG}-${locale}`);
+        expect(article.image[i]).toMatch(re);
+        expect((await page.request.get(new URL(article.image[i]).pathname)).status()).toBe(200); // the local build, not production
+      }
     }
   });
 });

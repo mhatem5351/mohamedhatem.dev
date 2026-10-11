@@ -10,7 +10,7 @@
 import { Font } from "astro:assets";
 import { localePath, messages, otherLocale, type Locale } from "~/lib/i18n";
 import { absolute, ogImage as ogPath } from "~/lib/site";
-import { versioned } from "~/lib/og-version";
+import { versioned, withCardRatios } from "~/lib/og-version";
 import { analyticsToken } from "~/lib/env";
 
 export interface HeadProps {
@@ -72,6 +72,11 @@ const arabicPreload = (preloadFonts.arabicWeights ?? [400, 600, 700]).map((weigh
  * those pages preload the two Latin faces as well (measured: CLS 0, Lighthouse mobile 99).
  */
 const latinOnArabicCase = locale === "ar" && path.startsWith("/work/");
+/**
+ * Structured data as the page passes it, except that a case study's Article image (its sharing card) becomes the card
+ * in 16:9, 4:3 and 1:1 (lib/og-version.ts → withCardRatios; the files come from scripts/postbuild/og-ratios.mjs).
+ */
+const structured = jsonLd.map((data) => withCardRatios(data, og));
 const alternates = indexable
   ? [
       { hreflang: "en", href: absolute(localePath(path, "en")) },
@@ -154,5 +159,5 @@ const alternates = indexable
 }
 <meta name="author" content={m.meta.siteName} />
 <meta name="format-detection" content="telephone=no" />
-{jsonLd.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data).replace(/</g, "\\u003c")} />)}
+{structured.map((data) => <script type="application/ld+json" set:html={JSON.stringify(data).replace(/</g, "\\u003c")} />)}
 {token && <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon={JSON.stringify({ token })} />}
