@@ -21,7 +21,7 @@
  * name, so only `name` and `alternateName` are stated.
  * Pure functions (no I/O), so tests can call them directly.
  */
-import type { CaseStudy, Client, Locale, Period } from "@content/profile.ts";
+import type { CaseStudy, Certification, Client, Locale, Period } from "@content/profile.ts";
 import { datedByRole } from "./case";
 import { PRIVACY_UPDATED, SITE_PUBLISHED, HOME_UPDATED } from "./dates";
 import { format, localePath, messages, parseIso } from "./i18n";
@@ -41,6 +41,13 @@ export function temporalCoverage(period: Period): string {
   if (period.end === period.start) return period.start;
   return `${period.start}/${period.end === null ? ".." : period.end}`;
 }
+
+/**
+ * The certifications the CV lists (round 6, HM-10: none is "featured" any more, so `featured` would leave
+ * hasCredential empty). Today that is "AWS Certified Machine Learning – Specialty" (2022). Content from before
+ * round 6 has no `onCv` and falls back to `featured`.
+ */
+export const onCv = (c: Certification): boolean => ("onCv" in c ? c.onCv === true : c.featured);
 
 function organization(name: string, url?: string): Record<string, unknown> {
   return { "@type": "Organization", name, ...(url ? { url } : {}) };
@@ -78,7 +85,7 @@ export function person(): Record<string, unknown> {
       alternateName: l.name.en === "Arabic" ? "ar" : "en",
     })),
     hasCredential: profile.certifications
-      .filter((c) => c.featured)
+      .filter(onCv)
       .map((c) => ({
         "@type": "EducationalOccupationalCredential",
         name: c.name.en,

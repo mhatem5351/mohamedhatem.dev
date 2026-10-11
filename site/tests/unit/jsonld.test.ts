@@ -39,6 +39,18 @@ describe("JSON-LD", () => {
     expect(p.alternateName).toEqual(expect.arrayContaining(["Mohamed Hatem Radwan", "محمد حاتم"]));
   });
 
+  it("lists the CV's certification as a credential: AWS Certified Machine Learning – Specialty (2022), nothing else", () => {
+    expect(person().hasCredential).toEqual([
+      {
+        "@type": "EducationalOccupationalCredential",
+        name: "AWS Certified Machine Learning – Specialty",
+        credentialCategory: "certification",
+        recognizedBy: { "@type": "Organization", name: "Amazon Web Services" },
+        dateCreated: "2022",
+      },
+    ]);
+  });
+
   it("describes the Person and the WebSite once: the same content on every page and in both languages", () => {
     for (const id of [PERSON_ID, WEBSITE_ID]) {
       const bodies = new Set(all.filter((n) => n["@id"] === id).map((n) => JSON.stringify(n)));
