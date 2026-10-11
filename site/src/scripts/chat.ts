@@ -54,7 +54,7 @@ export function mountChatWidget(): void {
   const copy = { name: d.avName, hi: d.avHi, text: d.avText, hide: d.avHide };
   const load = () =>
     import("./chat-avatar")
-      .then((m) => (header = m.mountAvatar(launcher, copy, { disc: d.avDisc || "dark" }).header))
+      .then((m) => (header = m.mountAvatar(launcher, copy, { disc: d.avDisc || "dark", greet: d.avGreet !== "off" }).header))
       .catch(fallback)
       .finally(prefetch); // after the avatar, which the panel header shows too
   afterLoad(() => ("requestIdleCallback" in window ? requestIdleCallback(() => void load(), { timeout: 1500 }) : setTimeout(load, 300)));

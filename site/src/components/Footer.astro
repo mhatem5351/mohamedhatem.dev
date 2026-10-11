@@ -58,7 +58,7 @@ const otherHref = alternatePath ?? localePath(path, other);
               <li><a href={link("site-source").href}>{m.footer.sourceCode}</a></li>
               <li><a href={otherHref} lang={other} hreflang={other}>{m.language.otherVersion}</a></li>
               <li><a href={localePath(PATHS.privacy, locale)}>{m.footer.privacy}</a></li>
-              <li>
+              <li data-js-only>
                 <button class="footer__link-btn" type="button" data-theme-toggle data-cycle-only>
                   {m.footer.changeTheme}
                 </button>

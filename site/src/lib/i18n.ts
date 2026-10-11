@@ -123,7 +123,7 @@ export function cairoTime(locale: Locale, date: Date = new Date()): string {
   }).format(date);
 }
 
-/** Joins a list the way each language does ("A, B and C" / "A وB وC"). */
-export function joinList(items: readonly string[], locale: Locale): string {
-  return new Intl.ListFormat(locale === "ar" ? "ar" : "en-GB", { style: "long", type: "conjunction" }).format(items);
+/** Joins a list the way each language does ("A, B and C" / "A وB وC"; with "disjunction": "A, B or C" / "A أو B"). */
+export function joinList(items: readonly string[], locale: Locale, type: "conjunction" | "disjunction" = "conjunction"): string {
+  return new Intl.ListFormat(locale === "ar" ? "ar" : "en-GB", { style: "long", type }).format(items);
 }

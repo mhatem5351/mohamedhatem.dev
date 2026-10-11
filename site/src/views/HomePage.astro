@@ -1,9 +1,11 @@
 ---
 /**
- * Home page (EN at /, AR at /ar/). Sections alternate plain (P) and bg-subtle bands (B):
- * Hero (P) · 01 What I build (P) · 02 Selected work (B) · 03 Experience (P) · 04 About, with "open to" and work
+ * Home page (EN at /, AR at /ar/). Sections, plain (P) or on a bg-subtle band (B):
+ * Hero (P) · 01 Selected work (B) · 02 What I build (P) · 03 Experience (P) · 04 About, with "open to" and work
  * arrangements (B) · 05 Open source (P) · 06 AI assistant (B) · 07 Skills (P) · 08 Education (B) · 09 Contact (P).
- * About sits right after the career so a recruiter reaches availability and relocation early; the front-end
+ * The proof comes first: Selected work (with the Saudi Tourism Authority card) right under the hero, before the
+ * capabilities that sum it up (audit HM-05). About sits right after the career so a recruiter reaches availability and
+ * relocation early; the front-end
  * showcase lives in the logic-controls.com case study (its card in Selected work keeps the old #craft anchor).
  * Section ids match the chat widget's open_section targets (about, work, experience, projects, skills, education,
  * contact) and profile.site.sections.
@@ -30,8 +32,8 @@ const m = messages(locale);
 ---
 <Base locale={locale} title={m.meta.home.title} description={m.meta.home.description} path="/" ogKey="home" ogType="profile" jsonLd={homeJsonLd(locale)}>
   <Hero locale={locale} />
-  <Capabilities locale={locale} />
   <SelectedWork locale={locale} />
+  <Capabilities locale={locale} />
   <ExperienceTrace locale={locale} />
   <About locale={locale} />
   <OpenSource locale={locale} />

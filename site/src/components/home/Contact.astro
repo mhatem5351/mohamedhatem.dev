@@ -37,7 +37,7 @@ const [emailUser, emailDomain] = email.display.split("@") as [string, string];
       <p class="lede contact__lede">
         {m.contact.lead}
         {" "}
-        {m.contact.askFirst.before}{" "}<button class="link" type="button" data-open-chat aria-haspopup="dialog">{m.contact.askFirst.action}</button>{" "}{m.contact.askFirst.after}
+        <span data-js-only>{m.contact.askFirst.before}{" "}<button class="link" type="button" data-open-chat aria-haspopup="dialog">{m.contact.askFirst.action}</button>{" "}{m.contact.askFirst.after}</span>
       </p>
       <p class="contact__time">
         <i class="dot" aria-hidden="true"></i>
@@ -67,6 +67,7 @@ const [emailUser, emailDomain] = email.display.split("@") as [string, string];
             <button
               class="btn btn--ghost btn--sm btn--icon channel__copy"
               data-chat-avoid
+              data-js-only
               type="button"
               data-copy={email.display}
               data-copied={m.contact.emailCopied}

@@ -67,6 +67,17 @@ async function pastHero(page: Page) {
 async function ready(page: Page) {
   await expect(host(page)).toHaveAttribute("data-art", "on", { timeout: 10_000 });
 }
+/**
+ * The page's content hidden, so the greeting (which only lands on empty page, after the visitor's first scroll) finds
+ * a clear spot at the next rest; its placement has its own tests (chat-avatar.spec.ts).
+ */
+async function emptyStage(page: Page) {
+  await page.evaluate(() => {
+    const s = new CSSStyleSheet();
+    s.replaceSync("main, body > footer { visibility: hidden !important; }");
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, s];
+  });
+}
 
 /** A vertical touch drag on the sheet's header (on its title, not a button), `dy` px over `ms`. */
 async function dragHeader(page: Page, browserName: string, dy: number, { ms = 320, hold }: { ms?: number; hold?: (at: number) => Promise<void> } = {}) {
@@ -483,6 +494,7 @@ test.describe("the chat sheet on phones", () => {
   test("CHAT-06: the greeting says hello once per session, hides on scroll (800 px) and after 5 s; its × is a 44 px target", async ({ page }) => {
     await page.goto("/");
     await ready(page);
+    await emptyStage(page);
     await pastHero(page);
     const shown = () =>
       page.evaluate(() => {
@@ -490,6 +502,7 @@ test.describe("the chat sheet on phones", () => {
         return r.querySelector(".mhb")!.getAttribute("data-s") === "on" && getComputedStyle(r.querySelector(".bub")!).visibility === "visible";
       });
     await expect.poll(shown, { timeout: 8000 }).toBe(true);
+    await page.waitForTimeout(800); // the bubble's entrance (it pops in, scaled) has settled
     // × hit area: 8 px above its drawn 24 px circle (outside the bubble) still hits it.
     const hit = await page.evaluate(() => {
       const r = document.querySelector("[data-mh-chat]")!.shadowRoot!;
@@ -505,17 +518,19 @@ test.describe("the chat sheet on phones", () => {
     await expect.poll(shown).toBe(false);
     expect(await page.evaluate(() => sessionStorage.getItem("mh-chat:greet"))).toBe("1");
 
-    // A new page in the same session: no second greeting on a phone.
-    await page.reload();
+    // A new page in the same session (a fresh load at the top, not a reload that restores the scroll): no second greeting.
+    await page.goto("/");
     await ready(page);
+    await emptyStage(page);
     await pastHero(page);
     await page.waitForTimeout(4500);
     expect(await shown()).toBe(false);
 
     // A fresh session: the greeting leaves on its own after 5 s.
     await page.evaluate(() => sessionStorage.clear());
-    await page.reload();
+    await page.goto("/");
     await ready(page);
+    await emptyStage(page);
     await pastHero(page);
     await expect.poll(shown, { timeout: 8000 }).toBe(true);
     const t0 = Date.now();
@@ -527,6 +542,7 @@ test.describe("the chat sheet on phones", () => {
     test(`CHAT-06 ${lang}: the greeting never shows as an empty card: its first line arrives with the bubble`, async ({ page }) => {
       await page.goto(path);
       await ready(page);
+      await emptyStage(page);
       // Freeze the bubble's animations the moment it shows, then step through its entrance.
       await page.evaluate(() => {
         const h = document.querySelector("[data-mh-chat]")!;

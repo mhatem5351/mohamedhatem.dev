@@ -26,6 +26,9 @@ const m = messages(locale);
 const f = m.contact.form;
 const email = contact("email").display;
 const [leadBefore, leadAfter] = f.lead.split("{email}") as [string, string];
+/** Without JavaScript the spam check can't run: a note above Send points to email and WhatsApp (when the copy has it). */
+const noJs = (f as { noJs?: string }).noJs;
+const [noJsBefore, noJsAfter] = (noJs ?? "").split("{email}") as [string, string?];
 
 /** Strings the client script needs (data, not code: a JSON block is exempt from script-src). */
 const i18n = {
@@ -177,6 +180,17 @@ const json = JSON.stringify(i18n).replace(/</g, "\\u003c");
       </div>
     </div>
 
+    {
+      noJs && (
+        <noscript>
+          <p class="field__hint">
+            {noJsBefore}
+            {noJsAfter !== undefined && <bdi dir="ltr">{email}</bdi>}
+            {noJsAfter}
+          </p>
+        </noscript>
+      )
+    }
     <div class="form__foot">
       <p class="field__hint">{f.turnstile}</p>
       <button class="btn btn--primary" type="submit" data-submit data-chat-avoid>

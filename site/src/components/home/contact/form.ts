@@ -134,20 +134,8 @@ export function initContactForm(): void {
       tick();
     });
 
-  // Mouse and keyboard: ready by the time the form is reached. Touch screens: on first use of the form (the managed
-  // challenge solves long before four fields are filled), so visitors who only tap a channel above never load it.
-  if (!matchMedia("(pointer: coarse)").matches && "IntersectionObserver" in window) {
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          io.disconnect();
-          loadTurnstile().catch(() => {});
-        }
-      },
-      { rootMargin: "400px 0px" },
-    );
-    io.observe(form);
-  }
+  // On first use of the form, on every device (the managed challenge solves long before four fields are filled), so
+  // visitors who only read the page or tap a channel above never load it (audit PERF-05).
   form.addEventListener("focusin", () => void loadTurnstile().catch(() => {}), { once: true });
   form.addEventListener("pointerdown", () => void loadTurnstile().catch(() => {}), { once: true, passive: true });
 

@@ -66,6 +66,10 @@ const examples = [
     outline: 2px solid transparent;
     outline-offset: 2px;
   }
+  /* The field's focus shows as the site's ring on the whole bar, as strong as every other control's (audit A11Y-08). */
+  .ask-bar:has(.ask-bar__input:focus-visible) {
+    outline-color: var(--color-focus);
+  }
   .ask-bar__field {
     position: relative;
     flex: 1;
@@ -197,6 +201,10 @@ const examples = [
     let timer: number | undefined;
     const range = document.createRange();
     const overlay = out.parentElement;
+    // The typed text's width comes from a canvas (no layout): the field's width and font are read once per example, so
+    // a tick never forces a layout (audit PERF-02).
+    const ctx = document.createElement("canvas").getContext("2d");
+    let fieldW = -1;
     let qi = 0;
     let ci = 0;
     let step = 1;
@@ -215,8 +223,18 @@ const examples = [
       out!.textContent = ex.text.slice(0, ci);
       out!.lang = ex.lang;
       // Wider than the field? (Its overflow is on the start side, which scrollWidth doesn't count: measure the text.)
-      range.selectNodeContents(out!);
-      overlay?.classList.toggle("is-over", range.getBoundingClientRect().width > out!.clientWidth + 1);
+      if (fieldW < 0 && ctx && overlay) {
+        fieldW = overlay.clientWidth - 4; // the text's max-width (calc(100% - 4px)): beyond it, the start scrolls out
+        const cs = getComputedStyle(out!);
+        ctx.font = `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      }
+      let width: number;
+      if (ctx && overlay) width = ctx.measureText(out!.textContent ?? "").width;
+      else {
+        range.selectNodeContents(out!);
+        width = range.getBoundingClientRect().width;
+      }
+      overlay?.classList.toggle("is-over", width > (ctx && overlay ? fieldW : out!.clientWidth) + 1);
       if (ci >= ex.text.length) {
         step = -1;
         wait = 26;
@@ -225,6 +243,7 @@ const examples = [
         step = 1;
         qi = (qi + 1) % examples.length;
         wait = 4;
+        fieldW = -1; // the next example measures again (its language, a resize, a late font)
         if (qi === 0 && onePass) {
           done = true;
           sync();

@@ -68,9 +68,18 @@ function layers(file) {
     if (svg.startsWith("<g", i) && /[\s>]/.test(svg[i + 2])) depth++;
     else if (svg.startsWith("</g>", i) && --depth === 0) break;
   }
-  const decor = svg.slice(start, i + 4).replace(' id="decor"', "");
+  const decor = svg
+    .slice(start, i + 4)
+    .replace(' id="decor"', "")
+    // A still card shows the request's route lit, not a comet frozen mid-flight (a stray dash at feed size; audit D-24):
+    // each comet's halo goes and its head becomes the whole edge, in the comet's colour.
+    .replace(/<path [^>]*stroke-opacity="\.22"[^>]*stroke-dashoffset="[^"]*"\/>/g, "")
+    .replace(/<path d="([^"]+)" stroke="(#[0-9A-Fa-f]{6})" stroke-width="[\d.]+" stroke-linecap="round" stroke-dasharray="[^"]*" stroke-dashoffset="[^"]*"\/>/g, '<path d="$1" stroke="$2" stroke-opacity=".85" stroke-width="2.6" stroke-linecap="round"/>')
+    // The hub's glow fades out instead of ending in a hard-edged disc.
+    .replace(/<circle cx="([\d.]+)" cy="([\d.]+)" r="([\d.]+)" fill="#5AC0BC" opacity="\.07"\/>/g, (_, cx, cy, r) => `<circle cx="${cx}" cy="${cy}" r="${(Number(r) * 1.35).toFixed(2)}" fill="url(#og-hub)"/>`);
+  const hub = '<radialGradient id="og-hub"><stop offset="0" stop-color="#5AC0BC" stop-opacity=".14"/><stop offset=".55" stop-color="#5AC0BC" stop-opacity=".07"/><stop offset="1" stop-color="#5AC0BC" stop-opacity="0"/></radialGradient>';
   const mark = svg.match(/<g id="mark"[^>]*>([\s\S]*?)<\/g>/)?.[1] ?? "";
-  return { defs, decor, mark };
+  return { defs: defs.replace("</defs>", `${hub}</defs>`), decor, mark };
 }
 const TEMPLATES = { case: layers("og-case.svg"), home: layers("og-home.svg") };
 
@@ -127,6 +136,8 @@ function cards(locale) {
       name: b.name[locale],
       role: [b.title[locale], b.employer],
       focus: [...m.seo.ogFocus],
+      // A small client line under the focus (round 6, HM-33), when the copy has one.
+      client: m.seo.ogClient ?? null,
     },
     {
       key: "cv",
@@ -145,7 +156,8 @@ function cards(locale) {
       title: lead1,
       summary: rest.join(" "),
       chips: [],
-      meta: [b.name[locale], b.title[locale], b.employer],
+      // Gold falls on the employer (meta[1]), as on every other card (audit D-25).
+      meta: [b.title[locale], b.employer, b.name[locale]],
     },
     ...[...profile.caseStudies].sort((a, z) => a.order - z.order).map((cs) => caseCard(cs, locale)),
   ];
@@ -190,6 +202,8 @@ body{-webkit-font-smoothing:antialiased;font-kerning:normal;text-rendering:geome
 .focus{margin-top:40px;max-width:720px;font:500 26px/1.5 "OG Mono","OG Arabic",monospace;color:${C("ink-2")}}
 [lang=ar] .focus{font:500 30px/1.6 "OG Arabic","OG Sans",sans-serif}
 .focus .sep{color:${C("coral")}}
+.client{margin-top:18px;max-width:720px;display:flex;align-items:center;gap:12px;font:500 26px/1.35 "OG Sans","OG Arabic",sans-serif;color:${C("muted")}}
+.client::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;background:${C("teal-fill")}}
 .home .stripe{position:static;margin-top:40px}
 bdi{unicode-bidi:isolate}
 .nw{white-space:nowrap}
@@ -199,7 +213,10 @@ function cardHtml(card, locale) {
   const rtl = locale === "ar";
   const t = TEMPLATES[card.kind];
   const mirror = rtl ? ` transform="translate(${W} 0) scale(-1 1)"` : "";
-  const bg = `<svg class="bg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${t.defs}<rect width="${W}" height="${H}" fill="${C("bg")}"/><g fill="none"${mirror}>${t.decor}</g></svg>`;
+  // The home card's graph sits a little smaller and further out, so the long English name keeps its full size with 40 px
+  // of air before the guard node (audit D-03); the glows and the dot grid stay where they are.
+  const decor = card.kind === "home" ? t.decor.replace(/^(<g[^>]*>(?:<rect [^>]*\/>)+)([\s\S]*)<\/g>$/, '$1<g transform="translate(36 0) translate(950 330) scale(.92) translate(-950 -330)">$2</g></g>') : t.decor;
+  const bg = `<svg class="bg" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${t.defs}<rect width="${W}" height="${H}" fill="${C("bg")}"/><g fill="none"${mirror}>${decor}</g></svg>`;
   const top = `<div class="top"><svg class="mark" viewBox="0 0 46.7 40" aria-hidden="true">${t.mark}</svg><span class="domain">mohamedhatem.dev</span></div>`;
   const sep = '<span class="sep" aria-hidden="true">·</span>';
   let flow;
@@ -210,6 +227,7 @@ function cardHtml(card, locale) {
       <p class="focus">${card.focus
         .map((f, i) => `<span class="nw">${i ? '<span class="sep">·</span> ' : ""}${isolate(f, locale)}</span>`)
         .join(" ")}</p>
+      ${card.client ? `<p class="client">${isolate(card.client, locale)}</p>` : ""}
       <div class="stripe"><i></i><i></i><i></i></div>
     </div>`;
   } else {
@@ -231,10 +249,28 @@ function cardHtml(card, locale) {
   return `<div class="card ${card.kind}" lang="${locale}" dir="${rtl ? "rtl" : "ltr"}">${bg}${top}${flow}</div>`;
 }
 
-/** Runs in the page: fit text, drop chips that overflow, place the flow and the stripe. */
+/** Runs in the page: fit text, drop chips that overflow, place the flow and the stripe. Returns the text boxes that
+ * come within 24 px of the agent graph (none on the home card: the caller fails the render then; audit D-03). */
 function layout() {
   const card = document.querySelector(".card");
   const rtl = card.dir === "rtl";
+  // The agent graph's box: everything drawn in the decorative layer except its full-card fills (glows, dot grid).
+  const graph = [...document.querySelectorAll(".bg g *")]
+    .filter((el) => el.tagName !== "rect" && el.tagName !== "g" && !el.closest("defs"))
+    .map((el) => el.getBoundingClientRect())
+    .filter((r) => r.width > 0 && r.width < 600)
+    .reduce((a, r) => ({ left: Math.min(a.left, r.left), right: Math.max(a.right, r.right), top: Math.min(a.top, r.top), bottom: Math.max(a.bottom, r.bottom) }), { left: Infinity, right: -Infinity, top: Infinity, bottom: -Infinity });
+  /** How far `el`'s text (its line boxes, not its block) runs into the graph's side (px; ≤ 0: clear), keeping `air` px. */
+  const into = (el, air) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    let most = -Infinity;
+    for (const r of range.getClientRects()) {
+      if (!r.width || r.bottom < graph.top - air || r.top > graph.bottom + air) continue;
+      most = Math.max(most, rtl ? graph.right + air - r.left : r.right - (graph.left - air));
+    }
+    return most;
+  };
   for (const chip of document.querySelectorAll(".chip")) {
     chip.style.color = chip.dataset.fg;
     chip.style.background = chip.dataset.bg;
@@ -259,6 +295,12 @@ function layout() {
   const h = flow.getBoundingClientRect().height;
   if (card.classList.contains("home")) {
     flow.style.top = `${Math.round(132 + (568 - 132 - h) * 0.55)}px`;
+    // The name, the role and the focus line end at least 40 px before the graph (the long English name met its guard
+    // node): each steps down a pixel at a time until it does.
+    for (const [sel, min] of [[".name", 64], [".role", 30], [".focus", 22]]) {
+      const el = document.querySelector(sel);
+      while (el && into(el, 40) > 0 && parseFloat(getComputedStyle(el).fontSize) > min) el.style.fontSize = `${parseFloat(getComputedStyle(el).fontSize) - 1}px`;
+    }
   } else {
     const top = 168;
     // Whole flow must end above the bottom margin: shrink the title, then the summary, then drop chips.
@@ -281,7 +323,8 @@ function layout() {
     stripe.style.top = `${Math.round(meta.top + meta.height / 2 - 3.5)}px`;
     stripe.style[rtl ? "left" : "right"] = "72px";
   }
-  return document.fonts.ready.then(() => true);
+  const touching = [...document.querySelectorAll(".flow > *, .top")].filter((el) => into(el, 24) > 0).map((el) => el.className);
+  return document.fonts.ready.then(() => touching);
 }
 
 /* ------------------------------------------------------------------ run */
@@ -321,8 +364,10 @@ await page.evaluate(async () => {
 let bytes = 0;
 for (const job of jobs) {
   await page.evaluate((html) => (document.body.innerHTML = html), cardHtml(job.card, job.locale));
-  await page.evaluate(layout);
+  const touching = await page.evaluate(layout);
   await page.evaluate(() => document.fonts.ready);
+  if (touching.length && job.card.kind === "home") throw new Error(`og: ${job.name}: text within 24 px of the graph (${touching.join(", ")})`);
+  if (touching.length) console.warn(`og: ${job.name}: text within 24 px of the graph (${touching.join(", ")})`);
   const raw = await page.screenshot({ type: "png", clip: { x: 0, y: 0, width: W, height: H } });
   const png = await sharp(raw).png({ compressionLevel: 9, adaptiveFiltering: true, effort: 10 }).toBuffer();
   writeFileSync(job.file, png);

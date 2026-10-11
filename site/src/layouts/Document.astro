@@ -52,7 +52,8 @@ const m = messages(locale);
       <slot />
     </main>
     <p id="live" class="sr-only" aria-live="polite"></p>
-    <ChatMount locale={locale} />
+    {/* The CV is read line by line: the avatar never greets on its own here (audit HM-12, L-05). */}
+    <ChatMount locale={locale} greet={false} />
     <script>
       import "~/scripts/site";
     </script>

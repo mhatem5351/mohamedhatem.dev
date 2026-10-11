@@ -69,6 +69,7 @@ const themeLabel = (mode: string) => `${m.theme.label}: ${mode}`;
         class="nav__icon-btn theme-toggle"
         type="button"
         data-theme-toggle
+        data-js-only
         data-mode="dark"
         aria-label={themeLabel(m.theme.dark)}
         title={themeLabel(m.theme.dark)}
@@ -78,7 +79,7 @@ const themeLabel = (mode: string) => `${m.theme.label}: ${mode}`;
         <Icon name="sun" class="i-sun" />
         <Icon name="moon" class="i-moon" />
       </button>
-      <button class="btn btn--accent btn--sm nav__ask" type="button" data-open-chat aria-haspopup="dialog">
+      <button class="btn btn--accent btn--sm nav__ask" type="button" data-open-chat aria-haspopup="dialog" data-js-only>
         <Icon name="ask" />
         <span class="label-long">{m.hero.ctaAsk}</span><span class="label-short">{m.nav.assistant}</span>
       </button>
@@ -93,6 +94,7 @@ const themeLabel = (mode: string) => `${m.theme.label}: ${mode}`;
             data-label-open={m.a11y.openMenu}
             data-label-close={m.a11y.closeMenu}
             data-menu-button
+            data-js-only
           >
             <Icon name="menu" class="i-menu" />
             <Icon name="close" class="i-close" />
@@ -125,7 +127,7 @@ const themeLabel = (mode: string) => `${m.theme.label}: ${mode}`;
             , {m.language.switchToLabel}
           </span>
         </a>
-        <div class="segmented" role="group" aria-label={m.theme.label} data-theme-segmented>
+        <div class="segmented" role="group" aria-label={m.theme.label} data-theme-segmented data-js-only>
           <button type="button" data-set-theme="light" aria-pressed="false">
             <Icon name="sun" size="sm" />
             {m.theme.light}

@@ -134,7 +134,8 @@ test.describe("structure", () => {
 
   test("Latin and number runs keep their order on Arabic pages (365 Data Science, CV degree dates)", async ({ page }) => {
     await page.goto("/ar/#education");
-    const issuer = page.locator("#education .edu__sub bdi", { hasText: "365 Data Science" });
+    // The label sits in the page direction; its Latin run is the isolated left-to-right part (lib/bidi.ts).
+    const issuer = page.locator('#education .edu__sub bdi[dir="ltr"]', { hasText: "365 Data Science" });
     const order = await issuer.evaluate((el) => {
       const t = el.firstChild as Text;
       const at = (s: string) => {

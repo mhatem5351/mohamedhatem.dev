@@ -7,11 +7,18 @@
  *   phone action dock (dock.ts).
  * Everything degrades: without JS the page is complete (in the default dark theme, menu links are reachable in the
  * footer, the assistant offers email/WhatsApp in a <noscript> card).
+ * Start-up never forces a style or layout pass (audit PERF-01): nothing here reads geometry while the module runs.
+ * Measurements come from ResizeObserver / IntersectionObserver callbacks (after the frame's own layout) or the first
+ * animation frame, and writes that would restyle the whole document (custom properties on <html>, the theme) happen
+ * only when the value actually changes.
  */
 
 type Theme = "light" | "dark";
 type OpenRequest = { question?: string };
-type ChatWindow = Window & { MHChat?: { open(o?: OpenRequest): void }; MHChatQueue?: OpenRequest[] };
+type ChatWindow = Window & {
+  MHChat?: { open(o?: OpenRequest): void; launcher?: { host: HTMLElement; root: ShadowRoot; button: HTMLElement } };
+  MHChatQueue?: OpenRequest[];
+};
 
 import "./dock";
 
@@ -34,23 +41,27 @@ function readTheme(): Theme {
 let theme: Theme = readTheme();
 
 function applyTheme(): void {
-  root.dataset.theme = theme;
+  // Same value as the head's boot script on load: no write, so no restyle of the whole document.
+  if (root.dataset.theme !== theme) root.dataset.theme = theme;
   for (const b of document.querySelectorAll<HTMLElement>("[data-theme-toggle]")) {
-    b.dataset.mode = theme;
+    if (b.dataset.mode !== theme) b.dataset.mode = theme;
     if (b.hasAttribute("data-cycle-only")) continue;
     const label = b.dataset[theme === "light" ? "labelLight" : "labelDark"];
-    if (label) {
+    if (label && b.getAttribute("aria-label") !== label) {
       b.setAttribute("aria-label", label);
       b.title = label;
     }
   }
-  for (const b of document.querySelectorAll<HTMLElement>("[data-set-theme]")) b.setAttribute("aria-pressed", String(b.dataset.setTheme === theme));
+  for (const b of document.querySelectorAll<HTMLElement>("[data-set-theme]")) {
+    const pressed = String(b.dataset.setTheme === theme);
+    if (b.getAttribute("aria-pressed") !== pressed) b.setAttribute("aria-pressed", pressed);
+  }
   // The browser chrome and the canvas follow the page (each page's own colours, from Head.astro).
   const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
   const chrome = meta?.dataset[theme];
-  if (meta && chrome) meta.content = chrome;
+  if (meta && chrome && meta.content !== chrome) meta.content = chrome;
   const scheme = document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]');
-  if (scheme) scheme.content = theme;
+  if (scheme && scheme.content !== theme) scheme.content = theme;
 }
 
 /** An explicit choice, remembered (dark included, so a later change of default never overrides it). */
@@ -61,7 +72,12 @@ function setTheme(next: Theme): void {
   } catch {
     /* storage blocked: the choice lasts for this page only */
   }
+  // The switch is instant (DESIGN.md 7.2; audit M-04): the header's and the buttons' colour transitions are off for
+  // the frame that changes theme, so the header never shows a half-switched grey band. The class goes after that frame
+  // has been styled (two frames later), when nothing is left to transition.
+  root.classList.add("theme-switching");
   applyTheme();
+  requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove("theme-switching")));
 }
 
 applyTheme();
@@ -79,8 +95,13 @@ function openChat(req: OpenRequest = {}): void {
   closeMenu();
   const w = window as ChatWindow;
   const go = () => {
-    if (w.MHChat?.open) w.MHChat.open(req);
-    else (w.MHChatQueue ??= []).push(req);
+    const chat = w.MHChat;
+    if (!chat?.open) return void (w.MHChatQueue ??= []).push(req);
+    const wasOpen = chat.launcher?.button.getAttribute("aria-expanded") === "true";
+    chat.open(req);
+    // The desktop panel is non-modal: a keyboard user who tabbed out of it gets back in with the page's own "Ask" button
+    // or "/", straight to the composer (audit A11Y-01). (Opening it moves focus there already.)
+    if (wasOpen) chat.launcher?.root.querySelector<HTMLElement>("textarea")?.focus({ preventScroll: true });
   };
   // A modal dialog (a case study's enlarge view; "/" still reaches the page from inside it) sits in the top layer, over
   // the chat, and keeps it inert: it closes first. zoom-dialog.ts reports the close ("mh:dialog") once it has taken
@@ -91,6 +112,11 @@ function openChat(req: OpenRequest = {}): void {
   dialog.close();
 }
 (window as Window & { mhOpenChat?: typeof openChat }).mhOpenChat = openChat;
+// The page's own "Ask" buttons are the chat's openers too (aria-haspopup="dialog"): they expose its state.
+document.addEventListener("mh:chat-state", (e) => {
+  const open = String(!!(e as CustomEvent<{ open?: boolean }>).detail?.open);
+  for (const b of document.querySelectorAll<HTMLElement>("button[data-open-chat][aria-haspopup]")) b.setAttribute("aria-expanded", open);
+});
 
 // The installed app's "Ask my AI" shortcut (site.webmanifest: /?ask=1): open the assistant once and drop the parameter
 // (the hash stays), so a reload or a shared link doesn't open it again.
@@ -166,38 +192,45 @@ const menuBtn = document.querySelector<HTMLButtonElement>("[data-menu-button]");
 const sheet = document.querySelector<HTMLElement>("[data-menu-sheet]");
 const menuOpen = () => !!sheet && !sheet.hidden;
 if (nav) {
-  // The chat panel's top edge sits below the sticky header (chat-widget README: --mh-chat-top). The widget measures it
-  // too when it opens; this keeps the page-level value right from the start and whenever the header's height changes
-  // (zoom, text size, a wrapped nav). The header is sticky at the top, so its height is its bottom edge, except while
-  // it has slid away (below): the panel then starts 12 px from the top instead of leaving the header's band empty
-  // (a tablet with its keyboard up has little height to spare). --nav-real is the header's height for the menu sheet
-  // and its scrim (the header grows with text zoom).
-  const setChatTop = () => {
-    const h = Math.round(nav.getBoundingClientRect().height);
-    root.style.setProperty("--mh-chat-top", `${(root.hasAttribute("data-nav-hidden") ? 0 : h) + 12}px`);
-    root.style.setProperty("--nav-real", `${h}px`);
+  // --nav-real is the header's height (the menu sheet, its scrim, the case-study TOC bar) and the chat panel's top edge
+  // follows it (chat-widget README: --mh-chat-top; 12 px from the top while the header has slid away, below). The
+  // stylesheet's default is the header's natural height (components.css 7), so --nav-real is written only while the
+  // header is taller (zoom, text size, a wrapped nav): the start-up never restyles the whole page for it.
+  let navH = 0;
+  let natural = true;
+  let written = false;
+  const setNavReal = () => {
+    if (natural && !written) return;
+    written = !natural;
+    if (natural) root.style.removeProperty("--nav-real");
+    else root.style.setProperty("--nav-real", `${navH}px`);
   };
-  setChatTop();
-  if ("ResizeObserver" in window) new ResizeObserver(setChatTop).observe(nav);
+  /** Measured after layout (no forced reflow): the observer's first callback comes with the first frame. */
+  const measure = (box?: ResizeObserverSize) => {
+    navH = Math.round(box?.blockSize ?? nav.getBoundingClientRect().height);
+    const cs = getComputedStyle(nav);
+    natural = Math.abs(navH - parseFloat(cs.minHeight) - parseFloat(cs.borderBottomWidth)) < 1;
+    setNavReal();
+  };
 
   // Below 64rem the header slides up on scroll down (after 200 px, 8 px hysteresis) and comes back on any scroll up,
   // the way phone browsers treat their own toolbars (audit NAV-03). Never while the menu is open or focus is in the
   // header, and not for an in-page jump (a menu or TOC link scrolls down to its target: the header stays, so the target
   // lands clear of it). <html data-nav-hidden> drives the CSS (components.css 21e, case.css: the TOC bar follows).
   const narrow = matchMedia("(max-width: 63.99rem)");
-  let lastY = scrollY;
+  let lastY = 0;
   let holdUntil = 0;
   const setHidden = (hide: boolean) => {
     if (hide === root.hasAttribute("data-nav-hidden")) return;
+    // The panel's top edge follows (components.css: :root[data-nav-hidden] --mh-chat-top).
     root.toggleAttribute("data-nav-hidden", hide);
-    setChatTop();
     // The open panel measured the header when it opened (the widget's own --mh-chat-top on its host): from here the
     // page's value, which follows the header, applies (the widget measures again on resize, to the same value).
     document.querySelector<HTMLElement>("[data-mh-chat]")?.style.removeProperty("--mh-chat-top");
   };
   const onScroll = () => {
     const y = scrollY;
-    nav.dataset.scrolled = String(y > 8);
+    if ((nav.dataset.scrolled === "true") !== y > 8) nav.dataset.scrolled = String(y > 8);
     // Keyboard focus in the header keeps it (a tap leaves no visible focus there, so it doesn't).
     const kbFocus = !!nav.querySelector(":focus-visible");
     if (!narrow.matches || menuOpen() || kbFocus || performance.now() < holdUntil || y < 200) {
@@ -210,9 +243,27 @@ if (nav) {
     setHidden(dy > 0);
     lastY = y;
   };
-  onScroll();
   addEventListener("scroll", onScroll, { passive: true });
   narrow.addEventListener("change", onScroll);
+  // The first measurement and the first scroll state come after the first layout (a page restored mid-scroll gets its
+  // hairline there).
+  let first = true;
+  const startUp = () => {
+    if (!first) return;
+    first = false;
+    lastY = scrollY;
+    onScroll();
+  };
+  if ("ResizeObserver" in window)
+    new ResizeObserver(([e]) => {
+      measure(e?.borderBoxSize?.[0]);
+      startUp();
+    }).observe(nav);
+  else
+    requestAnimationFrame(() => {
+      measure();
+      startUp();
+    });
   nav.addEventListener("focusin", (e) => (e.target as Element).matches(":focus-visible") && setHidden(false));
   /** An in-page jump keeps the header (its target lands below it); scrolling resumes the rule once it settles. */
   const hold = () => {
@@ -323,8 +374,9 @@ for (const wrap of document.querySelectorAll<HTMLElement>("[data-scroll-region]"
       wrap.removeAttribute("aria-label");
     }
   };
-  update();
+  // Measured after layout: the observer's first callback comes with the first frame (no forced reflow at start-up).
   if ("ResizeObserver" in window) new ResizeObserver(update).observe(wrap);
+  else requestAnimationFrame(update);
   void document.fonts?.ready.then(update);
 }
 
@@ -350,10 +402,13 @@ for (const box of document.querySelectorAll<HTMLElement>("[data-toolbox], [data-
 // The avatar's comic speech bubble (chat-avatar.ts) sits above the launcher: while it would cover a marked element,
 // `data-hush` on the host hides the speech bubble alone. Elements marked [data-chat-hush] (the phone action dock, which
 // sits beside the launcher by design) only hush the bubble; they never move the launcher.
+// A page that offers the assistant in its own actions (the 404: ChatMount data-launcher="off") keeps the launcher out of
+// its corner altogether until the chat is open (audit L-05).
 const avoidEls = [...document.querySelectorAll<HTMLElement>("[data-chat-avoid]")];
 const hushEls = [...document.querySelectorAll<HTMLElement>("[data-chat-hush]")];
 const afterEl = document.querySelector<HTMLElement>("[data-chat-after]");
-if (avoidEls.length || hushEls.length || afterEl) {
+const launcherOff = document.getElementById("mh-chat-config")?.dataset.launcher === "off";
+if (avoidEls.length || hushEls.length || afterEl || launcherOff) {
   const phone = matchMedia("(max-width: 39.99rem)");
   const onScreen = new Set<HTMLElement>(avoidEls);
   const PAD = 12;
@@ -369,7 +424,7 @@ if (avoidEls.length || hushEls.length || afterEl) {
     // The avatar's speech bubble (chat-avatar.ts), measured whether it is showing or not.
     const bub = host.shadowRoot?.querySelector(".bub")?.getBoundingClientRect();
     // While the mobile menu is open the launcher (and its greeting) step away too: the page behind is inert.
-    let hide = (!!afterEl && phone.matches && afterEl.getBoundingClientRect().bottom > 0) || menuOpen();
+    let hide = launcherOff || (!!afterEl && phone.matches && afterEl.getBoundingClientRect().bottom > 0) || menuOpen();
     let hush = false;
     for (const el of onScreen) {
       const r = el.getBoundingClientRect();
@@ -411,13 +466,13 @@ if (avoidEls.length || hushEls.length || afterEl) {
     if (chatOpen) hostEl()?.removeAttribute("data-dodge");
     schedule();
   });
-  // The widget mounts its host after this module runs: decide as soon as it exists, before its entrance animation.
+  // Decide in the first frame the host exists (it stays hidden until the avatar has dressed it, chat-avatar.ts).
   if (hostEl()) schedule();
   else {
     const mo = new MutationObserver(() => {
       if (!hostEl()) return;
       mo.disconnect();
-      update();
+      schedule();
     });
     mo.observe(document.body, { childList: true });
   }
@@ -467,6 +522,18 @@ if (reveal.length) {
 // than downloading an A4 file the phone can't show (audit CV-01). With a mouse it still downloads.
 if (matchMedia("(pointer: coarse)").matches)
   for (const a of document.querySelectorAll<HTMLAnchorElement>("a[download][data-open-on-touch]")) a.removeAttribute("download");
+
+/* ------------------------------------------------------------------ CSP violations: one report per page view */
+// The per-page policy is a <meta> tag, which can't report on its own (audit SEC-H01): the first violation of a page view
+// goes to the Worker, which keeps only the directive, the blocked host and the known page path.
+document.addEventListener(
+  "securitypolicyviolation",
+  (e) => {
+    const body = { documentURL: location.href, blockedURL: e.blockedURI, effectiveDirective: e.effectiveDirective, disposition: e.disposition };
+    navigator.sendBeacon?.("/api/csp-report", new Blob([JSON.stringify(body)], { type: "application/json" }));
+  },
+  { once: true },
+);
 
 /* ------------------------------------------------------------------ live Cairo time */
 const clocks = document.querySelectorAll<HTMLTimeElement>("time[data-cairo-time]");

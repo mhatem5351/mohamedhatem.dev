@@ -36,7 +36,7 @@
   letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--color-muted);
 }
 .eyebrow:lang(ar), :lang(ar) .eyebrow { font-family: var(--font-arabic); font-weight: 600; font-size: var(--text-sm); text-transform: none; letter-spacing: 0; }
-.eyebrow .sep { color: var(--color-saffron); }
+.eyebrow .sep { color: var(--color-accent); } /* one accent per component: gold by night, lapis by day (audit H-28) */
 .prose { max-width: var(--container-prose); color: var(--color-ink-2); }
 .prose > * + * { margin-block-start: 1.1em; }
 .prose h2 { font-size: var(--text-xl); line-height: var(--text-xl--line-height); letter-spacing: var(--text-xl--letter-spacing); margin-block-start: 2.2em; color: var(--color-ink); }
@@ -108,10 +108,18 @@
 .card--pad { padding: clamp(1.25rem, 1rem + 1vw, 2rem); }
 .card--link { transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-base) var(--ease-standard), transform var(--duration-base) var(--ease-out); }
 @media (hover: hover) { .card--link:hover { border-color: var(--color-line-strong); box-shadow: var(--shadow-md), var(--inset-highlight); } }
+/* By night a shadow doesn't read on lapis: the hovered card's edge warms toward the accent instead (audit H-03). */
+@media (hover: hover) { :root:not([data-theme="light"]) .card--link:hover { border-color: color-mix(in srgb, var(--color-accent-fill) 45%, var(--color-line-strong)); } }
 @media (hover: hover) and (prefers-reduced-motion: no-preference) { .card--link:hover { transform: translateY(-2px); } }
 .card--link:focus-within { border-color: var(--color-line-strong); }
 /* whole-card link: the title anchor stretches over the card; inner links sit above it */
 .card .stretched::after { content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
+/* Keyboard focus on a whole-card link rings the card, like its hover and its hit area, not the title's line boxes
+   (audit H-04). Browsers without :has() keep the title's own ring. */
+@supports selector(:has(*)) {
+  .card:has(.stretched:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+  .card .stretched:focus-visible { outline: none; }
+}
 .card .above { position: relative; z-index: 2; }
 .icon-tile { --tile-fg: var(--color-teal); --tile-bg: var(--color-teal-tint); --tile-line: var(--color-teal-tint-line);
   display: inline-grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: .8rem; flex: none;
@@ -125,9 +133,16 @@
 
 /* ---------- 7. Site nav ---------- */
 /* --nav-h: the header's height, shared by the menu sheet, the case-study TOC bar and the reading progress. The header
-   grows with text zoom (min-height); site.ts writes the measured height to --nav-real. */
+   grows with text zoom (min-height); site.ts then writes the measured height to --nav-real. */
 :root { --nav-h: 4rem; }
 @media (max-height: 30rem) and (orientation: landscape) { :root { --nav-h: 3.25rem; } }
+/* --nav-real: the header's height (--nav-h and its 1 px hairline), for the menu sheet, its scrim and the case-study TOC
+   bar; site.ts writes the measured value only while the header is taller (text zoom, a wrapped nav). --mh-chat-top: the
+   chat panel's top edge (chat-widget), 12 px below the header, or below the top while the header has slid away (21e). */
+:root { --nav-real: calc(var(--nav-h) + 1px); --mh-chat-top: calc(var(--nav-real) + 12px); }
+:root[data-nav-hidden] { --mh-chat-top: 12px; }
+/* The theme switch is instant (DESIGN.md 7.2): site.ts sets this class for the frame that changes it. */
+:root.theme-switching *, :root.theme-switching *::before, :root.theme-switching *::after { transition: none !important; }
 .nav { position: sticky; inset-block-start: 0; z-index: var(--z-nav); min-height: var(--nav-h);
   background: color-mix(in srgb, var(--color-bg) 82%, transparent); -webkit-backdrop-filter: saturate(1.5) blur(14px); backdrop-filter: saturate(1.5) blur(14px);
   border-block-end: 1px solid transparent; transition: border-color var(--duration-base) var(--ease-standard), background-color var(--duration-base) var(--ease-standard); }
@@ -135,9 +150,10 @@
 .nav__inner { min-height: var(--nav-h); display: flex; align-items: center; gap: 1rem; }
 .brand { display: inline-flex; align-items: center; gap: .625rem; white-space: nowrap; font-family: var(--font-display); font-weight: 600; font-size: 1.0625rem; letter-spacing: -.01em; color: var(--color-ink); border-radius: var(--radius-sm); }
 .brand__mark { width: 2rem; height: 2rem; }
+:lang(ar) .brand { letter-spacing: 0; } /* Arabic is never letter-spaced (DESIGN 4.3; audit A-21) */
 .brand__role { font-family: var(--font-sans); font-weight: 500; font-size: var(--text-xs); color: var(--color-muted); padding-inline-start: .625rem; border-inline-start: 1px solid var(--color-line-strong); letter-spacing: 0; }
 .nav__links { display: none; gap: .25rem; margin-inline-start: auto; }
-.nav__links a { padding: .5rem .75rem; border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: 500; color: var(--color-ink-2); transition: color var(--duration-fast), background-color var(--duration-fast); }
+.nav__links a { padding: .5rem .75rem; border-radius: var(--radius-sm); font-size: var(--text-sm); font-weight: 500; color: var(--color-ink-2); white-space: nowrap; transition: color var(--duration-fast), background-color var(--duration-fast); }
 @media (hover: hover) { .nav__links a:hover { color: var(--color-ink); background: var(--color-surface-2); } }
 .nav__links a[aria-current="true"], .nav__links a[aria-current="page"] { color: var(--color-ink); }
 .nav__actions { display: flex; align-items: center; gap: .375rem; margin-inline-start: auto; }
@@ -155,6 +171,15 @@
 @media (max-width: 47.99rem) { .brand__role, .nav__actions > .lang-switch, .nav__actions > .theme-toggle { display: none; } }
 /* The long "Ask my AI assistant" label only where the full nav has room (it overflowed at 1024 px). */
 @media (max-width: 79.99rem) { .nav__ask .label-long { display: none; } }
+/* 64-80rem (iPad landscape, small laptops): the brand gives way in whole units, never mid-word (audit L-03). The role
+   goes (the hero's person chip states it) and the links stay on one line with a little less padding, so the name and
+   the Arabic «السيرة الذاتية» fit whole. The header keeps its 64 px. */
+@media (max-width: 79.99rem) {
+  .brand__role { display: none; }
+  .nav__links { gap: 0; }
+  .nav__links a { padding-inline: .5rem; }
+  .nav__links + .nav__actions { margin-inline-start: .5rem; padding-inline-start: .5rem; }
+}
 /* Below 360 px only the monogram shows; the name stays in the accessibility tree as the link's name (WCAG 2.4.4). */
 @media (max-width: 22.49rem) { .brand > span:not(.brand__mark) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 @media (min-width: 80rem) { .nav__ask .label-short { display: none; } }
@@ -200,10 +225,14 @@
   content: ""; position: absolute; inset: 0;
   background:
     radial-gradient(36rem 30rem at 74% 44%, var(--color-glow-1), transparent 70%),
-    radial-gradient(28rem 22rem at 98% 2%, var(--color-glow-2), transparent 70%),
-    radial-gradient(30rem 24rem at 0% 100%, var(--color-glow-3), transparent 70%); }
+    radial-gradient(28rem 22rem at 92% 13%, var(--color-glow-2), transparent 70%),
+    radial-gradient(30rem 24rem at 4% 90%, var(--color-glow-3), transparent 70%);
+  /* The glows fade out over the hero's top and bottom 10rem (the header's line, the next section), so no lit band ends
+     in a ruler-straight edge there (audit L-01); left and right they meet the viewport's own edge. */
+  --glow-fade: linear-gradient(to bottom, transparent, rgb(0 0 0 / .4) 4rem, #000 10rem, #000 calc(100% - 10rem), rgb(0 0 0 / .4) calc(100% - 4rem), transparent);
+  -webkit-mask-image: var(--glow-fade); mask-image: var(--glow-fade); }
 [dir="rtl"] .hero__bg::before { -webkit-mask-image: radial-gradient(60% 75% at 26% 42%, #000 0%, rgb(0 0 0 / .55) 45%, transparent 78%); mask-image: radial-gradient(60% 75% at 26% 42%, #000 0%, rgb(0 0 0 / .55) 45%, transparent 78%); }
-[dir="rtl"] .hero__bg::after { background: radial-gradient(36rem 30rem at 26% 44%, var(--color-glow-1), transparent 70%), radial-gradient(28rem 22rem at 2% 2%, var(--color-glow-2), transparent 70%), radial-gradient(30rem 24rem at 100% 100%, var(--color-glow-3), transparent 70%); }
+[dir="rtl"] .hero__bg::after { background: radial-gradient(36rem 30rem at 26% 44%, var(--color-glow-1), transparent 70%), radial-gradient(28rem 22rem at 8% 13%, var(--color-glow-2), transparent 70%), radial-gradient(30rem 24rem at 96% 90%, var(--color-glow-3), transparent 70%); }
 .hero__grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(2rem, 1rem + 3vw, 3rem); align-items: center; }
 /* Keeps a short run ("multi-agent", "logic-controls.com:") on one line, but as an inline block that may still wrap
    inside itself when it is wider than its line (user text spacing, WCAG 1.4.12), instead of overflowing or clipping. */
@@ -216,6 +245,9 @@
 .hero__title { display: block; font-size: var(--text-display); line-height: var(--text-display--line-height); letter-spacing: var(--text-display--letter-spacing); max-width: 15.5ch; }
 .hero__title em { font-style: normal; color: var(--color-accent); }
 :lang(ar) .hero__title { max-width: 15.5ch; }
+/* Desktop: the English headline takes its column's measure, balanced, so it sets in four lines at 1280-1536 px and the
+   metric strip still peeks above a 900 px fold (the Arabic headline keeps its own measure). */
+@media (min-width: 64rem) { .hero__title { max-width: 20ch; text-wrap: balance; } }
 .hero__lede { font-size: var(--text-md); line-height: var(--text-md--line-height); color: var(--color-ink-2); max-width: 35rem; }
 .hero__lede strong { color: var(--color-ink); font-weight: 600; }
 .person-chip { display: inline-flex; align-items: center; gap: .625rem; padding: .3125rem .875rem .3125rem .3125rem; border-radius: var(--radius-full); background: var(--color-surface); border: 1px solid var(--color-line); box-shadow: var(--shadow-xs); font-size: var(--text-sm); line-height: 1.2; }
@@ -244,7 +276,7 @@
 .ask-bar__go { display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .625rem; background: var(--color-accent-solid); color: var(--color-on-accent); flex: none; box-shadow: var(--inset-highlight); }
 .ask-bar__go .icon { width: 1.125rem; height: 1.125rem; }
 .ask-bar__kbd { display: none; }
-@media (min-width: 48rem) { .ask-bar__kbd { display: inline-grid; } }
+@media (min-width: 48rem) and (hover: hover) and (pointer: fine) { .ask-bar__kbd { display: inline-grid; } }
 .suggests { display: flex; flex-wrap: wrap; gap: .5rem; max-width: 36rem; }
 .suggest { display: inline-flex; align-items: center; gap: .375rem; min-height: 2rem; padding: .3125rem .75rem; border-radius: var(--radius-full); border: 1px solid var(--color-line); background: color-mix(in srgb, var(--color-surface) 70%, transparent); font-size: var(--text-xs); font-weight: 500; color: var(--color-ink-2); transition: border-color var(--duration-fast), color var(--duration-fast), background-color var(--duration-fast); }
 @media (hover: hover) { .suggest:hover { border-color: var(--color-accent-tint-line); color: var(--color-accent); background: var(--color-accent-tint); } }
@@ -267,7 +299,7 @@
 :lang(ar) .hero__meta { font-family: var(--font-arabic); font-size: var(--text-xs); letter-spacing: 0; }
 .hero__meta time { font-variant-numeric: tabular-nums; }
 
-/* ---------- 10. Metric strip + logo row ---------- */
+/* ---------- 10. Metric strip + logo row ("Worked at") ---------- */
 .metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-block: 1px solid var(--color-line); }
 .metric { padding: 1.25rem 1rem 1.375rem; display: grid; gap: .375rem; align-content: start; }
 .metric + .metric { border-inline-start: 1px solid var(--color-line); }
@@ -280,6 +312,14 @@
 .logos { display: grid; gap: 1rem; padding-block: 1.75rem .25rem; }
 @media (min-width: 64rem) { .logos { grid-template-columns: auto 1fr; align-items: center; gap: 2.5rem; } }
 .logos__list { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem 2.25rem; }
+/* Below 64rem: even rows (three across, two on a phone), each logo centred in its cell, so none sits alone on a ragged
+   last row (audit H-18). */
+@media (max-width: 63.99rem) {
+  .logos__list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); justify-items: center; gap: 1.25rem 1rem; }
+  .logos__list > li { max-width: 100%; }
+  .logos__list .brand-logo__img { max-width: 100%; }
+}
+@media (max-width: 29.99rem) { .logos__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 64rem) { .logos__list { justify-content: space-between; flex-wrap: nowrap; gap: 1.5rem; } }
 /* Official logos in their real colours (LogoRow.astro), sized by the image's own width/height (optically balanced in
    design/assets/logos/brand/brand.json). One file per theme: dark is the default page, light the visitor's choice. */
@@ -289,13 +329,20 @@
 :root[data-theme="light"] .brand-logo__light { display: block; }
 :root[data-theme="light"] .brand-logo__dark { display: none; }
 .brand-logo__name { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; line-height: 1; letter-spacing: -.02em; color: var(--color-ink); white-space: nowrap; }
-@media (max-width: 29.99rem) { .logos__list { gap: 1.125rem 1.75rem; zoom: .84; } }
+@media (max-width: 29.99rem) { .logos__list { gap: 1.125rem 1rem; zoom: .84; } }
 
 /* ---------- 11. Capabilities (bento) ---------- */
 .bento { display: grid; gap: var(--grid-gap); grid-template-columns: 1fr; }
 @media (min-width: 48rem) { .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 48rem) and (max-width: 63.99rem) { .bento__feature { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto; align-items: center; } }
-@media (min-width: 64rem) { .bento { grid-template-columns: repeat(3, minmax(0, 1fr)); } .bento__feature { grid-column: span 2; grid-row: span 2; } }
+/* Desktop: the feature card takes two thirds and two rows, two cards beside it, the last two share the row under it
+   (a six-column grid, so no row ends in a hole). */
+@media (min-width: 64rem) {
+  .bento { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .bento > * { grid-column: span 2; }
+  .bento > .bento__feature { grid-column: span 4; grid-row: span 2; }
+  .bento > :nth-child(n + 4):nth-last-child(-n + 2) { grid-column: span 3; }
+}
 .cap { display: grid; gap: 1rem; align-content: start; }
 @media (max-width: 47.99rem) {
   .cap { grid-template-columns: auto 1fr; gap: .5rem .875rem; align-items: center; }
@@ -324,9 +371,12 @@
 @media (min-width: 48rem) and (max-width: 63.99rem) { .work-list > .work:last-child:nth-child(even) { grid-column: 1 / -1; } }
 .work { display: grid; overflow: hidden; }
 .work::before { content: ""; position: absolute; inset-inline: 0; inset-block-start: 0; height: 3px; background: var(--work-accent, var(--color-teal-fill)); border-radius: var(--radius-lg) var(--radius-lg) 0 0; z-index: 3; }
-.work__media { position: relative; background: var(--color-bg); border-block-end: 1px solid var(--color-line); aspect-ratio: 16 / 10; overflow: hidden; display: grid; place-items: center; padding: 1.25rem; }
+.work__media { --media-pad: 1.25rem; position: relative; background: var(--color-bg); border-block-end: 1px solid var(--color-line); aspect-ratio: 16 / 10; overflow: hidden; display: grid; place-items: center; padding: var(--media-pad); }
 .work__media::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(circle at 2px 2px, var(--color-graph-grid) 1.1px, transparent 1.4px); background-size: 18px 18px; -webkit-mask-image: linear-gradient(to bottom, #000, rgb(0 0 0 / .35)); mask-image: linear-gradient(to bottom, #000, rgb(0 0 0 / .35)); }
 .work__media > * { position: relative; width: 100%; height: 100%; object-fit: contain; }
+/* A drawing fits its box at every width (audit H-01): it is laid out in the media's content box and letterboxed by its
+   own viewBox (preserveAspectRatio meet), instead of keeping its 16:10 height, which overflowed the phone's shorter box. */
+.work__media > svg { position: absolute; inset: var(--media-pad); margin: auto; width: calc(100% - 2 * var(--media-pad)); height: calc(100% - 2 * var(--media-pad)); }
 .work--feature .work__media > svg { max-width: 40rem; max-height: 22rem; }
 .work__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: .875rem; padding: clamp(1.25rem, 1rem + 1vw, 1.75rem); align-content: start; }
 /* A card's media keeps its 16:10 box and the body takes any extra height (a taller neighbour must not stretch the
@@ -356,8 +406,13 @@
 /* The card eyebrow (company / role / years) wraps instead of overflowing the card on narrow screens or with user text spacing. */
 .work__meta .eyebrow { flex-wrap: wrap; row-gap: .125rem; }
 .work__title { font-size: var(--text-xl); line-height: var(--text-xl--line-height); letter-spacing: var(--text-xl--letter-spacing); overflow-wrap: break-word; hyphens: manual; }
-/* 64-80rem: three cards share a narrow row; one step smaller keeps a domain ("logic-controls.com:") on one line. */
-@media (min-width: 64rem) and (max-width: 79.99rem) { .work-list > .work:not(.work--feature) .work__title { font-size: var(--text-lg); line-height: var(--text-lg--line-height); letter-spacing: var(--text-lg--letter-spacing); } }
+/* 64-80rem: three cards share a narrow row; one step smaller keeps a domain ("logic-controls.com:") on one line. The
+   wide card (media first) shares its row evenly there and steps down too, so its domain title never splits at the
+   hyphen (audit H-02; CaseCard.astro). */
+@media (min-width: 64rem) and (max-width: 79.99rem) {
+  .work-list > .work:not(.work--feature) .work__title { font-size: var(--text-lg); line-height: var(--text-lg--line-height); letter-spacing: var(--text-lg--letter-spacing); }
+  .work-list > .work--feature.work--reverse .work__title { font-size: var(--text-xl); line-height: var(--text-xl--line-height); letter-spacing: var(--text-xl--letter-spacing); }
+}
 .work__summary { color: var(--color-ink-2); }
 .work__facts { display: grid; gap: .5rem; font-size: var(--text-sm); color: var(--color-ink-2); }
 .work__facts li { list-style: none; display: grid; grid-template-columns: auto 1fr; gap: .625rem; align-items: baseline; }
@@ -368,7 +423,7 @@
 @media (hover: hover) and (prefers-reduced-motion: no-preference) { .work:hover .work__cta .icon { transform: translateX(3px); } [dir="rtl"] .work:hover .work__cta .icon { transform: scaleX(-1) translateX(3px); } }
 @media (min-width: 64rem) {
   .work--feature { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
-  .work--feature .work__media { order: 2; aspect-ratio: auto; min-height: 26rem; border-block-end: 0; border-inline-start: 1px solid var(--color-line); padding: 2rem; }
+  .work--feature .work__media { --media-pad: 2rem; order: 2; aspect-ratio: auto; min-height: 26rem; border-block-end: 0; border-inline-start: 1px solid var(--color-line); }
   .work--feature .work__body { padding: 2.25rem; align-content: center; gap: 1.125rem; }
   .work--feature .work__title { font-size: var(--text-2xl); line-height: var(--text-2xl--line-height); letter-spacing: var(--text-2xl--letter-spacing); }
 }
@@ -483,7 +538,7 @@
 @media (hover: hover) and (prefers-reduced-motion: no-preference) { .chat-preview:hover { transform: translateY(-3px); } }
 .chat-preview__head { display: flex; align-items: center; gap: .75rem; padding: .875rem 1rem; border-block-end: 1px solid var(--color-line); }
 .chat-preview__head img { width: 2.25rem; height: 2.25rem; border-radius: 50%; object-fit: cover; }
-.chat-preview__head b { display: block; font-size: var(--text-sm); color: var(--color-ink); }
+.chat-preview__head b { display: block; font-size: var(--text-sm); font-weight: 600; color: var(--color-ink); }
 .chat-preview__head small { display: flex; align-items: center; gap: .375rem; font-size: var(--text-2xs); color: var(--color-muted); }
 .chat-preview__head small .dot { width: .375rem; height: .375rem; background: var(--color-teal-fill); }
 .chat-preview__body { display: grid; gap: .875rem; padding: 1.125rem 1rem 1rem; background: var(--color-bg); }
@@ -544,7 +599,7 @@ select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csv
 
 /* ---------- 17. Education & certifications ---------- */
 .edu { display: grid; gap: var(--grid-gap); }
-@media (min-width: 64rem) { .edu { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 64rem) { .edu { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
 .edu__list { display: grid; }
 .edu__item { display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: start; padding-block: 1.125rem; border-block-end: 1px solid var(--color-line); }
 .edu__item:first-child { padding-block-start: 0; }
@@ -581,13 +636,17 @@ select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csv
 .field label .opt { font-weight: 400; color: var(--color-muted); }
 .input { width: 100%; min-height: 2.875rem; padding: .625rem .875rem; border-radius: var(--radius-md); border: 1px solid var(--color-line-input); background: var(--color-surface); color: var(--color-ink); font-size: var(--text-base); line-height: 1.5; transition: border-color var(--duration-fast), box-shadow var(--duration-fast); }
 .input::placeholder { color: var(--color-muted); }
+/* Arabic pages: an empty field (dir="auto", so typed text still follows its own script) shows its Arabic placeholder
+   from the right; email and phone fields stay LTR for what is typed (audit A-03). */
+:lang(ar) :is(input, textarea)[dir="auto"]:placeholder-shown { direction: rtl; text-align: right; }
+:lang(ar) input[dir="ltr"]:placeholder-shown { text-align: right; }
 @media (hover: hover) { .input:hover { border-color: var(--color-ink-2); } }
 .input:focus-visible { outline: 2px solid transparent; outline-offset: 1px; border-color: var(--color-focus); box-shadow: 0 0 0 3px var(--color-focus-halo); }
 textarea.input { min-height: 8.5rem; resize: vertical; }
 .field__hint { font-size: var(--text-xs); color: var(--color-muted); }
 .field__error { display: flex; gap: .375rem; align-items: center; font-size: var(--text-xs); font-weight: 600; color: var(--color-danger); }
 .input[aria-invalid="true"] { border-color: var(--color-danger); }
-.turnstile-slot { direction: ltr; height: 65px; max-width: 300px; border-radius: var(--radius-sm); border: 1px dashed var(--color-line-strong); display: grid; place-items: center; font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); }
+.turnstile-slot { direction: ltr; height: 65px; max-width: 300px; border-radius: var(--radius-sm); border: 1px dashed transparent; /* no empty dashed box before the check loads (audit H-25) */ display: grid; place-items: center; font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); }
 .form__foot { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
 
 /* ---------- 19. Footer ---------- */
@@ -603,8 +662,16 @@ textarea.input { min-height: 8.5rem; resize: vertical; }
 
 /* ---------- 20. Reveal on scroll (enhancement only) ---------- */
 @media (prefers-reduced-motion: no-preference) {
-  .js [data-reveal] { opacity: 0; transform: translateY(14px); transition: opacity var(--duration-slower) var(--ease-out), transform var(--duration-slower) var(--ease-out); transition-delay: calc(var(--i, 0) * 70ms); }
-  .js [data-reveal].is-in { opacity: 1; transform: none; }
+  /* `translate`, not `transform`, so a card's hover lift (transform) still runs once it is in; the card's own hover
+     transitions stay in the list, without the reveal's stagger (audit H-03). */
+  .js [data-reveal] {
+    opacity: 0; translate: 0 14px;
+    transition-property: opacity, translate, border-color, box-shadow, transform;
+    transition-duration: var(--duration-slower), var(--duration-slower), var(--duration-fast), var(--duration-base), var(--duration-base);
+    transition-timing-function: var(--ease-out), var(--ease-out), var(--ease-standard), var(--ease-standard), var(--ease-out);
+    transition-delay: calc(var(--i, 0) * 70ms), calc(var(--i, 0) * 70ms), 0s, 0s, 0s;
+  }
+  .js [data-reveal].is-in { opacity: 1; translate: none; }
 }
 
 /* ---------- 20a. Living charts (src/scripts/motion.ts; DESIGN.md 7.2) ----------
@@ -679,6 +746,8 @@ textarea.input { min-height: 8.5rem; resize: vertical; }
 .metric > .metric__value { order: -1; margin: 0; }
 :lang(ar) .chip { direction: ltr; unicode-bidi: isolate; }
 :lang(ar) .eyebrow .latin, :lang(ar) .eyebrow [lang="en"] { font-family: var(--font-mono); font-size: var(--text-xs); letter-spacing: .04em; }
+/* The years in an Arabic card eyebrow share the org's Latin voice (audit A-13). */
+:lang(ar) .work__meta .eyebrow bdi { font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 500; letter-spacing: .04em; }
 
 /* ---------- 21. Phones and touch (the mobile round: DESIGN.md 12.23) ----------
    Everything here is either phone-only (max-width queries), touch-only (pointer: coarse / hover: none) or a safe-area
@@ -703,7 +772,7 @@ textarea.input { min-height: 8.5rem; resize: vertical; }
   .hero__lede--short { display: block; }
   .hero__meta .hero__open { display: none; }
 }
-/* Below 40rem the proof (metric strip, "Shipped at") comes before the graph: one graph, reordered (DOM order kept). */
+/* Below 40rem the proof (metric strip, "Worked at") comes before the graph: one graph, reordered (DOM order kept). */
 @media (max-width: 39.99rem) {
   .hero { display: flex; flex-direction: column; }
   .hero__grid { display: contents; }
@@ -776,13 +845,13 @@ main > section[id]:not(#top) { scroll-margin-block-start: calc(.25rem - var(--sp
   .dock {
     --dock-launcher: 4rem; /* the launcher (3.5rem on phones) + an 0.5rem gap */
     position: fixed; z-index: var(--z-widget); inset-block-end: max(1rem, env(safe-area-inset-bottom));
-    left: max(.75rem, env(safe-area-inset-left)); right: calc(max(1rem, env(safe-area-inset-right)) + var(--dock-launcher));
-    display: flex; gap: .25rem; padding: .25rem; container-type: inline-size;
+    left: max(1rem, env(safe-area-inset-left)); right: calc(max(1rem, env(safe-area-inset-right)) + var(--dock-launcher));
+    display: flex; gap: .25rem; padding: .3125rem; container-type: inline-size; /* 56 px tall, like the launcher beside it (audit M-17) */
     border-radius: var(--radius-full); border: 1px solid var(--color-line-strong);
     background: color-mix(in srgb, var(--color-surface) 96%, transparent); -webkit-backdrop-filter: saturate(1.4) blur(12px); backdrop-filter: saturate(1.4) blur(12px);
     box-shadow: var(--shadow-lg), var(--inset-highlight);
   }
-  [dir="rtl"] .dock { left: calc(max(1rem, env(safe-area-inset-left)) + var(--dock-launcher)); right: max(.75rem, env(safe-area-inset-right)); }
+  [dir="rtl"] .dock { left: calc(max(1rem, env(safe-area-inset-left)) + var(--dock-launcher)); right: max(1rem, env(safe-area-inset-right)); }
   .dock[hidden] { display: none; }
   .dock[data-away] { opacity: 0; visibility: hidden; translate: 0 calc(100% + 1.25rem); }
 }
@@ -799,6 +868,9 @@ main > section[id]:not(#top) { scroll-margin-block-start: calc(.25rem - var(--sp
 @container (max-width: 16rem) { .dock__btn .icon { display: none; } .dock__btn { padding-inline: .5rem; } }
 @media (hover: none) { .dock__btn:active { background-color: color-mix(in srgb, var(--color-ink) 10%, transparent); } .dock__btn--cv:active { background: var(--color-accent-solid-hover); } }
 @media print { .dock { display: none !important; } }
+/* A very short screen (400 % zoom, a phone in landscape with a keyboard): the header, the dock and the launcher would
+   cover a third of it; the contact section and the footer carry the same actions (audit A11Y-06). */
+@media (max-height: 28rem) { .dock { display: none !important; } }
 
 /* 21h. Readable small text on phones (audit READ-01): content, not labels, goes up one step. */
 @media (max-width: 39.99rem) {
@@ -820,7 +892,7 @@ main > section[id]:not(#top) { scroll-margin-block-start: calc(.25rem - var(--sp
   .bento > * { scroll-snap-align: start; }
   .bento__feature { grid-template-rows: auto; }
   .bento__feature .feature-art, .cap__stack { display: none; }
-  .work__media { aspect-ratio: 16 / 8; padding: .875rem; }
+  .work__media { --media-pad: .875rem; aspect-ratio: 16 / 8; }
   .work__media svg text { display: none; }
 }
 
@@ -829,6 +901,7 @@ main > section[id]:not(#top) { scroll-margin-block-start: calc(.25rem - var(--sp
 @media (max-width: 47.99rem) {
   .trace__head { display: none; }
   .span__lane { display: none; }
+  .trace__legend { display: none; } /* a key for bars that aren't on screen (audit H-10) */
 }
 .span__dur { display: none; }
 @media (max-width: 47.99rem) { .span__dur { display: inline; } }
@@ -897,6 +970,7 @@ main > section[id]:not(#top) { scroll-margin-block-start: calc(.25rem - var(--sp
 h1, h2, h3, h4 { overflow-wrap: anywhere; }
 @media (max-width: 39.99rem) {
   .btn { white-space: normal; line-height: 1.2; text-align: center; }
+  :lang(ar) .btn { line-height: var(--lh-ui); } /* a wrapped Arabic label keeps its marks clear (audit A-15) */
   .edu__when { white-space: normal; }
   .channel__value { white-space: normal; overflow-wrap: anywhere; }
   .chip { white-space: normal; }
@@ -907,9 +981,10 @@ h1, h2, h3, h4 { overflow-wrap: anywhere; }
   .chat-preview span, .chat-preview b { min-width: 0; overflow-wrap: anywhere; }
   .form__head p, .cta-band__mail, .about__bio, .facts dd, .edu__title, .edu__sub, .edu__courses, .span__attrs dd, .work__meta .eyebrow { overflow-wrap: anywhere; }
 }
-/* The metric strip goes to one column when its text is large for its width (em: it follows text zoom). */
+/* The metric strip goes to one column when its text is large for its width (rem: it follows text zoom, and the Arabic
+   script scale doesn't trip it at default zoom; audit A-18). */
 .metrics-wrap { container-type: inline-size; }
-@container (max-width: 17em) { .metrics-wrap .metrics { grid-template-columns: minmax(0, 1fr); } .metrics-wrap .metric:nth-child(n) { grid-column: auto; border-inline-start: 0; padding-inline-start: 0; } .metrics-wrap .metric + .metric { border-block-start: 1px solid var(--color-line); } }
+@container (max-width: 17rem) { .metrics-wrap .metrics { grid-template-columns: minmax(0, 1fr); } .metrics-wrap .metric:nth-child(n) { grid-column: auto; border-inline-start: 0; padding-inline-start: 0; } .metrics-wrap .metric + .metric { border-block-start: 1px solid var(--color-line); } }
 @media (max-width: 16rem) {
   bdi, .metric__value { overflow-wrap: anywhere; }
 }
@@ -917,9 +992,9 @@ h1, h2, h3, h4 { overflow-wrap: anywhere; }
 /* 21q. Section heads on phones: a little tighter, so a menu jump lands the title near the top. */
 @media (max-width: 39.99rem) { .sec-head { gap: .875rem; } main > section[id]:not(#top) { scroll-margin-block-start: calc(0px - 3.75rem); } }
 
-/* A role's attributes stack (label above value) when the text is large for the width (em: follows text zoom). */
+/* A role's attributes stack (label above value) when the text is large for the width (rem: follows text zoom). */
 .span__detail { container-type: inline-size; }
-@container (max-width: 18em) { .span__attrs div { grid-template-columns: minmax(0, 1fr); gap: .125rem; } }
+@container (max-width: 18rem) { .span__attrs div { grid-template-columns: minmax(0, 1fr); gap: .125rem; } }
 
 /* On phones scroll-padding clears the 64 px header with a little air (it was 88 px): anchor jumps and focus land closer
    to the top. Case studies keep their own (they add the TOC bar). */

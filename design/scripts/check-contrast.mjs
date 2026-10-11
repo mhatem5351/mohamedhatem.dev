@@ -198,11 +198,23 @@ const disc = grab("scripts/chat-avatar.ts", /--mh-av-disc,(#[0-9a-fA-F]{6})/, "a
 const rim = grab("scripts/chat-avatar.ts", /--mh-av-rim,(#[0-9a-fA-F]{6})/, "avatar rim");
 const bubbleInk = grab("scripts/chat-avatar.ts", /--mh-bubble-ink,(#[0-9a-fA-F]{6})/, "bubble ink");
 const bubbleAccent = grab("scripts/chat-avatar.ts", /--mh-bubble-accent,(#[0-9a-fA-F]{6})/, "bubble accent");
-const paper = grab("scripts/chat-avatar.ts", /--pp:color-mix\(in srgb,(#[0-9a-fA-F]{6})/, "bubble paper");
+const paper = grab("scripts/chat-avatar.ts", /--pp:var\(--mh-bubble-paper,color-mix\(in srgb,(#[0-9a-fA-F]{6})/, "bubble paper");
+// Open, the launcher is the panel's close button: its × keeps its own ink on the disc (audit M-01).
+const closeInk = grab("scripts/chat-avatar.ts", /\.b\.av\{[^}]*;color:(#[0-9a-fA-F]{6})/, "launcher close ink");
+// By night the bubble is a "night comic" from the theme's tokens (site.css: --mh-bubble-paper / -text / -ink / -accent).
+const night = grab("styles/site.css", /\[data-mh-chat\] \{ (--mh-bubble-paper: var\(--color-surface\); --mh-bubble-text: var\(--color-ink\); --mh-bubble-ink: var\(--color-accent-fill\); --mh-bubble-accent: var\(--color-accent\);) \}/, "night comic bubble");
 if (disc) for (const theme of ["light", "dark"]) {
   component(theme, rim, THEMES[theme].bg, theme === "dark" ? 3 : 0, "avatar rim against the page (the launcher's edge in dark)");
   component(theme, disc, THEMES[theme].bg, theme === "light" ? 3 : 0, "avatar disc against the page (the launcher's edge in light)");
   component(theme, rim, disc, 3, "avatar rim against its disc");
+  component(theme, closeInk, disc, 3, "launcher open: its × against the disc (1.4.11)");
+  if (theme === "dark" && night) {
+    const T = THEMES.dark;
+    component(theme, T.ink, T.surface, 4.5, "comic bubble by night: ivory text on surface paper");
+    component(theme, T.accent, T.surface, 4.5, "comic bubble by night: the greeting line");
+    component(theme, T["accent-fill"], T.bg, 3, "comic bubble by night: the gold outline against the page");
+    continue;
+  }
   for (const [c, use] of [[bubbleInk, "comic bubble: ink text and outline"], [bubbleAccent, "comic bubble: the greeting line"]]) {
     // the bubble's paper is 94 % paper over the page background
     const P = parse(paper), B = parse(THEMES[theme].bg);

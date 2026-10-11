@@ -27,6 +27,7 @@ import { formatYears, localePath, messages, type Locale } from "~/lib/i18n";
 import { sharesRolePeriod } from "~/lib/case";
 import { PATHS, profile } from "~/lib/site";
 import { CASE_ACCENT } from "~/lib/home-work";
+import { noBreakHtml } from "~/lib/nobreak";
 
 interface Props {
   cs: CaseStudy;
@@ -54,15 +55,12 @@ const years = formatYears(cs.period);
 const yearsParts = company && sharesRolePeriod(cs) ? m.work.page.atRole.split(/(\{years\})/).filter(Boolean) : ["{years}"];
 const Heading = headingLevel === 3 ? "h3" : "h4";
 const lc = locale === "ar" ? lcAr : lcEn;
-const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 /**
- * Titles never break inside a hyphenated compound ("self-hosted", "real-estate", "6-agent") or a domain name
- * ("logic-controls.com", with its trailing punctuation): each becomes an unbreakable unit (audit VUX-05).
+ * Titles never break inside a hyphenated compound ("self-hosted", "real-estate", "6-agent"), a number range or a domain
+ * name ("logic-controls.com", with its trailing punctuation): each becomes an unbreakable unit (audit VUX-05, H-02),
+ * with the site's shared helper (lib/nobreak.ts).
  */
-const noBreakDomains = (t: string) =>
-  esc(t)
-    .replace(/\b([a-z0-9-]+\.(?:com|dev))([:;,.]?)/g, '<span class="nowrap" dir="ltr">$1$2</span>')
-    .replace(/(^|[\s(])([A-Za-z0-9]+(?:-[A-Za-z0-9]+)+)(?![^<]*<\/span>)(?=[\s,.:;)]|$)/g, '$1<span class="nowrap">$2</span>');
+const title = noBreakHtml(cs.title[locale], "nowrap");
 const brief = cs.depth === "brief";
 /** The company's tile beside the eyebrow: the employer's (the government assistant shows Wakeb Data, never its client);
  * freelance work shows its client's, Logic Controls. Decorative: the eyebrow names the company. */
@@ -121,7 +119,7 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
         <span>{yearsParts.map((part) => (part === "{years}" ? <Ltr>{years}</Ltr> : part))}</span>
       </span>
     </div>
-    <Heading class="work__title"><a class="stretched" href={href} set:html={noBreakDomains(cs.title[locale])} /></Heading>
+    <Heading class="work__title"><a class="stretched" href={href} set:html={title} /></Heading>
     <p class="work__summary">{cs.summary[locale]}</p>
     {
       facts.length > 0 && (
@@ -170,7 +168,7 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
   }
   /* logic-controls.com: a framed screenshot instead of a diagram. */
   .work__media--shot {
-    padding: 1.25rem;
+    --media-pad: 1.25rem;
   }
   .mini-browser {
     width: 100%;
@@ -207,13 +205,19 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
     .work--reverse {
       grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
     }
+    /* Up to 80rem the wide card's row is shared evenly: its body column then holds a domain title on one line. */
+    @media (max-width: 79.99rem) {
+      .work--reverse {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+    }
     .work--reverse .work__media {
       order: 0;
       border-inline-start: 0;
       border-inline-end: 1px solid var(--color-line);
     }
     .work--feature .work__media--shot {
-      padding: 2.5rem;
+      --media-pad: 2.5rem;
     }
   }
   .work--compact .work__title {
