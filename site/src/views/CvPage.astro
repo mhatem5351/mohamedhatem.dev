@@ -8,9 +8,10 @@ import { fileURLToPath } from "node:url";
 import Document from "~/layouts/Document.astro";
 import CvToolbar from "~/components/cv/CvToolbar.astro";
 import CvSheet from "~/components/cv/CvSheet.astro";
+import BidiText from "~/components/ui/BidiText.astro";
 import Ltr from "~/components/ui/Ltr.astro";
 import "~/styles/cv.css";
-import { format, formatMonth, messages, otherLocale, type Locale } from "~/lib/i18n";
+import { format, messages, otherLocale, type Locale } from "~/lib/i18n";
 import { CV_PDF, PATHS, profile } from "~/lib/site";
 import { cvJsonLd } from "~/lib/jsonld";
 
@@ -29,7 +30,8 @@ function pdfInfo(l: Locale): string | undefined {
   return format(m.cv.fileInfo, { size: `${kb} KB` });
 }
 const fileInfo = pdfInfo(locale);
-const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, locale, "long") });
+/** On /ar/cv/: which PDF to give an applicant tracking system (round 7, HM-26), once the copy has the note. */
+const atsNote = locale === "ar" ? (m.cv as { atsNote?: string }).atsNote : undefined;
 ---
 <Document
   locale={locale}
@@ -45,11 +47,14 @@ const updated = format(m.cv.updated, { date: formatMonth(profile.cv.updated, loc
   <CvToolbar slot="bar" locale={locale} fileInfo={fileInfo} />
   <CvSheet locale={locale} />
   <p class="cv-after">
-    <span>{updated}{fileInfo && <> · <Ltr>{fileInfo}</Ltr></>}</span>
+    {/* The PDF's size and format, never the sheet's date again: "Updated …" is already in the sheet's footer, 40 px above
+        (audit D-16). The size is known once the PDF has been generated (scripts/postbuild/cv-pdf.mjs). */}
+    {fileInfo && <span class="cv-after__info"><Ltr>{fileInfo}</Ltr></span>}
     {/* Touch screens open the PDF from the toolbar; this saves the file instead (cv.css shows it on touch only). The
         chat launcher steps aside while it would sit on either link (data-chat-avoid, site.ts; audit L-05). */}
     <a class="cv-after__save" href={CV_PDF[locale]} download={profile.cv.fileName[locale]} type="application/pdf" data-chat-avoid>{m.cv.savePdf}</a>
     {/* The other language's PDF opens in the viewer on touch screens (site.ts drops `download` there). */}
     <a href={CV_PDF[other]} download={profile.cv.fileName[other]} hreflang={other} type="application/pdf" data-open-on-touch data-chat-avoid>{m.cv.otherLanguagePdf}</a>
   </p>
+  {atsNote && <p class="cv-after cv-after__ats"><BidiText text={atsNote} locale={locale} /></p>}
 </Document>

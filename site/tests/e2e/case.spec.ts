@@ -20,7 +20,9 @@ test.describe("brief case studies", () => {
         for (const id of ["problem", "approach", "outcome"]) await expect(page.locator(`section#${id} h2`)).toBeVisible();
         const note = page.locator(".cs-brief__note");
         await expect(note).toContainText(m.work.briefNote);
-        await expect(note.getByRole("button", { name: m.work.page.ask })).toBeVisible();
+        // One in-content "Ask my AI about this project" per page: the hero's (C-35).
+        await expect(page.locator(".cs-hero__actions").getByRole("button", { name: m.work.page.ask })).toBeVisible();
+        await expect(note.getByRole("button", { name: m.work.page.ask })).toHaveCount(0);
         // A capability view of five boxes or fewer (users, assistant, model…) adds nothing to the text: no figure, no
         // link to one (HM-22).
         const figure = cs.architecture.nodes.length > 5;
@@ -125,7 +127,13 @@ test.describe("home: selected work", () => {
 
   test("one eyebrow pattern: Company / years (Wakeb's shared role: during …)", async ({ page }) => {
     await page.goto("/");
-    const eyebrows = await page.locator(".work-list > .work:not(.work--feature) .eyebrow, .more-work .eyebrow").allInnerTexts();
+    // The "/" between the parts is drawn by CSS (a separator list that never ends or starts a line, H-07): read the parts.
+    const eyebrows = await page.locator(".work-list > .work:not(.work--feature) .eyebrow, .more-work .eyebrow").evaluateAll((els) =>
+      els.map((el) => {
+        const parts = [...el.querySelectorAll(".sep-list__in > :not(.sr-only)")].filter((p) => p.getClientRects().length);
+        return parts.length ? parts.map((p) => (p as HTMLElement).innerText.trim()).join(" / ") : (el as HTMLElement).innerText;
+      }),
+    );
     for (const e of eyebrows.slice(0, 3)) expect(e.replace(/\s+/g, " ")).toMatch(/^[^/]+ \/ (during )?\d{4}(–\d{4})?$/i);
     expect(eyebrows.join(" ")).not.toMatch(/\bAt Wakeb/i);
   });
@@ -189,15 +197,17 @@ test.describe("figures (round 6: C-01, C-04, C-05, C-07, C-08, C-24)", () => {
         await btn.click();
         const dialog = page.locator("dialog[data-zoom-dialog]");
         await expect(dialog).toBeVisible();
+        await page.waitForTimeout(300); // the opening fade
         const box = (await dialog.boundingBox())!;
-        // The whole window (a classic scrollbar's gutter stays reserved while the page is locked).
-        expect(box.width, `${width}: dialog width`).toBeGreaterThanOrEqual(width - 16);
+        // The whole window: no strip of bare page beside it (R7 C-24).
+        expect(box.width, `${width}: dialog width`).toBeGreaterThanOrEqual(width - 1);
         expect(box.height, `${width}: dialog height`).toBeGreaterThanOrEqual(height - 1);
         const scale = await dialog.locator("[data-zoom-body] > svg").evaluate((s) => {
           const svg = s as SVGSVGElement;
           return (svg.getBoundingClientRect().width - 32) / svg.viewBox.baseVal.width;
         });
-        expect(scale, `${width}: enlarged`).toBeGreaterThanOrEqual(1.1);
+        // At its design size or more: fitted to the window where that still reads, else the readable zoom (R7-CASE-03).
+        expect(scale, `${width}: enlarged`).toBeGreaterThanOrEqual(1);
         expect(scale, `${width}: larger than the page's own`).toBeGreaterThan(inline);
         const close = (await dialog.locator("[data-zoom-close]").boundingBox())!;
         if (end === "right") expect(box.x + box.width - (close.x + close.width)).toBeLessThanOrEqual(16);

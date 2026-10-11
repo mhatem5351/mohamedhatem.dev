@@ -30,7 +30,7 @@ html { scroll-padding-block-start: 6.5rem; }
 .crumbs li + li::before { content: "/"; font-family: var(--font-mono); color: var(--color-saffron); }
 .crumbs a { color: var(--color-ink-2); border-radius: var(--radius-xs); text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .2em; transition: text-decoration-color var(--duration-fast); }
 @media (hover: hover) { .crumbs a:hover { text-decoration-color: currentColor; color: var(--color-ink); } }
-.crumbs [aria-current="page"] { color: var(--color-ink); font-weight: 500; }
+.crumbs [aria-current="page"] { color: var(--color-ink); font-weight: var(--fw-medium); }
 
 /* ---------- 2. Case-study hero ---------- */
 .cs-hero { position: relative; isolation: isolate; padding-block: clamp(1.25rem, .75rem + 1.5vw, 2rem) 0; }
@@ -56,10 +56,9 @@ html { scroll-padding-block-start: 6.5rem; }
 .cs-meta__row:last-child { border-block-end: 0; padding-block-end: 0; }
 .cs-meta dt { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); letter-spacing: .02em; }
 :lang(ar) .cs-meta dt { font-family: var(--font-arabic); font-size: var(--text-xs); letter-spacing: 0; }
-.cs-meta dd { margin: 0; font-size: var(--text-sm); color: var(--color-ink); font-weight: 500; line-height: 1.45; }
+.cs-meta dd { margin: 0; font-size: var(--text-sm); color: var(--color-ink); font-weight: var(--fw-medium); line-height: 1.45; }
 .cs-meta dd small { display: block; font-weight: 400; color: var(--color-muted); font-size: var(--text-xs); }
 .cs-meta__org { display: inline-flex; align-items: center; gap: .5rem; }
-.cs-meta__org .mask { display: inline-block; flex: none; background: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; color: var(--color-ink-2); }
 .cs-meta .cluster { --cluster-gap: .3125rem; padding-block-start: .125rem; }
 /* 13 px: some stack chips are gold, which needs 13 px to read at its contrast on its tint (check-contrast.mjs). */
 .cs-meta .chip { font-size: var(--text-xs); }
@@ -103,8 +102,9 @@ html { scroll-padding-block-start: 6.5rem; }
 :lang(ar) .fig__caption-text { font-family: var(--font-arabic); font-size: var(--text-sm); line-height: 1.8; }
 :lang(ar) .fig__caption-text b { font-family: var(--font-arabic); font-weight: 700; }
 
-/* Callout number badge (matches the diagram's saffron callouts) + the numbered legend under a figure */
-.co { display: inline-grid; place-items: center; min-width: 1.375rem; height: 1.375rem; padding-inline: .25rem; border-radius: var(--radius-full); background: var(--color-saffron-fill); color: var(--color-on-saffron); font: 700 var(--text-xs)/1 var(--font-mono); font-variant-numeric: tabular-nums; flex: none; box-shadow: 0 0 0 2px var(--color-bg); }
+/* Callout number badge (matches the diagram's callout discs: the solid accent, gold by night and lapis by day, audit
+   C-44) + the numbered legend under a figure */
+.co { display: inline-grid; place-items: center; min-width: 1.375rem; height: 1.375rem; padding-inline: .25rem; border-radius: var(--radius-full); background: var(--color-accent-solid); color: var(--color-on-accent); font: 700 var(--text-xs)/1 var(--font-mono); font-variant-numeric: tabular-nums; flex: none; box-shadow: 0 0 0 2px var(--color-bg); }
 a.co { text-decoration: none; }
 .co-ref { vertical-align: .12em; margin-inline: .125rem; transform: scale(.92); }
 .callouts { display: grid; gap: .625rem 2rem; list-style: none; counter-reset: co; }
@@ -130,7 +130,7 @@ a.co { text-decoration: none; }
 .toc__list a { position: relative; display: grid; grid-template-columns: 1.75rem 1fr; align-items: baseline; padding: .4375rem .5rem .4375rem .875rem; margin-inline-start: -1px; border-inline-start: 2px solid transparent; font-size: var(--text-sm); line-height: 1.35; color: var(--color-muted); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; transition: color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard); }
 [dir="rtl"] .toc__list a { border-radius: var(--radius-sm) 0 0 var(--radius-sm); padding: .4375rem .875rem .4375rem .5rem; }
 @media (hover: hover) { .toc__list a:hover { color: var(--color-ink); background: color-mix(in srgb, var(--color-surface-2) 70%, transparent); } }
-.toc__list a[aria-current="true"] { color: var(--color-ink); font-weight: 500; border-inline-start-color: var(--color-accent-fill); }
+.toc__list a[aria-current="true"] { color: var(--color-ink); font-weight: var(--fw-medium); border-inline-start-color: var(--color-accent-fill); }
 /* The number sits at the start of its cell in both directions (no dir="ltr": that turned "start" into left in Arabic,
    so "01" ran into its label, audit A-04); two digits read the same either way, isolated from the label. */
 .toc__num { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); font-variant-numeric: tabular-nums; unicode-bidi: isolate; text-align: start; }
@@ -149,7 +149,7 @@ a.co { text-decoration: none; }
 .toc-m > summary::-webkit-details-marker { display: none; }
 .toc-m__label { font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--color-muted); white-space: nowrap; }
 :lang(ar) .toc-m__label { font-family: var(--font-arabic); font-size: var(--text-xs); text-transform: none; letter-spacing: 0; font-weight: 600; }
-.toc-m__current { flex: 1; min-width: 0; color: var(--color-ink); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toc-m__current { flex: 1; min-width: 0; color: var(--color-ink); font-weight: var(--fw-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .toc-m__current::before { content: ""; display: inline-block; width: 1px; height: .875rem; margin-inline-end: .75rem; vertical-align: -.125rem; background: var(--color-line-strong); }
 .toc-m__chev { color: var(--color-muted); transition: transform var(--duration-base) var(--ease-out); }
 .toc-m[open] .toc-m__chev { transform: rotate(180deg); }
@@ -532,11 +532,19 @@ a.co { text-decoration: none; }
 /* --- Titles: a hyphenated compound or a domain is one unit (lib/nobreak.ts, C-02). */
 .nb-unit { display: inline-block; max-width: 100%; }
 
-/* --- Breadcrumbs on one line: the current page ellipsizes instead of wrapping into three lines (C-17). */
+/* --- Breadcrumbs (C-17, R7-AR-02, R7-AR-04): one line from 40rem, where a long current title ellipsizes, and up to two
+   lines on phones. A Latin name inside an Arabic title (Breadcrumbs.astro: BidiText) is one atomic unit, so the
+   ellipsis drops it whole instead of eating its start ("…poweromics"). Arabic gets the line room its descenders need:
+   in a 1.3 line box the dots under a final ي were clipped and it read as ى. */
 .crumbs { min-width: 0; }
 .crumbs ol { flex-wrap: nowrap; min-width: 0; }
 .crumbs li:last-child { min-width: 0; }
 .crumbs [aria-current="page"] { display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crumbs [aria-current="page"] bdi { display: inline-block; max-width: 100%; vertical-align: top; }
+:lang(ar) .crumbs [aria-current="page"] { line-height: 1.75; padding-block: .125em; margin-block: -.125em; }
+@media (max-width: 39.99rem) {
+  .crumbs [aria-current="page"] { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; white-space: normal; }
+}
 
 /* --- The meta card on small phones (C-18): labels above values from 24rem down, and each end of a date range whole. */
 @media (max-width: 24rem) {
@@ -548,9 +556,8 @@ a.co { text-decoration: none; }
 :lang(ar) .cs-meta .chip { font-size: calc(var(--text-xs) / var(--script-scale, 1)); }
 .cs-meta .chip { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 
-/* --- Arabic has no 500 weight (Plex Arabic ships 400/600/700, so 500 falls to 400): the current page, section and
-   TOC entry step up to 600 so their state still shows (A-09). */
-:lang(ar) .crumbs [aria-current="page"], :lang(ar) .toc__list a[aria-current="true"], :lang(ar) .toc-m__current { font-weight: 600; }
+/* --- Arabic has no 500 weight (Plex Arabic ships 400/600/700, so 500 falls to 400): --fw-medium (tokens.css) is 600 on
+   Arabic pages, so the current page, section, TOC entry and the meta card's values keep their weight (A-09). */
 
 /* --- Hero actions on phones: the ghost links sit flush with the text edge instead of floating in their padding (C-16);
    a wrapped Arabic label keeps the Arabic UI line height (A-15). */
@@ -645,8 +652,12 @@ a.co { text-decoration: none; }
 .shots .fig__caption { justify-items: start; text-align: start; }
 
 /* --- The enlarge view (C-04, C-05, C-24, C-25, C-26, C-39, C-40). */
-/* The page behind doesn't move while it is open. */
-:root[data-screen-open] { overflow: hidden; scrollbar-gutter: stable; }
+/* The page behind doesn't move while it is open. Where a scrollbar takes space (Windows, Linux), zoom-dialog.ts puts its
+   width on <body> as padding on its side, so the page keeps its layout and the dialog and its backdrop cover the whole
+   window (a reserved gutter left a 15 px strip of bare page beside them; R7 C-24). */
+:root[data-screen-open] { overflow: hidden; }
+:root[data-screen-open] body { padding-right: var(--lock-pad, 0px); }
+:root[data-screen-open][data-lock-left] body { padding-right: 0; padding-left: var(--lock-pad, 0px); }
 .zoom { overscroll-behavior: contain; }
 /* The close button sits at the bar's end corner, whatever the caption's length. */
 .zoom__close { flex: none; margin-inline-start: auto; }
@@ -656,15 +667,48 @@ a.co { text-decoration: none; }
 .zoom[data-pans] .zoom__hint { display: block; }
 .zoom::backdrop { -webkit-backdrop-filter: blur(6px) saturate(.8); backdrop-filter: blur(6px) saturate(.8); }
 :root[data-theme="light"] .zoom::backdrop { background: rgb(19 29 54 / .56); }
-/* A figure fills the window at every width. From 48rem the drawing is fitted to the window where that shows it at 1.1x
-   its design size or more (zoom-dialog.ts sets --zoom-min, up to 1.5x), else drawn at 1.25x (labels at 15 px) and
-   panned both ways: no fit that is barely larger than the page, no pan of a few pixels. */
+/* A figure fills the window at every width. From 48rem the whole drawing is fitted to the window, both ways, where that
+   shows it at its design size or more (up to 1.5x), else drawn at 1.25-1.5x (labels at 15 px) and panned; the bar's
+   toggle switches between the two (zoom-dialog.ts sets --zoom-at). */
 .zoom[data-kind="figure"] { inset: 0; width: auto; height: auto; max-width: none; max-height: none; margin: 0; border: 0; border-radius: 0; }
 .zoom[data-kind="figure"] .zoom__bar { padding-top: max(.375rem, env(safe-area-inset-top)); padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(.375rem, env(safe-area-inset-right)); }
 [dir="rtl"] .zoom[data-kind="figure"] .zoom__bar { padding-left: max(.375rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
 @media (min-width: 48rem) {
   .zoom[data-kind="figure"] .zoom__body { display: grid; }
-  .zoom[data-kind="figure"] .zoom__body > svg { box-sizing: border-box; padding: 1rem; margin: auto; width: clamp(var(--zoom-min, calc(var(--zoom-w, 70rem) * 1.25 + 2rem)), 100%, calc(var(--zoom-w, 70rem) * 1.5 + 2rem)); }
+  /* zoom-dialog.ts sets --zoom-at: the whole drawing fitted both ways, or the readable zoom (R7-CASE-03). */
+  .zoom[data-kind="figure"] .zoom__body > svg { box-sizing: border-box; padding: 1rem; margin: auto; width: var(--zoom-at, clamp(calc(var(--zoom-w, 70rem) * 1.25 + 2rem), 100%, calc(var(--zoom-w, 70rem) * 1.5 + 2rem))); }
+}
+/* The bar's "Show the full diagram" toggle (figures from 48rem): its icon says what a press does next. */
+.zoom__fit { flex: none; margin-inline-start: auto; }
+.zoom__fit[hidden] { display: none; }
+.zoom__fit:not([hidden]) + .zoom__close { margin-inline-start: 0; }
+.zoom__fit[aria-pressed="true"] .zoom__fit-whole, .zoom__fit[aria-pressed="false"] .zoom__fit-zoom { display: none; }
+.zoom__fit[aria-pressed="true"] { color: var(--color-ink); background: var(--color-surface-2); }
+/* The dialog itself takes focus after a pointer or tap open (no ring on a button the reader never asked for). */
+.zoom:focus { outline: none; }
+/* The pan hint for the pointer in use (a mouse drags or scrolls; touch also pinches), where both lines exist. */
+.zoom__hint-pointer { display: none; }
+@media (pointer: fine) {
+  .zoom__hint:has(.zoom__hint-pointer) .zoom__hint-touch { display: none; }
+  .zoom__hint-pointer { display: inline; }
+}
+/* Grab to pan with a mouse (zoom-dialog.ts); touch pans natively. */
+@media (pointer: fine) {
+  .zoom[data-pans] .zoom__body { cursor: grab; }
+  .zoom[data-pans] .zoom__body[data-dragging] { cursor: grabbing; user-select: none; }
+}
+/* Opening and closing fade (M-19); a screen also settles from 98.5 % (a full-window figure only fades). */
+@media (prefers-reduced-motion: no-preference) {
+  .zoom, .zoom::backdrop {
+    transition: opacity var(--duration-base) var(--ease-out), scale var(--duration-base) var(--ease-out),
+      overlay var(--duration-base) var(--ease-out) allow-discrete, display var(--duration-base) var(--ease-out) allow-discrete;
+  }
+  .zoom:not([open]), .zoom:not([open])::backdrop { opacity: 0; }
+  .zoom:not([open]):not([data-kind="figure"]) { scale: .985; }
+  @starting-style {
+    .zoom[open], .zoom[open]::backdrop { opacity: 0; }
+    .zoom[open]:not([data-kind="figure"]) { scale: .985; }
+  }
 }
 /* Screens on phones: full screen too; phone and dialog captures fitted to the width, desktop ones at their natural size
    to pan. */
@@ -681,6 +725,149 @@ a.co { text-decoration: none; }
   .zoom:is([data-frame="phone"], [data-frame="panel"]) .zoom__img { max-width: calc(100vw - 3rem - 2 * clamp(1rem, 3vw, 2rem)); max-height: calc(100dvh - 5.5rem - 2 * clamp(1rem, 3vw, 2rem)); }
 }
 
+}
+
+/* ================================================================== round 7 (audit 2026-10-11) ================ */
+@layer components {
+/* --- Hero background (L-01, R7-CASE-05): the glows and the dot grid fade in under the header and out at the end of
+   their box, so no lit band starts or stops on a ruler-straight edge (the home hero's --glow-fade). A brief hero is
+   short: its lapis glow sits higher, inside the box. */
+.cs-hero__bg { --glow-fade: linear-gradient(to bottom, transparent, rgb(0 0 0 / .45) 2.5rem, #000 7rem, #000 calc(100% - 10rem), rgb(0 0 0 / .4) calc(100% - 4rem), transparent); }
+.cs-hero__bg::after { -webkit-mask-image: var(--glow-fade); mask-image: var(--glow-fade); }
+.cs-hero__bg::before {
+  -webkit-mask-image: radial-gradient(50% 60% at 88% 18%, #000 0%, rgb(0 0 0 / .5) 45%, transparent 80%), var(--glow-fade);
+  mask-image: radial-gradient(50% 60% at 88% 18%, #000 0%, rgb(0 0 0 / .5) 45%, transparent 80%), var(--glow-fade);
+  -webkit-mask-composite: source-in; mask-composite: intersect;
+}
+[dir="rtl"] .cs-hero__bg::before {
+  -webkit-mask-image: radial-gradient(50% 60% at 12% 18%, #000 0%, rgb(0 0 0 / .5) 45%, transparent 80%), var(--glow-fade);
+  mask-image: radial-gradient(50% 60% at 12% 18%, #000 0%, rgb(0 0 0 / .5) 45%, transparent 80%), var(--glow-fade);
+}
+.cs-hero--brief .cs-hero__bg::after { background: radial-gradient(34rem 26rem at 92% 6%, var(--color-glow-2), transparent 70%), radial-gradient(40rem 24rem at 70% 38%, var(--color-glow-1), transparent 72%); }
+[dir="rtl"] .cs-hero--brief .cs-hero__bg::after { background: radial-gradient(34rem 26rem at 8% 6%, var(--color-glow-2), transparent 70%), radial-gradient(40rem 24rem at 30% 38%, var(--color-glow-1), transparent 72%); }
+
+/* --- A title with a domain in it (C-02): on small phones the domain (about 9.2 em) sets on one line instead of
+   breaking at its hyphen ("logic-" / "controls.com:"). */
+@media (max-width: 29.99rem) { .cs-hero__title--domain { font-size: min(var(--text-display), calc((100vw - 2.5rem) / 9.4)); } }
+
+/* --- Hero actions (A-15): a wrapped Arabic label on a 320 px phone gets air above and below its two lines. */
+@media (max-width: 39.99rem) { :lang(ar) .cs-hero__actions .btn { padding-block: .5rem; } }
+
+/* --- Key facts (R7-AR-07): the unit word after a numeral ("أداة", "شهرًا", "months") never drops under 13 px. */
+.cs-facts .metric__value small { font-size: max(.42em, var(--text-xs)); }
+
+/* --- Figure bars (A-22, C-31, A11Y-07, M-14).
+   "الشكل 1" in the Arabic UI face (JetBrains Mono has no Arabic: it fell back to Courier). The title wraps (up to three
+   lines) instead of truncating to a word, and never cuts a Latin name inside an Arabic title (it moves whole). On
+   phones the bar shows one of the two: the title from 24rem (the "Fig. n" id gives it its room), the id below, where
+   even three lines can't hold a long title beside the 44 px tools; the caption under the figure carries both. The bar's two buttons share one look: 32 px with the same shadow
+   (touch screens keep their 44 px targets). */
+:lang(ar) .fig-panel__id { font-family: var(--font-arabic); font-size: var(--text-xs); font-weight: 600; letter-spacing: 0; text-transform: none; }
+.fig-panel__bar { line-height: 1.35; }
+.fig-panel__title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; white-space: normal; overflow: hidden; }
+.fig-panel__title bdi { display: inline-block; max-width: 100%; vertical-align: top; }
+@media (min-width: 24rem) and (max-width: 29.99rem) { .fig-panel__id { display: none; } }
+@media (max-width: 23.99rem) { .fig-panel__title { display: none; } }
+@media (pointer: fine) {
+  .fig-panel__zoom, .fig-panel .fig-panel__bar > .mo-btn { width: 2rem; height: 2rem; }
+  .fig-panel .fig-panel__bar > .mo-btn { box-shadow: var(--shadow-xs); }
+}
+
+/* --- Figure notes and the drawing point at each other (C-50; FigurePanel.astro): the note's part stays lit, the rest
+   steps back; the note itself takes the accent tint. */
+.fig-panel svg.dg-focus :is(.dg-n, .dg-e, .dg-ah, .dg-grp, .dg-tab, .dg-tabbg, .dg-co, .dg-el, .dg-elbg, .dg-p):not(.dg-on) { opacity: .25; }
+.fig-panel svg.dg-focus .dg-n.dg-on > .dg-b, .fig-panel svg.dg-focus .dg-grp.dg-on { stroke: var(--color-accent-fill); stroke-width: 2; }
+.fig--dg .callouts > li { padding: .25rem .375rem; margin: -.25rem -.375rem; border-radius: var(--radius-sm); }
+.fig--dg .callouts > li.is-on { background: var(--color-surface-2); color: var(--color-ink); }
+@media (prefers-reduced-motion: no-preference) {
+  .fig-panel svg :is(.dg-n, .dg-e, .dg-ah, .dg-grp, .dg-tab, .dg-tabbg, .dg-co, .dg-el, .dg-elbg) { transition: opacity var(--duration-fast) var(--ease-standard); }
+  .fig--dg .callouts > li { transition: background-color var(--duration-fast) var(--ease-standard); }
+}
+
+/* --- The role row's award (R7-26), as on the work cards. */
+.cs-meta__award { margin-block-start: .5rem; max-width: 100%; width: fit-content; align-items: flex-start; border-radius: var(--radius-sm); line-height: 1.35; text-wrap: balance; }
+.cs-meta__award .icon { margin-block-start: .1em; }
+
+/* --- Brief pages (C-21): below 64rem the note card (why the page is short) comes right under the hero. */
+@media (max-width: 63.99rem) { .cs-brief__aside { order: -1; } }
+.cs-brief__sec > .fig { margin-block-start: .875rem; }
+
+/* --- Architecture (C-22): the connections, one click away under the component list. */
+.arch-more { margin-block-start: 1.25rem; }
+.arch-more > summary { font-size: var(--text-sm); }
+.arch-more__n { color: var(--color-muted); font-weight: 400; font-variant-numeric: tabular-nums; }
+.arch-more__list { list-style: none; display: grid; gap: .375rem 2rem; margin: .75rem 0 0; padding: 0; font-size: var(--text-sm); line-height: 1.5; color: var(--color-ink-2); }
+.arch-more__list small { color: var(--color-muted); font-size: var(--text-xs); }
+@media (min-width: 48rem) { .arch-more__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+:lang(ar) .arch-more__list { line-height: 1.8; }
+
+/* --- Component view (R7-AR-14): a connection's arrow stays with the end it points to. */
+.cv-edges__to { white-space: nowrap; }
+.cv-edges__to > .cv-edges__end { white-space: normal; }
+
+/* --- The CTA band's "Download my CV (PDF)" (R7-25), a text link beside "Contact me". */
+.cta-band__cv { display: inline-flex; align-items: center; gap: .375rem; font-size: var(--text-sm); font-weight: 600; color: var(--color-on-inverse); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--color-on-inverse) 40%, transparent); text-underline-offset: .2em; }
+.cta-band__cv .icon { width: 1rem; height: 1rem; flex: none; }
+@media (hover: hover) { .cta-band__cv:hover { text-decoration-color: currentColor; } }
+@media (pointer: coarse) { .cta-band__cv { min-height: 2.75rem; } }
+
+/* --- Next case (C-23, C-49): the thumbnail's labels (5-8 px at this size) go, as on phones; the card shows its place in
+   the series; from 64 to 80rem it takes the full width, so its title isn't squeezed into a 240 px column. */
+.next-case .work__media svg text { display: none; }
+.next-case__label { justify-content: flex-start; }
+.next-case__pos { margin-inline-start: auto; font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: .04em; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+@media (min-width: 64rem) and (max-width: 79.99rem) { .cs-end { grid-template-columns: minmax(0, 1fr); } }
+/* The years move to the next line whole, led by their "/" (never left hanging at a line's end; A-20, H-07), and
+   still wrap inside under strong zoom. */
+.next-case__org > .eyebrow { flex-wrap: wrap; row-gap: .125rem; }
+.next-case__yrs { min-width: 0; max-width: 100%; }
+
+/* --- The CTA band's ask bar (R7-AR-04): its question wraps whole words and never ellipsizes a name; on a 320 px phone
+   the leading icon gives its width to the text. */
+.cta-band .ask-bar__text { overflow: visible; text-overflow: clip; overflow-wrap: break-word; }
+@media (max-width: 23.99rem) { .cta-band .ask-bar__icon { display: none; } }
+
+/* --- Reading progress (R7-CASE-06): below 64rem, while the header is away, the sticky "On this page" bar's own line
+   shows the progress; the hairline doesn't hang half off the top of the screen. */
+@media (max-width: 63.99rem) { :root[data-nav-hidden] .read-progress { opacity: 0; } }
+@media (max-width: 63.99rem) and (prefers-reduced-motion: no-preference) {
+  .read-progress { transition: translate var(--duration-base) var(--ease-out), opacity var(--duration-fast) var(--ease-standard); }
+}
+}
+
+/* ---------- Print (R7-CASE-02, R7-RES-03): a case study on paper is the article, not the screen. site.css hides the
+   site chrome (header, launcher, dock, footer). Unlayered, so it outranks the screen rules it undoes. */
+@media print {
+  .read-progress, .toc-m, .toc-rail, .back-btn, .cs-hero__actions, .cs-hero__bg, .fig-panel__zoom, .fig-panel__more, .mo-btn,
+  .zoom, .next-case, .cta-band .ask-bar, .cta-band__row > .btn { display: none !important; }
+  .cs-layout, .cs-brief { grid-template-columns: minmax(0, 1fr) !important; padding-block: 1.5rem 0 !important; }
+  .cs-brief__aside { position: static !important; }
+  .cs-hero__grid { grid-template-columns: minmax(0, 1fr) !important; }
+  /* The first figure whole (it is cut on screen below 73.5rem), with its callouts; the wide drawing, which fits A4's
+     width, instead of the tall phone one. */
+  .fig--hero .fig-panel__canvas { max-height: none !important; overflow: visible !important; }
+  .fig--hero .fig-panel__canvas::after { content: none !important; }
+  .fig--hero .fig__caption > .callouts { display: grid !important; }
+  .fig--dg { display: block !important; }
+  .fig--dg > .fig__caption { position: static !important; margin-block-start: .75rem !important; }
+  .dg-variant--wide { display: block !important; }
+  .dg-variant--compact { display: none !important; }
+  .cs-prose > .fig--dg { margin-inline-end: 0 !important; }
+  .fig-panel, .card, .cta-band { box-shadow: none !important; }
+  .fig-panel__canvas { padding: .5rem !important; }
+  /* Colours that carry meaning (callout discs, stack chips, category dots, ticks) print as on screen. */
+  .fig-panel, .co, .chip, .cs-meta, .arch-list dt i, .stack-list dt i, .ticks .tick, .decision { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* The CTA band: a light, bordered box (ink on paper) keeping its question and the email address. */
+  .cta-band { --color-surface-inverse: transparent; --color-on-inverse: var(--color-ink); background: none !important; border: 1px solid var(--color-line-strong) !important; }
+  .cta-band::before, .cta-band::after { content: none !important; }
+  .cs-end { grid-template-columns: minmax(0, 1fr) !important; }
+  .cs-next { padding-block: 1.5rem !important; background: none !important; border: 0 !important; }
+  /* Nothing splits across pages that reads as one unit. */
+  .cs-facts, .fig, .decision, .arch-list__row, .stack-list__row, .steps > li, .ticks > li, .cs-meta, .cta-band, .cs-brief__note { break-inside: avoid; }
+  .cs-sec__title, .cs-brief__h { break-after: avoid; }
+  .cs-sec + .cs-sec { margin-block-start: 2.25rem; }
+  /* Links print their address. */
+  .cs-links .sr-only { position: static !important; width: auto !important; height: auto !important; margin: 0 !important; overflow: visible !important; clip: auto !important; clip-path: none !important; white-space: normal !important; }
 }
 
 /* Paper is light whatever the screen theme (D-01; cv.css has the same for the CV). Unlayered, so it beats the token

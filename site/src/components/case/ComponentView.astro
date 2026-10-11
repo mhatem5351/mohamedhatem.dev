@@ -67,8 +67,8 @@ const accentClass = (a: string) => (a === "neutral" ? undefined : `accent-${a}`)
                 <li>
                   <span class="sr-only">{format(m.work.page.connection, { from: e.from, to: e.to })}</span>
                   <bdi class="cv-edges__end" aria-hidden="true" dir={dirOf(locale)}><BidiText text={e.from} locale={locale} /></bdi>
-                  <Icon name="arrow-right" />
-                  <bdi class="cv-edges__end" aria-hidden="true" dir={dirOf(locale)}><BidiText text={e.to} locale={locale} /></bdi>
+                  {/* The arrow stays with the end it points to: never alone on a line (R7-AR-14). */}
+                  <span class="cv-edges__to" aria-hidden="true"><Icon name="arrow-right" /><bdi class="cv-edges__end" dir={dirOf(locale)}><BidiText text={e.to} locale={locale} /></bdi></span>
                   {e.label && <small>(<BidiText text={e.label} locale={locale} />)</small>}
                 </li>
               ))}
@@ -81,7 +81,7 @@ const accentClass = (a: string) => (a === "neutral" ? undefined : `accent-${a}`)
   <figcaption class="fig__caption">
     <p class="fig__caption-text" id={capId}>
       <b>{format(m.work.page.figure, { n })}</b>
-      {" "}{tr(cs.architecture.caption, locale)}
+      {" "}<BidiText text={tr(cs.architecture.caption, locale)} locale={locale} />
       <span class="fig__note">{m.work.architectureNote}</span>
     </p>
   </figcaption>

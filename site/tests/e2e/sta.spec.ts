@@ -104,6 +104,8 @@ test.describe("STA case study", () => {
     await expect(dialog).toHaveAccessibleName(cs.screens![0]!.caption.en);
     const img = dialog.locator("img");
     await expect(img).toHaveAttribute("alt", cs.screens![0]!.alt.en);
+    // Measured once the opening fade has settled.
+    await dialog.evaluate((d) => Promise.all(d.getAnimations().map((a) => a.finished)));
     await expect.poll(() => img.evaluate((i) => (i as HTMLImageElement).naturalWidth)).toBeGreaterThan(1000);
     const { shown, natural, shownH } = await img.evaluate((i) => ({ shown: i.getBoundingClientRect().width, shownH: i.getBoundingClientRect().height, natural: (i as HTMLImageElement).naturalWidth }));
     const inline = (await link.locator("img").boundingBox())!.width;
@@ -118,10 +120,18 @@ test.describe("STA case study", () => {
       expect(Math.round(shown)).toBe(Math.round(natural / 2));
       expect(shown).toBeGreaterThan(inline);
     }
-    await expect(dialog.getByRole("button", { name: en.work.page.closeScreen })).toBeFocused();
+    // Opened with a pointer: focus is on the dialog itself (no ring round a button the reader never asked for,
+    // R7-CASE-04); Tab reaches its controls.
+    await expect(dialog).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(link).toBeFocused();
+    // Opened from the keyboard: focus lands on the close button.
+    await link.press("Enter");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("button", { name: en.work.page.closeScreen })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
     // The close button closes it too.
     await link.click();
     await dialog.getByRole("button", { name: en.work.page.closeScreen }).click();

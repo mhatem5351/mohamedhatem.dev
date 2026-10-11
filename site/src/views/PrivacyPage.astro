@@ -12,7 +12,8 @@ import { format, formatMonth, localePath, messages, type Locale } from "~/lib/i1
 import { PATHS, contact, mailtoHref } from "~/lib/site";
 import { privacyJsonLd } from "~/lib/jsonld";
 import { PRIVACY_UPDATED } from "~/lib/dates";
-
+import { bidiParts } from "~/lib/bidi";
+import { noBreakHtml } from "~/lib/nobreak";
 
 interface Props {
   locale: Locale;
@@ -24,6 +25,40 @@ const sections = Object.entries(p.sections) as [string, { title: string; body: r
 const email = contact("email").display;
 /** Splits a paragraph around {email} so the address becomes a link. */
 const parts = (text: string) => text.split("{email}");
+const esc = (t: string): string => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/**
+ * A paragraph as escaped HTML. English: a hyphenated compound ("rate-limited", "short-lived", "reply-to") never splits
+ * at its hyphen (lib/nobreak.ts; audit D-27). Arabic: each Latin run is isolated left to right (lib/bidi.ts), and a
+ * product name of a few words ("Cloudflare Email Routing", "Cloudflare Web Analytics") moves to the next line whole
+ * instead of breaking inside (audit A-20). `.nb-unit` is an inline block that still wraps inside itself when it is
+ * wider than its line. A line may always break before and after an inline block, so the punctuation that follows a
+ * unit ("reply-to.", "Cloudflare Email Routing،") goes inside it, and a Latin run attached to an Arabic prefix
+ * ("الـWorker") stays a plain isolate: neither can be left alone at the start or the end of a line.
+ */
+const PUNCT = /^[.,:;!?)\u060C\u061B\u061F\u00BB]+/;
+const prose = (text: string): string => {
+  if (locale !== "ar") return noBreakHtml(text).replace(/(<span class="nb-unit"[^>]*>[^<]*)<\/span>([.,:;!?)]+)/g, "$1$2</span>");
+  const xs = bidiParts(text, locale);
+  let out = "";
+  for (let i = 0; i < xs.length; i++) {
+    const x = xs[i]!;
+    if (!x.dir) {
+      out += esc(x.text);
+      continue;
+    }
+    const iso = `<bdi dir="${x.dir}">${esc(x.text)}</bdi>`;
+    const prev = xs[i - 1];
+    const next = xs[i + 1];
+    if (x.text.length > 28 || (prev && !prev.dir && /\S$/.test(prev.text))) {
+      out += iso;
+      continue;
+    }
+    const punct = next && !next.dir ? (PUNCT.exec(next.text)?.[0] ?? "") : "";
+    if (punct) next!.text = next!.text.slice(punct.length);
+    out += `<span class="nb-unit">${iso}${esc(punct)}</span>`;
+  }
+  return out;
+};
 ---
 <Base
   locale={locale}
@@ -37,7 +72,7 @@ const parts = (text: string) => text.split("{email}");
   <article class="container doc" aria-labelledby="privacy-title">
     <header class="doc__head">
       <h1 class="doc__title" id="privacy-title">{p.title}</h1>
-      <p class="doc__lead">{p.lead}</p>
+      <p class="doc__lead" set:html={prose(p.lead)} />
       <p class="doc__meta">
         <Icon name="calendar" size="sm" />
         <time datetime={PRIVACY_UPDATED}>{format(p.updated, { date: formatMonth(PRIVACY_UPDATED, locale, "long") })}</time>
@@ -63,32 +98,46 @@ const parts = (text: string) => text.split("{email}");
             <h2 id={`privacy-${id}`}>{s.title}</h2>
             {s.body.map((para) => {
               const [before, after] = parts(para);
+              // The address is the link's whole text: no space inside it, so its underline ends with it (audit D-21).
               return after === undefined ? (
-                <p>{para}</p>
+                <p set:html={prose(para)} />
               ) : (
-                <p>
-                  {before}
-                  <a href={mailtoHref(locale)}>
-                    <Ltr>{email}</Ltr>
-                  </a>
-                  {after}
-                </p>
+                <p><Fragment set:html={prose(before ?? "")} /><a href={mailtoHref(locale)}><Ltr>{email}</Ltr></a><Fragment set:html={prose(after)} /></p>
               );
             })}
           </section>
         ))
       }
+      {/* The way back ends the text column (audit D-12), not the empty TOC column under the table of contents. */}
+      <p class="doc__back">
+        <a class="btn btn--secondary" href={localePath("/", locale)}>
+          <Icon name="arrow-left" />
+          {m.notFound.home}
+        </a>
+      </p>
       </div>
     </div>
     <script>
-      // Table of contents: mark the section being read (aria-current), like the case-study pages.
+      // Table of contents: mark the section being read (aria-current), like the case-study pages. When no section is in
+      // the reading band (the page opens with the title above it, or the end is reached), the last section whose top has
+      // passed the band's top is current, else the first: the TOC never loads with nothing marked (audits R7-DOC-06,
+      // A-27). Measured in the observer's callback, after layout.
       const links = [...document.querySelectorAll<HTMLAnchorElement>(".doc__toc a")];
       if (links.length && "IntersectionObserver" in window) {
         const visible = new Set<string>();
+        const secs = links.map((a) => document.getElementById(a.hash.slice(1)));
         const io = new IntersectionObserver(
           (entries) => {
             for (const en of entries) en.isIntersecting ? visible.add(en.target.id) : visible.delete(en.target.id);
-            const current = links.find((a) => visible.has(a.hash.slice(1)));
+            let current = links.find((a) => visible.has(a.hash.slice(1)));
+            if (!current) {
+              const line = innerHeight * 0.2;
+              let i = 0;
+              secs.forEach((el, j) => {
+                if (el && el.getBoundingClientRect().top <= line) i = j;
+              });
+              current = links[i];
+            }
             for (const a of links) a === current ? a.setAttribute("aria-current", "true") : a.removeAttribute("aria-current");
           },
           { rootMargin: "-20% 0px -60% 0px" },
@@ -99,11 +148,5 @@ const parts = (text: string) => text.split("{email}");
         }
       }
     </script>
-    <p class="doc__back">
-      <a class="btn btn--secondary" href={localePath("/", locale)}>
-        <Icon name="arrow-left" />
-        {m.notFound.home}
-      </a>
-    </p>
   </article>
 </Base>
