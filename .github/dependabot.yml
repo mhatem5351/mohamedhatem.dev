@@ -1,0 +1,47 @@
+# Dependency and GitHub Actions updates (free on public repositories): weekly, minor and patch updates grouped into
+# one pull request per directory, at most 3 open version-update pull requests per entry (major updates come one by
+# one). Security updates follow the repository's Dependabot settings (Settings → Advanced Security) and are not held
+# back by these limits.
+# Dependabot's runs get no Actions secrets, so CI skips only the keyed client-name check on its pull requests
+# (.github/workflows/ci.yml); they change only manifests, lockfiles and workflow pins.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Africa/Cairo
+    open-pull-requests-limit: 3
+    groups:
+      root:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "deps"
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Africa/Cairo
+    open-pull-requests-limit: 3
+    groups:
+      site:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "deps(site)"
+
+  # Keeps the SHA-pinned actions in .github/workflows (and their version comments) current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Africa/Cairo
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci"

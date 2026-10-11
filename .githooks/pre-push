@@ -1,0 +1,5 @@
+#!/bin/sh
+# Last check before anything reaches the public repository: the pushed branch and tag names, and the messages, file
+# paths and added lines of every commit being pushed, must not name the unnamed client (this also covers commits made
+# with hooks off, or a name added in one commit and removed in a later one, which would stay in the history).
+exec node worker/src/chat/confidential-node.mjs check-push "$1"
