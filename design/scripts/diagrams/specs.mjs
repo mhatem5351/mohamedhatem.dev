@@ -40,7 +40,7 @@ SPECS["hybrid-rag"] = {
     ["r0", "AI image generation", "image"],
     ["r1", "Content moderation", "shield-check"],
     ["r2", "Semantic search", "search"],
-    ["r3", "Integrated AI services", "tools-mcp"],
+    ["r3", "Other platform AI services", "tools-mcp"],
     ["r4", "Database operations", "database"],
   ];
   const serving = [
@@ -56,7 +56,7 @@ SPECS["hybrid-rag"] = {
       groups: [
         { id: "media", x: 32, y: 40, w: 1056, h: 96, tab: "Media pipelines", co: 6 },
         { id: "assist", x: 32, y: 264, w: 512, h: 424, tab: "Assistant" },
-        { id: "ag", x: 48, y: 384, w: 256, h: 280, tab: "14 agents", co: 2 },
+        { id: "ag", x: 48, y: 384, w: 256, h: 280, tab: "14 agents", co: 3 },
         { id: "index", x: 576, y: 264, w: 224, h: 320, tab: "Indexing", co: 4 },
         { id: "serve", x: 832, y: 264, w: 256, h: 344, tab: "Model serving", co: 5 },
       ],
@@ -66,8 +66,8 @@ SPECS["hybrid-rag"] = {
         { id: "meta", kind: "data", x: 864, y: 64, w: 208, t: "Metadata enrichment", g: "tag" },
         { id: "plat", kind: "ext", x: 32, y: 168, w: 1056, t: "ArabsStock platform", s: "photos · videos · vectors · audio", g: "frontend" },
         { id: "orch", kind: "orch", x: 88, y: 296, w: 176, t: "Orchestrator", s: "LangGraph", co: 1 },
-        { id: "eval", kind: "eval", x: 328, y: 296, w: 200, t: "LLM agent evaluation", s: "accuracy · routing", co: 3 },
-        ...rows.map(([id, t, g], i) => ({ id, kind: "agent", x: 64, y: 416 + i * 48, w: 224, h: 40, t, g })),
+        { id: "eval", kind: "eval", x: 328, y: 296, w: 200, t: "LLM agent evaluation", s: "accuracy · routing", co: 2 },
+        ...rows.map(([id, t, g], i) => ({ id, kind: "agent", x: 64, y: 416 + i * 48, w: 228, h: 40, t, g })),
         { id: "db", kind: "store", x: 336, y: 596, w: 192, h: 64, t: "Platform database" },
         { id: "ing", kind: "infra", x: 592, y: 296, w: 192, t: "Batch ingestion", s: "millions of assets", g: "pipeline" },
         { id: "emb", kind: "model", x: 592, y: 392, w: 192, t: "OpenAI embeddings", g: "embed" },
@@ -97,34 +97,33 @@ SPECS["hybrid-rag"] = {
 // ============================================================================ wakeb-multi-agent-chatbot
 SPECS["wakeb-multi-agent-chatbot"] = {
   wide: {
-    w: 1120, h: 432,
+    w: 1120, h: 392,
     groups: [
-      { id: "lg", x: 616, y: 48, w: 472, h: 224, tab: "LangGraph · fully async" },
-      { id: "ag", x: 856, y: 80, w: 216, h: 168, tab: "6 agents", co: 3 },
+      { id: "lg", x: 616, y: 48, w: 472, h: 144, tab: "LangGraph · fully async" },
     ],
     nodes: [
-      { id: "user", kind: "ext", x: 32, y: 136, w: 176, t: "User", s: "Arabic · English", g: "bilingual" },
-      { id: "nginx", kind: "infra", x: 232, y: 136, w: 160, t: "Nginx", s: "reverse proxy", g: "gateway" },
-      { id: "api", kind: "infra", x: 416, y: 136, w: 168, t: "FastAPI services", s: "Docker · gRPC", g: "container", co: 1 },
-      { id: "orch", kind: "orch", x: 640, y: 136, w: 184, t: "Command routing", s: "no static edges", co: 2 },
-      ...[0, 1, 2, 3, 4, 5].map((i) => ({ id: `a${i}`, kind: "agent", x: 876 + (i % 3) * 64, y: 112 + Math.floor(i / 3) * 64, w: 48, h: 48, g: "agents", align: "center" })),
-      { id: "qwen", kind: "model", x: 296, y: 336, w: 184, t: "Qwen LLM", s: "vLLM · A100 GPUs", co: 4 },
-      { id: "hyb", kind: "data", x: 500, y: 336, w: 256, t: "Hybrid retrieval", s: "vector + BM25 · LLM rerank", co: 5 },
-      { id: "brave", kind: "infra", x: 776, y: 336, w: 152, t: "Brave Search", s: "via MCP", g: "tools-mcp", co: 6 },
-      { id: "cache", kind: "store", x: 948, y: 332, w: 140, h: 64, t: "Node cache", s: "SQLite", g: "cache", co: 7 },
+      { id: "user", kind: "ext", x: 32, y: 96, w: 176, t: "User", s: "Arabic · English", g: "bilingual" },
+      { id: "nginx", kind: "infra", x: 232, y: 96, w: 160, t: "Nginx", s: "reverse proxy", g: "gateway" },
+      { id: "api", kind: "infra", x: 416, y: 96, w: 168, t: "FastAPI services", s: "Docker · gRPC", g: "container", co: 1 },
+      { id: "orch", kind: "orch", x: 640, y: 96, w: 184, t: "Command routing", s: "no static edges", co: 2 },
+      { id: "ag", kind: "agent", x: 856, y: 96, w: 216, stack: 2, t: "6 specialised agents", s: "modular subgraphs", co: 3 },
+      { id: "qwen", kind: "model", x: 296, y: 296, w: 184, t: "Qwen LLM", s: "vLLM · A100 GPUs", co: 4 },
+      { id: "hyb", kind: "data", x: 500, y: 296, w: 256, t: "Hybrid retrieval", s: "vector + BM25 · LLM rerank", co: 5 },
+      { id: "brave", kind: "infra", x: 776, y: 296, w: 152, t: "Brave Search", s: "via MCP", g: "tools-mcp", co: 6 },
+      { id: "cache", kind: "store", x: 948, y: 292, w: 140, h: 64, t: "Node cache", s: "SQLite", g: "cache", co: 7 },
     ],
     edges: [
       { id: "e1", from: "user:r", to: "nginx:l" },
       { id: "e2", from: "nginx:r", to: "api:l" },
       { id: "e3", from: "api:r", to: "orch:l" },
       { id: "e4", from: "orch:r", to: "ag:l" },
-      { id: "t1", from: "lg:b-8", to: "qwen:t", via: { y: 304 } },
-      { id: "t2", from: "lg:b-8", to: "hyb:t", via: { y: 304 } },
-      { id: "t3", from: "lg:b-8", to: "brave:t", via: { y: 304 } },
-      { id: "t4", from: "lg:b-8", to: "cache:t", via: { y: 304 } },
+      { id: "t1", from: "lg:b-8", to: "qwen:t", via: { y: 264 } },
+      { id: "t2", from: "lg:b-8", to: "hyb:t", via: { y: 264 } },
+      { id: "t3", from: "lg:b-8", to: "brave:t", via: { y: 264 } },
+      { id: "t4", from: "lg:b-8", to: "cache:t", via: { y: 264 } },
     ],
     main: ["e1", "e2", "e3", "e4", ["t1", "t2", "t3", "t4"]],
-    legend: { x: 32, y: 248, w: 320, cols: 2 },
+    legend: { x: 32, y: 208, w: 320, cols: 2 },
   },
 };
 
@@ -210,48 +209,47 @@ SPECS["empoweromics-message-routing"] = {
 const CW = 320;
 
 SPECS["hybrid-rag"].compact = {
-  w: CW, h: 648,
-  groups: [{ id: "par", x: 12, y: 104, w: 296, h: 104, tab: "parallel", tabAlign: "center", co: 1 }],
+  w: CW, h: 680,
+  groups: [{ id: "par", x: 12, y: 104, w: 296, h: 136, tab: "parallel", tabAlign: "center", co: 1 }],
   nodes: [
     { id: "q", kind: "ext", x: 56, y: 24, w: 208, h: 48, t: "Query", g: "user" },
-    { id: "bm25", kind: "data", x: 24, y: 128, w: 116, t: "BM25", s: "keyword", g: "keyword" },
-    { id: "vec", kind: "data", x: 148, y: 128, w: 148, t: "Dense vector", s: "embeddings", g: "embed" },
-    { id: "merge", kind: "data", x: 56, y: 240, w: 208, h: 48, t: "Merge", g: "merge", co: 2 },
-    { id: "rr", kind: "data", x: 56, y: 320, w: 208, h: 48, t: "LLM rerank", g: "rerank", co: 3 },
-    { id: "ctx", kind: "data", x: 56, y: 400, w: 208, h: 48, t: "Context", g: "file-text" },
-    { id: "gen", kind: "model", x: 56, y: 480, w: 208, t: "Generate", s: "LLM", g: "generate", co: 4 },
+    { id: "bm25", kind: "data", tile: true, x: 24, y: 128, w: 128, h: 88, t: "BM25", s: "keyword", g: "keyword", wellTop: 12 },
+    { id: "vec", kind: "data", tile: true, x: 168, y: 128, w: 128, h: 88, t: "Dense vector", s: "embeddings", g: "embed", wellTop: 12 },
+    { id: "merge", kind: "data", x: 56, y: 272, w: 208, h: 48, t: "Merge", g: "merge", co: 2 },
+    { id: "rr", kind: "data", x: 56, y: 352, w: 208, h: 48, t: "LLM rerank", g: "rerank", co: 3 },
+    { id: "ctx", kind: "data", x: 56, y: 432, w: 208, h: 48, t: "Context", g: "file-text" },
+    { id: "gen", kind: "model", x: 56, y: 512, w: 208, t: "Generate", s: "LLM", g: "generate", co: 4 },
   ],
   edges: [
     { id: "q1", from: "q:b", to: "bm25:t", via: { y: 88 } },
     { id: "q2", from: "q:b", to: "vec:t", via: { y: 88 } },
-    { id: "m1", from: "bm25:b", to: "merge:t", via: { y: 224 } },
-    { id: "m2", from: "vec:b", to: "merge:t", via: { y: 224 } },
+    { id: "m1", from: "bm25:b", to: "merge:t", via: { y: 256 } },
+    { id: "m2", from: "vec:b", to: "merge:t", via: { y: 256 } },
     { id: "r", from: "merge:b", to: "rr:t" },
     { id: "c", from: "rr:b", to: "ctx:t" },
     { id: "g", from: "ctx:b", to: "gen:t" },
   ],
   main: [["q1", "q2"], ["m1", "m2"], "r", "c", "g"],
-  legend: { x: 24, y: 576, w: 272, cols: 2, colX: [0, 152] },
+  legend: { x: 24, y: 608, w: 272, cols: 2, colX: [0, 160] },
 };
 
 // The request chain sits right of centre so the edge into the LangGraph group clears its tab; the tools hang off a
 // trunk on the left.
 SPECS["wakeb-multi-agent-chatbot"].compact = {
-  w: CW, h: 1088,
+  w: CW, h: 1032,
   groups: [
-    { id: "lg", x: 12, y: 288, w: 296, h: 308, tab: "LangGraph · async" },
-    { id: "ag", x: 80, y: 408, w: 208, h: 168, tab: "6 agents", co: 3 },
+    { id: "lg", x: 12, y: 288, w: 296, h: 236, tab: "LangGraph · async" },
   ],
   nodes: [
-    { id: "user", kind: "ext", x: 80, y: 24, w: 208, t: "User", s: "Arabic · English", g: "bilingual" },
-    { id: "nginx", kind: "infra", x: 80, y: 112, w: 208, t: "Nginx", s: "reverse proxy", g: "gateway" },
-    { id: "api", kind: "infra", x: 80, y: 200, w: 208, t: "FastAPI services", s: "Docker · gRPC", g: "container", co: 1 },
-    { id: "orch", kind: "orch", x: 80, y: 320, w: 208, t: "Command routing", s: "no static edges", co: 2 },
-    ...[0, 1, 2, 3, 4, 5].map((i) => ({ id: `a${i}`, kind: "agent", x: 96 + (i % 3) * 64, y: 440 + Math.floor(i / 3) * 64, w: 48, h: 48, g: "agents", align: "center" })),
-    { id: "qwen", kind: "model", x: 48, y: 628, w: 256, t: "Qwen LLM", s: "vLLM · A100 GPUs", co: 4 },
-    { id: "hyb", kind: "data", x: 48, y: 708, w: 256, t: "Hybrid retrieval", s: "vector + BM25 · LLM rerank", co: 5 },
-    { id: "brave", kind: "infra", x: 48, y: 788, w: 256, t: "Brave Search", s: "via MCP", g: "tools-mcp", co: 6 },
-    { id: "cache", kind: "store", x: 48, y: 864, w: 256, h: 64, t: "Node cache", s: "SQLite", g: "cache", co: 7 },
+    { id: "user", kind: "ext", x: 92, y: 24, w: 204, t: "User", s: "Arabic · English", g: "bilingual" },
+    { id: "nginx", kind: "infra", x: 92, y: 112, w: 204, t: "Nginx", s: "reverse proxy", g: "gateway" },
+    { id: "api", kind: "infra", x: 92, y: 200, w: 204, t: "FastAPI services", s: "Docker · gRPC", g: "container", co: 1 },
+    { id: "orch", kind: "orch", x: 92, y: 320, w: 204, t: "Command routing", s: "no static edges", co: 2 },
+    { id: "ag", kind: "agent", x: 92, y: 416, w: 204, h: 72, stack: 2, stackDir: "down", t: "6 specialised\nagents", s: "modular subgraphs", co: 3 },
+    { id: "qwen", kind: "model", x: 48, y: 556, w: 256, t: "Qwen LLM", s: "vLLM · A100 GPUs", co: 4 },
+    { id: "hyb", kind: "data", x: 48, y: 636, w: 256, h: 72, t: "Hybrid retrieval", s: "vector + BM25\nLLM rerank", co: 5 },
+    { id: "brave", kind: "infra", x: 48, y: 732, w: 256, t: "Brave Search", s: "via MCP", g: "tools-mcp", co: 6 },
+    { id: "cache", kind: "store", x: 48, y: 808, w: 256, h: 64, t: "Node cache", s: "SQLite", g: "cache", co: 7 },
   ],
   edges: [
     { id: "e1", from: "user:b", to: "nginx:t" },
@@ -264,14 +262,14 @@ SPECS["wakeb-multi-agent-chatbot"].compact = {
     { id: "t4", from: "lg:b-132", to: "cache:l" },
   ],
   main: ["e1", "e2", "e3", "e4", ["t1", "t2", "t3", "t4"]],
-  legend: { x: 24, y: 968, w: 272, cols: 2, colX: [0, 152] },
+  legend: { x: 24, y: 912, w: 272, cols: 2, colX: [0, 160] },
 };
 
 SPECS["llm-serving-a100"].compact = {
   w: CW, h: 912,
   groups: [
     { id: "deliv", x: 12, y: 24, w: 296, h: 144, tab: "Delivery · CI/CD", co: 1 },
-    { id: "prod", x: 12, y: 376, w: 276, h: 232, tab: "Production GPU servers", co: 4, coX: 228 },
+    { id: "prod", x: 12, y: 376, w: 276, h: 232, tab: "Production GPU servers", co: 4, coX: 262 },
   ],
   nodes: [
     { id: "git", kind: "infra", tile: true, x: 24, y: 52, w: 80, h: 96, t: "Git", g: "branch" },
@@ -296,7 +294,7 @@ SPECS["llm-serving-a100"].compact = {
     { id: "h3", from: "rs:r", to: "prod:r", pts: [[308, 756], [308, 492]] },
   ],
   main: ["d1", "d2", "d3", "h1", "h2", "h3"],
-  legend: { x: 24, y: 816, w: 272, cols: 2, colX: [0, 152] },
+  legend: { x: 24, y: 816, w: 272, cols: 2, colX: [0, 160] },
 };
 
 // The integration group's tab is shortened to "Integration" (its node and callout name the data integration): the
@@ -305,21 +303,21 @@ SPECS["empoweromics-message-routing"].compact = {
   w: CW, h: 1064,
   groups: [
     { id: "main", x: 12, y: 24, w: 296, h: 432, tab: "WhatsApp message routing" },
-    { id: "etl", x: 12, y: 488, w: 144, h: 412, tab: "ETL", co: 3 },
-    { id: "int", x: 164, y: 488, w: 144, h: 412, tab: "Integration", co: 4 },
+    { id: "etl", x: 12, y: 488, w: 144, h: 412, tab: "ETL", tabX: 20, co: 3 },
+    { id: "int", x: 164, y: 488, w: 144, h: 412, tab: "Integration", tabX: 172, co: 4 },
   ],
   nodes: [
     { id: "wa", kind: "ext", x: 32, y: 56, w: 256, t: "WhatsApp messages", s: "text · images", g: "whatsapp" },
-    { id: "txt", kind: "model", tile: true, x: 24, y: 144, w: 132, h: 96, t: "Text classifier", s: "NLP", g: "chat", co: 1 },
-    { id: "imc", kind: "model", tile: true, x: 164, y: 144, w: 132, h: 96, t: "Image classifier", s: "computer vision", g: "image" },
+    { id: "txt", kind: "model", tile: true, x: 20, y: 144, w: 136, h: 96, t: "Text classifier", s: "NLP", g: "chat", co: 1 },
+    { id: "imc", kind: "model", tile: true, x: 164, y: 144, w: 136, h: 96, t: "Image classifier", s: "computer vision", g: "image" },
     { id: "rt", kind: "infra", x: 56, y: 272, w: 208, t: "Route", s: "by department", g: "route", co: 2 },
     { id: "dep", kind: "ext", x: 32, y: 360, w: 256, h: 72, t: "Departments", s: "Tech · HR · Accounting\nOperations · Marketing", g: "users" },
-    { id: "cos", kind: "store", tile: true, x: 24, y: 520, w: 120, h: 104, t: "Cosmos DB", s: "NoSQL", wellTop: 4 },
-    { id: "etlj", kind: "infra", tile: true, x: 24, y: 648, w: 120, h: 104, t: "Scheduled ETL", s: "Azure triggers", g: "function", wellTop: 18 },
-    { id: "sql", kind: "store", tile: true, x: 24, y: 776, w: 120, h: 104, t: "SQL Server", s: "Microsoft", wellTop: 4 },
-    { id: "dev", kind: "ext", tile: true, x: 176, y: 520, w: 120, h: 104, t: "3,008+\ndevelopers", s: "unique schemas", g: "building", wellTop: 12 },
-    { id: "di", kind: "data", tile: true, x: 176, y: 648, w: 120, h: 104, t: "Data integration", g: "merge", wellTop: 26 },
-    { id: "map", kind: "ext", tile: true, x: 176, y: 776, w: 120, h: 104, t: "E-map", s: "real-time", g: "map", wellTop: 18 },
+    { id: "cos", kind: "store", tile: true, x: 20, y: 520, w: 128, h: 104, t: "Cosmos DB", s: "NoSQL", wellTop: 4 },
+    { id: "etlj", kind: "infra", tile: true, x: 20, y: 648, w: 128, h: 104, t: "Scheduled ETL", s: "Azure triggers", g: "function", wellTop: 18 },
+    { id: "sql", kind: "store", tile: true, x: 20, y: 776, w: 128, h: 104, t: "SQL Server", s: "Microsoft", wellTop: 4 },
+    { id: "dev", kind: "ext", tile: true, x: 172, y: 520, w: 128, h: 104, t: "3,008+\ndevelopers", s: "unique schemas", g: "building", wellTop: 10 },
+    { id: "di", kind: "data", tile: true, x: 172, y: 648, w: 128, h: 104, t: "Data integration", g: "merge", wellTop: 26 },
+    { id: "map", kind: "ext", tile: true, x: 172, y: 776, w: 128, h: 104, t: "E-map", s: "real-time", g: "map", wellTop: 18 },
   ],
   edges: [
     { id: "w1", from: "wa:b", to: "txt:t", via: { y: 128 } },
@@ -333,51 +331,54 @@ SPECS["empoweromics-message-routing"].compact = {
     { id: "y2", from: "di:b", to: "map:t" },
   ],
   main: [["w1", "w2"], ["c1", "c2"], "r1"],
-  legend: { x: 24, y: 940, w: 272, cols: 2, colX: [0, 152] },
+  legend: { x: 24, y: 940, w: 272, cols: 2, colX: [0, 160] },
 };
 
-// Orchestrator and evaluation are tiles (two row nodes side by side do not fit 320); Pinecone's sublabel and the
-// ingestion tile's sublabel wrap for the same reason.
+// Top to bottom in reading order, the callouts too (audit C-43): the platform, then the assistant (orchestrator and
+// evaluation, the 14 agents, their stores), indexing, model serving and, last, the media pipelines that feed the
+// platform (their edge back up to it is left out here: it is in the wide drawing, the caption and callout 6). Every
+// group tab sits at the start of its border (audit C-46); the platform's request trunk comes down right of the tabs.
+// Orchestrator and evaluation are tiles (two row nodes side by side do not fit 320); the platform bar has no glyph so
+// its sublabel fits one line.
 {
-  const rows = [["AI image generation", "image"], ["Content moderation", "shield-check"], ["Semantic search", "search"], ["Integrated AI services", "tools-mcp"], ["Database operations", "database"]];
+  const rows = [["AI image generation", "image"], ["Content moderation", "shield-check"], ["Semantic search", "search"], ["Other platform AI services", "tools-mcp"], ["Database operations", "database"]];
   const serving = [["Image search", "image"], ["Sound generation", "audio"], ["Instrument classification", "tag"], ["BPM detection", "activity"], ["Audio watermarking", "guard"]];
   SPECS["arabsstock-assistant"].compact = {
-    w: CW, h: 1624,
+    w: CW, h: 1640,
     groups: [
-      { id: "media", x: 12, y: 24, w: 296, h: 244, tab: "Media pipelines", co: 6 },
-      { id: "assist", x: 12, y: 388, w: 296, h: 556, tab: "Assistant", tabAlign: "right" },
-      { id: "ag", x: 24, y: 540, w: 272, h: 280, tab: "14 agents", tabAlign: "right", co: 2 },
-      { id: "index", x: 12, y: 976, w: 296, h: 156, tab: "Indexing", co: 4 },
-      { id: "serve", x: 12, y: 1164, w: 296, h: 284, tab: "Model serving", co: 5 },
+      { id: "assist", x: 12, y: 112, w: 296, h: 556, tab: "Assistant" },
+      { id: "ag", x: 24, y: 264, w: 272, h: 280, tab: "14 agents", co: 3 },
+      { id: "index", x: 12, y: 700, w: 296, h: 156, tab: "Indexing", co: 4 },
+      { id: "serve", x: 12, y: 888, w: 296, h: 284, tab: "Model serving", co: 5 },
+      { id: "media", x: 12, y: 1204, w: 296, h: 244, tab: "Media pipelines", co: 6 },
     ],
     nodes: [
-      { id: "raw", kind: "ext", x: 32, y: 56, w: 256, h: 48, t: "Raw video & audio", g: "video" },
-      { id: "qual", kind: "infra", x: 32, y: 128, w: 256, h: 48, t: "Quality optimisation", g: "filter" },
-      { id: "meta", kind: "data", x: 32, y: 200, w: 256, h: 48, t: "Metadata enrichment", g: "tag" },
-      { id: "plat", kind: "ext", x: 12, y: 300, w: 296, t: "ArabsStock platform", s: "photos · videos · vectors · audio", g: "frontend" },
-      { id: "orch", kind: "orch", tile: true, x: 24, y: 420, w: 124, h: 88, t: "Orchestrator", s: "LangGraph", wellTop: 12, co: 1 },
-      { id: "eval", kind: "eval", tile: true, x: 172, y: 420, w: 124, h: 88, t: "Evaluation", s: "LLM agents", wellTop: 12, co: 3 },
-      ...rows.map(([t, g], i) => ({ id: `r${i}`, kind: "agent", x: 36, y: 572 + i * 48, w: 248, h: 40, t, g })),
-      { id: "db", kind: "store", x: 24, y: 852, w: 132, h: 72, t: "Database", s: "platform" },
-      { id: "pc", kind: "store", tone: "saffron", x: 164, y: 852, w: 132, h: 72, t: "Pinecone", s: "vector\nindex" },
-      { id: "ing", kind: "infra", tile: true, x: 24, y: 1008, w: 120, h: 104, t: "Batch ingestion", s: "millions\nof assets", g: "pipeline", wellTop: 12 },
-      { id: "emb", kind: "model", tile: true, x: 164, y: 1008, w: 132, h: 104, t: "OpenAI\nembeddings", g: "embed", wellTop: 12 },
-      ...serving.map(([t, g], i) => ({ id: `s${i}`, kind: "model", x: 24, y: 1196 + i * 48, w: 272, h: 40, t, g })),
+      { id: "plat", kind: "ext", x: 12, y: 24, w: 296, t: "ArabsStock platform", s: "photos · videos · vectors · audio", g: null },
+      { id: "orch", kind: "orch", tile: true, x: 24, y: 144, w: 144, h: 88, t: "Orchestrator", s: "LangGraph", wellTop: 12, co: 1 },
+      { id: "eval", kind: "eval", tile: true, x: 188, y: 144, w: 108, h: 88, t: "Evaluation", s: "LLM agents", wellTop: 12, co: 2 },
+      ...rows.map(([t, g], i) => ({ id: `r${i}`, kind: "agent", x: 36, y: 296 + i * 48, w: 248, h: 40, t, g })),
+      { id: "db", kind: "store", x: 24, y: 576, w: 132, h: 72, t: "Database", s: "platform" },
+      { id: "pc", kind: "store", tone: "saffron", x: 164, y: 576, w: 132, h: 72, t: "Pinecone", s: "vector\nindex" },
+      { id: "ing", kind: "infra", tile: true, x: 24, y: 732, w: 132, h: 104, t: "Batch ingestion", s: "millions\nof assets", g: "pipeline", wellTop: 10 },
+      { id: "emb", kind: "model", tile: true, x: 164, y: 732, w: 132, h: 104, t: "OpenAI\nembeddings", g: "embed", wellTop: 10 },
+      ...serving.map(([t, g], i) => ({ id: `s${i}`, kind: "model", x: 24, y: 920 + i * 48, w: 272, h: 40, t, g })),
+      { id: "raw", kind: "ext", x: 32, y: 1236, w: 256, h: 48, t: "Raw video & audio", g: "video" },
+      { id: "qual", kind: "infra", x: 32, y: 1308, w: 256, h: 48, t: "Quality optimisation", g: "filter" },
+      { id: "meta", kind: "data", x: 32, y: 1380, w: 256, h: 48, t: "Metadata enrichment", g: "tag" },
     ],
     edges: [
-      { id: "m1", from: "raw:b", to: "qual:t", async: true },
-      { id: "m2", from: "qual:b", to: "meta:t", async: true },
-      { id: "m3", from: "meta:b", to: "plat:t", async: true },
-      { id: "p1", from: "plat:b-74", to: "orch:t" },
+      { id: "p1", from: "plat:b-24", to: "orch:t+40" },
       { id: "o2", from: "orch:r", to: "eval:l", async: true },
-      { id: "o1", from: "orch:b", to: "ag:t-74" },
+      { id: "o1", from: "orch:b+40", to: "ag:t-24" },
       { id: "a2", from: "ag:b-70", to: "db:t" },
       { id: "a1", from: "ag:b+70", to: "pc:t" },
       { id: "i1", from: "ing:r", to: "emb:l", async: true },
       { id: "i2", from: "emb:t", to: "pc:b", async: true },
+      { id: "m1", from: "raw:b", to: "qual:t", async: true },
+      { id: "m2", from: "qual:b", to: "meta:t", async: true },
     ],
     main: ["p1", "o1", "a1"],
-    legend: { x: 24, y: 1480, w: 272, cols: 2, colX: [0, 152] },
+    legend: { x: 24, y: 1480, w: 272, cols: 2, colX: [0, 160] },
   };
 }
 
@@ -422,12 +423,12 @@ SPECS["arabsstock-assistant"].thumb = {
   main: ["o", "p"],
 };
 
+// The six agents are one stacked node (audit C-46: six identical, unlabelled tiles said nothing more).
 SPECS["wakeb-multi-agent-chatbot"].thumb = {
   w: TW, h: TH,
-  groups: [{ id: "ag", x: 116, y: 28, w: 168, h: 104, tab: "6 agents" }],
   nodes: [
     icon({ id: "orch", kind: "orch", x: 24, y: 52, w: 56, h: 56, wl: 34, gs: 20, cap: "command\nrouting", capGap: 24 }),
-    ...[0, 1, 2, 3, 4, 5].map((i) => ({ id: `a${i}`, kind: "agent", x: 140 + (i % 3) * 44, y: 52 + Math.floor(i / 3) * 40, w: 32, h: 32, rx: 8, g: "agents", align: "center", wl: 0, well: false, gs: 16, offgrid: true })),
+    icon({ id: "ag", kind: "agent", x: 120, y: 56, w: 160, h: 48, stack: 2, g: "agents", t: "6 agents" }),
     icon({ id: "qwen", kind: "model", x: 320, y: 52, w: 56, h: 56, wl: 34, gs: 20, g: "generate", cap: "qwen\nvllm", capGap: 24 }),
     icon({ id: "hyb", kind: "data", x: 116, y: 168, w: 44, h: 44, wl: 30, gs: 18, g: "retrieve", cap: "hybrid rag", capGap: 20 }),
     icon({ id: "mcp", kind: "infra", x: 178, y: 168, w: 44, h: 44, wl: 30, gs: 18, g: "tools-mcp", cap: "mcp", capGap: 20 }),
@@ -480,10 +481,36 @@ SPECS["empoweromics-message-routing"].thumb = {
   main: [["a", "b"], ["c", "d"], ["r0", "r1", "r2", "r3", "r4"]],
 };
 
+// ============================================================================ agent-orchestration (pattern, thumb only)
+// The pattern behind the multi-agent work, with no client in it, for the home page's "Multi-agent LLM systems" card
+// (audit R7-HOME-05: it reused the Wakeb drawing right after the Wakeb card). A router hands the request to one of
+// several subgraph agents (search, tools over MCP, data); an LLM writes the answer; evaluation checks it.
+SPECS["agent-orchestration"] = {
+  thumb: {
+    w: TW, h: TH,
+    nodes: [
+      icon({ id: "req", kind: "ext", x: 16, y: 100, w: 48, h: 48, g: "user", cap: "request", capGap: 20 }),
+      icon({ id: "orch", kind: "orch", x: 92, y: 96, w: 56, h: 56, wl: 34, gs: 20, cap: "router", capGap: 24 }),
+      ...[["s0", "search", 40], ["s1", "tools-mcp", 102], ["s2", "database", 164]].map(([id, g, y], i) =>
+        icon({ id, kind: "agent", x: 196, y, w: 44, h: 44, wl: 30, gs: 18, g, ...(i === 0 && { cap: "subgraphs", capPos: "above", capGap: 12 }) })),
+      icon({ id: "gen", kind: "model", x: 280, y: 100, w: 48, h: 48, g: "generate", cap: "llm", capGap: 20 }),
+      icon({ id: "ev", kind: "eval", x: 348, y: 102, w: 44, h: 44, wl: 30, gs: 18, g: "evaluate", cap: "eval", capGap: 22 }),
+    ],
+    edges: [
+      { id: "a", from: "req:r", to: "orch:l" },
+      ...[0, 1, 2].map((i) => ({ id: `b${i}`, from: "orch:r", to: `s${i}:l`, via: { x: 172 } })),
+      ...[0, 1, 2].map((i) => ({ id: `c${i}`, from: `s${i}:r`, to: "gen:l", via: { x: 260 } })),
+      { id: "d", from: "gen:r", to: "ev:l", async: true },
+    ],
+    main: ["a", ["b0", "b1", "b2"], ["c0", "c1", "c2"]],
+  },
+};
+
 // ============================================================================ sta-tourism-assistants
 // One LangGraph agent behind an audience gate serves both assistants (Noura for visitors, the staff assistant).
-// Look-up tools are called directly; tools that change something are reached only through human approval.
-// The main path is a visitor's request, so it never lands on a staff tool.
+// Look-up tools are called directly; tools that book or order something are reached only through human approval.
+// Answers come from a search over the authority's documents, with citations (no separate model node: the profile
+// names none, R7-22). The main path is a visitor's request, so it never lands on a staff tool.
 {
   const look = [["r0", "Destinations & events", "location"], ["r1", "Visas & weather", "globe"]];
   const act = [["r2", "Itineraries", "map"], ["r3", "Staff requests", "calendar"]];
@@ -491,18 +518,17 @@ SPECS["empoweromics-message-routing"].thumb = {
   SPECS["sta-tourism-assistants"] = {
     wide: {
       w: 1120, h: 464,
-      groups: [{ id: "tools", x: 844, y: 88, w: 256, h: 248, tab, tabX: 876, co: 3, coX: 856 }], // callout on the corner, before the 12-unit tab
+      groups: [{ id: "tools", x: 844, y: 88, w: 256, h: 248, tab, tabX: 876, co: 5, coX: 856 }], // callout on the corner, before the 12-unit tab
       nodes: [
         { id: "vis", kind: "ext", x: 24, y: 96, w: 232, t: "Visitors", s: "Noura · Arabic · English", g: "bilingual" },
         { id: "staff", kind: "ext", x: 24, y: 176, w: 232, t: "Staff", s: "staff assistant", g: "briefcase" },
         { id: "gate", kind: "guard", x: 280, y: 136, w: 192, t: "Audience gate", s: "tools · knowledge", co: 1 },
-        { id: "eval", kind: "eval", x: 484, y: 40, w: 200, t: "Evaluation", s: "answers · retrieval", co: 6 },
+        { id: "eval", kind: "eval", x: 484, y: 40, w: 200, t: "Evaluation", s: "answers · retrieval", co: 3 },
         { id: "agent", kind: "orch", x: 496, y: 136, w: 176, t: "One agent", s: "LangGraph", co: 2 },
-        { id: "appr", kind: "guard", x: 632, y: 248, w: 192, t: "Human approval", s: "before any action", g: "check", co: 4 },
+        { id: "appr", kind: "guard", x: 632, y: 248, w: 192, h: 72, t: "Human approval", s: "before any booking\nor order", g: "check", co: 4 },
         ...look.map(([id, t, g], i) => ({ id, kind: "infra", x: 872, y: 120 + i * 48, w: 200, h: 40, t, g })),
         ...act.map(([id, t, g], i) => ({ id, kind: "infra", x: 872, y: 232 + i * 48, w: 200, h: 40, t, g })),
-        { id: "llm", kind: "model", x: 472, y: 376, w: 128, t: "LLM" },
-        { id: "ret", kind: "data", x: 632, y: 376, w: 176, t: "Retrieval", s: "with sources", co: 5 },
+        { id: "ret", kind: "data", x: 496, y: 376, w: 312, t: "Search over the authority's documents", s: "with citations", co: 6 },
         { id: "kb", kind: "store", x: 872, y: 372, w: 200, h: 64, t: "Authority content", s: "documents · tourism", g: "file-text" },
       ],
       edges: [
@@ -514,8 +540,7 @@ SPECS["empoweromics-message-routing"].thumb = {
         { id: "ap", from: "agent:b+16", to: "appr:l" },
         { id: "a0", from: "appr:r", to: "r2:l", via: { x: 832 } },
         { id: "a1", from: "appr:r", to: "r3:l", via: { x: 832 } },
-        { id: "l1", from: "agent:b-48", to: "llm:t" },
-        { id: "l2", from: "agent:b-48", to: "ret:t", via: { y: 344 } },
+        { id: "l2", from: "agent:b-48", to: "ret:t-116" },
         { id: "k1", from: "ret:r", to: "kb:l" },
         { id: "ev", from: "agent:t", to: "eval:b", async: true },
       ],
@@ -525,39 +550,37 @@ SPECS["empoweromics-message-routing"].thumb = {
 
     // Vertical: the agent's trunk on the left reaches the look-up tools, the LLM and retrieval; the approval's bus on
     // the right reaches the action tools. The tools' tab sits between the trunk and the bus, its callout on the
-    // group's top-left corner (no room beside the tab at 320 wide).
+    // group's top-left corner (no room beside the tab at 320 wide). Callouts read top to bottom (audit C-43).
     compact: {
-      w: CW, h: 1104,
-      groups: [{ id: "tools", x: 12, y: 424, w: 296, h: 248, tab, tabX: 63, co: 3, coX: 28 }],
+      w: CW, h: 1064,
+      groups: [{ id: "tools", x: 12, y: 440, w: 296, h: 248, tab, tabX: 58, co: 5, coX: 22 }],
       nodes: [
-        { id: "vis", kind: "ext", tile: true, x: 24, y: 24, w: 132, h: 104, t: "Visitors", s: "Noura\nArabic · English", g: "bilingual", wellTop: 12 },
-        { id: "staff", kind: "ext", tile: true, x: 164, y: 24, w: 132, h: 104, t: "Staff", s: "staff assistant\ninternal", g: "briefcase", wellTop: 12 },
+        { id: "vis", kind: "ext", tile: true, x: 12, y: 24, w: 144, h: 104, t: "Visitors", s: "Noura\nArabic · English", g: "bilingual", wellTop: 10 },
+        { id: "staff", kind: "ext", tile: true, x: 164, y: 24, w: 144, h: 104, t: "Staff", s: "staff assistant\ninternal", g: "briefcase", wellTop: 10 },
         { id: "gate", kind: "guard", x: 24, y: 160, w: 272, t: "Audience gate", s: "tools · knowledge", co: 1 },
-        { id: "agent", kind: "orch", x: 24, y: 248, w: 128, t: "One agent", s: "LangGraph", co: 2 },
-        { id: "eval", kind: "eval", x: 176, y: 248, w: 128, t: "Evaluation", s: "quality", co: 6 },
-        { id: "appr", kind: "guard", x: 64, y: 336, w: 188, t: "Human approval", s: "before any action", g: "check", co: 4 },
-        ...look.map(([id, t, g], i) => ({ id, kind: "infra", x: 64, y: 456 + i * 48, w: 208, h: 40, t, g })),
-        ...act.map(([id, t, g], i) => ({ id, kind: "infra", x: 64, y: 568 + i * 48, w: 208, h: 40, t, g })),
-        { id: "llm", kind: "model", x: 64, y: 704, w: 208, h: 48, t: "LLM" },
-        { id: "ret", kind: "data", x: 64, y: 776, w: 208, t: "Retrieval", s: "with sources", co: 5 },
-        { id: "kb", kind: "store", x: 64, y: 856, w: 208, h: 64, t: "Authority content", s: "documents · tourism", g: "file-text" },
+        { id: "agent", kind: "orch", x: 20, y: 248, w: 136, t: "One agent", s: "LangGraph", co: 2 },
+        { id: "eval", kind: "eval", x: 172, y: 248, w: 136, t: "Evaluation", s: "quality", co: 3 },
+        { id: "appr", kind: "guard", x: 64, y: 336, w: 204, h: 72, t: "Human approval", s: "before any booking\nor order", g: "check", co: 4 },
+        ...look.map(([id, t, g], i) => ({ id, kind: "infra", x: 64, y: 472 + i * 48, w: 212, h: 40, t, g })),
+        ...act.map(([id, t, g], i) => ({ id, kind: "infra", x: 64, y: 584 + i * 48, w: 212, h: 40, t, g })),
+        { id: "ret", kind: "data", x: 64, y: 720, w: 220, h: 72, t: "Search over the\nauthority's documents", s: "with citations", co: 6 },
+        { id: "kb", kind: "store", x: 64, y: 816, w: 220, h: 64, t: "Authority content", s: "documents · tourism", g: "file-text" },
       ],
       edges: [
         { id: "v1", from: "vis:b", to: "gate:t", via: { y: 144 } },
         { id: "s1", from: "staff:b", to: "gate:t", via: { y: 144 } },
         { id: "g1", from: "gate:b-72", to: "agent:t" },
         { id: "ev", from: "agent:r", to: "eval:l", async: true },
-        { id: "ap", from: "agent:b+48", to: "appr:t-22" },
-        { id: "t0", from: "agent:b-42", to: "r0:l" },
-        { id: "t1", from: "agent:b-42", to: "r1:l" },
-        { id: "a0", from: "appr:r", to: "r2:r", via: { x: 292 } },
-        { id: "a1", from: "appr:r", to: "r3:r", via: { x: 292 } },
-        { id: "l1", from: "agent:b-42", to: "llm:l" },
-        { id: "l2", from: "agent:b-42", to: "ret:l" },
+        { id: "ap", from: "agent:b+48", to: "appr:t-30" },
+        { id: "t0", from: "agent:b-46", to: "r0:l" },
+        { id: "t1", from: "agent:b-46", to: "r1:l" },
+        { id: "a0", from: "appr:r", to: "r2:r", via: { x: 300 } },
+        { id: "a1", from: "appr:r", to: "r3:r", via: { x: 300 } },
+        { id: "l2", from: "agent:b-46", to: "ret:l" },
         { id: "k1", from: "ret:b", to: "kb:t" },
       ],
       main: ["v1", "g1", ["t0", "t1", "ap"], "a0"],
-      legend: { x: 24, y: 960, w: 272, cols: 2, colX: [0, 152] },
+      legend: { x: 24, y: 920, w: 272, cols: 2, colX: [0, 160] },
     },
 
     // Thumbnail: two audiences, the gate, the agent, approval, and the tool set as pips.
@@ -585,3 +608,104 @@ SPECS["empoweromics-message-routing"].thumb = {
     },
   };
 }
+
+// ============================================================================ Arabic variants (audit HM-41)
+// The STA figure is the one Arabic readers meet first, so its drawings are drawn in Arabic for /ar/: the same facts and
+// layout, mirrored to read right to left, with Arabic labels (product names such as LangGraph stay Latin). Node ids map
+// to { t, s, cap } (newlines as in the English spec); `tabs` maps group ids, `texts` replaces free texts in order.
+// Wording follows the Arabic case study («طبقة الصلاحيات», «نورة»); STA is never "multi-agent" or "live".
+const STA_AR = {
+  wide: {
+    nodes: {
+      vis: { t: "الزوار", s: "«نورة» · عربي · إنجليزي" },
+      staff: { t: "الموظفون", s: "مساعد الموظفين" },
+      gate: { t: "طبقة الصلاحيات", s: "الأدوات · المعرفة" },
+      eval: { t: "التقييم", s: "الإجابات · الاسترجاع" },
+      agent: { t: "وكيل واحد", s: "LangGraph" },
+      appr: { t: "الموافقة البشرية", s: "قبل أي حجز أو طلب" },
+      r0: { t: "الوجهات والفعاليات" }, r1: { t: "التأشيرات والطقس" }, r2: { t: "خطط الرحلات" }, r3: { t: "طلبات الموظفين" },
+      ret: { t: "بحث في وثائق الهيئة", s: "مع ذكر المصادر" },
+      kb: { t: "محتوى الهيئة", s: "وثائق · سياحة" },
+    },
+    tabs: { tools: "96 أداة · 27 منها للزوار" },
+  },
+  compact: {
+    nodes: {
+      vis: { t: "الزوار", s: "«نورة»\nعربي · إنجليزي" },
+      staff: { t: "الموظفون", s: "مساعد الموظفين\nداخلي" },
+      gate: { t: "طبقة الصلاحيات", s: "الأدوات · المعرفة" },
+      agent: { t: "وكيل واحد", s: "LangGraph" },
+      eval: { t: "التقييم", s: "الجودة" },
+      appr: { t: "الموافقة البشرية", s: "قبل أي حجز أو طلب" },
+      r0: { t: "الوجهات والفعاليات" }, r1: { t: "التأشيرات والطقس" }, r2: { t: "خطط الرحلات" }, r3: { t: "طلبات الموظفين" },
+      ret: { t: "بحث في وثائق الهيئة", s: "مع ذكر المصادر" },
+      kb: { t: "محتوى الهيئة", s: "وثائق · سياحة" },
+    },
+    tabs: { tools: "96 أداة · 27 منها للزوار" },
+  },
+  thumb: {
+    nodes: {
+      vis: { cap: "الزوار" }, staff: { cap: "الموظفون" }, gate: { cap: "طبقة\nالصلاحيات" },
+      agent: { cap: "وكيل واحد" }, appr: { cap: "موافقة" },
+    },
+    tabs: { tools: "96 أداة" },
+    texts: ["27 للزوار"],
+  },
+};
+
+/** A spec with its labels replaced (every labelled node, tab and text must have a translation). */
+function localize(spec, L, where) {
+  const miss = [];
+  const nodes = spec.nodes.map((n) => {
+    const t = L.nodes?.[n.id];
+    for (const k of ["t", "s", "cap"]) if (n[k] && !t?.[k]) miss.push(`${n.id}.${k}`);
+    return t ? { ...n, ...t } : n;
+  });
+  const groups = spec.groups?.map((g) => {
+    if (g.tab && !L.tabs?.[g.id]) miss.push(`tab ${g.id}`);
+    return L.tabs?.[g.id] ? { ...g, tab: L.tabs[g.id] } : g;
+  });
+  const texts = spec.texts?.map((t, i) => {
+    if (!L.texts?.[i]) miss.push(`text ${i}`);
+    return { ...t, text: L.texts?.[i] ?? t.text };
+  });
+  if (miss.length) throw new Error(`${where}: no Arabic for ${miss.join(", ")}`);
+  return { ...spec, nodes, ...(groups && { groups }), ...(texts && { texts }) };
+}
+
+/** Right-to-left: the drawing mirrored about its vertical axis (ports swap sides, offsets along x flip). */
+export function mirror(S) {
+  const W = S.w;
+  const mx = (x) => W - x;
+  const port = (ref) => ref.replace(/^([\w-]+):([trbl])([+-]\d+(?:\.\d+)?)?$/, (_, id, side, off) => {
+    const o = off ? Number(off) * (side === "t" || side === "b" ? -1 : 1) : 0;
+    return `${id}:${side === "l" ? "r" : side === "r" ? "l" : side}${o ? (o > 0 ? `+${o}` : o) : ""}`;
+  });
+  return {
+    ...S,
+    rtl: true,
+    groups: S.groups?.map((g) => ({
+      ...g, x: W - g.x - g.w,
+      // tabX is a tab's start edge: its right end in RTL; tabAlign "right" (the end) becomes "left"
+      ...(g.tabX !== undefined && { tabX: mx(g.tabX) }), ...(g.coX !== undefined && { coX: mx(g.coX) }),
+      ...(g.tabAlign === "right" && { tabAlign: "left" }),
+    })),
+    nodes: S.nodes.map((n) => ({ ...n, x: W - n.x - n.w })),
+    edges: S.edges?.map((e) => ({
+      ...e, from: port(e.from), to: port(e.to),
+      ...(e.via?.x !== undefined && { via: { ...e.via, x: mx(e.via.x) } }),
+      ...(e.pts && { pts: e.pts.map(([x, y]) => [mx(x), y]) }),
+      ...(e.lxy && { lxy: [mx(e.lxy[0]), e.lxy[1]] }), ...(e.lo && { lo: [-e.lo[0], e.lo[1]] }),
+    })),
+    callouts: S.callouts?.map((c) => ({ ...c, x: mx(c.x) })),
+    texts: S.texts?.map((t) => ({ ...t, x: mx(t.x), anchor: t.anchor === "start" ? "end" : t.anchor === "end" ? "start" : t.anchor })),
+    // the legend keeps its box, mirrored; the renderer lays its items out right to left inside it
+    ...(S.legend && { legend: { ...S.legend, x: W - S.legend.x - (S.legend.w ?? W - 2 * S.legend.x) } }),
+  };
+}
+
+export const SPECS_AR = {
+  "sta-tourism-assistants": Object.fromEntries(
+    Object.entries(STA_AR).map(([v, L]) => [v, mirror(localize(SPECS["sta-tourism-assistants"][v], L, `sta-tourism-assistants/${v}`))]),
+  ),
+};

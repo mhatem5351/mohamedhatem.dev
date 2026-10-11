@@ -8,7 +8,7 @@
 // desc.long: full description of the system (used by the wide and compact SVGs).
 // desc.short: the simplified thumbnail.
 
-export const ORDER = ["arabsstock-assistant", "wakeb-multi-agent-chatbot", "llm-serving-a100", "hybrid-rag", "empoweromics-message-routing", "sta-tourism-assistants"];
+export const ORDER = ["arabsstock-assistant", "wakeb-multi-agent-chatbot", "llm-serving-a100", "hybrid-rag", "empoweromics-message-routing", "sta-tourism-assistants", "agent-orchestration"];
 
 export const CAPTIONS = {
   "arabsstock-assistant": {
@@ -18,13 +18,13 @@ export const CAPTIONS = {
       ar: "مساعد ArabsStock: نظام من 14 وكيلًا مبني على LangGraph وخدمات الذكاء الاصطناعي في المنصة",
     },
     caption: {
-      en: "The ArabsStock Assistant routes platform requests through a LangGraph orchestrator to 14 specialised agents, backed by semantic search on Pinecone, containerised model-serving endpoints and media pipelines.",
-      ar: "يوجّه مساعد ArabsStock طلبات المنصة عبر منسّق LangGraph إلى 14 وكيلًا متخصصًا، مدعومًا ببحث دلالي على Pinecone ونقاط خدمة نماذج داخل حاويات ومسارات لمعالجة الوسائط.",
+      en: "The ArabsStock Assistant routes platform requests through a LangGraph orchestrator to 14 specialised agents across five kinds of job, backed by semantic search on Pinecone, containerised model-serving endpoints and media pipelines.",
+      ar: "يوجّه مساعد ArabsStock طلبات المنصة عبر منسّق LangGraph إلى 14 وكيلًا متخصصًا لخمسة أنواع من المهام، مدعومًا ببحث دلالي على Pinecone ونقاط خدمة نماذج داخل حاويات ومسارات لمعالجة الوسائط.",
     },
     desc: {
       long: {
-        en: "Architecture diagram. Top: media pipelines take raw video and audio through quality optimisation and metadata enrichment, then deliver it to the ArabsStock platform (photos, videos, vectors and audio). Below the platform are three systems. Assistant: platform requests go to a LangGraph orchestrator, which routes them to 14 specialised agents grouped by capability: AI image generation, content moderation, semantic search, integrated AI services and database operations. Semantic search queries the Pinecone vector index; database operations use the platform database. An LLM agent evaluation workflow monitors response accuracy, agent routing and reliability. Indexing: platform assets go through automated batch ingestion and OpenAI embeddings into the Pinecone vector index, covering millions of assets. Model serving: five containerised FastAPI microservices serve image search, sound generation, instrument classification, BPM detection and audio watermarking to the platform.",
-        ar: "مخطط معماري. في الأعلى: مسارات معالجة الوسائط تنقل الفيديو والصوت الخام عبر تحسين الجودة وإثراء البيانات الوصفية، ثم تسلّمها إلى منصة ArabsStock (صور وفيديو ورسوم متجهة وصوت). تحت المنصة ثلاثة أنظمة. المساعد: تصل طلبات المنصة إلى منسّق LangGraph الذي يوجّهها إلى 14 وكيلًا متخصصًا مجمّعين حسب القدرة: توليد الصور بالذكاء الاصطناعي، والإشراف على المحتوى، والبحث الدلالي، وخدمات الذكاء الاصطناعي المدمجة، وعمليات قواعد البيانات. يستعلم البحث الدلالي فهرس المتجهات في Pinecone، وتعمل عمليات قواعد البيانات على قاعدة بيانات المنصة. ويراقب مسار لتقييم وكلاء LLM دقة الإجابات وتوجيه الوكلاء والاعتمادية. الفهرسة: تمر أصول المنصة عبر إدخال آلي على دفعات وتضمينات OpenAI إلى فهرس المتجهات في Pinecone، لتغطي ملايين الأصول. خدمة النماذج: خمس خدمات FastAPI مصغّرة داخل حاويات تقدّم للمنصة البحث بالصور وتوليد الأصوات وتصنيف الآلات الموسيقية وكشف الإيقاع (BPM) والعلامات المائية الصوتية.",
+        en: "Architecture diagram. Top: media pipelines take raw video and audio through quality optimisation and metadata enrichment, then deliver it to the ArabsStock platform (photos, videos, vectors and audio). Below the platform are three systems. Assistant: platform requests go to a LangGraph orchestrator, which routes them to 14 specialised agents across five kinds of job: AI image generation, content moderation, semantic search, other platform AI services and database operations. Semantic search queries the Pinecone vector index; database operations use the platform database. An LLM agent evaluation workflow monitors response accuracy, agent routing and reliability. Indexing: platform assets go through automated batch ingestion and OpenAI embeddings into the Pinecone vector index, covering millions of assets. Model serving: five containerised FastAPI microservices serve image search, sound generation, instrument classification, BPM detection and audio watermarking to the platform.",
+        ar: "مخطط معماري. في الأعلى: مسارات معالجة الوسائط تنقل الفيديو والصوت الخام عبر تحسين الجودة وإثراء البيانات الوصفية، ثم تسلّمها إلى منصة ArabsStock (صور وفيديو ورسوم متجهة وصوت). تحت المنصة ثلاثة أنظمة. المساعد: تصل طلبات المنصة إلى منسّق LangGraph الذي يوجّهها إلى 14 وكيلًا متخصصًا لخمسة أنواع من المهام: توليد الصور بالذكاء الاصطناعي، والإشراف على المحتوى، والبحث الدلالي، وخدمات ذكاء اصطناعي أخرى على المنصة، وعمليات قواعد البيانات. يستعلم البحث الدلالي فهرس المتجهات في Pinecone، وتعمل عمليات قواعد البيانات على قاعدة بيانات المنصة. ويراقب مسار لتقييم وكلاء LLM دقة الإجابات وتوجيه الوكلاء والاعتمادية. الفهرسة: تمر ملفات الوسائط في المنصة عبر إدخال آلي على دفعات وتضمينات OpenAI إلى فهرس المتجهات في Pinecone، لتغطي ملايين الصور ومقاطع الفيديو والرسومات المتجهة. خدمة النماذج: خمس خدمات FastAPI مصغّرة داخل حاويات تقدّم للمنصة البحث بالصور وتوليد الأصوات وتصنيف الآلات الموسيقية وكشف الإيقاع (BPM) والعلامات المائية الصوتية.",
       },
       short: {
         en: "Simplified diagram: a LangGraph orchestrator routes requests to 14 agents, which query a Pinecone vector index; agent behaviour is evaluated.",
@@ -33,8 +33,8 @@ export const CAPTIONS = {
     },
     callouts: [
       { n: 1, term: { en: "Orchestrator", ar: "المنسّق" }, en: "LangGraph routes each request to the right specialised agent.", ar: "يوجّه LangGraph كل طلب إلى الوكيل المتخصص المناسب." },
-      { n: 2, term: { en: "Specialised agents", ar: "الوكلاء المتخصصون" }, en: "14 of them, covering semantic search, AI image generation, database operations, content moderation and integrated AI services.", ar: "14 وكيلًا تغطي البحث الدلالي وتوليد الصور بالذكاء الاصطناعي وعمليات قواعد البيانات والإشراف على المحتوى وخدمات الذكاء الاصطناعي المدمجة." },
-      { n: 3, term: { en: "Evaluation", ar: "التقييم" }, en: "LLM agent evaluation workflows monitor reliability, response accuracy and agent routing in production.", ar: "مسارات لتقييم وكلاء LLM تراقب الاعتمادية ودقة الإجابات وتوجيه الوكلاء في بيئة الإنتاج." },
+      { n: 2, term: { en: "Evaluation", ar: "التقييم" }, en: "LLM agent evaluation workflows monitor reliability, response accuracy and agent routing in production.", ar: "مسارات لتقييم وكلاء LLM تراقب الاعتمادية ودقة الإجابات وتوجيه الوكلاء في بيئة الإنتاج." },
+      { n: 3, term: { en: "Specialised agents", ar: "الوكلاء المتخصصون" }, en: "14 of them across five kinds of job: semantic search, AI image generation, database operations, content moderation and other platform AI services.", ar: "14 وكيلًا لخمسة أنواع من المهام: البحث الدلالي وتوليد الصور بالذكاء الاصطناعي وعمليات قواعد البيانات والإشراف على المحتوى وخدمات ذكاء اصطناعي أخرى على المنصة." },
       { n: 4, term: { en: "Semantic search", ar: "البحث الدلالي" }, en: "Automated batch ingestion processes and indexes millions of photos, videos and vectors with OpenAI embeddings in Pinecone.", ar: "إدخال آلي على دفعات يعالج ملايين الصور ومقاطع الفيديو والرسوم المتجهة ويفهرسها بتضمينات OpenAI في Pinecone." },
       { n: 5, term: { en: "AI services", ar: "خدمات الذكاء الاصطناعي" }, en: "Model-serving endpoints for image search, sound generation, instrument classification, BPM detection and audio watermarking, each a containerised FastAPI microservice.", ar: "نقاط خدمة نماذج للبحث بالصور وتوليد الأصوات وتصنيف الآلات الموسيقية وكشف الإيقاع (BPM) والعلامات المائية الصوتية، كلٌّ منها خدمة FastAPI مصغّرة داخل حاوية." },
       { n: 6, term: { en: "Media pipelines", ar: "مسارات الوسائط" }, en: "Production pipelines take raw video and audio through quality optimisation and metadata enrichment before distribution on the platform.", ar: "مسارات إنتاج تعالج الفيديو والصوت الخام عبر تحسين الجودة وإثراء البيانات الوصفية قبل نشرها على المنصة." },
@@ -49,12 +49,12 @@ export const CAPTIONS = {
     },
     caption: {
       en: "A fully async, bilingual multi-agent chatbot: LangGraph hands off between six specialised agents, routing through LangGraph Command instead of fixed edges, on Qwen served by vLLM on A100 GPUs, with hybrid retrieval, web search over MCP and node-level caching.",
-      ar: "روبوت محادثة ثنائي اللغة متعدد الوكلاء وغير متزامن بالكامل: ينقل LangGraph التحكم بين ستة وكلاء متخصصين بتوجيه قائم على Command دون حواف ثابتة، فوق نموذج Qwen الذي يخدّمه vLLM على معالجات A100، مع استرجاع هجين وبحث في الويب عبر MCP وتخزين مؤقت على مستوى العُقد.",
+      ar: "روبوت محادثة ثنائي اللغة متعدد الوكلاء وغير متزامن بالكامل: ينقل LangGraph التحكم بين ستة وكلاء متخصصين بتوجيه قائم على Command دون حواف ثابتة، فوق نموذج Qwen المستضاف عبر vLLM على وحدات A100، مع استرجاع هجين وبحث في الويب عبر MCP وتخزين مؤقت على مستوى العُقد.",
     },
     desc: {
       long: {
         en: "Architecture diagram. A user writes in Arabic or English. Requests pass through Nginx, a reverse proxy, to Dockerised FastAPI services; key internal APIs use gRPC. Inside a fully async LangGraph graph, routing through LangGraph Command instead of fixed edges hands control between six specialised agents, built as modular subgraphs. The graph calls four back ends: the Qwen LLM served with vLLM on A100 GPUs; hybrid retrieval that combines vector and BM25 search with LLM reranking; Brave Search through MCP; and a SQLite node-level cache.",
-        ar: "مخطط معماري. يكتب المستخدم بالعربية أو الإنجليزية. تمر الطلبات عبر Nginx، وهو وكيل عكسي، إلى خدمات FastAPI داخل حاويات Docker، وتستخدم الواجهات الداخلية الأساسية gRPC. داخل رسم LangGraph غير متزامن بالكامل، ينقل التوجيه القائم على Command، دون حواف ثابتة، التحكم بين ستة وكلاء متخصصين مبنيين كرسوم فرعية قابلة للتركيب. ويستدعي الرسم أربع خدمات خلفية: نموذج Qwen الذي يخدّمه vLLM على معالجات A100، واسترجاعًا هجينًا يجمع بحث المتجهات وBM25 مع إعادة ترتيب بواسطة LLM، وBrave Search عبر MCP، وذاكرة تخزين مؤقت على مستوى العُقد مبنية على SQLite.",
+        ar: "مخطط معماري. يكتب المستخدم بالعربية أو الإنجليزية. تمر الطلبات عبر Nginx (خادم وسيط عكسي) إلى خدمات FastAPI داخل حاويات Docker، وتستخدم الواجهات الداخلية الأساسية gRPC. داخل مخطط LangGraph غير متزامن بالكامل، ينقل التوجيه القائم على Command، دون حواف ثابتة، التحكم بين ستة وكلاء متخصصين مبنيين من مخططات فرعية قابلة للتركيب. ويستدعي المخطط أربع خدمات خلفية: نموذج Qwen المستضاف عبر vLLM على وحدات A100، واسترجاعًا هجينًا يجمع بحث المتجهات وBM25 مع إعادة ترتيب بواسطة LLM، وBrave Search عبر MCP، وذاكرة تخزين مؤقت على مستوى العُقد مبنية على SQLite.",
       },
       short: {
         en: "Simplified diagram: routing through LangGraph Command instead of fixed edges hands off between six agents, which call Qwen on vLLM, hybrid retrieval, MCP tools and a node cache.",
@@ -63,10 +63,10 @@ export const CAPTIONS = {
     },
     callouts: [
       { n: 1, term: { en: "Services", ar: "الخدمات" }, en: "Dockerised FastAPI services behind Nginx; key internal APIs moved from REST to gRPC to cut latency between services.", ar: "خدمات FastAPI داخل حاويات Docker خلف Nginx، مع نقل واجهات داخلية أساسية من REST إلى gRPC لتقليل زمن الاستجابة بين الخدمات." },
-      { n: 2, term: { en: "Routing", ar: "التوجيه" }, en: "Routing through LangGraph Command instead of fixed edges: control moves between the agents at run time.", ar: "قائم على Command ودون حواف ثابتة: ينتقل التحكم بين الوكلاء عبر Command في LangGraph بدلًا من حواف ثابتة في الرسم البياني." },
-      { n: 3, term: { en: "Agents", ar: "الوكلاء" }, en: "Six specialised agents composed as modular subgraphs, working in Arabic and English.", ar: "ستة وكلاء متخصصين مبنيون كرسوم فرعية (subgraphs) قابلة للتركيب، ويعملون بالعربية والإنجليزية." },
-      { n: 4, term: { en: "Model", ar: "النموذج" }, en: "Qwen served with vLLM on A100 GPU infrastructure.", ar: "نموذج Qwen يخدّمه vLLM على بنية تحتية من معالجات A100." },
-      { n: 5, term: { en: "Retrieval", ar: "الاسترجاع" }, en: "Hybrid search for RAG: vector and BM25 results, reranked by an LLM.", ar: "بحث هجين لـ RAG: نتائج المتجهات وBM25 يعيد LLM ترتيبها." },
+      { n: 2, term: { en: "Routing", ar: "التوجيه" }, en: "Routing through LangGraph Command instead of fixed edges: control moves between the agents at run time.", ar: "قائم على Command ودون حواف ثابتة: ينتقل التحكم بين الوكلاء عبر Command في LangGraph بدلًا من حواف ثابتة في المخطط." },
+      { n: 3, term: { en: "Agents", ar: "الوكلاء" }, en: "Six specialised agents composed as modular subgraphs, working in Arabic and English.", ar: "ستة وكلاء متخصصين مبنيون من مخططات فرعية (subgraphs) قابلة للتركيب، ويعملون بالعربية والإنجليزية." },
+      { n: 4, term: { en: "Model", ar: "النموذج" }, en: "Qwen served with vLLM on A100 GPU infrastructure.", ar: "نموذج Qwen مستضاف عبر vLLM على وحدات NVIDIA A100." },
+      { n: 5, term: { en: "Retrieval", ar: "الاسترجاع" }, en: "Hybrid search for RAG: vector and BM25 results, reranked by an LLM.", ar: "بحث هجين لأنظمة RAG: نتائج المتجهات وBM25 يعيد LLM ترتيبها." },
       { n: 6, term: { en: "Web search", ar: "البحث في الويب" }, en: "Through the Brave Search MCP integration.", ar: "عبر تكامل Brave Search باستخدام MCP." },
       { n: 7, term: { en: "Cache", ar: "التخزين المؤقت" }, en: "SQLite-based node-level caching.", ar: "تخزين مؤقت على مستوى العُقد مبني على SQLite." },
     ],
@@ -76,29 +76,29 @@ export const CAPTIONS = {
     context: { en: ["Senior AI & MLOps Engineer", "Wakeb Data", "Sep 2024 – Apr 2026"], ar: ["مهندس أول للذكاء الاصطناعي وMLOps", "Wakeb Data", "سبتمبر 2024 – أبريل 2026"] },
     title: {
       en: "LLM serving on A100 GPUs: the model deployment lifecycle",
-      ar: "خدمة نماذج LLM على معالجات A100: دورة حياة نشر النماذج",
+      ar: "خدمة نماذج LLM على وحدات A100: دورة حياة النشر",
     },
     caption: {
       en: "End-to-end deployment lifecycle for Qwen on vLLM across multiple production A100 GPU servers: CI/CD and containers, model versions, serving configuration and GPU allocation, health monitoring and automated restarts.",
-      ar: "دورة حياة كاملة لنشر نماذج Qwen عبر vLLM على عدة خوادم إنتاج بمعالجات A100: CI/CD والحاويات، وإصدارات النماذج، وإعدادات الخدمة وتوزيع موارد GPU، ومراقبة الصحة وإعادة التشغيل الآلية.",
+      ar: "دورة حياة كاملة لنشر نماذج Qwen عبر vLLM على عدة خوادم إنتاج بوحدات A100، تشمل CI/CD والحاويات، وإصدارات النماذج، وإعدادات الخدمة وتوزيع موارد GPU، ومراقبة الحالة وإعادة التشغيل التلقائي.",
     },
     desc: {
       long: {
         en: "Architecture diagram. Delivery: code in Git goes through CI/CD with shell-scripted automation into Docker images, promoted from development to production and deployed to the production GPU servers. Model version management for Qwen and the vLLM serving configuration, including GPU resource allocation, are applied to the same servers. Production: multiple A100 GPU servers, each running vLLM with a Qwen model; two are drawn and a placeholder stands for the rest. The LangGraph chatbot agents send inference requests to them. Health monitoring checks the servers, and automated restart pipelines restart them.",
-        ar: "مخطط معماري. التسليم: تمر الشيفرة من Git عبر CI/CD بأتمتة مكتوبة بسكربتات shell إلى صور Docker، تُرقّى من بيئة التطوير إلى بيئة الإنتاج وتُنشر على خوادم GPU الإنتاجية. وتُطبَّق على الخوادم نفسها إدارة إصدارات نماذج Qwen وإعدادات الخدمة في vLLM، بما فيها توزيع موارد GPU. الإنتاج: عدة خوادم بمعالجات A100، يشغّل كلٌّ منها vLLM مع نموذج Qwen؛ يظهر في المخطط خادمان وعنصر يمثّل البقية. يرسل وكلاء روبوت المحادثة المبني على LangGraph طلبات الاستدلال إليها. وتفحص مراقبة الصحة الخوادم، وتعيد مسارات إعادة التشغيل الآلية تشغيلها.",
+        ar: "مخطط معماري. التسليم: تمر الشيفرة من Git عبر CI/CD بأتمتة مكتوبة بسكربتات shell إلى صور Docker، تُرقّى من بيئة التطوير إلى بيئة الإنتاج وتُنشر على خوادم GPU الإنتاجية. وتُطبَّق على الخوادم نفسها إدارة إصدارات نماذج Qwen وإعدادات الخدمة في vLLM، بما فيها توزيع موارد GPU. الإنتاج: عدة خوادم بوحدات A100، يشغّل كلٌّ منها vLLM مع نموذج Qwen؛ يظهر في المخطط خادمان وعنصر يمثّل البقية. يرسل وكلاء روبوت المحادثة المبني على LangGraph طلبات الاستدلال إليها. وتفحص مراقبة الحالة الخوادم، وتعيد مسارات إعادة التشغيل التلقائي تشغيلها.",
       },
       short: {
         en: "Simplified diagram: Docker images deploy to vLLM GPU servers on A100s; health monitoring feeds automated restarts.",
-        ar: "مخطط مبسّط: تُنشر صور Docker على خوادم GPU بمعالجات A100 تعمل بـ vLLM، وتغذّي مراقبة الصحة إعادة التشغيل الآلية.",
+        ar: "مخطط مبسّط: تُنشر صور Docker على خوادم GPU بوحدات A100 تشغّل vLLM، وتغذّي مراقبة الحالة إعادة التشغيل التلقائي.",
       },
     },
     callouts: [
       { n: 1, term: { en: "Delivery", ar: "التسليم" }, en: "CI/CD and containerised deployments with Docker, Git and shell-scripted automation, across development and production.", ar: "CI/CD ونشر عبر الحاويات باستخدام Docker وGit وأتمتة بسكربتات shell، في بيئتي التطوير والإنتاج." },
       { n: 2, term: { en: "Versions", ar: "الإصدارات" }, en: "Model version management for the Qwen models in production.", ar: "إدارة إصدارات نماذج Qwen في بيئة الإنتاج." },
       { n: 3, term: { en: "Serving", ar: "الخدمة" }, en: "vLLM serving configuration and GPU resource allocation.", ar: "إعدادات الخدمة في vLLM وتوزيع موارد GPU." },
-      { n: 4, term: { en: "GPU servers", ar: "خوادم GPU" }, en: "Multiple production GPU servers (NVIDIA A100) running vLLM.", ar: "عدة خوادم إنتاج بمعالجات NVIDIA A100 تعمل بـ vLLM." },
-      { n: 5, term: { en: "Monitoring", ar: "المراقبة" }, en: "Health monitoring across the GPU servers.", ar: "مراقبة صحة الخدمة عبر خوادم GPU." },
-      { n: 6, term: { en: "Recovery", ar: "التعافي" }, en: "Automated restart pipelines.", ar: "مسارات آلية لإعادة التشغيل." },
+      { n: 4, term: { en: "GPU servers", ar: "خوادم GPU" }, en: "Multiple production GPU servers (NVIDIA A100) running vLLM.", ar: "عدة خوادم إنتاج بوحدات NVIDIA A100 تشغّل vLLM." },
+      { n: 5, term: { en: "Monitoring", ar: "المراقبة" }, en: "Health monitoring across the GPU servers.", ar: "مراقبة حالة الخدمة عبر خوادم GPU." },
+      { n: 6, term: { en: "Recovery", ar: "التعافي" }, en: "Automated restart pipelines.", ar: "مسارات تلقائية لإعادة التشغيل." },
     ],
   },
 
@@ -107,7 +107,7 @@ export const CAPTIONS = {
     title: { en: "Hybrid retrieval with LLM reranking", ar: "استرجاع هجين مع إعادة ترتيب بواسطة LLM" },
     caption: {
       en: "The retrieval pattern behind my RAG work: keyword (BM25) and dense vector search run in parallel, results are merged and reranked by an LLM, and the answer is generated from that context.",
-      ar: "نمط الاسترجاع وراء أعمالي في RAG: بحث بالكلمات المفتاحية (BM25) وبحث بالمتجهات الكثيفة بالتوازي، ثم دمج النتائج وإعادة ترتيبها بواسطة LLM، وتوليد الإجابة من هذا السياق.",
+      ar: "نمط الاسترجاع الذي أعتمده في أنظمة RAG: بحث بالكلمات المفتاحية (BM25) وبحث بالمتجهات الكثيفة بالتوازي، ثم دمج النتائج وإعادة ترتيبها بواسطة LLM، وتوليد الإجابة من هذا السياق.",
     },
     desc: {
       long: {
@@ -122,7 +122,7 @@ export const CAPTIONS = {
     callouts: [
       { n: 1, term: { en: "Retrieve", ar: "الاسترجاع" }, en: "Keyword (BM25) and dense vector retrieval run in parallel.", ar: "يعمل البحث بالكلمات المفتاحية (BM25) والبحث بالمتجهات الكثيفة بالتوازي." },
       { n: 2, term: { en: "Merge", ar: "الدمج" }, en: "Both result lists are merged into one candidate set.", ar: "تُدمج قائمتا النتائج في مجموعة مرشحين واحدة." },
-      { n: 3, term: { en: "Rerank", ar: "إعادة الترتيب" }, en: "An LLM reranks the candidates before they reach the prompt.", ar: "يعيد LLM ترتيب المرشحين قبل وصولهم إلى الموجِّه (prompt)." },
+      { n: 3, term: { en: "Rerank", ar: "إعادة الترتيب" }, en: "An LLM reranks the candidates before they reach the prompt.", ar: "يعيد LLM ترتيب المرشحين قبل وصولها إلى الموجِّه (prompt)." },
       { n: 4, term: { en: "Generate", ar: "التوليد" }, en: "The LLM generates the answer from the reranked context.", ar: "يولّد LLM الإجابة من السياق بعد إعادة ترتيبه." },
     ],
   },
@@ -135,12 +135,12 @@ export const CAPTIONS = {
     },
     caption: {
       en: "Automatic classification of WhatsApp messages (text and images) routes each message to the right department, alongside the ETL and data-integration work behind the company's real-time e-map.",
-      ar: "تصنيف تلقائي لرسائل WhatsApp (نصوص وصور) يوجّه كل رسالة إلى القسم المناسب، إلى جانب أعمال ETL وتكامل البيانات التي تغذّي الخريطة الإلكترونية الفورية للشركة.",
+      ar: "تصنيف تلقائي لرسائل WhatsApp (نصوص وصور) يوجّه كل رسالة إلى القسم المناسب، إلى جانب أعمال ETL وتكامل البيانات التي تغذّي الخريطة الإلكترونية المحدَّثة لحظيًا للشركة.",
     },
     desc: {
       long: {
         en: "Architecture diagram in two parts. Message routing: incoming WhatsApp messages are classified, text with an NLP model and images with a computer-vision model, and routed by department to Tech, HR, Accounting, Operations or Marketing. Data engineering: an ETL pipeline moves data from Cosmos DB (NoSQL) to Microsoft SQL Server on scheduled Azure triggers; a data-integration system merges data from 3,008+ real-estate developers, each with its own schema, to feed the real-time e-map.",
-        ar: "مخطط معماري من جزأين. توجيه الرسائل: تُصنَّف رسائل WhatsApp الواردة، النصوص بنموذج NLP والصور بنموذج رؤية حاسوبية، ثم تُوجَّه حسب القسم إلى التقنية أو الموارد البشرية أو المحاسبة أو العمليات أو التسويق. هندسة البيانات: ينقل مسار ETL البيانات من Cosmos DB (NoSQL) إلى Microsoft SQL Server وفق مشغّلات Azure مجدولة، ويدمج نظام لتكامل البيانات بيانات أكثر من 3,008 مطوّرين عقاريين، لكلٍّ منهم مخطط بيانات خاص، لتغذية الخريطة الإلكترونية الفورية.",
+        ar: "مخطط معماري من جزأين. توجيه الرسائل: تُصنَّف رسائل WhatsApp الواردة، النصوص بنموذج NLP والصور بنموذج رؤية حاسوبية، ثم تُوجَّه حسب القسم إلى التقنية أو الموارد البشرية أو المحاسبة أو العمليات أو التسويق. هندسة البيانات: ينقل مسار ETL البيانات من Cosmos DB (NoSQL) إلى Microsoft SQL Server وفق مشغّلات Azure مجدولة، ويدمج نظام لتكامل البيانات بيانات أكثر من 3,008 مطوّرين عقاريين، لكلٍّ منهم مخطط بيانات خاص، لتغذية الخريطة الإلكترونية المحدَّثة لحظيًا.",
       },
       short: {
         en: "Simplified diagram: WhatsApp messages are classified with NLP and computer vision, then routed to five departments.",
@@ -151,7 +151,7 @@ export const CAPTIONS = {
       { n: 1, term: { en: "Classification", ar: "التصنيف" }, en: "Messages are classified automatically: text with NLP, images with computer vision.", ar: "تُصنَّف الرسائل تلقائيًا: النصوص بمعالجة اللغة الطبيعية (NLP) والصور بالرؤية الحاسوبية." },
       { n: 2, term: { en: "Routing", ar: "التوجيه" }, en: "Each message is routed to Tech, HR, Accounting, Operations or Marketing.", ar: "تُوجَّه كل رسالة إلى التقنية أو الموارد البشرية أو المحاسبة أو العمليات أو التسويق." },
       { n: 3, term: { en: "ETL", ar: "ETL" }, en: "ETL from Cosmos DB (NoSQL) to Microsoft SQL Server, scheduled with Azure Functions triggers.", ar: "عمليات ETL من Cosmos DB (NoSQL) إلى Microsoft SQL Server، مجدولة بمشغّلات Azure Functions." },
-      { n: 4, term: { en: "Data integration", ar: "تكامل البيانات" }, en: "Data from 3,008+ real-estate developers, each with its own schema, merged to scale the real-time e-map.", ar: "دمج بيانات أكثر من 3,008 مطوّرين عقاريين، لكلٍّ منهم مخطط بيانات خاص، لتوسيع الخريطة الإلكترونية الفورية." },
+      { n: 4, term: { en: "Data integration", ar: "تكامل البيانات" }, en: "Data from 3,008+ real-estate developers, each with its own schema, merged to scale the real-time e-map.", ar: "دمج بيانات أكثر من 3,008 مطوّرين عقاريين، لكلٍّ منهم مخطط بيانات خاص، لتوسيع الخريطة الإلكترونية المحدَّثة لحظيًا." },
     ],
   },
 
@@ -162,28 +162,49 @@ export const CAPTIONS = {
       ar: "مساعدا الهيئة السعودية للسياحة: وكيل واحد للزوار والموظفين",
     },
     caption: {
-      en: "Two assistants for the Saudi Tourism Authority (STA) run on one LangGraph agent: Noura, for visitors in Arabic and English, and an internal staff assistant. An audience gate sets which tools and knowledge each session may use; typed tools return cards, every action waits for the user's approval, and answers show their sources.",
-      ar: "يعمل مساعدان للهيئة السعودية للسياحة (STA) على وكيل LangGraph واحد: «نورة» للزوار بالعربية والإنجليزية، و«مساعد الموظفين» الداخلي. تحدد طبقة الصلاحيات الأدوات والمعرفة المتاحة لكل جلسة، وتعيد الأدوات المحددة الأنواع نتائجها في بطاقات، وينتظر كل إجراء موافقة المستخدم، وتعرض الإجابات مصادرها.",
+      en: "Two assistants for the Saudi Tourism Authority (STA) run on one LangGraph agent: Noura, for visitors in Arabic and English, and an internal staff assistant. An audience gate sets which tools and knowledge each session may use; typed tools return cards, every booking or order waits for the user's confirmation, and answers cite their sources.",
+      ar: "يعمل مساعدان للهيئة السعودية للسياحة (STA) على وكيل LangGraph واحد: «نورة» للزوار بالعربية والإنجليزية، و«مساعد الموظفين» الداخلي. تحدد طبقة الصلاحيات الأدوات والمعرفة المتاحة لكل جلسة، وتعيد الأدوات المحددة الأنواع نتائجها في بطاقات، وينتظر كل حجز أو طلب تأكيد المستخدم، وتذكر الإجابات مصادرها.",
     },
     desc: {
       long: {
-        en: "Architecture diagram. Two audiences come in: visitors, who use Noura in Arabic or English, and the authority's staff, who use the staff assistant. Both pass through an audience gate, which decides which tools and which knowledge the session may use, so a visitor never reaches staff tools or data. The gate hands the request to one LangGraph agent. The agent calls typed tools that return cards: 96 tools, 27 of them visible to visitors. Look-up tools (destinations and events, visas and weather) are called directly. Tools that change something (itineraries, and staff requests such as meeting rooms, leave and office coffee orders) are reached only through human approval: each action waits for the user's approval before it runs. The agent also calls an LLM and retrieval, which answers from the authority's own documents and tourism content and shows the sources. Evaluation checks answer quality and retrieval in the background.",
-        ar: "مخطط معماري. يدخل جمهوران: الزوار الذين يستخدمون «نورة» بالعربية أو الإنجليزية، وموظفو الهيئة الذين يستخدمون «مساعد الموظفين». يمر الطرفان عبر طبقة الصلاحيات التي تحدد الأدوات والمعرفة التي يحق للجلسة استخدامها، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم. تسلّم الطبقة الطلب إلى وكيل LangGraph واحد. يستدعي الوكيل أدوات محددة الأنواع تعيد نتائجها في بطاقات: 96 أداة، منها 27 متاحة للزوار. تُستدعى أدوات الاستعلام (الوجهات والفعاليات، والتأشيرات والطقس) مباشرةً، أما الأدوات التي تغيّر شيئًا (خطط الرحلات، وطلبات الموظفين مثل حجز قاعات الاجتماعات والإجازات وطلبات قهوة المكتب) فلا يُوصَل إليها إلا عبر الموافقة البشرية: ينتظر كل إجراء موافقة المستخدم قبل تنفيذه. ويستدعي الوكيل أيضًا نموذجًا لغويًا كبيرًا (LLM) والاسترجاعَ الذي يجيب من وثائق الهيئة ومحتواها السياحي ويعرض المصادر. وتُقيَّم جودة الإجابات والاسترجاع في الخلفية.",
+        en: "Architecture diagram. Two audiences come in: visitors, who use Noura in Arabic or English, and the authority's staff, who use the staff assistant. Both pass through an audience gate, which decides which tools and which knowledge the session may use, so a visitor never reaches staff tools or data. The gate hands the request to one LangGraph agent. The agent calls typed tools that return cards: 96 tools, 27 of them visible to visitors. Look-up tools (destinations and events, visas and weather) are called directly. Tools that book or order something (itineraries, and staff requests such as meeting rooms, leave and office coffee orders) are reached only through human approval: every booking or order waits for the user's confirmation. The agent also searches the authority's own documents and tourism content, and its answers cite their sources. Evaluation scores answer quality and retrieval.",
+        ar: "مخطط معماري. يدخل جمهوران: الزوار الذين يستخدمون «نورة» بالعربية أو الإنجليزية، وموظفو الهيئة الذين يستخدمون «مساعد الموظفين». يمر الطرفان عبر طبقة الصلاحيات التي تحدد الأدوات والمعرفة التي يحق للجلسة استخدامها، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم. تسلّم الطبقة الطلب إلى وكيل LangGraph واحد. يستدعي الوكيل أدوات محددة الأنواع تعيد نتائجها في بطاقات: 96 أداة، منها 27 متاحة للزوار. تُستدعى أدوات الاستعلام (الوجهات والفعاليات، والتأشيرات والطقس) مباشرةً، أما الأدوات التي تحجز أو تطلب شيئًا (خطط الرحلات، وطلبات الموظفين مثل حجز قاعات الاجتماعات والإجازات وطلبات قهوة المكتب) فلا يُوصَل إليها إلا عبر الموافقة البشرية: كل حجز أو طلب ينتظر تأكيد المستخدم. ويبحث الوكيل أيضًا في وثائق الهيئة ومحتواها السياحي، وتذكر إجاباته مصادرها. ويقيس التقييم جودة الإجابات ودقة الاسترجاع.",
       },
       short: {
-        en: "Simplified diagram: visitors and staff pass an audience gate to one agent, which calls a set of 96 tools, 27 of them for visitors; actions wait for human approval.",
-        ar: "مخطط مبسّط: يمر الزوار والموظفون عبر طبقة الصلاحيات إلى وكيل واحد يستدعي 96 أداة، منها 27 للزوار، وتنتظر الإجراءات الموافقة البشرية.",
+        en: "Simplified diagram: visitors and staff pass an audience gate to one agent, which calls a set of 96 tools, 27 of them for visitors; bookings and orders wait for human approval.",
+        ar: "مخطط مبسّط: يمر الزوار والموظفون عبر طبقة الصلاحيات إلى وكيل واحد يستدعي 96 أداة، منها 27 للزوار، وينتظر كل حجز أو طلب الموافقة البشرية.",
       },
     },
     callouts: [
       { n: 1, term: { en: "Audience gate", ar: "طبقة الصلاحيات" }, en: "Decides which tools and which knowledge each session may use, so a visitor never reaches staff tools or data.", ar: "تحدد الأدوات والمعرفة التي يحق لكل جلسة استخدامها، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم." },
       { n: 2, term: { en: "One agent", ar: "وكيل واحد" }, en: "A single LangGraph agent serves both Noura and the staff assistant, and works by calling tools.", ar: "وكيل LangGraph واحد يخدم «نورة» و«مساعد الموظفين» معًا، ويعمل باستدعاء الأدوات." },
-      { n: 3, term: { en: "Typed tools", ar: "أدوات محددة الأنواع" }, en: "96 tools, 27 of them visible to visitors, each returning a card: destinations and events, visas, weather, itineraries, and staff requests such as meeting rooms, leave and office coffee orders.", ar: "96 أداة، منها 27 متاحة للزوار، تعيد كلٌّ منها بطاقة: الوجهات والفعاليات، والتأشيرات، والطقس، وخطط الرحلات، وطلبات الموظفين مثل حجز قاعات الاجتماعات والإجازات وطلبات قهوة المكتب." },
-      { n: 4, term: { en: "Human approval", ar: "الموافقة البشرية" }, en: "Every action that changes something, such as booking a room, placing an order, requesting leave or building an itinerary, waits for the user's approval before it runs.", ar: "كل إجراء يغيّر شيئًا، مثل حجز قاعة أو إرسال طلب أو طلب إجازة أو بناء خطة رحلة، ينتظر موافقة المستخدم قبل تنفيذه." },
-      { n: 5, term: { en: "Retrieval with sources", ar: "الاسترجاع مع المصادر" }, en: "Answers come from the authority's own documents and tourism content, and show their sources.", ar: "تأتي الإجابات من وثائق الهيئة ومحتواها السياحي، وتعرض مصادرها." },
-      { n: 6, term: { en: "Evaluation", ar: "التقييم" }, en: "Answer quality and retrieval are evaluated in the background.", ar: "تُقيَّم جودة الإجابات والاسترجاع في الخلفية." },
+      { n: 3, term: { en: "Evaluation", ar: "التقييم" }, en: "Evaluation scores answer quality and retrieval.", ar: "يقيس التقييم جودة الإجابات ودقة الاسترجاع." },
+      { n: 4, term: { en: "Human approval", ar: "الموافقة البشرية" }, en: "Every booking or order waits for the user's confirmation.", ar: "كل حجز أو طلب ينتظر تأكيد المستخدم." },
+      { n: 5, term: { en: "Typed tools", ar: "أدوات محددة الأنواع" }, en: "96 tools, 27 of them visible to visitors, each returning a card: destinations and events, visas, weather, itineraries, and staff requests such as meeting rooms, leave and office coffee orders.", ar: "96 أداة، منها 27 متاحة للزوار، تعيد كلٌّ منها بطاقة: الوجهات والفعاليات، والتأشيرات، والطقس، وخطط الرحلات، وطلبات الموظفين مثل حجز قاعات الاجتماعات والإجازات وطلبات قهوة المكتب." },
+      { n: 6, term: { en: "Search with citations", ar: "البحث مع ذكر المصادر" }, en: "Answers come from the authority's own documents and tourism content, and cite their sources.", ar: "تأتي الإجابات من وثائق الهيئة ومحتواها السياحي، وتذكر مصادرها." },
     ],
   },
+};
+
+// A pattern, drawn only as a thumbnail (the home page's multi-agent capability card); no callouts.
+CAPTIONS["agent-orchestration"] = {
+  context: { en: ["Orchestration pattern", "Multi-agent systems"], ar: ["نمط تنسيق", "الأنظمة متعددة الوكلاء"] },
+  title: { en: "Multi-agent orchestration: a router and modular subgraphs", ar: "تنسيق متعدد الوكلاء: توجيه ومخططات فرعية قابلة للتركيب" },
+  caption: {
+    en: "The pattern behind my multi-agent work: a LangGraph router hands each request to the right subgraph agent, an LLM writes the answer, and evaluation checks it.",
+    ar: "النمط الذي أعتمده في الأنظمة متعددة الوكلاء: يوجّه LangGraph كل طلب إلى الوكيل المناسب في مخطط فرعي، ويكتب LLM الإجابة، ثم يتحقق منها التقييم.",
+  },
+  desc: {
+    long: {
+      en: "Pattern diagram. A request reaches a LangGraph router, which hands it to one of several subgraph agents: search, tools over MCP, or data. The agents' results go to an LLM that writes the answer, and evaluation checks it.",
+      ar: "مخطط نمط. يصل الطلب إلى طبقة توجيه مبنية على LangGraph تسلّمه إلى أحد عدة وكلاء في مخططات فرعية: البحث، أو الأدوات عبر MCP، أو البيانات. تذهب نتائج الوكلاء إلى LLM يكتب الإجابة، ويتحقق منها التقييم.",
+    },
+    short: {
+      en: "Simplified diagram: a router hands a request to subgraph agents (search, MCP tools, data); an LLM answers and evaluation checks it.",
+      ar: "مخطط مبسّط: طبقة توجيه تسلّم الطلب إلى وكلاء في مخططات فرعية (البحث وأدوات MCP والبيانات)، ثم يجيب LLM ويتحقق التقييم من الإجابة.",
+    },
+  },
+  callouts: [],
 };
 
 // Legend labels for an HTML legend (optional; the SVG legend stays English like the diagram).
