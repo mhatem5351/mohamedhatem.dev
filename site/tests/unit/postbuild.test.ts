@@ -20,6 +20,18 @@ describe("_redirects rules", () => {
     expect(rules.get("/ar/work/")).toBe("/ar/#work");
   });
 
+  it("sends guessed URLs to the real ones: sitemap, resume, CV PDFs, security.txt, the unused /en/ prefix", () => {
+    expect(rules.get("/sitemap.xml")).toBe("/sitemap-index.xml");
+    expect(rules.get("/resume")).toBe("/cv/");
+    expect(rules.get("/ar/resume/")).toBe("/ar/cv/");
+    expect(rules.get("/cv.pdf")).toBe("/cv/Mohamed-Hatem-CV.pdf");
+    expect(rules.get("/security.txt")).toBe("/.well-known/security.txt");
+    expect(rules.get("/en")).toBe("/");
+    expect(rules.get("/en/*")).toBe("/:splat");
+    // The splat is the only dynamic rule (Workers allow 100).
+    expect([...rules.keys()].filter((from) => from.includes("*"))).toEqual(["/en/*"]);
+  });
+
   it("never redirects a page to itself or loops", () => {
     for (const [from, to] of rules) {
       expect(from).not.toBe(to);

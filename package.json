@@ -24,7 +24,8 @@
     "test:widget": "node chat-widget/scripts/build.mjs && playwright test -c chat-widget/playwright.config.ts",
     "test:widget:unit": "vitest run --project widget",
     "build": "npm --prefix site run build",
-    "deploy": "npm run build && npm run deploy:worker"
+    "deploy": "npm run build && npm run deploy:worker",
+    "indexnow": "node site/scripts/indexnow.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

@@ -1,6 +1,14 @@
 import type { ErrorBody, ErrorCode } from "./chat/protocol";
 import type { Env } from "./env";
 
+/**
+ * The site's Permissions-Policy (site/public/_headers, same value; a unit test keeps the two equal). Pages served by
+ * the Worker (the no-JavaScript contact result) are documents and need it; on JSON it is inert but harmless.
+ * The retired FLoC directive (interest-cohort) is gone: browsing-topics replaced it.
+ */
+export const PERMISSIONS_POLICY =
+  "accelerometer=(), browsing-topics=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()";
+
 /** Headers on every API response (static assets get theirs from the site's _headers file). */
 export const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
@@ -10,7 +18,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
   "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
   "X-Frame-Options": "DENY",
   "Cross-Origin-Resource-Policy": "same-site",
-  "Permissions-Policy": "interest-cohort=()",
+  "Permissions-Policy": PERMISSIONS_POLICY,
   "Cache-Control": "no-store",
 };
 
@@ -108,8 +116,9 @@ export function errorJson(req: Request, env: Env, status: number, code: ErrorCod
   return json(req, env, status, body, retryAfter ? { "Retry-After": String(retryAfter) } : {});
 }
 
-export function methodNotAllowed(req: Request, env: Env): Response {
-  return json(req, env, 405, { ok: false, error: "bad_request", message: "Method not allowed" }, { Allow: "POST, OPTIONS" });
+/** 405 with the route's real methods in `Allow` (RFC 9110 15.5.6). */
+export function methodNotAllowed(req: Request, env: Env, allow = "POST, OPTIONS"): Response {
+  return json(req, env, 405, { ok: false, error: "bad_request", message: "Method not allowed" }, { Allow: allow });
 }
 
 /* ------------------------------------------------------------------ bodies */

@@ -1,0 +1,6 @@
+# Security contact for mohamedhatem.dev (RFC 9116). Please report a vulnerability privately by email.
+# Renew before Expires: site/scripts/check-dist.mjs fails the build when it is less than 30 days away.
+Contact: mailto:hatem@mohamedhatem.dev
+Expires: 2027-10-01T00:00:00.000Z
+Preferred-Languages: en, ar
+Canonical: https://mohamedhatem.dev/.well-known/security.txt

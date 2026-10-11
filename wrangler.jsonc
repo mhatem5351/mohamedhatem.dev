@@ -13,7 +13,8 @@
     "directory": "./dist",
     "binding": "ASSETS",
     // Only /api/* invokes the Worker (100,000 requests/day on Free); every page and file is served free from assets.
-    "run_worker_first": ["/api/*"],
+    // The 404 pages' own URLs too, so they answer 404 instead of 200 (worker/src/index.ts → NOT_FOUND_PAGES).
+    "run_worker_first": ["/api/*", "/404", "/ar/404"],
     "not_found_handling": "404-page",
   },
   // Bundles content/chat/* (or the test fixtures until they exist) into worker/src/generated/content.ts.
@@ -37,6 +38,10 @@
     { "name": "RL_CHAT_SESSION", "namespace_id": "2605", "simple": { "limit": 6, "period": 60 } },
     // Contact form per IP: 3 a minute.
     { "name": "RL_CONTACT", "namespace_id": "2604", "simple": { "limit": 3, "period": 60 } },
+    // CSP violation reports (POST /api/csp-report): 10 a minute per IP, 60 a minute per location for everyone, so a
+    // flood can't spend the Analytics Engine budget (100,000 data points a day).
+    { "name": "RL_CSP", "namespace_id": "2606", "simple": { "limit": 10, "period": 60 } },
+    { "name": "RL_CSP_GLOBAL", "namespace_id": "2607", "simple": { "limit": 60, "period": 60 } },
   ],
   // Anonymous counts and latency only (no IP, no message text). Workers Free: 100,000 data points written a day.
   "analytics_engine_datasets": [{ "binding": "EVENTS", "dataset": "mh_events" }],
@@ -57,7 +62,7 @@
     "GEMINI_HEDGE_MS": "3200",
   },
   // Secrets (wrangler secret put …; locally .dev.vars from `npm run dev-vars`):
-  //   GEMINI_API_KEY · TURNSTILE_SECRET · SESSION_SECRET
+  //   GEMINI_API_KEY · TURNSTILE_SECRET · SESSION_SECRET · CONFIDENTIAL_HMAC_KEY
   // Never set in production: ALLOW_MODEL_OVERRIDE, ALLOW_TURNSTILE_TEST (local .dev.vars only).
   // Only the Worker's own console lines are kept (no IPs, no message text); automatic invocation logs would store request
   // metadata such as the client IP, which /privacy/ promises is never logged.

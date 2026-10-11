@@ -16,8 +16,11 @@
  *                    x-default (not on 404 pages, which must be noindex), og:image file present, JSON-LD parses,
  *                    exactly one <h1>, internal links / src / srcset / #anchors resolve, no insecure http:// URLs
  *   files            _headers, _redirects, robots.txt, sitemap-index.xml, llms.txt, favicons and manifests are present;
- *                    _redirects has a 301 for every page's slash-less URL and for /work/; text files declare UTF-8;
- *                    every sitemap URL has a <lastmod> date
+ *                    _redirects has a 301 for every page's slash-less URL, for /work/ and for the guessed URLs, and
+ *                    every target exists; text files declare UTF-8; every sitemap URL has a <lastmod> date;
+ *                    .well-known/security.txt (RFC 9116) has a Contact and an Expires at least 30 days away; the
+ *                    IndexNow key file holds its own name; _headers reports CSP violations and sends CORP on /_astro/*
+ *   robots meta      indexable pages allow large image previews (max-image-preview:large), 404 pages are noindex
  *   vCard            mohamed-hatem.vcf parses as a vCard 3.0 (BEGIN/END, VERSION, N, FN; CRLF, lines <= 75 octets, a
  *                    JPEG PHOTO) and _headers serves it as text/vcard
  *   manifests        site.webmanifest (en) and ar.webmanifest (ar): parse, lang/dir/start_url, one id and scope, icons
@@ -28,12 +31,12 @@
  *                    codeRepository only on SoftwareSourceCode; og:image:alt describes each page's own card
  * Warnings (no failure): long titles/descriptions, pages not in the expected list.
  */
-import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cspHash, elements, fileForPath, pageText, parsePolicy, tags, walk, withoutCode } from "./lib/html.mjs";
 import { allPages } from "./lib/pages.mjs";
+import { loadConfidential } from "../../worker/src/chat/confidential-node.mjs";
 
 const args = process.argv.slice(2);
 const DIST = resolve(args.includes("--dist") ? args[args.indexOf("--dist") + 1] : fileURLToPath(new URL("../../dist", import.meta.url)));
@@ -81,19 +84,14 @@ const SECRETS = secretValues();
 const TEXT_FILE = /\.(html|js|mjs|css|txt|xml|json|webmanifest|vcf|svg|map)$|(^|\/)_headers$/;
 
 /* ------------------------------------------------------------------ honesty */
-// Hashes of the unnamed client's names: the repository's one list (worker/src/chat/confidential-hashes.json, shared
-// with content/scripts/check-content.mjs and the Worker's output guard); the names are never written.
-const CONFIDENTIAL = JSON.parse(readFileSync(fileURLToPath(new URL("../../worker/src/chat/confidential-hashes.json", import.meta.url)), "utf8"));
-const FORBIDDEN_SHA256 = new Set([...(CONFIDENTIAL.canonical ?? []), ...(CONFIDENTIAL.variants ?? [])]);
-if (!CONFIDENTIAL.canonical?.length) fail("confidential-hashes.json", "has no canonical hashes: the unnamed-client check would pass anything");
+// The unnamed client's names: the repository's one keyed list and matcher (worker/src/chat/confidential-node.mjs, shared
+// with content/scripts/check-content.mjs and the Worker's output guard); the names are never written. Fail closed: a
+// missing or wrong CONFIDENTIAL_HMAC_KEY (environment or ../.env) is an error, unless CONFIDENTIAL_KEY_OPTIONAL=1.
+const CONFIDENTIAL = loadConfidential({ optional: process.env.CONFIDENTIAL_KEY_OPTIONAL === "1" });
+if (CONFIDENTIAL.error) fail("confidential-hashes.json", `the unnamed-client check can't run: ${CONFIDENTIAL.error}`);
+if (CONFIDENTIAL.skipped) warn("confidential-hashes.json", `the unnamed-client check was skipped: ${CONFIDENTIAL.skipped}`);
 export function mentionsUnnamedClient(text) {
-  const words = text.normalize("NFKC").toLowerCase().replace(/\p{M}/gu, "").split(/[^\p{L}\p{N}]+/u).filter(Boolean);
-  for (let i = 0; i < words.length; i++)
-    for (let n = 1; n <= 3 && i + n <= words.length; n++) {
-      const gram = words.slice(i, i + n).join(" ");
-      if (FORBIDDEN_SHA256.has(createHash("sha256").update(gram).digest("hex"))) return true;
-    }
-  return false;
+  return CONFIDENTIAL.matcher?.mentions(text) ?? false;
 }
 const HELD_MSC = /\b(hold|holds|holding|has|completed|earned)\s+(an?\s+|his\s+|the\s+)?(m\.?\s?sc|master'?s)\b|حاصل على (درجة )?الماجستير|حصل على (درجة )?الماجستير/i;
 
@@ -109,7 +107,7 @@ for (const f of files) {
 }
 
 /* ------------------------------------------------------------------ required files */
-for (const f of ["_headers", "_redirects", "robots.txt", "sitemap-index.xml", "llms.txt", "favicon.ico", "favicon.svg", "apple-touch-icon.png", "site.webmanifest", "ar.webmanifest", "404.html"])
+for (const f of ["_headers", "_redirects", "robots.txt", "sitemap-index.xml", "llms.txt", "favicon.ico", "favicon.svg", "apple-touch-icon.png", "site.webmanifest", "ar.webmanifest", "404.html", ".well-known/security.txt"])
   if (!fileSet.has(f)) fail(f, "missing from the build");
 
 /* ------------------------------------------------------------------ redirects (Workers static assets _redirects) */
@@ -139,9 +137,21 @@ if (fileSet.has("_redirects")) {
   need("/work/", "/#work");
   need("/ar/work", "/ar/#work");
   need("/ar/work/", "/ar/#work");
+  // URLs people and tools guess (postbuild/redirects.mjs → ALIASES).
+  need("/sitemap.xml", "/sitemap-index.xml");
+  need("/resume", "/cv/");
+  need("/cv.pdf", "/cv/Mohamed-Hatem-CV.pdf");
+  need("/security.txt", "/.well-known/security.txt");
+  need("/en", "/");
+  need("/en/*", "/:splat");
+  const dynamic = [...rules.keys()].filter((from) => from.includes("*") || from.includes("/:"));
+  if (dynamic.length > 100) fail("_redirects", `${dynamic.length} dynamic rules (Workers static assets allow 100)`);
+  if (rules.size - dynamic.length > 2000) fail("_redirects", `${rules.size - dynamic.length} static rules (Workers static assets allow 2,000)`);
   for (const [from, r] of rules) {
     if (from.endsWith("/") && rules.get(r.to)?.to === from) fail("_redirects", `loop between ${from} and ${r.to}`);
-    if (rules.size > 2000) fail("_redirects", `${rules.size} rules (Workers static assets allow 2,000 static rules)`);
+    // Every fixed target is a built file or page (a renamed CV PDF or page would otherwise redirect to a 404).
+    const target = r.to.replace(/#.*$/, "");
+    if (!target.includes(":") && !fileSet.has(fileForPath(target))) fail("_redirects", `${from} → ${r.to}: no such file or page in the build`);
   }
 }
 
@@ -154,11 +164,34 @@ if (fileSet.has("_headers")) {
     [/Referrer-Policy:/, "Referrer-Policy"],
     [/Permissions-Policy:/, "Permissions-Policy"],
     [/\/_astro\/\*\s*\n\s*Cache-Control: public, max-age=31536000, immutable/, "immutable caching for /_astro/*"],
+    [/\/_astro\/\*\s*\n(\s+.+\n)*?\s+Cross-Origin-Resource-Policy: same-origin/, "CORP same-origin on /_astro/*"],
+    [/Content-Security-Policy: frame-ancestors[^\n]*report-uri \/api\/csp-report; report-to csp/, "CSP violation reporting (report-uri + report-to)"],
+    [/Reporting-Endpoints: csp="\/api\/csp-report"/, "Reporting-Endpoints for report-to csp"],
+    [/^\/\.well-known\/security\.txt\s*\n\s+Content-Type: text\/plain; charset=utf-8/m, "UTF-8 text/plain for /.well-known/security.txt"],
   ])
     if (!re.test(h)) fail("_headers", `missing ${what}`);
   if (/unsafe-inline/.test(h.replace(/^#.*$/gm, "").replace(/\/\*\.svg[\s\S]*?\n\n/, ""))) fail("_headers", "a page-level policy allows 'unsafe-inline'");
 }
 if (fileSet.has("robots.txt") && !/Sitemap: https:\/\/mohamedhatem\.dev\/sitemap-index\.xml/.test(read("robots.txt"))) fail("robots.txt", "no Sitemap line");
+
+/* ------------------------------------------------------------------ security.txt (RFC 9116) and the IndexNow key */
+const SECURITY_TXT = ".well-known/security.txt";
+if (fileSet.has(SECURITY_TXT)) {
+  const txt = read(SECURITY_TXT);
+  const field = (name) => txt.match(new RegExp(`^${name}:\\s*(.+)$`, "mi"))?.[1]?.trim();
+  if (!/^mailto:[^@\s]+@mohamedhatem\.dev$/.test(field("Contact") ?? "")) fail(SECURITY_TXT, `Contact is "${field("Contact")}" (expected a mailto: on the site's domain)`);
+  if (field("Canonical") !== `${SITE}/${SECURITY_TXT}`) fail(SECURITY_TXT, `Canonical is "${field("Canonical")}"`);
+  if (!field("Preferred-Languages")) fail(SECURITY_TXT, "no Preferred-Languages");
+  const expires = Date.parse(field("Expires") ?? "");
+  const days = (expires - Date.now()) / 86_400_000;
+  if (!Number.isFinite(expires)) fail(SECURITY_TXT, "no valid Expires date");
+  else if (days < 30) fail(SECURITY_TXT, `Expires in ${Math.floor(days)} days: renew it (RFC 9116: at most a year ahead)`);
+  else if (days > 366) fail(SECURITY_TXT, "Expires is more than a year ahead (RFC 9116 recommends less)");
+}
+// IndexNow (scripts/indexnow.mjs): one key file at the root, named <key>.txt and holding exactly the key.
+const indexNowKeys = files.filter((f) => /^[0-9a-f]{32}\.txt$/.test(f));
+if (indexNowKeys.length !== 1) fail("indexnow", `${indexNowKeys.length} key files (expected one <32 hex>.txt at the root)`);
+for (const f of indexNowKeys) if (read(f) !== f.slice(0, -4)) fail(f, "the IndexNow key file must contain exactly its own name (no newline)");
 // Workers static assets serve .txt as "text/plain" without a charset; _headers sets UTF-8 explicitly (one rule each,
 // so the value replaces the default instead of being joined to another rule's).
 if (fileSet.has("_headers"))
@@ -267,6 +300,7 @@ for (const f of htmlFiles) {
   if (is404) {
     if (!/noindex/.test(metaByName("robots") ?? "")) fail(f, "404 page without noindex");
   } else {
+    if (metaByName("robots") !== "max-image-preview:large") fail(f, `robots meta is "${metaByName("robots")}" (expected max-image-preview:large)`);
     if (canonical !== `${SITE}${path}`) fail(f, `canonical is ${canonical} (expected ${SITE}${path})`);
     for (const l of ["en", "ar", "x-default"]) if (!hreflangs.has(l)) fail(f, `missing hreflang ${l}`);
     const enPath = ar ? path.slice(3) : path;

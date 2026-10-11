@@ -9,7 +9,7 @@
 import { profile } from "../../../content/profile.ts";
 
 /** Day the privacy page's facts were last checked against the Worker, the widget and wrangler.jsonc. */
-export const PRIVACY_UPDATED = "2026-10-10";
+export const PRIVACY_UPDATED = "2026-10-11";
 
 /** First publication of the site's pages (all of today's pages went live together). */
 export const SITE_PUBLISHED: string = profile.site.published;

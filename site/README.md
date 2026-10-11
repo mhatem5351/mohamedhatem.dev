@@ -242,19 +242,71 @@ more, and phone or dialog captures sit beside the rest (`screenGroups()` in `lib
   `_redirects` before `html_handling` (whose own redirects are 307s) and before asset lookup; matching is exact, so
   `/cv/` never matches `/cv` (no loop), and the query string is kept. Generated from the built pages, so new pages are
   covered; `check-dist.mjs` and `tests/e2e/seo.spec.ts` check them, and `scripts/serve.mjs` applies them locally.
+  Guessed URLs (`ALIASES`) redirect too: `/sitemap.xml` → `/sitemap-index.xml`, `/resume` → `/cv/`, `/cv.pdf` and
+  `/ar/cv.pdf` → the PDFs, `/security.txt` → `/.well-known/security.txt`, and `/en`, `/en/*` → the unprefixed English
+  page (the one dynamic rule; Workers allow 100). `check-dist.mjs` fails if a target isn't in the build.
+- **404s:** unknown paths get the nearest `404.html` with status 404. The 404 pages' own URLs (`/404`, `/ar/404`) run
+  the Worker (`run_worker_first` in `wrangler.jsonc`), which answers the same page with status 404, so they are no
+  longer soft 404s (`/404.html` → 307 → `/404`).
 - **Early hints (`postbuild/early-hints.mjs`):** each page's stylesheets and preloaded fonts as a `Link` header in
   `dist/_headers`, so Cloudflare can send a 103 Early Hints response when the zone's (free) Early Hints setting is on.
+- **Zone settings the repo can't set (free, in the dashboard):**
+  - HTML gets an ETag (and so a 304 on repeat visits) only with Security → Settings → "Replace insecure JavaScript
+    libraries" off. That feature parses HTML, and strips ETag and Content-Length, whenever the header CSP has no
+    `script-src` or `default-src`, which is the case here by design (those live in the per-page `<meta>`). The site
+    loads no polyfill.io, so the feature has nothing to do. Early Hints doesn't affect ETags.
+  - Free zones compress with zstd by default, which comes out 4–7 % larger than Brotli for this HTML and CSS. A
+    Compression Rule ("Enable Brotli and Gzip compression" for text/html, text/css, text/javascript and
+    application/json) makes Brotli preferred.
 - **`public/_headers`:**
   - A header CSP with `frame-ancestors 'none'`, `object-src`, `base-uri` and `form-action`. Script and style rules
-    stay in the per-page meta, so the header can't weaken them.
+    stay in the per-page meta, so the header can't weaken them. Its violations are reported to the Worker
+    (`report-to csp` + `Reporting-Endpoints: csp="/api/csp-report"`, and `report-uri` for older browsers), which keeps
+    an anonymous counter (directive, blocked host, page path; worker/README.md). A `<meta>` policy can't report.
+  - `Cross-Origin-Resource-Policy: same-origin` on `/_astro/*` (scripts, styles, fonts, images) and `/logos/*`, so
+    other sites can't embed them. The sharing cards, icons, the photo and the CV PDFs stay embeddable.
   - HSTS, Referrer-Policy, Permissions-Policy, `nosniff`, `X-Frame-Options: DENY` and COOP.
   - Immutable caching for `/_astro/*`.
-  - `Content-Type: text/plain; charset=utf-8` for `robots.txt`, `llms.txt` and `llms-full.txt` (Workers send `.txt`
-    without a charset; one rule each, so the value replaces the default).
+  - `Content-Type: text/plain; charset=utf-8` for `robots.txt`, `llms.txt`, `llms-full.txt` and
+    `.well-known/security.txt` (Workers send `.txt` without a charset; one rule each, so the value replaces the
+    default).
+- **`public/.well-known/security.txt` (RFC 9116):** the security contact (hatem@mohamedhatem.dev), languages and an
+  `Expires` less than a year ahead. `check-dist.mjs` fails the build when `Expires` is less than 30 days away: renew it
+  then (one line). Workers static assets upload and serve dot-directories.
+- **Without JavaScript:** everything reads, and the contact form still posts; the Worker answers that post with an
+  HTML page (nothing is sent without Turnstile) that offers email and WhatsApp links prefilled with the visitor's text.
+  Controls that only work with JavaScript carry `data-js-only` and are hidden by a `<noscript>` rule in `Head.astro`.
 - **Secrets:** the analytics token (public by design) is read from `../.env` at build time. Only that one key is read
   (`src/lib/env.ts`). `scripts/check-dist.mjs` fails if anything secret-looking ends up in `../dist`.
 - **Turnstile site key:** `0x4AAAAAAFSgKXNi27pxPG5n` in production builds, and Cloudflare's test key in `astro dev`.
   `PUBLIC_TURNSTILE_SITE_KEY` overrides both.
+
+## Search engines
+
+- **Sitemap and robots:** `robots.txt` points to `/sitemap-index.xml` (`/sitemap.xml` redirects there); every URL has
+  a `<lastmod>` from the content dates. Indexable pages carry `<meta name="robots" content="max-image-preview:large">`
+  (large previews in Search and Discover; the default is a thumbnail); the 404 pages are `noindex`.
+- **IndexNow** (Bing, Yandex, Naver, Seznam; Bing's index also feeds Copilot and ChatGPT search). The key file is
+  `public/a3a5da423a6558a83a702446932679c6.txt`: public by design, served at `/<key>.txt` and holding exactly the key
+  (`check-dist.mjs` checks it). After a deploy, from the repo root:
+
+  ```bash
+  npm run indexnow                 # the URLs whose <lastmod> changed since the last accepted submission
+  npm run indexnow -- --dry-run    # list them only
+  npm run indexnow -- --all        # every sitemap URL
+  ```
+
+  It refuses until the live key file and the live sitemap match the build (deploy first). On success it writes
+  `scripts/indexnow-state.json`: commit it. The first run sends all 22 URLs; a `202` (key validation pending) is normal
+  the first time. Leave Cloudflare's Crawler Hints off: it pings IndexNow on cache misses, which only adds noise.
+- **One-time verification (the owner, in the dashboards; free):**
+  1. Google Search Console → Add property → **Domain** → `mohamedhatem.dev` → Start verification. Cloudflare
+     supports Google's Domain Connect flow: approve the TXT record in the Cloudflare dashboard (or add the
+     `google-site-verification=…` TXT record at `@` by hand, and keep it). Then Sitemaps → submit
+     `https://mohamedhatem.dev/sitemap-index.xml`.
+  2. Bing Webmaster Tools → Add a site → **Import from Google Search Console** (imported sites are verified at once).
+     Bing's own DNS one-click doesn't work with Cloudflare; its fallbacks are a CNAME record or a meta tag.
+  3. A few days later, check Pages (indexing) in Search Console and Site Explorer in Bing.
 
 ## Chat widget
 
@@ -319,6 +371,22 @@ Preloads:
   when the fonts swapped in.
 - **The Arabic CV:** Inter as well (the sheet's Latin runs: names and tools; its summary shifted when Inter swapped in).
 
+Round 6 (audit PERF-07) measured whether the Arabic preloads could be trimmed. Method: cold cache, 4x CPU, Slow 4G and
+Slow 3G, HTTP/1.1 and HTTP/2, widths from 360 to 1920 px, 3–7 runs per cell. Scripts and data are kept outside the
+repo. The answer for case studies is no; the current set is the smallest that keeps CLS ≤ 0.01:
+- **Plex 700 is the case-study H1's weight.** The audit assumed 600. Dropping it shifts the page by 0.018–0.263 (the
+  H1 re-wraps and pushes the summary, the actions and the meta card down).
+- **Each other face is needed too.** Dropping Plex 600, Space Grotesk or Inter fails at 360–412 px or at 1024 px.
+- **Why the Latin faces matter on Arabic pages.** Plex's `unicode-range` has no space character, so the spaces between
+  Arabic words come from Inter (body text) or Space Grotesk (headings). Their widths differ from the fallbacks', which is
+  enough to re-wrap a line.
+- **The lasting fix** is to add U+0020 to the Plex subset and its range, or to give Plex a metric-matched fallback. Then
+  the extra preloads can go. That changes the rendered Arabic layout, so it needs a visual review first.
+- **Left as they are:** small shifts at single widths elsewhere (home and privacy 0.02 at 768 px, the CV 0.014 at
+  412 px; all "good" by the Core Web Vitals threshold). Adding preloads would fix them, but costs up to 0.5 s of FCP on
+  slow links. The exception is privacy: swapping Plex 600 for Inter costs no FCP.
+- **Never preload JetBrains Mono.** It is metric-identical to its Courier New fallback, so it never moves anything.
+
 ## Budgets (`scripts/check-budgets.mjs`, part of `npm test`)
 
 - **JS:** ≤ 60 KB gzip loaded on first view of each page. The lazy chat panel and the launcher's avatar (loaded after
@@ -352,6 +420,8 @@ beacon's report, which logs a console error the live site doesn't have.
 **Unit (`npm run test:unit`, Vitest):**
 - **Postbuild:** the `_redirects` rules (every page, the /work/ parents, no loops), the early-hints `Link` header,
   and the page dates.
+- **IndexNow (`indexnow.test.ts`):** only new, re-dated and removed sitemap URLs are submitted; the request body; the
+  key is the one public key file.
 - **i18n:** parity, placeholders, digits, and the date and duration helpers.
 - **Trace geometry:** checked against the prototype's numbers.
 - **Diagram motion values:** every pulse carries its length and hop, every lit node its arrival (`data-vars`).
@@ -387,8 +457,12 @@ beacon's report, which logs a console error the live site doesn't have.
     and never printed.
   - **Honesty:** the unnamed client (hashed check against `worker/src/chat/confidential-hashes.json`, the repository's one
     list) and "holds an M.Sc." wording.
-  - **Redirects, headers, sitemap:** a 301 for every page's slash-less and `index.html` URL and for `/work/`; UTF-8
-    text files; a `<lastmod>` on every sitemap URL.
+  - **Redirects, headers, sitemap:** a 301 for every page's slash-less and `index.html` URL, for `/work/` and for
+    the guessed URLs, every target in the build, ≤ 100 dynamic rules; UTF-8 text files; a `<lastmod>` on every
+    sitemap URL; CSP violation reporting and CORP in `_headers`.
+  - **security.txt and IndexNow:** a contact on the site's domain and an `Expires` 30–366 days away; exactly one
+    IndexNow key file, holding its own name.
+  - **Robots meta:** `max-image-preview:large` on indexable pages, `noindex` on the 404 pages.
   - **Structured data:** the Person and WebSite are identical on every page; a WebSite node wherever `#website` is
     referenced; Articles have full ISO `datePublished` / `dateModified`; `codeRepository` only on `SoftwareSourceCode`;
     each page's `og:image:alt` is its own.
@@ -486,9 +560,12 @@ running server such as `wrangler dev`.
   and with the dialog open (dark and light × 1440, 390 and 320); the Article JSON-LD (headline, language, Globant as
   producer, the authority as sponsor, its OG image); home: the feature card with the Globant tile and ArabsStock first
   in the grid, the trace's Globant role linking the case study, About naming the authority.
-- **SEO (`seo.spec.ts`):** the 301 redirects and their targets (the brief case studies kept their URLs), every case study
-  200 at its URL in both languages and in the sitemap, UTF-8 text files, sitemap `<lastmod>`, the home H1
-  (name and role, then the tagline), per-page `og:image:alt`, `article:*` dates on case studies.
+- **SEO (`seo.spec.ts`):** the 301 redirects and their targets (the brief case studies kept their URLs; the guessed
+  URLs such as `/resume`, `/cv.pdf`, `/sitemap.xml`, `/en/…`), every case study 200 at its URL in both languages and
+  in the sitemap, `/404` and `/ar/404` answering 404, security.txt, the IndexNow key file, the robots meta, UTF-8 text
+  files, sitemap `<lastmod>`, the home H1 (name and role, then the tagline), per-page `og:image:alt`, `article:*`
+  dates on case studies. It also passes against `wrangler dev` (`E2E_BASE_URL=http://127.0.0.1:8790`), where the 404
+  status comes from the Worker.
 - **CSP (`csp.spec.ts`):** see "Security".
 - **Phones (`mobile.spec.ts`, iPhone SE, iPhone 15, Pixel 7; EN and AR, dark and light where the theme matters):**
   the first screen holds the ask bar, both buttons and "Open to new roles" (the ask bar inside Safari's 548 px on an

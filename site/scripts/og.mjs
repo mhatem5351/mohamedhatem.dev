@@ -369,7 +369,10 @@ for (const job of jobs) {
   if (touching.length && job.card.kind === "home") throw new Error(`og: ${job.name}: text within 24 px of the graph (${touching.join(", ")})`);
   if (touching.length) console.warn(`og: ${job.name}: text within 24 px of the graph (${touching.join(", ")})`);
   const raw = await page.screenshot({ type: "png", clip: { x: 0, y: 0, width: W, height: H } });
-  const png = await sharp(raw).png({ compressionLevel: 9, adaptiveFiltering: true, effort: 10 }).toBuffer();
+  // A full 256-colour palette (what effort 10 always selected): the same pixels as before, 36-39 % smaller without
+  // adaptive filtering, which only bloats palette PNGs (audit PERF-06; fewer colours band the glows and shift the
+  // coral separators, so the palette stays full).
+  const png = await sharp(raw).png({ palette: true, quality: 100, colours: 256, compressionLevel: 9, adaptiveFiltering: false, effort: 10 }).toBuffer();
   writeFileSync(job.file, png);
   manifest[job.name] = job.hash;
   bytes += png.length;

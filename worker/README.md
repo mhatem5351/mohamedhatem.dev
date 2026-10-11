@@ -1,15 +1,18 @@
 # mohamedhatem.dev: Worker (chat assistant + contact API)
 
-One Cloudflare Worker on the **Workers Free** plan serves the static site from `./dist` and answers two API routes.
-Static files never run Worker code (`assets.run_worker_first: ["/api/*"]`), so they cost nothing and don't count
-against the 100,000 requests/day.
+One Cloudflare Worker on the **Workers Free** plan serves the static site from `./dist` and answers the API routes.
+Static files never run Worker code (`assets.run_worker_first: ["/api/*", "/404", "/ar/404"]`), so they cost nothing
+and don't count against the 100,000 requests/day. The two 404 URLs are the only pages that run it: as plain assets
+they would answer their page with status 200 (a soft 404).
 
 ```
-browser ──▶ mohamedhatem.dev ──┬─ /*            static assets (free, unlimited)
-                               └─ /api/*        this Worker
-                                    ├─ POST /api/chat     ─▶ Gemini (streamGenerateContent, SSE) ─▶ SSE to the widget
-                                    ├─ POST /api/contact  ─▶ send_email binding ─▶ mhatem5351@gmail.com
-                                    └─ GET  /api/health
+browser ──▶ mohamedhatem.dev ──┬─ /*               static assets (free, unlimited)
+                               ├─ /api/*           this Worker
+                               │    ├─ POST /api/chat        ─▶ Gemini (streamGenerateContent, SSE) ─▶ SSE to the widget
+                               │    ├─ POST /api/contact     ─▶ send_email binding ─▶ mhatem5351@gmail.com
+                               │    ├─ POST /api/csp-report  ─▶ Analytics Engine (an anonymous counter)
+                               │    └─ GET  /api/health
+                               └─ /404, /ar/404    this Worker: the 404 page with status 404 (via env.ASSETS)
 ```
 
 | Path | What |
@@ -26,7 +29,8 @@ browser ──▶ mohamedhatem.dev ──┬─ /*            static assets (fre
 | `worker/src/chat/links.ts` | Link guard (only URLs from the knowledge base / instructions, and the site, stay links) and the phone-number canonicaliser |
 | `worker/src/chat/parse.ts` | Request validation, sanitising, language detection |
 | `worker/src/chat/protocol.ts` | **The wire contract shared with the widget** (types only + constants) |
-| `worker/src/contact/*` | `/api/contact`: validation, email composition, handler |
+| `worker/src/contact/*` | `/api/contact`: validation, email composition, handler, and the HTML answer to a form posted without JavaScript (`page.ts`) |
+| `worker/src/csp-report.ts` | `/api/csp-report`: CSP violation reports → an anonymous Analytics Engine counter |
 | `worker/src/session.ts`, `turnstile.ts`, `ratelimit.ts`, `http.ts`, `analytics.ts` | Shared security plumbing |
 | `worker/scripts/gen-content.mjs` | Bundles `content/chat/*` into `worker/src/generated/content.ts` (+ widget suggestions) |
 | `worker/scripts/dev-vars.mjs` | Writes `.dev.vars` from `.env` (never prints secrets) |
@@ -196,9 +200,38 @@ a plain-text part and an HTML part (all visitor input escaped, message in a `dir
 subject, text, html, headers })`), which composes the MIME itself; no MIME library (mimetext) is needed in Workers
 today.
 
+**Without JavaScript** the form still posts natively (`application/x-www-form-urlencoded`). Turnstile can't run, so
+nothing is sent, but the visitor no longer lands on raw JSON: a form post that asks for a document
+(`Sec-Fetch-Mode: navigate`, or an `Accept` that prefers `text/html` over JSON) gets the same checks and status codes
+answered as a small HTML page in the form's language (`contact/page.ts`). It says what happened and offers email and
+WhatsApp links that start a message with the visitor's text (also shown read-only, to copy). The text is echoed only
+for posts from the site (an allowed `Origin`), always HTML-escaped; the page runs no script and its CSP admits only its
+own nonce-tagged style block. The page script's `fetch` (JSON, `Accept: application/json`) keeps the JSON contract.
+
+### `POST /api/csp-report`
+
+Where browsers report violations of the site's **header** CSP (`site/public/_headers`: `report-to csp` with
+`Reporting-Endpoints: csp="/api/csp-report"`, plus `report-uri /api/csp-report` for older browsers). It accepts
+`application/reports+json` (the Reporting API's batched array), `application/csp-report` (report-uri) and
+`application/json` (one violation in the Reporting API body shape, e.g. from a page's `securitypolicyviolation`
+listener), ≤ 16 KB. Each violation becomes one Analytics Engine data point with three coarse facts: the directive,
+what was blocked (a keyword such as `inline`, or a host name, never a full URL) and the page (a known site path, else
+`other`; reports about other sites' pages are dropped). Never the IP, user agent, referrer, query string, sample or
+source line. At most 5 points per request, duplicates in a batch counted once; rate limited per IP (10/min) and per
+location (60/min). The answer is `204` whenever the report is readable, also when it is dropped (a `429` would only
+make the browser resend it); `403` for a foreign `Origin` (`Origin: null`, which report-uri may send, is judged by the
+page URL inside), `415`, `413`, `400`.
+
 ### `GET /api/health`
 
-`200 { "ok": true, "version": "<sha of system prompt + knowledge>" }`.
+`200 { "ok": true, "version": "<sha of system prompt + knowledge>" }`. Other methods: `405` with `Allow: GET, HEAD`
+(the POST routes answer `405` with `Allow: POST, OPTIONS`).
+
+### `GET /404`, `GET /ar/404`
+
+The 404 page in its language with status `404`, exactly what a missing path gets: the Worker asks the assets binding
+for a path that can't exist (`/__404__`, `/ar/__404__`), so `not_found_handling` serves `404.html` / `ar/404.html`
+with the `_headers` rules, and forwards it without conditional headers (a 404 is never a 304).
 
 ## Security model
 
@@ -215,7 +248,7 @@ today.
 | Markup injection | The API returns markdown text only; the widget renders it with a DOM builder (no `innerHTML`, link protocol allow-list) |
 | Privacy | Message text is never logged or stored server-side. Analytics Engine gets counts, token numbers, latency, model, language and country only (no IP, no text). Logs are content-free one-liners (`chat ok gemini-3.8-flash:quota429>gemini-3.5-flash-lite:ok first=905ms total=1443ms`) |
 | Secrets | `GEMINI_API_KEY`, `TURNSTILE_SECRET`, `SESSION_SECRET` are Worker secrets; the Gemini key is sent in the `x-goog-api-key` header (never in a URL); nothing secret reaches the browser |
-| Response hardening | `nosniff`, HSTS, `CSP: default-src 'none'; frame-ancestors 'none'`, `X-Frame-Options: DENY`, `CORP: same-site`, `Cache-Control: no-store` on every API response |
+| Response hardening | `nosniff`, HSTS, `CSP: default-src 'none'; frame-ancestors 'none'`, `X-Frame-Options: DENY`, `CORP: same-site`, the site's `Permissions-Policy` (the retired `interest-cohort` is gone), `Cache-Control: no-store` on every API response |
 
 ### Threat model: free-tier quota (audit AST-05, SEC-1, SEC-2)
 
@@ -356,10 +389,10 @@ WHERE index1 = 'chat' AND timestamp > NOW() - INTERVAL '1' DAY ORDER BY timestam
 |---|---|---|
 | Workers Free | 100,000 requests/day (reset 00:00 UTC), **10 ms CPU** per request, 50 subrequests, 128 MB; streaming has no wall-time limit while the client is connected | Only `/api/*` invokes the Worker. CPU per chat request is about 2 ms measured in Node for a 3,400-character answer, plus ~1.2 ms for the confidentiality scan of a 3,200-character answer (guards are incremental; prompt fingerprints are built at isolate start-up, ~4 ms once). 1–3 subrequests per chat (Turnstile, Gemini, maybe a hedge) |
 | Static assets | Free and unlimited | Everything but `/api/*` |
-| Rate limiting binding | All plans; periods of 10 or 60 s; counters per Cloudflare location | 5 namespaces (`2601`–`2605`) |
+| Rate limiting binding | All plans; periods of 10 or 60 s; counters per Cloudflare location | 7 namespaces (`2601`–`2607`) |
 | Turnstile | Free, unlimited verifications | One check per chat session and per contact post |
 | Email Routing / `send_email` | Free; the destination must be a verified Email Routing address; the sender must be on a domain with Email Routing enabled | One email per contact post |
-| Workers Analytics Engine | 100,000 data points written/day, 10,000 read queries/day | One data point per API request |
+| Workers Analytics Engine | 100,000 data points written/day, 10,000 read queries/day | One data point per API request; CSP reports at most 5 per request and 60 requests a minute per location |
 | Workers Logs | 200,000 log events/day, 3-day retention | Logs only failures and fallbacks |
 | Gemini API free tier | Per project and model (table in "Model selection"): Flash models 5 RPM / 20 RPD each, Flash-Lite 3.5 and 3.1 15 RPM / 500 RPD, Gemma 4 30 RPM / 16K input tokens per minute. Daily quotas reset around midnight Pacific (Google's `RetryInfo` is authoritative) | A 10-model free chain (~1,150 answers a day before Gemma) with shared cooldowns, ≤ 4 generation attempts per answer, one request when nothing fails. Dev, eval and production share the key's quotas: tests default to gemini-3.1-flash-lite |
 
@@ -384,7 +417,16 @@ GROUP BY day, model ORDER BY day;
 -- outcomes (rate limits, busy upstream, guard blocks) and contact form results
 SELECT blob1 AS kind, blob2 AS outcome, SUM(_sample_interval) AS n
 FROM mh_events WHERE timestamp > NOW() - INTERVAL '7' DAY GROUP BY kind, outcome ORDER BY n DESC;
+
+-- CSP violations (src/csp-report.ts: blob2 directive, blob3 blocked, blob4 page, blob5 disposition, blob6 format)
+SELECT blob2 AS directive, blob3 AS blocked, blob4 AS page, SUM(_sample_interval) AS n
+FROM mh_events WHERE index1 = 'csp' AND timestamp > NOW() - INTERVAL '7' DAY
+GROUP BY directive, blocked, page ORDER BY n DESC;
 ```
+
+Any row in the last query is worth a look: zero is normal. A `script-src`/`style-src` row can only come from a page
+script's report (the per-page `<meta>` policy can't report by itself); `frame-ancestors` means another site tried to
+frame a page.
 
 ## Configuration
 
@@ -402,6 +444,7 @@ FROM mh_events WHERE timestamp > NOW() - INTERVAL '7' DAY GROUP BY kind, outcome
 | `ALLOW_TURNSTILE_TEST` | `.dev.vars` only | `1` accepts Turnstile's test secret and test-key results; never set in production |
 | `MAIL` | `send_email` | destination `mhatem5351@gmail.com` (must be a verified Email Routing destination) |
 | `RL_CHAT`, `RL_CHAT_BURST`, `RL_CHAT_GLOBAL`, `RL_CHAT_SESSION`, `RL_CONTACT` | `ratelimits` | 8/60 s, 3/10 s, 60/60 s (verified requests only), 6/60 s per session, 3/60 s |
+| `RL_CSP`, `RL_CSP_GLOBAL` | `ratelimits` | CSP reports: 10/60 s per IP, 60/60 s per location |
 | `EVENTS` | Analytics Engine | dataset `mh_events` |
 
 ## Deploy (phase 2, after the Astro build exists in `./dist`)

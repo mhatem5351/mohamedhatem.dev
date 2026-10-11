@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Minimal static server for a build directory, close to how Cloudflare Workers static assets serve ../dist:
- *   1. dist/_redirects (exact-path static rules, as scripts/postbuild/redirects.mjs writes them) run first, keeping
- *      the query string;
+ *   1. dist/_redirects (exact-path static rules, as scripts/postbuild/redirects.mjs writes them, then "/x/*" splat
+ *      rules with ":splat" in the target) run first, keeping the query string;
+ *   1b. /404 and /ar/404 answer their 404 page with status 404 (the Worker does this in production: worker/src/index.ts);
  *   2. html_handling auto-trailing-slash: "/x" → 307 "/x/" when x/index.html exists (the platform's code is 307;
  *      the 301s come from _redirects), "/x/" → x/index.html;
  *   3. not_found_handling 404-page: unknown paths → the nearest 404.html (ar/404.html under /ar/), 404 status.
@@ -39,7 +40,7 @@ const TYPES = {
   ".vcf": "text/vcard; charset=utf-8",
 };
 
-/** Parses dist/_redirects into Map(from → { to, status }) (static rules only: exact paths). */
+/** Parses dist/_redirects into Map(from → { to, status }): exact paths, and "/x/*" splats (matched after them). */
 function parseRedirects(dir) {
   const file = join(dir, "_redirects");
   const rules = new Map();
@@ -49,6 +50,18 @@ function parseRedirects(dir) {
     if (from && to && !rules.has(from)) rules.set(from, { to, status: Number(status) || 302 });
   }
   return rules;
+}
+
+/** The redirect for a path: an exact rule, else the first splat rule whose prefix matches (":splat" filled in). */
+function matchRedirect(rules, path) {
+  const exact = rules.get(path);
+  if (exact && !path.endsWith("*")) return exact;
+  for (const [from, rule] of rules) {
+    if (!from.endsWith("/*")) continue;
+    const prefix = from.slice(0, -1);
+    if (path.startsWith(prefix)) return { ...rule, to: rule.to.replace(":splat", path.slice(prefix.length)) };
+  }
+  return undefined;
 }
 
 /** Parses public/_headers into [{ pattern: RegExp, headers: [name, value][] }]. */
@@ -96,10 +109,16 @@ export function startServer({ dir = fileURLToPath(new URL("../../dist", import.m
       const location = `${target.pathname}${target.search || url.search}${target.hash}`;
       res.writeHead(status, custom({ location })).end();
     };
-    const rule = redirects.get(url.pathname);
+    const rule = matchRedirect(redirects, url.pathname);
     if (rule) return redirect(rule.to, rule.status);
+    if (path === "/404" || path === "/ar/404") {
+      const page = join(root, path === "/404" ? "404.html" : "ar/404.html");
+      if (existsSync(page)) return send(page, 404);
+    }
     const safe = normalize(join(root, path));
     if (!safe.startsWith(root)) return void res.writeHead(400).end();
+    // html_handling drops ".html": /404.html → 307 /404 (index.html forms are 301s in _redirects).
+    if (/[^/]\.html$/.test(path) && !path.endsWith("/index.html") && existsSync(safe)) return redirect(path.slice(0, -5), 307);
     if (existsSync(safe) && statSync(safe).isFile()) return send(safe);
     if (existsSync(safe) && statSync(safe).isDirectory()) {
       if (!path.endsWith("/")) return redirect(`${path}/`, 307);

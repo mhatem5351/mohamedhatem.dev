@@ -18,9 +18,14 @@
 # Rules are additive on Cloudflare (a header set by two matching rules is joined with a comma), so no rule below
 # repeats a header from "/*" except Content-Security-Policy on *.svg, where two policies are intended (both apply).
 # HSTS without `preload` for now: add it (and submit to hstspreload.org) once every subdomain is known to be HTTPS-only.
+# Violations of the header policy are reported to the Worker (POST /api/csp-report, worker/src/csp-report.ts: an
+# anonymous counter, nothing about the visitor): report-to + Reporting-Endpoints (Chrome 96+, Safari 16.4+, Firefox
+# 149+; the path must start with "/"), and report-uri for older browsers (ignored wherever report-to works). A <meta>
+# policy can't report, so the per-page script and style rules stay silent here.
 
 /*
-  Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
+  Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; report-uri /api/csp-report; report-to csp
+  Reporting-Endpoints: csp="/api/csp-report"
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
@@ -28,9 +33,12 @@
   Permissions-Policy: accelerometer=(), browsing-topics=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()
   Cross-Origin-Opener-Policy: same-origin
 
-# Fingerprinted build output (file names change with their content): cache for a year, never revalidate.
+# Fingerprinted build output (file names change with their content): cache for a year, never revalidate. Only this
+# site's pages use the scripts, styles, fonts and images, so other sites can't embed them (CORP). Sharing images,
+# icons, the photo and the CV PDFs stay embeddable: social platforms and other sites load those.
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
+  Cross-Origin-Resource-Policy: same-origin
 
 # SVG files opened directly can't run script or load anything (they are only used as images and CSS masks).
 /*.svg
@@ -54,6 +62,10 @@
   Content-Type: text/plain; charset=utf-8
 /llms-full.txt
   Content-Type: text/plain; charset=utf-8
+# RFC 9116 requires text/plain with charset=utf-8 (/security.txt redirects here: postbuild/redirects.mjs).
+/.well-known/security.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=86400
 
 # "Add to contacts" (src/pages/mohamed-hatem.vcf.ts, generated from content/profile.ts). The type is set here rather than
 # left to the extension (.vcf maps to text/x-vcard in some MIME tables): iOS Safari opens text/vcard as a contact card,
@@ -78,5 +90,6 @@
   Cache-Control: public, max-age=86400
 /logos/*
   Cache-Control: public, max-age=604800
+  Cross-Origin-Resource-Policy: same-origin
 /mohamed-hatem.jpg
   Cache-Control: public, max-age=604800
