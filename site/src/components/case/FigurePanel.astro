@@ -15,6 +15,7 @@
  *   diagram. Without JS the figure is shown whole.
  */
 import Icon from "~/components/ui/Icon.astro";
+import BidiText from "~/components/ui/BidiText.astro";
 import MotionToggle from "~/components/ui/MotionToggle.astro";
 import { diagram, diagramSvg, type DiagramId } from "~/lib/diagrams";
 import { dirOf, format, messages, type Locale } from "~/lib/i18n";
@@ -38,16 +39,20 @@ const compact = diagramSvg(id, "compact", { locale });
 const zoomed = diagramSvg(id, "wide", { locale, idSuffix: "zoom" });
 const hero = (className ?? "").split(/\s+/).includes("fig--hero");
 const enlarge = format(m.work.page.enlargeFigure, { n });
+/** The bar names the figure in the page's language (audits C-31, A-22): "Fig. 1" / "الشكل 1", the system's short
+ * title (the diagram title up to its colon) and the kind, "Architecture", like the generated component views. */
+const barId = locale === "ar" ? figLabel : `Fig. ${n}`;
+const barTitle = d.title[locale].split(/[:：]/)[0]!.trim();
 ---
-<figure class:list={["fig", className]} id={anchor} aria-labelledby={capId}>
+<figure class:list={["fig", "fig--dg", className]} id={anchor} aria-labelledby={capId}>
   <div class="fig-panel">
-    <div class="fig-panel__bar" dir="ltr">
-      <span class="fig-panel__id">Fig. {n}</span>
-      <span class="fig-panel__title" lang="en">{id} · architecture</span>
+    <div class="fig-panel__bar">
+      <span class="fig-panel__id">{barId}</span>
+      <span class="fig-panel__title"><BidiText text={barTitle} locale={locale} /></span>
+      <span class="fig-panel__kind">{m.work.labels.architecture}</span>
       <button
         class="fig-panel__zoom"
         type="button"
-        dir={dirOf(locale)}
         data-zoom-figure
         data-caption={`${figLabel}. ${d.title[locale]}`}
         aria-label={enlarge}

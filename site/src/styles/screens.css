@@ -17,7 +17,7 @@
     .screens__grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-auto-flow: row dense; align-items: start; }
     .shot--lead { grid-column: 1 / -1; }
     .shot--main { grid-column: 1; }
-    .shot--side { grid-column: 2; align-self: center; }
+    .shot--side { grid-column: 2; align-self: start; }  /* top edges line up with the frame beside it (audit C-27) */
     .shot--rows-2 { grid-row: span 2; }
     .shot--rows-3 { grid-row: span 3; }
   }
@@ -42,9 +42,13 @@
   .shot--panel .shot__frame { display: grid; place-items: center; padding: clamp(1rem, 3vw, 1.75rem) clamp(.75rem, 2vw, 1.25rem); border-radius: var(--radius-lg); border: 1px solid var(--color-line); background: var(--color-surface-2); }
   .shot--panel .shot__img { max-width: 448px; border-radius: .75rem; border: 1px solid var(--color-line); box-shadow: var(--shadow-lg); }
 
-  /* "Enlarge" cue: shown on hover and keyboard focus, always on touch screens. */
+  /* "Enlarge" cue: shown on hover and keyboard focus, always on touch screens. It never covers the product (audit C-28):
+     on a desktop frame it sits in the empty end of the browser bar (physical right: the bar is a fixed LTR graphic, its
+     dots on the left, in both languages); on the phone it anchors to the bezel, not to the full-width link. */
   .shot__hint { position: absolute; inset-block-start: .5rem; inset-inline-end: .5rem; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: var(--radius-full); border: 1px solid var(--color-line-strong); background: var(--color-surface); color: var(--color-ink-2); box-shadow: var(--shadow-sm); opacity: 0; }
-  .shot--desktop .shot__hint { inset-block-start: 2.25rem; }
+  .shot--desktop .shot__hint { top: .125rem; right: .375rem; left: auto; width: 1.5rem; height: 1.5rem; }
+  .shot--desktop .shot__hint .icon { width: .875rem; height: .875rem; }
+  .shot--phone .shot__zoom { width: fit-content; max-width: 100%; margin-inline: auto; }
   .shot__zoom:focus-visible .shot__hint { opacity: 1; }
   @media (hover: hover) { .shot__zoom:hover .shot__hint { opacity: 1; } }
   @media (hover: none) { .shot__hint { opacity: 1; } }
@@ -53,6 +57,17 @@
     .shot--desktop .shot__frame, .shot--panel .shot__img { transition: box-shadow var(--duration-base) var(--ease-standard); }
     @media (hover: hover) { .shot__zoom:hover .shot__frame { box-shadow: var(--shadow-lg); } }
   }
+
+  /* By night (audit C-37): the light-UI captures are dimmed a little on the dark page (the brightest thing on it
+     otherwise) and come back to full brightness on hover, on focus and enlarged; the frames get a faint rim and the
+     phone's bezel is lifted off the page so the device reads. The captures themselves are unchanged. */
+  @media screen {
+    :root:not([data-theme="light"]) .shot__img { filter: brightness(.88); }
+    :root:not([data-theme="light"]) .shot__zoom:is(:hover, :focus-visible) .shot__img { filter: none; }
+    :root:not([data-theme="light"]) .shot--desktop .shot__frame { box-shadow: var(--shadow-md), 0 0 0 1px rgb(255 255 255 / .06); }
+    :root:not([data-theme="light"]) .shot--phone .shot__frame.phone { background: #1A2338; box-shadow: 0 0 0 1px #2A3550, var(--shadow-lg); }
+  }
+  @media screen and (prefers-reduced-motion: no-preference) { .shot__img { transition: filter var(--duration-base) var(--ease-standard); } }
 
   .shot__cap { font-size: var(--text-sm); line-height: 1.55; color: var(--color-muted); max-width: 62ch; text-wrap: pretty; }
   :lang(ar) .shot__cap { line-height: 1.8; }

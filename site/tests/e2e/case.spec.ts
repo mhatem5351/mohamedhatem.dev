@@ -21,8 +21,9 @@ test.describe("brief case studies", () => {
         const note = page.locator(".cs-brief__note");
         await expect(note).toContainText(m.work.briefNote);
         await expect(note.getByRole("button", { name: m.work.page.ask })).toBeVisible();
-        // A capability view of three boxes or fewer adds nothing to the text: no figure, no link to one.
-        const figure = cs.architecture.nodes.length > 3;
+        // A capability view of five boxes or fewer (users, assistant, model…) adds nothing to the text: no figure, no
+        // link to one (HM-22).
+        const figure = cs.architecture.nodes.length > 5;
         await expect(page.locator("#architecture")).toHaveCount(figure ? 1 : 0);
         await expect(page.getByRole("link", { name: m.work.page.seeArchitecture })).toHaveCount(figure ? 1 : 0);
       });
@@ -45,9 +46,17 @@ test.describe("full case studies", () => {
       const cells = page.locator(".cs-facts .metric");
       await expect(cells).toHaveCount(Math.min(4, cs.figures.length));
       expect(cs.figures.length).toBeGreaterThanOrEqual(2);
-      const strip = (await page.locator(".cs-facts").boundingBox())!;
+      // Each fact keeps at most a quarter of the content width, and the strip (its hairlines) ends with its last fact
+      // instead of running under an empty fourth cell (C-14).
+      const content = await page.locator(".cs-hero > .container").evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      });
       for (const box of await cells.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width)))
-        expect(box).toBeLessThanOrEqual(strip.width / 4 + 1);
+        expect(box).toBeLessThanOrEqual(content / 4 + 1);
+      const strip = (await page.locator(".cs-facts").boundingBox())!;
+      const last = (await cells.last().boundingBox())!;
+      expect(Math.abs(strip.x + strip.width - (last.x + last.width))).toBeLessThanOrEqual(1);
     });
 
   test("ArabsStock: the design's four facts, with the unit set small", async ({ page }) => {
@@ -107,5 +116,96 @@ test.describe("home: selected work", () => {
     const eyebrows = await page.locator(".work-list > .work:not(.work--feature) .eyebrow, .more-work .eyebrow").allInnerTexts();
     for (const e of eyebrows.slice(0, 3)) expect(e.replace(/\s+/g, " ")).toMatch(/^[^/]+ \/ (during )?\d{4}(–\d{4})?$/i);
     expect(eyebrows.join(" ")).not.toMatch(/\bAt Wakeb/i);
+  });
+});
+
+test.describe("figures (round 6: C-01, C-04, C-05, C-07, C-08, C-24)", () => {
+  const DESIGNED = ["/work/sta-tourism-assistants/", "/work/arabsstock-assistant/", "/work/wakeb-bilingual-chatbot/", "/work/empoweromics-ml/"];
+  /** Rendered size of every visible diagram label (CSS px) and the fill of every visible pill behind a tab or label. */
+  const measure = (page: import("@playwright/test").Page) =>
+    page.evaluate(() => {
+      const sizes: number[] = [];
+      const pills: string[] = [];
+      for (const svg of document.querySelectorAll<SVGSVGElement>(".fig-panel svg.dg")) {
+        if (!svg.getClientRects().length) continue;
+        const k = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+        for (const t of svg.querySelectorAll("text")) if (t.getClientRects().length && t.textContent?.trim()) sizes.push(parseFloat(getComputedStyle(t).fontSize) * k);
+        for (const r of svg.querySelectorAll(".dg-tabbg, .dg-elbg")) pills.push(getComputedStyle(r).fill);
+      }
+      return { sizes, pills, bg: getComputedStyle(document.querySelector(".fig-panel__canvas")!).backgroundColor };
+    });
+
+  for (const width of [1440, 1280, 1024])
+    test(`at ${width} px every diagram label reads at 11 px or more, on a filled pill (C-07, C-08) @desktop-only`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      for (const path of DESIGNED) {
+        await page.goto(path);
+        const { sizes, pills, bg } = await measure(page);
+        expect(sizes.length, path).toBeGreaterThan(10);
+        expect(Math.min(...sizes), path).toBeGreaterThanOrEqual(10.95);
+        // The pill takes the canvas colour, so no group border or edge runs through the text.
+        for (const fill of pills) expect(fill, path).toBe(bg);
+      }
+    });
+
+  test("Wakeb's in-article figures get the hero's width from 73.5rem, and the TOC rail steps aside while one passes @desktop-only", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/work/wakeb-bilingual-chatbot/");
+    const hero = (await page.locator("#architecture .fig-panel").boundingBox())!;
+    const fig = page.locator("#fig-hybrid-rag");
+    const panel = (await fig.locator(".fig-panel").boundingBox())!;
+    expect(Math.abs(panel.width - hero.width)).toBeLessThanOrEqual(1);
+    await fig.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await expect(page.locator(".toc-rail__inner")).toHaveAttribute("data-covered", "");
+    await expect(page.locator(".toc-rail__inner")).toBeHidden();
+    await page.locator("#outcome").evaluate((el) => el.scrollIntoView({ block: "start" }));
+    await expect(page.locator(".toc-rail__inner")).toBeVisible();
+  });
+
+  for (const [path, end] of [["/work/sta-tourism-assistants/", "right"], ["/ar/work/sta-tourism-assistants/", "left"]] as const)
+    test(`${path}: Enlarge fills the window, draws the figure larger than the page does, closes from the ${end} corner @desktop-only`, async ({ page }) => {
+      for (const [width, height] of [[1440, 900], [1024, 768]] as const) {
+        await page.setViewportSize({ width, height });
+        await page.goto(path);
+        const inline = await page.locator("#architecture svg.dg").evaluateAll((svgs) => {
+          const s = (svgs as SVGSVGElement[]).find((x) => x.getClientRects().length)!;
+          return s.getBoundingClientRect().width / s.viewBox.baseVal.width;
+        });
+        const btn = page.locator("#architecture [data-zoom-figure]");
+        await btn.scrollIntoViewIfNeeded();
+        const y = await page.evaluate(() => scrollY);
+        await btn.click();
+        const dialog = page.locator("dialog[data-zoom-dialog]");
+        await expect(dialog).toBeVisible();
+        const box = (await dialog.boundingBox())!;
+        // The whole window (a classic scrollbar's gutter stays reserved while the page is locked).
+        expect(box.width, `${width}: dialog width`).toBeGreaterThanOrEqual(width - 16);
+        expect(box.height, `${width}: dialog height`).toBeGreaterThanOrEqual(height - 1);
+        const scale = await dialog.locator("[data-zoom-body] > svg").evaluate((s) => {
+          const svg = s as SVGSVGElement;
+          return (svg.getBoundingClientRect().width - 32) / svg.viewBox.baseVal.width;
+        });
+        expect(scale, `${width}: enlarged`).toBeGreaterThanOrEqual(1.1);
+        expect(scale, `${width}: larger than the page's own`).toBeGreaterThan(inline);
+        const close = (await dialog.locator("[data-zoom-close]").boundingBox())!;
+        if (end === "right") expect(box.x + box.width - (close.x + close.width)).toBeLessThanOrEqual(16);
+        else expect(close.x - box.x).toBeLessThanOrEqual(16);
+        // Panning shows its hint; the page behind doesn't move under the wheel.
+        const pans = await dialog.evaluate((d) => d.hasAttribute("data-pans"));
+        await expect(dialog.locator("[data-zoom-hint]")).toBeVisible({ visible: pans });
+        await page.mouse.move(4, height - 4);
+        await page.mouse.wheel(0, 800);
+        await page.waitForTimeout(150);
+        expect(await page.evaluate(() => scrollY)).toBe(y);
+        await page.keyboard.press("Escape");
+        await expect(dialog).toBeHidden();
+        await expect(btn).toBeFocused();
+      }
+    });
+
+  test("the reading-progress hairline grows as the page scrolls (C-01)", async ({ page }) => {
+    await page.goto("/work/sta-tourism-assistants/");
+    await page.evaluate(() => scrollTo(0, 2000));
+    await expect.poll(() => page.locator(".read-progress i").evaluate((i) => i.getBoundingClientRect().width)).toBeGreaterThan(10);
   });
 });

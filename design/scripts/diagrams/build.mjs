@@ -74,26 +74,27 @@ const SPEC_COMMENT = `/*
  * Nodes      min height 40 (rows) / 48 / 56 (two lines); radius 10; 1.5 px stroke in the category tint-line.
  *            A 28 px icon well (radius 8, category tint) holds a 16 px glyph from assets/icons (stroke 2 on the
  *            24 grid = 1.33 px), drawn in the category text colour. Title Inter 600 13 px --color-ink; sublabel
- *            JetBrains Mono 500 11 px --color-muted. Text starts 48 px from the node edge (40 without a well).
+ *            JetBrains Mono 500 12 px --color-muted. Text starts 48 px from the node edge (40 without a well).
  * Kinds      orchestrator  teal, 2 px teal-fill border + dashed outer ring (4 px out), hub glyph
  *            agent         teal          retrieval / data   saffron       model / LLM   coral
  *            evaluation    sky           guard / safety     sage          service / tool / infra   slate
  *            store         cylinder (slate by default; tone overrides, e.g. a saffron vector index)
  *            external      dashed outline, canvas fill, no well (users, channels, platforms, departments)
  *            more          dotted ghost ("and more of the same"), never in the legend
- * Groups     1 px dashed --color-line-strong, radius 14, mono 10 px uppercase tab (0.08em) sitting on the top
- *            border on a canvas-coloured pill.
+ * Groups     1 px dashed --color-line-strong, radius 14, mono 12 px uppercase tab (0.08em) sitting on the top
+ *            border on a pill in the page background (--dg-pill, default --color-bg).
  * Edges      orthogonal, 8 px rounded corners, 1.5 px --color-line-input (>= 3:1 on the canvas).
  *            solid = request / call; dashed (4 5) = batch, background or monitoring.
  *            Open chevron heads (5.5 x 8) drawn as paths whose tip touches the target outline; no <marker>
- *            ids, so many diagrams can share a page. Optional mono 10.5 px labels on a canvas pill.
- * Callouts   20 px saffron-fill discs with a canvas ring, mono 700 11 px numerals; numbered in reading order
+ *            ids, so many diagrams can share a page. Optional mono 12 px labels on the same pill.
+ * Callouts   20 px saffron-fill discs with a page-background ring, mono 700 12 px numerals; numbered in reading order
  *            and listed under the figure (diagrams.json -> callouts, EN + AR).
  * Legend     generated from the kinds and edge types actually used; nodes row, then links row.
- * Compact    phone text floor (.dg-compact rules): sublabels, tabs, edge labels and legend 12, callout numerals 13,
- *            titles 13. A 375 px phone shows the drawing about 294 px wide (scale 0.92), so no label renders under
- *            11 CSS px. Its tab and edge-label pills take the page background, so a transparent canvas
- *            (--dg-canvas: transparent) never lets a border or edge run through their text.
+ * Text floor sublabels, tabs, edge labels and legend 12, titles 13 in every variant (callout numerals 12, compact
+ *            13): shown at scale 0.917 or more, no label renders under 11 CSS px. A 375 px phone shows the compact
+ *            drawing about 294 px wide (scale 0.92); the site shows the wide one only from a 64.25rem canvas. The
+ *            pills and callout rings take the page background, not the canvas, so a transparent canvas
+ *            (--dg-canvas: transparent) never lets a border or an edge run through their text.
  * Theming    every colour is var(--color-*, <hex>) through local --_* properties; an internal
  *            prefers-color-scheme block supplies dark hex fallbacks when the file is opened standalone.
  *            Inline in the page and the site tokens (and its [data-theme]) win.

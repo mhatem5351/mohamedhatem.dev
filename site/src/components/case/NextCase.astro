@@ -2,7 +2,9 @@
 /**
  * The next case study in display order (pages.css §11): one card, whole card is a link (stretched title anchor),
  * with the next system's decorative diagram thumbnail (moving while on screen, with its pause button) or, for
- * logic-controls.com, its desktop screenshot. The drawing and the screenshot are decorative (aria-hidden / alt="").
+ * logic-controls.com, its desktop screenshot whole in a small browser frame (never cropped or upscaled, audit C-09).
+ * The drawing and the screenshot are decorative (aria-hidden / alt=""). Titles never break inside a hyphenated
+ * compound (noBreakHtml, audit C-02).
  */
 import { Image } from "astro:assets";
 import Icon from "~/components/ui/Icon.astro";
@@ -12,6 +14,7 @@ import MotionToggle from "~/components/ui/MotionToggle.astro";
 import type { CaseStudy } from "@content/profile.ts";
 import { diagramSvg } from "~/lib/diagrams";
 import { localePath, messages, tr, type Locale } from "~/lib/i18n";
+import { noBreakHtml } from "~/lib/nobreak";
 import { PATHS, profile } from "~/lib/site";
 import { accentOf, diagramsOf, eyebrowParts } from "~/lib/case";
 import lcDesktopEn from "~/assets/showcase/lc-desktop-en-960.webp";
@@ -41,7 +44,16 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
             <MotionToggle locale={locale} variant="corner" />
           </>
         ) : (
-          shot && <Image src={shot} alt="" width={480} widths={[480, 960]} sizes="(min-width: 64rem) 22rem, 100vw" loading="lazy" />
+          shot && (
+            <span class="next-case__shot">
+              <span class="next-case__bar" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <Image src={shot} alt="" width={480} widths={[480, 960]} sizes="(min-width: 48rem) 22rem, calc(100vw - 5rem)" loading="lazy" />
+            </span>
+          )
         )}
       </div>
     )
@@ -57,8 +69,8 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
       {isLatin(eb.company) ? <span lang="en">{eb.company}</span> : eb.company}<span class="sep" aria-hidden="true">/</span><Ltr>{eb.years}</Ltr>
     </span>
     </span>
-    <h3 class="work__title"><a class="stretched" href={localePath(PATHS.work(cs.slug), locale)}>{tr(cs.title, locale)}</a></h3>
-    <p class="work__summary">{tr(cs.summary, locale)}</p>
+    <h3 class="work__title"><a class="stretched" href={localePath(PATHS.work(cs.slug), locale)} set:html={noBreakHtml(tr(cs.title, locale))} /></h3>
+    <p class="work__summary" set:html={noBreakHtml(tr(cs.summary, locale))} />
     <ul class="cluster gap-tight" role="list">
       {cs.stack.slice(0, 5).map((t) => <li class="chip">{t}</li>)}
     </ul>

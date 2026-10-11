@@ -1,12 +1,12 @@
 ---
 /**
  * An engineering decision as a pull quote (pages.css §7). The statement is an approach fact from profile.ts, quoted
- * as written, and the source line names where it is stated. Only used where the sources describe a choice.
+ * as written. Only used where the sources describe a choice; where the facts come from is said once, at the end of the
+ * page (no per-decision "Source:" line, audit HM-19).
  */
 import Icon from "~/components/ui/Icon.astro";
 import type { Fact } from "@content/profile.ts";
-import { format, messages, tr, type Locale } from "~/lib/i18n";
-import { sourcesText } from "~/lib/case";
+import { messages, tr, type Locale } from "~/lib/i18n";
 
 interface Props {
   locale: Locale;
@@ -19,5 +19,4 @@ const text = tr(fact.text, locale);
 <aside class="decision wide" aria-label={`${m.work.page.decision}: ${text.slice(0, 80)}`}>
   <p class="decision__label"><Icon name="branch" />{m.work.page.decision}</p>
   <p class:list={["decision__text", text.length > 110 && "decision__text--long"]}>{text}</p>
-  <p class="decision__src"><span>{format(m.work.page.decisionSource, { sources: sourcesText(fact.source, locale) })}</span></p>
 </aside>

@@ -61,7 +61,7 @@ test.describe("CV", () => {
     await expect(page.locator(".cv-foot a")).toHaveAttribute("href", "https://mohamedhatem.dev/ar/");
   });
 
-  test("Arabic CV: the in-progress degree's years read like the others, with (expected) on its own line", async ({ page }) => {
+  test("Arabic CV: the in-progress degree's years read like the others, with (expected) after them on the same line", async ({ page }) => {
     await page.goto("/ar/cv/");
     const rows = await page.locator(".cv-side .side-list").first().locator("li").evaluateAll((lis) =>
       lis.map((li) => {
@@ -76,12 +76,14 @@ test.describe("CV", () => {
         };
         const [start, end] = t.data.match(/\d{4}/g)!;
         const ems = li.querySelectorAll("em");
-        return { startLeft: x(start!).left < x(end!).left, qualifierBelow: ems.length > 1 ? ems[1]!.getBoundingClientRect().top >= ems[0]!.getBoundingClientRect().bottom - 1 : null };
+        const [a, b] = [ems[0]!.getBoundingClientRect(), ems[1]?.getBoundingClientRect()];
+        // Right to left: the qualifier follows the years, so it sits to their left, on their line (D-20).
+        return { startLeft: x(start!).left < x(end!).left, qualifierAfter: b ? b.right <= a.left + 1 && Math.abs(b.top - a.top) < 4 : null };
       }),
     );
     expect(rows.length).toBe(3);
     for (const r of rows) expect(r.startLeft).toBe(true);
-    expect(rows[0]!.qualifierBelow).toBe(true);
+    expect(rows[0]!.qualifierAfter).toBe(true);
   });
 
   for (const [path, locale] of [["/cv/", "en"], ["/ar/cv/", "ar"]] as const) {
@@ -270,6 +272,38 @@ test.describe("CV", () => {
       // The PDF keeps the links (URI annotations) to every featured case study.
       const pdf = Buffer.from(await (await request.get(file)).body()).toString("latin1");
       for (const { cs } of featured) expect(pdf, `${file}: ${cs!.slug}`).toContain(`${prefix}/work/${cs!.slug}/`);
+    }
+  });
+
+  test("prints on white paper from the dark theme too: the page's colour scheme turns light in print (D-01)", async ({ page }) => {
+    for (const path of ["/cv/", "/ar/cv/", "/work/sta-tourism-assistants/"]) {
+      await page.goto(path);
+      const scheme = () => page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
+      // Dark is the default on screen; the print canvas (the @page margins) follows the root's scheme, which painted a
+      // black frame around every printed page.
+      await page.emulateMedia({ media: "screen" });
+      expect(await scheme(), path).toMatch(/dark/);
+      await page.emulateMedia({ media: "print" });
+      expect(await scheme(), path).toMatch(/^light/);
+      if (path.endsWith("/cv/")) expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), path).toBe("rgb(255, 255, 255)");
+    }
+  });
+
+  test("tablets read the CV in one column, the sidebar under the experience in two columns (D-02, D-04) @desktop-only", async ({ page }) => {
+    for (const width of [768, 900]) {
+      await page.setViewportSize({ width, height: 1000 });
+      await page.goto("/cv/");
+      const main = (await page.locator(".cv-main").boundingBox())!;
+      const side = (await page.locator(".cv-side").boundingBox())!;
+      const sheet = (await page.locator(".sheet").boundingBox())!;
+      expect(side.y, `${width}: sidebar under the experience`).toBeGreaterThanOrEqual(main.y + main.height - 1);
+      expect(main.width / sheet.width, `${width}: experience takes the sheet's width`).toBeGreaterThan(0.8);
+      const cols = await page.locator(".cv-side > .cv-sec").evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().left))).size);
+      expect(cols, `${width}: sidebar sections in two columns`).toBe(2);
+      // The sheet's visible edges sit on the page gutters, flush with the line under it.
+      const after = (await page.locator(".cv-after").boundingBox())!;
+      expect(Math.abs(after.x - sheet.x), `${width}: start edges`).toBeLessThanOrEqual(2);
+      expect(Math.abs(after.x + after.width - (sheet.x + sheet.width)), `${width}: end edges`).toBeLessThanOrEqual(2);
     }
   });
 

@@ -8,8 +8,9 @@
  */
 import "~/styles/home-b.css";
 import Icon from "~/components/ui/Icon.astro";
+import BidiText from "~/components/ui/BidiText.astro";
 import SectionHeader from "~/components/ui/SectionHeader.astro";
-import { format, messages, pluralize, type Locale } from "~/lib/i18n";
+import { dirOf, format, messages, pluralize, type Locale } from "~/lib/i18n";
 import { profile } from "~/lib/site";
 import { GROUP_ACCENT, MATRIX_COLUMNS, matrixGroups } from "~/lib/skills-matrix";
 
@@ -54,7 +55,7 @@ const GROUP_COLOR: Record<string, string> = {
               {
                 MATRIX_COLUMNS.map((c) => (
                   <th scope="col">
-                    <span dir="auto">{mx.columns[c]}</span>
+                    <span><BidiText text={mx.columns[c]} locale={locale} /></span>
                   </th>
                 ))
               }
@@ -71,7 +72,7 @@ const GROUP_COLOR: Record<string, string> = {
                 {rows.map((row) => (
                   <tr class={`accent-${GROUP_ACCENT[group]}`}>
                     <th scope="row">
-                      <span dir="auto">{mx.rows[row.key]}</span>
+                      <span><BidiText text={mx.rows[row.key]} locale={locale} /></span>
                     </th>
                     {MATRIX_COLUMNS.map((c) =>
                       row.cells[c] ? (
@@ -102,7 +103,7 @@ const GROUP_COLOR: Record<string, string> = {
               <ul class="matrix-list__rows" role="list">
                 {rows.map((row) => (
                   <li class="matrix-list__row">
-                    <span class="matrix-list__skill" dir="auto">{mx.rows[row.key]}</span>
+                    <span class="matrix-list__skill"><BidiText text={mx.rows[row.key]} locale={locale} /></span>
                     <span class="sr-only">{locale === "ar" ? "، " : ", "}{m.skills.usedIn}: </span>
                     <span class="matrix-list__where">
                       {MATRIX_COLUMNS.filter((c) => row.cells[c]).map((c, i, all) => (
@@ -139,7 +140,7 @@ const GROUP_COLOR: Record<string, string> = {
               <ul class="toolbox__list" role="list">
                 {g.skills.filter((s) => s.evidence.length > 0).map((s) => (
                   <li class="tool">
-                    <span dir="auto">{s.name[locale]}</span>
+                    <span><BidiText text={s.name[locale]} locale={locale} /></span>
                     {s.endorsements !== undefined && (
                       <>
                         <span class="tool__count" aria-hidden="true">
@@ -162,7 +163,7 @@ const GROUP_COLOR: Record<string, string> = {
                     .filter((s) => s.evidence.length === 0)
                     .flatMap((s, i) => [
                       ...(i > 0 ? [locale === "ar" ? "، " : ", "] : []),
-                      <bdi>{s.name[locale]}</bdi>,
+                      <bdi dir={dirOf(locale)}><BidiText text={s.name[locale]} locale={locale} /></bdi>,
                       ...(s.endorsements !== undefined
                         ? [<span class="tool__count" aria-hidden="true">{s.endorsements}</span>, <span class="sr-only">({pluralize(m.skills.endorsements, s.endorsements, locale)})</span>]
                         : []),

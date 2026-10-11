@@ -134,7 +134,8 @@ const CONFIG = {
   },
   mtc: {
     name: "MTC", fullName: "Military Technical College, Cairo", nameAr: "الكلية الفنية العسكرية", kind: "school",
-    monogram: { text: "MTC" }, noSource: true, optical: 0.9,
+    // ink tile, light letters: a grey lettered tile read as a missing image next to the colour logos (audit HM-36)
+    monogram: { text: "MTC", tone: "ink" }, noSource: true, optical: 0.9,
   },
   tabaqat: {
     name: "Tabaqat", nameAr: "طبقات", kind: "company",
@@ -142,7 +143,7 @@ const CONFIG = {
   },
   uqu: {
     name: "UQU", fullName: "Umm Al-Qura University", nameAr: "جامعة أم القرى", kind: "school",
-    monogram: { text: "UQU" }, noSource: true, optical: 0.9,
+    monogram: { text: "UQU", tone: "ink" }, noSource: true, optical: 0.9,
   },
 };
 
@@ -535,8 +536,11 @@ async function composeTile(S, { bgRGB, bgSvg, vector, raster, place }) {
 // tile description per logo
 async function tileSpec(slug, cfg, mono) {
   if (cfg.noSource || cfg.monogramTile) {
-    // quiet paper tile with the monogram letters (no frame: the tile is the frame)
+    // quiet paper tile with the monogram letters (no frame: the tile is the frame); `tone: "ink"` sets light letters on
+    // the brand's lapis ink, like the MH mark, for lettered marks that sit among colour logos
     const P = palette("light");
+    const ink = cfg.monogram.tone === "ink";
+    const fg = ink ? P.bg : P.ink2, bgc = ink ? P.ink : P.bg2;
     const text = cfg.monogram.text;
     const o = outline(text, { font: "display", wght: 600, size: 100, tracking: cfg.monogram.wordmark ? -0.025 : (text.length > 2 ? -0.01 : -0.02) });
     const b = o.bbox, w = b.x1 - b.x0, h = b.y1 - b.y0;
@@ -544,9 +548,9 @@ async function tileSpec(slug, cfg, mono) {
     const k = cfg.monogram.wordmark ? 70 / w : Math.min((text.length > 2 ? 28 : 32) / o.capHeight, 62 / w);
     // centre the cap height (descenders such as the Q tail or the q of Tabaqat hang below, as in type)
     const tx = 50 - (b.x0 + w / 2) * k, ty = 50 + (o.capHeight / 2) * k;
-    const vector = `<path fill="${P.ink2}" d="${transformPath(o.d, tx, ty, k)}"/>`;
-    const bgRGB = P.bg2.match(/\w\w/g).map(v => parseInt(v, 16));
-    return { bgRGB, bgSvg: { defs: "", body: `<rect x="-60" y="-60" width="220" height="220" fill="${P.bg2}"/>` }, vector, place: { mode: "source", k: 1 } };
+    const vector = `<path fill="${fg}" d="${transformPath(o.d, tx, ty, k)}"/>`;
+    const bgRGB = bgc.match(/\w\w/g).map(v => parseInt(v, 16));
+    return { bgRGB, bgSvg: { defs: "", body: `<rect x="-60" y="-60" width="220" height="220" fill="${bgc}"/>` }, vector, place: { mode: "source", k: 1 } };
   }
   const src = await loadSource(slug);
   const up = await upscale(slug);

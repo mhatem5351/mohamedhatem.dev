@@ -38,7 +38,10 @@ export const KINDS = {
 };
 
 // local custom properties: page tokens win, hex fallbacks keep a standalone file themed
-const BASE_VARS = { cv: ["dg-canvas|bg"], nd: ["dg-node|surface"], ink: ["ink"], ink2: ["ink-2"], mut: ["muted"], lns: ["line-strong"], edge: ["line-input"], grid: ["graph-grid"] };
+// pl: the pills behind group tabs and edge labels and the ring around callout discs. They take the page background
+// (not the canvas), so a page that makes the canvas transparent (the site's figure panels, --dg-canvas: transparent)
+// never lets a group border or an edge run through their text (audit C-07); --dg-pill overrides it.
+const BASE_VARS = { cv: ["dg-canvas|bg"], pl: ["dg-pill|bg"], nd: ["dg-node|surface"], ink: ["ink"], ink2: ["ink-2"], mut: ["muted"], lns: ["line-strong"], edge: ["line-input"], grid: ["graph-grid"] };
 function varDecl(theme, cats) {
   const T = TOK[theme];
   const out = [];
@@ -61,21 +64,20 @@ const SANS = `"Inter Variable",Inter,ui-sans-serif,system-ui,-apple-system,"Sego
 const MONO = `"JetBrains Mono Variable","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace`;
 export const FONT = { SANS, MONO };
 
-// Text sizes in drawing units. The compact variant (320 wide) is shown about 294-308 px wide on a 375 px phone
-// (scale 0.92-0.96), so its smallest text is 12 units: every label renders at 11 CSS px or more there. Titles stay 13
-// and callout numerals are 13. The compact sizes reach the page through .dg-compact rules (inlined diagrams lose their
+// Text sizes in drawing units. Every variant's smallest text is 12 units, so a label renders at 11 CSS px or more
+// whenever the drawing is shown at scale 0.917 or more: the compact variant (320 wide) on a 375 px phone (about
+// 294-308 px wide, scale 0.92-0.96), the wide one (1120) only from a 64.25rem canvas (the site switches variants at
+// that width, case.css; audit C-08). Titles stay 13; callout numerals are 12 (wide) and 13 (compact). The wide sizes are
+// the defaults in the grammar, the compact ones reach the page through .dg-compact rules (inlined diagrams lose their
 // own <style>).
 // tabH / elH: pill heights; tabY / elY / coY: baseline offsets that centre the text on its pill or disc.
 export const TEXT = {
-  base:    { t: 13, s: 11, tab: 10, el: 10.5, co: 11, lg: 11, subGap: 15, tabH: 16, tabY: 4, elH: 16, elY: 3.7, coY: 3.9 },
+  base:    { t: 13, s: 12, tab: 12, el: 12, co: 12, lg: 12, subGap: 16, tabH: 18, tabY: 4.9, elH: 18, elY: 4.2, coY: 4.25 },
   compact: { t: 13, s: 12, tab: 12, el: 12, co: 13, lg: 12, subGap: 16, tabH: 18, tabY: 4.9, elH: 18, elY: 4.2, coY: 4.6 },
 };
 const COMPACT_RULES = [["s", "dg-s"], ["tab", "dg-tab"], ["el", "dg-el"], ["co", "dg-co text"], ["lg", "dg-lg"]]
   .filter(([k]) => TEXT.compact[k] !== TEXT.base[k])
-  .map(([k, sel]) => `.dg-compact .${sel}{font-size:${TEXT.compact[k]}px}`)
-  // a page that makes the canvas transparent (the site's figure panels) would also empty the tab and edge-label pills,
-  // letting group borders and edges run through the text: the pills take the page background there
-  .concat(`.dg-compact .dg-tabbg,.dg-compact .dg-elbg{fill:var(--color-bg,var(--_cv))}`);
+  .map(([k, sel]) => `.dg-compact .${sel}{font-size:${TEXT.compact[k]}px}`);
 
 // The full stylesheet. `cats` limits the per-category rules to the ones a diagram uses (keeps files small);
 // `compact: false` leaves out the compact text sizes (wide and thumb files).
@@ -93,16 +95,16 @@ export function css(cats = CATS, { compact = true } = {}) {
   r.push(`.dg-ring{fill:none;stroke:var(--_teal-f);stroke-opacity:.55;stroke-width:1.25;stroke-dasharray:4 4}`);
   r.push(`.dg-ext .dg-b{fill:var(--_cv);stroke:var(--_edge);stroke-dasharray:4 4}.dg-ext .dg-g{color:var(--_ink2)}`);
   r.push(`.dg-more .dg-b{fill:none;stroke:var(--_lns);stroke-dasharray:3 4}.dg-more .dg-t{fill:var(--_mut);font-weight:500}`);
-  r.push(`.dg-t{font:600 13px/1 ${SANS};fill:var(--_ink)}`);
-  r.push(`.dg-s{font:500 11px/1 ${MONO};fill:var(--_mut)}`);
+  r.push(`.dg-t{font:600 ${TEXT.base.t}px/1 ${SANS};fill:var(--_ink)}`);
+  r.push(`.dg-s{font:500 ${TEXT.base.s}px/1 ${MONO};fill:var(--_mut)}`);
   r.push(`.dg-grp{fill:var(--dg-group-fill,none);stroke:var(--_lns);stroke-dasharray:4 4}`);
-  r.push(`.dg-tab{font:600 10px/1 ${MONO};letter-spacing:.08em;fill:var(--_mut)}.dg-tabbg,.dg-elbg{fill:var(--_cv)}`);
+  r.push(`.dg-tab{font:600 ${TEXT.base.tab}px/1 ${MONO};letter-spacing:.08em;fill:var(--_mut)}.dg-tabbg,.dg-elbg{fill:var(--_pl)}`);
   r.push(`.dg-e{fill:none;stroke:var(--_edge);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}.dg-a{stroke-dasharray:4 5}`);
   r.push(`.dg-ah{fill:none;stroke:var(--_edge);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}`);
-  r.push(`.dg-el{font:500 10.5px/1 ${MONO};fill:var(--_mut)}`);
-  r.push(`.dg-co circle{fill:var(--_saffron-f);stroke:var(--_cv);stroke-width:2}.dg-co text{font:700 11px/1 ${MONO};fill:var(--color-on-saffron,${TOK.light["color-on-saffron"]});text-anchor:middle}`);
+  r.push(`.dg-el{font:500 ${TEXT.base.el}px/1 ${MONO};fill:var(--_mut)}`);
+  r.push(`.dg-co circle{fill:var(--_saffron-f);stroke:var(--_pl);stroke-width:2}.dg-co text{font:700 ${TEXT.base.co}px/1 ${MONO};fill:var(--color-on-saffron,${TOK.light["color-on-saffron"]});text-anchor:middle}`);
   r.push(`.dg-cap{font:500 12px/1 ${MONO};fill:var(--_ink2)}.dg-stk{opacity:.55}`);
-  r.push(`.dg-lg{font:500 11px/1 ${MONO};fill:var(--_mut)}.dg-lsw{stroke:var(--nl);stroke-width:1}`);
+  r.push(`.dg-lg{font:500 ${TEXT.base.lg}px/1 ${MONO};fill:var(--_mut)}.dg-lsw{stroke:var(--nl);stroke-width:1}`);
   r.push(`.dg-dot{fill:var(--ni,var(--_mut))}.dg-mute{fill:var(--_mut)}.dg-ink2{fill:var(--_ink2)}`);
   if (compact) r.push(...COMPACT_RULES);
   // Opt-in motion: add class "dg-play" to the <svg> (or any ancestor). Static and complete without it.
@@ -288,6 +290,11 @@ export class Diagram {
       s += `<rect class="dg-tabbg" x="${n2(tx - 7)}" y="${y + 0.5 - T.tabH / 2}" width="${n2(tw + 14)}" height="${T.tabH}" rx="4"/>`;
       s += `<text class="dg-tab" x="${n2(tx)}" y="${n2(y + T.tabY)}">${esc(label)}</text>`;
       if (tw + 30 > w) this.warn.push(`group tab overflows: ${g.tab}`);
+      // the group's callout disc (r 10 + its 2 px ring) must clear the tab's pill
+      if (g.co) {
+        const cx = g.coX ?? (g.tabAlign === "right" ? x + 20 : x + w - 16);
+        if (cx + 12 > tx - 7 && cx - 12 < tx + tw + 7) this.warn.push(`group tab runs into its callout: ${g.tab}`);
+      }
     }
     if (g.co) this.lateCallouts.push(this.callout(g.co, g.coX ?? (g.tabAlign === "right" ? x + 20 : x + w - 16), y));
     return s;
@@ -451,7 +458,7 @@ export class Diagram {
     if (this.hasCallout) links.push({ co: true, label: "note" });
     const rowH = lg.rowH ?? 24, gap = lg.gap ?? 24;
     const maxW = lg.w ?? this.W - lg.x * 2;
-    const T = this.T, compact = this.variant === "compact";
+    const T = this.T;
     const itemW = (it) => (it.e ? 28 : 16) + 8 + textW(it.label, "lg", T);
     const edge = this.W - 12; // legend text stays 12 units inside the canvas
     // column starts: equal columns, or explicit offsets from lg.x (lg.colX) when one column needs more room
@@ -498,10 +505,9 @@ export class Diagram {
         } else if (it.e) {
           s += `<path class="dg-e${it.e === "async" ? " dg-a" : ""}" d="M${x} ${cy}H${x + 26}"/><path class="dg-ah" d="M${x + 22.5} ${cy - 4}L${x + 26.5} ${cy}L${x + 22.5} ${cy + 4}"/>`;
         } else if (it.co) {
-          // compact: a full-size callout disc, its numeral at the compact callout size (no smaller inline size)
-          s += compact
-            ? `<g class="dg-co"><circle cx="${x + 8}" cy="${cy}" r="10"/><text x="${x + 8}" y="${n2(cy + T.coY)}">1</text></g>`
-            : `<g class="dg-co"><circle cx="${x + 8}" cy="${cy}" r="8"/><text x="${x + 8}" y="${cy + 3.4}" style="font-size:9.5px">1</text></g>`;
+          // a full-size callout disc with the variant's numeral size (no smaller inline size: the site drops style
+          // attributes, so a legend-only size would never reach the page)
+          s += `<g class="dg-co"><circle cx="${x + 8}" cy="${cy}" r="10"/><text x="${x + 8}" y="${n2(cy + T.coY)}">1</text></g>`;
         }
         s += `<text class="dg-lg" x="${x + sw + 8}" y="${y}">${esc(it.label)}</text>`;
         if (!lg.cols) x += iw + gap;

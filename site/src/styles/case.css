@@ -131,7 +131,9 @@ a.co { text-decoration: none; }
 [dir="rtl"] .toc__list a { border-radius: var(--radius-sm) 0 0 var(--radius-sm); padding: .4375rem .875rem .4375rem .5rem; }
 @media (hover: hover) { .toc__list a:hover { color: var(--color-ink); background: color-mix(in srgb, var(--color-surface-2) 70%, transparent); } }
 .toc__list a[aria-current="true"] { color: var(--color-ink); font-weight: 500; border-inline-start-color: var(--color-accent-fill); }
-.toc__num { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); font-variant-numeric: tabular-nums; }
+/* The number sits at the start of its cell in both directions (no dir="ltr": that turned "start" into left in Arabic,
+   so "01" ran into its label, audit A-04); two digits read the same either way, isolated from the label. */
+.toc__num { font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); font-variant-numeric: tabular-nums; unicode-bidi: isolate; text-align: start; }
 .toc__list a[aria-current="true"] .toc__num { color: var(--color-accent); font-weight: 600; }
 .toc__list a:focus-visible { outline-offset: -2px; }
 .toc-rail__aside { display: grid; gap: .5rem; padding-block-start: 1.25rem; border-block-start: 1px solid var(--color-line); }
@@ -200,8 +202,6 @@ a.co { text-decoration: none; }
 :lang(ar) .decision__text { font-weight: 600; line-height: 1.6; letter-spacing: 0; max-width: 36ch; }
 .decision__why { font-size: var(--text-sm); line-height: 1.6; color: var(--color-ink-2); max-width: 56ch; }
 :lang(ar) .decision__why { line-height: 1.85; }
-.decision__src { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .75rem; padding-block-start: .75rem; border-block-start: 1px dashed var(--color-teal-tint-line); font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); }
-:lang(ar) .decision__src { font-family: var(--font-arabic); font-size: var(--text-xs); }
 
 /* ---------- 10. Stack list + role ---------- */
 .stack-list { display: grid; border-block-start: 1px solid var(--color-line); }
@@ -257,9 +257,13 @@ a.co { text-decoration: none; }
 
 /* ================================================================== build additions ================ */
 
-/* Reading progress: CSS scroll timeline where supported; src/components/case/ReadingProgress.astro sets --p otherwise. */
+/* Reading progress: CSS scroll timeline where supported; src/components/case/ReadingProgress.astro sets --p otherwise.
+   Longhands only, and the timeline in a rule of its own: the build's minifier folded `animation` + `animation-timeline`
+   into one `animation` shorthand, which can't carry a timeline, so the browser dropped it and the bar never grew
+   (audit C-01; e2e case.spec.ts checks the built page). */
 @supports (animation-timeline: scroll()) {
-  .read-progress i { animation: read-grow linear both; animation-timeline: scroll(root block); }
+  .read-progress i { animation-name: read-grow; animation-timing-function: linear; animation-fill-mode: both; }
+  .read-progress > i { animation-timeline: scroll(root block); }
   @keyframes read-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 }
 
@@ -279,11 +283,12 @@ a.co { text-decoration: none; }
 }
 .cs-facts .metric__value { font-size: var(--text-2xl); }
 
-/* Figures: wide diagram from 52rem of figure width (container query), the compact vertical one below */
+/* Figures: the wide drawing (1120 units) only where its canvas is at least 64.25rem, so it renders at scale 0.917 or
+   more and its 12-unit labels at 11 px or more (audit C-08); the compact vertical drawing below that. */
 .fig--hero { margin-block-start: clamp(2.5rem, 1.75rem + 2.5vw, 4rem); }
 .fig-panel__canvas { container-type: inline-size; }
 .dg-variant--wide { display: none; }
-@container (min-width: 46rem) { .dg-variant--wide { display: block; } .dg-variant--compact { display: none; } }
+@container (min-width: 64.25rem) { .dg-variant--wide { display: block; } .dg-variant--compact { display: none; } }
 .dg-variant > svg { display: block; width: 100%; height: auto; margin-inline: auto; --dg-canvas: transparent; }
 .dg-variant--compact > svg { max-width: 22rem; }
 .fig-panel__bar .fig-panel__kind { margin-inline-start: auto; color: var(--color-muted); white-space: nowrap; }
@@ -339,14 +344,13 @@ a.co { text-decoration: none; }
 /* Approach: numbered steps (same voice as .owned); outcome: ticks */
 .steps { list-style: none; display: grid; counter-reset: step; border-block-start: 1px solid var(--color-line); margin: 0; padding: 0; }
 .steps > li { counter-increment: step; display: grid; grid-template-columns: 2.25rem 1fr; gap: .75rem; padding-block: 1rem; border-block-end: 1px solid var(--color-line); }
-.steps > li::before { content: counter(step, decimal-leading-zero); font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-accent); font-weight: 600; padding-block-start: .3em; }
+.steps > li::before { content: counter(step, decimal-leading-zero); font-family: var(--font-mono); font-size: var(--text-2xs); color: var(--color-muted); font-weight: 600; padding-block-start: .3em; }
 .ticks { list-style: none; display: grid; gap: .75rem; margin: 0; padding: 0; }
 .ticks > li { display: grid; grid-template-columns: auto 1fr; gap: .75rem; align-items: start; }
 .ticks .tick { display: grid; place-items: center; width: 1.375rem; height: 1.375rem; border-radius: 50%; background: var(--color-teal-tint); border: 1px solid var(--color-teal-tint-line); color: var(--color-teal); margin-block-start: .15em; }
 .ticks .tick .icon { width: .875rem; height: .875rem; }
 .cs-prose > .steps, .cs-prose > .ticks { max-width: var(--measure); }
-.cs-prose > .decision { max-width: 52rem; }
-.decision__src span + span::before { content: none; }
+.cs-prose > .decision { max-width: none; }  /* the article's full width, like the rules and lists (audit C-13) */
 .decision__text--long { font-size: clamp(1.125rem, 1.05rem + .45vw, 1.375rem); line-height: 1.35; max-width: 46ch; }
 :lang(ar) .decision__text--long { line-height: 1.7; }
 /* Mono, lowercase attribute keys in English (the trace's voice); Arabic keeps its case-less script. */
@@ -382,8 +386,12 @@ a.co { text-decoration: none; }
 /* The "Brief" tag in the hero eyebrow */
 .cs-hero__brief { display: inline-flex; align-items: center; min-height: 1.375rem; padding: 0 .5rem; border-radius: var(--radius-full); border: 1px solid var(--color-line-strong); background: var(--color-surface); color: var(--color-ink-2); font-size: var(--text-2xs); letter-spacing: var(--tracking-label); }
 
-/* Next case: thumbnails (diagram or screenshot) fill the media box */
-.next-case .work__media > img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: var(--radius-sm); }
+/* Next case: the thumbnail (diagram, or logic-controls.com's screenshot in a small browser frame) is shown whole, never
+   cropped or stretched (audit C-09). */
+.next-case__shot { display: block; width: 100%; max-width: 32rem; border: 1px solid var(--color-line-strong); border-radius: .625rem; background: var(--color-surface); overflow: hidden; box-shadow: var(--shadow-md); }
+.next-case__bar { display: flex; gap: .3rem; padding: .45rem .6rem; border-block-end: 1px solid var(--color-line); background: var(--color-surface-2); direction: ltr; }
+.next-case__bar i { width: .4rem; height: .4rem; border-radius: 50%; background: var(--color-line-strong); }
+.next-case .work__media .next-case__shot img { display: block; width: 100%; height: auto; }
 .next-case .eyebrow--ink { color: var(--color-ink-2); }
 .cs-next { padding-block: clamp(3rem, 2rem + 3vw, 5rem); }
 .cta-band .ask-bar { text-align: start; }
@@ -446,26 +454,30 @@ a.co { text-decoration: none; }
 :root[data-screen-open] [data-mh-chat] { visibility: hidden; }
 
 /* 13. The figure's Enlarge button (in the bar; JS only) and the first figure on phones. */
-.fig-panel__zoom { display: none; flex: none; place-items: center; width: 1.875rem; height: 1.875rem; margin-left: auto; border-radius: .5rem; border: 1px solid var(--color-line); background: var(--color-surface); color: var(--color-muted); box-shadow: var(--shadow-xs); }
+.fig-panel__zoom { display: none; flex: none; place-items: center; width: 1.875rem; height: 1.875rem; margin-inline-start: auto; border-radius: .5rem; border: 1px solid var(--color-line); background: var(--color-surface); color: var(--color-muted); box-shadow: var(--shadow-xs); }
 .js .fig-panel__zoom { display: inline-grid; }
 .fig-panel__zoom .icon { width: 1rem; height: 1rem; }
 .fig-panel__zoom:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 @media (hover: hover) { .fig-panel__zoom:hover { color: var(--color-ink); border-color: var(--color-line-strong); } }
 @media (hover: none) { .fig-panel__zoom:active { background-color: color-mix(in srgb, var(--color-ink) 9%, var(--color-surface)); } }
-.fig-panel__bar > .fig-panel__zoom + .mo-btn { margin-left: .375rem; }
+.fig-panel__bar > .fig-panel__zoom + .mo-btn { margin-inline-start: .375rem; }
+.fig-panel__kind + .fig-panel__zoom { margin-inline-start: .5rem; }
 @media (pointer: coarse) {
   .fig-panel__zoom, .fig-panel__bar > .mo-btn { width: 2.75rem; height: 2.75rem; }
   .back-btn { width: 2.75rem; height: 2.75rem; }
   .crumbs a { display: inline-flex; align-items: center; min-height: 2.75rem; padding-inline: .375rem; margin-inline: -.375rem; }
   .fig__desc > summary { min-height: 2.75rem; }
 }
-/* Phones: the first figure is cut at ~70 % of the screen with a fade and "Show the full diagram" (FigurePanel.astro);
-   its callouts and text description come with the full diagram. JS only (without it the figure is whole). */
+/* The first figure, wherever it shows its tall compact drawing (below 73.5rem), is cut at ~70 % of the screen with a
+   fade and "Show the full diagram" (FigurePanel.astro); on phones its callouts and text description come with the full
+   diagram (from 48rem they sit beside it). JS only (without it the figure is whole). Audit C-29. */
 .fig-panel__more { display: none; }
-@media (max-width: 39.99rem) {
+@media (max-width: 73.49rem) {
   .js .fig--hero:not([data-open]) .fig-panel__canvas { max-height: 70svh; overflow: hidden; }
   .js .fig--hero:not([data-open]) .fig-panel__canvas::after { content: ""; position: absolute; inset: auto 0 0; height: 7rem; background: linear-gradient(to bottom, transparent, var(--color-bg) 72%); pointer-events: none; }
   .js .fig--hero:not([data-open]) .fig-panel__more { position: absolute; z-index: 1; inset-inline: 0; inset-block-end: 1rem; display: flex; width: max-content; max-width: calc(100% - 2rem); margin-inline: auto; }
+}
+@media (max-width: 47.99rem) {
   .js .fig--hero:not([data-open]) .fig__caption > .callouts, .js .fig--hero:not([data-open]) .fig__caption > .fig__desc { display: none; }
 }
 
@@ -493,4 +505,186 @@ a.co { text-decoration: none; }
   .cs-meta__org { flex-wrap: wrap; }
   .toc-m__current::before { display: none; }
 }
+}
+
+/* ================================================================== round 6 (audit 2026-10-11) ================ */
+@layer components {
+/* --- Hero, article and brief: one end column (C-11, C-12). From 80rem the meta card, the TOC rail and the brief note
+   share one width and one gap, so the copy, the article and the brief text end on the same line, and the hero's
+   columns start together (the copy no longer waits at the bottom of a tall meta card). From 64 to 80rem the meta card
+   sits under the copy in its two-column form, as on tablets. */
+.cs-layout, .cs-brief { --cs-gap: clamp(3rem, 2rem + 4vw, 6rem); }
+@media (min-width: 64rem) { .cs-layout { --cs-aside: 15rem; } }
+@media (min-width: 64rem) and (max-width: 79.99rem) {
+  .cs-hero__grid { grid-template-columns: minmax(0, 1fr); }
+  .cs-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 2rem; }
+  .cs-meta__row:nth-last-child(2):nth-child(odd) { border-block-end: 0; }
+  .cs-meta__row:last-child { grid-column: 1 / -1; border-block-start: 1px solid var(--color-line); padding-block-start: .6875rem; }
+  .cs-meta__row:nth-child(2) { padding-block-start: 0; }
+}
+@media (min-width: 80rem) {
+  .cs-hero__grid, .cs-layout, .cs-brief { --cs-aside: 20rem; --cs-gap: clamp(3rem, 2rem + 4vw, 6rem); }
+  .cs-hero__grid { grid-template-columns: minmax(0, 1fr) var(--cs-aside); column-gap: var(--cs-gap); align-items: start; }
+  .cs-layout { grid-template-columns: minmax(0, 1fr) var(--cs-aside); }
+  .cs-brief { grid-template-columns: minmax(0, 1fr) var(--cs-aside); column-gap: var(--cs-gap); }
+}
+
+/* --- Titles: a hyphenated compound or a domain is one unit (lib/nobreak.ts, C-02). */
+.nb-unit { display: inline-block; max-width: 100%; }
+
+/* --- Breadcrumbs on one line: the current page ellipsizes instead of wrapping into three lines (C-17). */
+.crumbs { min-width: 0; }
+.crumbs ol { flex-wrap: nowrap; min-width: 0; }
+.crumbs li:last-child { min-width: 0; }
+.crumbs [aria-current="page"] { display: block; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- The meta card on small phones (C-18): labels above values from 24rem down, and each end of a date range whole. */
+@media (max-width: 24rem) {
+  .cs-meta__row { grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+  .cs-meta__org { flex-wrap: wrap; }
+}
+.cs-meta__date { white-space: nowrap; }
+/* Latin stack chips in Arabic keep the Latin size (no Arabic script scale) and one line (A-11). */
+:lang(ar) .cs-meta .chip { font-size: calc(var(--text-xs) / var(--script-scale, 1)); }
+.cs-meta .chip { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- Arabic has no 500 weight (Plex Arabic ships 400/600/700, so 500 falls to 400): the current page, section and
+   TOC entry step up to 600 so their state still shows (A-09). */
+:lang(ar) .crumbs [aria-current="page"], :lang(ar) .toc__list a[aria-current="true"], :lang(ar) .toc-m__current { font-weight: 600; }
+
+/* --- Hero actions on phones: the ghost links sit flush with the text edge instead of floating in their padding (C-16);
+   a wrapped Arabic label keeps the Arabic UI line height (A-15). */
+@media (max-width: 39.99rem) { .cs-hero__actions .btn--ghost { padding-inline: 0; } }
+:lang(ar) .cs-hero__actions .btn, :lang(ar) .cs-brief__note .btn, :lang(ar) .toc-rail__aside .btn { line-height: var(--lh-ui); }
+
+/* --- Key facts (C-14): three facts fill three columns and the strip's hairlines end with them; a lone last fact spans
+   the row until four columns fit. */
+@media (min-width: 64rem) {
+  .cs-facts--2.metrics { grid-template-columns: repeat(2, minmax(0, 19rem)); width: fit-content; max-width: 100%; }
+  .cs-facts--3.metrics { grid-template-columns: repeat(3, minmax(0, 19rem)); width: fit-content; max-width: 100%; }
+}
+@media (min-width: 48rem) and (max-width: 63.99rem) { .cs-facts .metric:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+
+/* --- Brief pages' note card (A-05, C-20): the ask button fills the card, start-aligned, and wraps inside it when it
+   must (the Arabic label is wider than the card); the "all work" link wraps instead of spilling out. */
+.cs-brief__note > .btn { max-width: 100%; white-space: normal; text-align: start; text-wrap: balance; }
+.cs-brief__note > .btn--secondary { justify-self: stretch; justify-content: flex-start; padding-block: .5rem; padding-inline: .875rem; line-height: 1.35; }
+
+/* --- Steps, decision, sources: two article widths only, the measure and the full column (C-13). */
+
+/* --- Figures: designed diagrams (C-08, C-29). From 48rem until the wide drawing fits at a legible scale (73.5rem), the
+   figure sets its compact drawing beside its caption and callouts instead of floating it in an empty panel; the caption
+   follows the reader down a tall drawing. */
+@media (min-width: 48rem) and (max-width: 73.49rem) {
+  .fig--dg { display: grid; grid-template-columns: minmax(0, 25rem) minmax(0, 1fr); column-gap: clamp(1.5rem, 3vw, 2.5rem); align-items: start; }
+  .fig--dg > .fig-panel { grid-column: 1; }
+  .fig--dg > .fig__caption { grid-column: 2; margin-block-start: 0; position: sticky; inset-block-start: 7.5rem; }
+  .fig--dg .callouts, .cs-prose .fig--dg .callouts--3 { grid-template-columns: minmax(0, 1fr); }
+  .fig--dg .fig-panel__kind { display: none; }
+}
+/* In-article figures (the Wakeb case's hybrid RAG and LLM serving) break out over the TOC rail from 64rem, so they get
+   the hero's width and show the wide drawing at the hero's scale; the rail steps aside while one passes
+   (CaseStudyPage.astro sets data-covered). */
+@media (min-width: 64rem) {
+  .cs-prose > .fig--dg { position: relative; z-index: 1; margin-inline-end: calc(-1 * (var(--cs-aside, 15rem) + var(--cs-gap, 6rem))); }
+  .toc-rail__inner[data-covered]:not(:focus-within) { opacity: 0; visibility: hidden; }
+}
+@media (min-width: 64rem) and (prefers-reduced-motion: no-preference) {
+  .toc-rail__inner { transition: opacity var(--duration-base) var(--ease-standard), visibility var(--duration-base) var(--ease-standard); }
+}
+/* The compact drawing on a 320 px phone: less canvas padding, so it renders larger (C-45). */
+@media (max-width: 22rem) { .fig-panel__canvas:not(.fig-panel__canvas--html) { padding: .25rem; } }
+/* Narrow figure bars: the kind label gives way to the title (C-31). */
+@media (max-width: 39.99rem) { .fig-panel:has(.fig-panel__zoom) .fig-panel__kind { display: none; } }
+
+/* --- Diagrams by day (C-30): nodes, component cards and groups get a firmer outline on the light canvas (1.4:1 tint
+   lines read as floating text); by night they already hold. */
+:root[data-theme="light"] :is(.fig-panel, .zoom) .dg .dg-b { stroke: color-mix(in srgb, var(--pf, var(--color-line-input)) 50%, var(--color-surface)); }
+:root[data-theme="light"] :is(.fig-panel, .zoom) .dg .dg-ext .dg-b { stroke: var(--color-line-input); }
+:root[data-theme="light"] :is(.fig-panel, .zoom) .dg .dg-grp { stroke: color-mix(in srgb, var(--color-line-input) 60%, var(--color-surface)); }
+:root[data-theme="light"] .cv-node { border-color: color-mix(in srgb, var(--accent-fill, var(--color-line-input)) 50%, var(--color-surface)); }
+:root[data-theme="light"] .cv-node--neutral { border-color: var(--color-line-input); }
+
+/* --- Captions (C-47): the figure label stays a mono label, the sentence is prose. */
+.fig__caption-text { font-family: var(--font-sans); font-size: var(--text-sm); line-height: 1.6; color: var(--color-ink-2); }
+.fig__caption-text > b:first-child { font-family: var(--font-mono); font-size: var(--text-2xs); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--color-ink); }
+:lang(ar) .fig__caption-text > b:first-child { font-family: var(--font-arabic); font-size: var(--text-xs); letter-spacing: 0; text-transform: none; }
+.fig__desc > summary { padding-inline: .25rem; margin-inline: -.25rem; }
+
+/* --- Generated component views (C-32): the panel's dot grid, and connection endpoints that never break mid-name. */
+.fig-panel__canvas--html { background-image: radial-gradient(circle at 2px 2px, var(--color-graph-grid) 1.1px, transparent 1.4px); background-size: 22px 22px; }
+.cv-edges__end { display: inline-block; max-width: 100%; }
+
+/* --- The next case (C-09, C-23): from 48rem its thumbnail is a 16:10 tile beside the text, centred, not a tall
+   letterboxed column; on phones the media keeps the drawing's 16:10, so no row of nodes is cut. A short range stays
+   whole (A-20). */
+.next-case .work__media { aspect-ratio: 16 / 10; }
+@media (min-width: 48rem) {
+  .next-case .work__media { aspect-ratio: 16 / 10; min-height: 0; align-self: center; margin: clamp(1rem, 2vw, 1.5rem); margin-inline-end: 0; border: 1px solid var(--color-line); border-radius: var(--radius-md); }
+}
+.next-case .work__media > .next-case__shot { height: auto; align-self: center; }
+/* the years ("2022–2023") move to the next line whole, and still wrap inside under strong page zoom (ERGO-04) */
+.next-case__org > .eyebrow { min-width: 0; }
+.next-case__org bdi { display: inline-block; max-width: 100%; }
+
+/* --- The CTA band's light (C-15): a lighter lapis glow in its corner instead of gold mixed into lapis (which read as a
+   grey-brown smudge), and the gold as a hairline on its top edge; the same by day and by night (the band keeps the
+   night gold for its icon too). */
+:root[data-theme="light"] .cta-band { --color-saffron-fill: #E8B458; }
+.cta-band { box-shadow: var(--shadow-lg), inset 0 1px 0 rgb(232 180 88 / .55); }
+.cta-band::after { background: radial-gradient(24rem 16rem at 100% 0%, rgb(101 145 225 / .24), transparent 70%); }
+[dir="rtl"] .cta-band::after { background: radial-gradient(24rem 16rem at 0% 0%, rgb(101 145 225 / .24), transparent 70%); }
+
+/* --- logic-controls.com's Figure 1 (C-06, C-41, A-26): the URL never wraps (it ellipsizes on a 320 px phone), the
+   composition and its caption start with the article, and the window chrome is a fixed device graphic (dots on the
+   left), as in the screens gallery. */
+.shots .browser__bar { direction: ltr; }
+.shots .browser__url { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-inline: .5rem; }
+@media (max-width: 39.99rem) { .shots .browser__pad { width: 0; } }
+.shots__devices { margin-inline: 0; }
+.shots .fig__caption { justify-items: start; text-align: start; }
+
+/* --- The enlarge view (C-04, C-05, C-24, C-25, C-26, C-39, C-40). */
+/* The page behind doesn't move while it is open. */
+:root[data-screen-open] { overflow: hidden; scrollbar-gutter: stable; }
+.zoom { overscroll-behavior: contain; }
+/* The close button sits at the bar's end corner, whatever the caption's length. */
+.zoom__close { flex: none; margin-inline-start: auto; }
+/* The caption never sets the dialog's width (a screen's dialog is as wide as the screen). */
+.zoom__bar { contain: inline-size; }
+/* "Drag to pan" whenever there is something to pan to. */
+.zoom[data-pans] .zoom__hint { display: block; }
+.zoom::backdrop { -webkit-backdrop-filter: blur(6px) saturate(.8); backdrop-filter: blur(6px) saturate(.8); }
+:root[data-theme="light"] .zoom::backdrop { background: rgb(19 29 54 / .56); }
+/* A figure fills the window at every width. From 48rem the drawing is fitted to the window where that shows it at 1.1x
+   its design size or more (zoom-dialog.ts sets --zoom-min, up to 1.5x), else drawn at 1.25x (labels at 15 px) and
+   panned both ways: no fit that is barely larger than the page, no pan of a few pixels. */
+.zoom[data-kind="figure"] { inset: 0; width: auto; height: auto; max-width: none; max-height: none; margin: 0; border: 0; border-radius: 0; }
+.zoom[data-kind="figure"] .zoom__bar { padding-top: max(.375rem, env(safe-area-inset-top)); padding-left: max(1rem, env(safe-area-inset-left)); padding-right: max(.375rem, env(safe-area-inset-right)); }
+[dir="rtl"] .zoom[data-kind="figure"] .zoom__bar { padding-left: max(.375rem, env(safe-area-inset-left)); padding-right: max(1rem, env(safe-area-inset-right)); }
+@media (min-width: 48rem) {
+  .zoom[data-kind="figure"] .zoom__body { display: grid; }
+  .zoom[data-kind="figure"] .zoom__body > svg { box-sizing: border-box; padding: 1rem; margin: auto; width: clamp(var(--zoom-min, calc(var(--zoom-w, 70rem) * 1.25 + 2rem)), 100%, calc(var(--zoom-w, 70rem) * 1.5 + 2rem)); }
+}
+/* Screens on phones: full screen too; phone and dialog captures fitted to the width, desktop ones at their natural size
+   to pan. */
+@media (max-width: 47.99rem) {
+  .zoom[data-kind="screen"] { inset: 0; width: auto; height: auto; max-width: none; max-height: none; margin: 0; border: 0; border-radius: 0; }
+  .zoom[data-kind="screen"] .zoom__bar { padding-top: max(.375rem, env(safe-area-inset-top)); }
+  .zoom:is([data-frame="phone"], [data-frame="panel"]) .zoom__img { max-width: 100%; height: auto; }
+}
+/* Phone and dialog captures sit on a stage with their own rounded corners (the crop's corners hold the app's overlay). */
+.zoom:is([data-frame="phone"], [data-frame="panel"]) .zoom__body { padding: clamp(1rem, 3vw, 2rem); background: var(--color-surface-2); }
+.zoom[data-frame="panel"] .zoom__img { border-radius: .75rem; box-shadow: var(--shadow-lg); }
+.zoom[data-frame="phone"] .zoom__img { border-radius: 1.25rem; box-shadow: var(--shadow-lg); }
+@media (min-width: 48rem) {
+  .zoom:is([data-frame="phone"], [data-frame="panel"]) .zoom__img { max-width: calc(100vw - 3rem - 2 * clamp(1rem, 3vw, 2rem)); max-height: calc(100dvh - 5.5rem - 2 * clamp(1rem, 3vw, 2rem)); }
+}
+
+}
+
+/* Paper is light whatever the screen theme (D-01; cv.css has the same for the CV). Unlayered, so it beats the token
+   layer's `color-scheme: dark`, which otherwise prints the @page margins as a black frame. */
+@media print {
+  :root, :root:not([data-theme="light"]) { color-scheme: light only !important; }
 }

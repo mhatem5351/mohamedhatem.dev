@@ -7,6 +7,7 @@ import Icon from "~/components/ui/Icon.astro";
 import Ltr from "~/components/ui/Ltr.astro";
 import type { CaseStudy } from "@content/profile.ts";
 import { format, messages, tr, type Locale } from "~/lib/i18n";
+import { noBreakHtml } from "~/lib/nobreak";
 import { contact, homeAnchor, mailtoHref } from "~/lib/site";
 import { askQuestion } from "~/lib/case";
 
@@ -21,7 +22,7 @@ const email = contact("email").display;
 ---
 <div class="cta-band">
   <p class="eyebrow">{m.work.page.ctaEyebrow}</p>
-  <h3 class="cta-band__title">{format(m.work.page.ctaTitle, { title: tr(cs.shortTitle, locale) })}</h3>
+  <h3 class="cta-band__title" set:html={noBreakHtml(format(m.work.page.ctaTitle, { title: tr(cs.shortTitle, locale) }))} />
   <p class="cta-band__text">{m.work.page.ctaBody}</p>
   <button class="ask-bar" type="button" data-open-chat data-question={q} aria-haspopup="dialog" data-chat-avoid>
     <Icon name="ask" size="md" class="ask-bar__icon" />
