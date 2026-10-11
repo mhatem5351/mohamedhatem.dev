@@ -1,5 +1,5 @@
 {
-  "//": "Type-checks content/ on its own: npx -y -p typescript tsc --noEmit -p content/tsconfig.json",
+  "//": "Type-checks content/ on its own: npx --no-install tsc --noEmit -p content/tsconfig.json",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",

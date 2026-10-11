@@ -3,6 +3,8 @@
  * Writes .dev.vars (gitignored, mode 600) for `wrangler dev` from the repo's .env, without printing any secret.
  *
  *   GEMINI_API_KEY                  copied from .env
+ *   CONFIDENTIAL_HMAC_KEY           copied from .env: the key of the unnamed client's hashed names (the local Worker must
+ *                                   use the list's own key, or the chat fails closed with 503)
  *   SESSION_SECRET                  a random dev-only value, never the production one in .env: a local Worker must not
  *                                   be able to mint session cookies that production accepts. Kept across
  *                                   regenerations so local sessions survive.
@@ -35,7 +37,11 @@ const parse = (file) => {
 const env = parse(join(root, ".env"));
 const previous = parse(target);
 // An older .dev.vars copied the production session secret, or predates ALLOW_TURNSTILE_TEST: always rewrite those.
-const current = previous.ALLOW_TURNSTILE_TEST === "1" && previous.SESSION_SECRET && previous.SESSION_SECRET !== env.SESSION_SECRET;
+const current =
+  previous.ALLOW_TURNSTILE_TEST === "1" &&
+  previous.SESSION_SECRET &&
+  previous.SESSION_SECRET !== env.SESSION_SECRET &&
+  (previous.CONFIDENTIAL_HMAC_KEY ?? "") === (env.CONFIDENTIAL_HMAC_KEY ?? "");
 if (args.has("--if-missing") && existsSync(target) && current) process.exit(0);
 if (!env.GEMINI_API_KEY) {
   console.error("dev-vars: GEMINI_API_KEY is missing from .env");
@@ -48,6 +54,7 @@ const origins = ports.flatMap((p) => [`http://localhost:${p}`, `http://127.0.0.1
 
 const vars = {
   GEMINI_API_KEY: env.GEMINI_API_KEY,
+  ...(env.CONFIDENTIAL_HMAC_KEY ? { CONFIDENTIAL_HMAC_KEY: env.CONFIDENTIAL_HMAC_KEY } : {}),
   SESSION_SECRET: current ? previous.SESSION_SECRET : randomBytes(32).toString("base64url"),
   TURNSTILE_SECRET: args.has("--real-turnstile") && env.TURNSTILE_SECRET ? env.TURNSTILE_SECRET : TEST_TURNSTILE_SECRET,
   ALLOW_TURNSTILE_TEST: "1",
@@ -56,6 +63,7 @@ const vars = {
   ALLOW_MODEL_OVERRIDE: "1",
 };
 
+if (!env.CONFIDENTIAL_HMAC_KEY) console.warn("dev-vars: CONFIDENTIAL_HMAC_KEY is missing from .env; the local chat will answer 503 (fail closed)");
 const q = (v) => JSON.stringify(String(v));
 writeFileSync(
   target,

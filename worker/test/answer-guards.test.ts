@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { fitContents, streamAnswer, type AnswerDeps } from "../src/chat/answer";
-import { CONFIDENTIAL_FOLLOWUPS, CONFIDENTIAL_REPLY, ConfidentialMatcher } from "../src/chat/confidential";
+import { CONFIDENTIAL_CHIPS, CONFIDENTIAL_REPLY, ConfidentialMatcher } from "../src/chat/confidential";
 import { resetCooldowns } from "../src/chat/cooldown";
 import { estimateTokens, inputTokenLimit, isFast, profileFor } from "../src/chat/gemini";
 import { answerableFollowup, asksAboutFit, isJobDescription, keepsClientsApart, wantsContact } from "../src/chat/intent";
@@ -46,8 +46,12 @@ describe("confidential client (AST-01): the answer is replaced, never shown", ()
     // Some text had already been shown, so the widget is told to replace it.
     const replace = sink.events.find((e) => e.event === "replace");
     expect(replace?.data.t).toBe(CONFIDENTIAL_REPLY.en);
-    expect(sink.names().slice(-2)).toEqual(["tool", "done"]);
-    expect(sink.events.at(-2)!.data).toEqual({ name: "suggest_followups", args: { questions: CONFIDENTIAL_FOLLOWUPS.en } });
+    // The model's own deflection shape: a link to the work section and two chips from the pool.
+    expect(sink.names().slice(-3)).toEqual(["tool", "tool", "done"]);
+    expect(sink.events.at(-3)!.data).toEqual({ name: "open_section", args: { id: "work" } });
+    const chips = sink.events.at(-2)!.data.args.questions as string[];
+    expect(chips).toHaveLength(2);
+    for (const q of chips) expect(CONFIDENTIAL_CHIPS.en).toContain(q);
     expect(sink.names()).not.toContain("error");
   });
 

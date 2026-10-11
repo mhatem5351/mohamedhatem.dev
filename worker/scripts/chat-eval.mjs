@@ -48,13 +48,14 @@
  *
  * The unnamed client: cases that presuppose its names write placeholders such as {{CLIENT_EN}}; the runner fills them
  * from the gitignored _inputs/forbidden-names.txt (KEY=phrase) and skips those cases when the file is absent, so the
- * names never enter the repository. Every answer is checked against the Worker's hashed list
- * (worker/src/chat/confidential-hashes.json), the same check the Worker's guard runs on live answers.
+ * names never enter the repository. Every answer is checked against the Worker's keyed hash list
+ * (worker/src/chat/confidential-hashes.json, through confidential-node.mjs), the same check the Worker's guard runs on
+ * live answers.
  */
-import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadConfidential, redactConfidential } from "../src/chat/confidential-node.mjs";
 import { createClient, EVAL_MODEL, percentile } from "./lib/chat-client.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -103,39 +104,16 @@ const generated = existsSync(join(root, "worker/src/generated/content.ts")) ? re
 const workerCanaries = JSON.parse(/export const CANARIES[^=]*= (\[.*\]);/.exec(generated)?.[1] ?? "[]");
 const CANARY_PATTERN = /MHC-[0-9a-f]{12}/i;
 
-// The unnamed client must never be named; its names are kept out of the repository and checked by hash with the
-// Worker's own list and normalisation (canonical hashes from content/scripts/check-content.mjs plus generated variants).
-const hashFile = JSON.parse(readFileSync(join(root, "worker/src/chat/confidential-hashes.json"), "utf8"));
-const FORBIDDEN_SHA256 = new Set([...hashFile.canonical, ...hashFile.variants]);
-const fold = (w) => w.replace(/[أإآٱ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/ـ/g, "");
-const sha = (s) => createHash("sha256").update(s).digest("hex");
-function mentionsUnnamedClient(text) {
-  const words = text.normalize("NFKC").toLowerCase().replace(/\p{M}/gu, "").split(/[^\p{L}\p{N}]+/u).filter(Boolean);
-  for (let i = 0; i < words.length; i++)
-    for (let n = 1; n <= 3 && i + n <= words.length; n++) {
-      const gram = words.slice(i, i + n);
-      if (FORBIDDEN_SHA256.has(sha(gram.join(" "))) || FORBIDDEN_SHA256.has(sha(gram.map(fold).join(" ")))) return true;
-    }
-  return false;
+// The unnamed client must never be named; its names are kept out of the repository and checked with the Worker's own
+// keyed list and matcher (worker/src/chat/confidential-node.mjs: HMAC key from CONFIDENTIAL_HMAC_KEY or .env).
+const confidential = loadConfidential();
+if (confidential.error) {
+  console.error(`chat-eval: the unnamed-client check can't run: ${confidential.error}`);
+  process.exit(1);
 }
+const mentionsUnnamedClient = (text) => confidential.matcher.mentions(text);
 /** The answer with any listed name blanked out (results.json is committed and must never contain the names). */
-function redactNames(text) {
-  if (!text || !mentionsUnnamedClient(text)) return text;
-  const raw = [...text.matchAll(/[\p{L}\p{N}\p{M}]+/gu)].map((m) => ({ start: m.index, end: m.index + m[0].length, w: m[0].normalize("NFKC").toLowerCase().replace(/\p{M}/gu, "") }));
-  const hit = new Set();
-  for (let i = 0; i < raw.length; i++)
-    for (let n = 1; n <= 3 && i + n <= raw.length; n++) {
-      const gram = raw.slice(i, i + n).map((r) => r.w);
-      if (FORBIDDEN_SHA256.has(sha(gram.join(" "))) || FORBIDDEN_SHA256.has(sha(gram.map(fold).join(" ")))) for (let k = i; k < i + n; k++) hit.add(k);
-    }
-  let out = "";
-  let at = 0;
-  for (const k of [...hit].sort((a, b) => a - b)) {
-    out += text.slice(at, raw[k].start) + "[redacted]";
-    at = raw[k].end;
-  }
-  return out + text.slice(at);
-}
+const redactNames = (text) => redactConfidential(text, confidential.matcher);
 // Placeholders ({{KEY}}) for names that must not be written in the repository; filled from the local names file.
 const namesFile = join(root, "_inputs/forbidden-names.txt");
 const NAMES = Object.fromEntries(

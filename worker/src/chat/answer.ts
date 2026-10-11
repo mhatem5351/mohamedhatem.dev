@@ -1,7 +1,7 @@
 import { CANARIES, KNOWLEDGE, SITE_PATHS, SYSTEM_PROMPT } from "../generated/content";
 import { FRIENDLY } from "../http";
 import { ApartFilter, type ApartMode } from "./apart";
-import { CONFIDENTIAL_FOLLOWUPS, CONFIDENTIAL_REPLY, ConfidentialMatcher } from "./confidential";
+import { confidentialDeflection, ConfidentialMatcher } from "./confidential";
 import { DirectiveExtractor } from "./directive";
 import { CooldownStore, secondsToPacificMidnight } from "./cooldown";
 import {
@@ -45,8 +45,9 @@ import { TableFilter } from "./tables";
  *     Flash-Lite 3.5 and 3.1.
  *   - Everything cooling or failing: `error upstream_busy` with a retry time; the widget offers the contact card.
  *
- * Confidentiality (confidential.ts): if the answer is about to name the unnamed client, it is replaced by a fixed,
- * localised reply (`replace` event, or plain tokens when nothing was shown yet), never by a generic error.
+ * Confidentiality (confidential.ts): if the answer is about to name the unnamed client, it is replaced by the fixed,
+ * localised deflection with the UI events of the model's own (a link to the work section, two chips from a pool):
+ * `replace` when text was already shown, else plain tokens; never a generic error.
  */
 export interface Sink {
   send(event: "meta" | "token" | "replace" | "tool" | "done" | "error", data: unknown): void;
@@ -235,15 +236,15 @@ export async function streamAnswer(
     sentTools.push(ev.name);
     sink.send("tool", ev);
   };
-  /** The answer was about to name the unnamed client: show the fixed reply instead of anything already streamed. */
+  /** The answer was about to name the unnamed client: show the fixed deflection instead of anything already streamed. */
   const redact = (): AnswerResult => {
     const lang: Lang = deps.lang === "ar" ? "ar" : "en";
-    const text = CONFIDENTIAL_REPLY[lang];
+    const { text, tools } = confidentialDeflection(lang);
     if (guard.started) sink.send("replace", { t: text });
     else emit(text);
     firstMs ??= Date.now() - t0;
     trace.push("redacted");
-    tool({ name: "suggest_followups", args: { questions: CONFIDENTIAL_FOLLOWUPS[lang] } });
+    for (const ev of tools) tool(ev);
     const data: DoneEvent = { finish: "stop", usage, ms: { first: firstMs, total: Date.now() - t0 }, model };
     sink.send("done", data);
     return result("redacted", "stop");
@@ -383,6 +384,21 @@ export async function streamAnswer(
     sink.send("done", data);
     return result("ok", finish);
   }
+}
+
+/**
+ * R6-03: the fixed confidentiality answer for a turn that asks who the unnamed client is (or guesses), sent like a
+ * normal answer (tokens, then the model's deflection UI events, then `done`) without calling the model, so a right
+ * guess and a wrong one get the same events and no `replace`.
+ */
+export function sendDeflection(lang: Lang, sink: Sink, model: string, t0 = Date.now()): AnswerResult {
+  const { text, tools } = confidentialDeflection(lang);
+  for (const part of text.match(/[^.،!?؟]+[.،!?؟]*\s*/g) ?? [text]) sink.send("token", { t: part });
+  for (const ev of tools) sink.send("tool", ev);
+  const usage: Usage = { input: 0, output: 0, thoughts: 0, cached: 0 };
+  const ms = Date.now() - t0;
+  sink.send("done", { finish: "stop", usage, ms: { first: ms, total: ms }, model } satisfies DoneEvent);
+  return { outcome: "redacted", model, fallback: false, finish: "stop", usage, firstMs: ms, totalMs: ms, tools: tools.map((t) => t.name), answerChars: text.length, trace: "deflected" };
 }
 
 function linked(parent: AbortSignal): AbortController {

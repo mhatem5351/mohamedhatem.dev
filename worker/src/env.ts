@@ -30,4 +30,9 @@ export interface Env {
   GEMINI_API_KEY?: string;
   TURNSTILE_SECRET?: string;
   SESSION_SECRET?: string;
+  /**
+   * Key of the unnamed client's hashed names (worker/src/chat/confidential-hashes.json): 64 hex characters. Missing,
+   * malformed or not the list's key: the chat answers 503 "unavailable" (fail closed).
+   */
+  CONFIDENTIAL_HMAC_KEY?: string;
 }

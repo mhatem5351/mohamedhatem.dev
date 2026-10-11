@@ -30,13 +30,13 @@ content/
 | `chat/system-prompt.md` + `chat/knowledge.md` | Worker `POST /api/chat` | `worker/src/chat/prompt.ts` builds the system instruction as `system-prompt.md` + the Worker's security rules (with its own canary) + UI directive + `# KNOWLEDGE` + `knowledge.md`, then a per-request tail with the server date and reply language. The prompt relies on that: it refers to "the KNOWLEDGE section" and to "the server date given at the end". Keep the prefix byte-identical across requests so Gemini's implicit prefix caching can apply. Never send either file to the browser (they are public in the repo, which the prompt acknowledges). |
 | `chat/suggestions.json` | Chat widget | Chips: show `label`, send `prompt`. Show the first 4 on small screens. `id`s match across locales. |
 | `chat/eval-set.json` | Chat agent's eval harness, QA | See "Evaluating the assistant" below. |
-| `scripts/check-content.mjs` | Anyone editing content, CI | `npx -y tsx content/scripts/check-content.mjs` (exits 1 on any problem). |
+| `scripts/check-content.mjs` | Anyone editing content, CI | `npm run check:content` (exits 1 on any problem). |
 
 Checks to run after any content change (both must pass):
 
 ```bash
-npx -y -p typescript tsc --noEmit -p content/tsconfig.json
-npx -y tsx content/scripts/check-content.mjs
+npx --no-install tsc --noEmit -p content/tsconfig.json
+npm run check:content
 ```
 
 ## Bilingual model: `{ en, ar }` fields inside `profile.ts`

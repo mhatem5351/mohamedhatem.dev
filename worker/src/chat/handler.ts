@@ -5,7 +5,8 @@ import { allowedHostnames, clientKey, corsHeaders, errorJson, networkKey, origin
 import { checkLimits } from "../ratelimit";
 import { checkSession, nextExpiry, readCookie, SESSION_COOKIE, SESSION_MAX_S, sessionBinding, sessionCookie, signSession, type Session } from "../session";
 import { verifyTurnstile } from "../turnstile";
-import { CONFIDENTIAL, streamAnswer, type AnswerDeps, type Sink } from "./answer";
+import { sendDeflection, streamAnswer, type AnswerDeps, type Sink } from "./answer";
+import { asksAboutUnnamedClient, confidentialFor } from "./confidential";
 import { CooldownStore } from "./cooldown";
 import { usesCompactPrompt } from "./gemini";
 import { asksAboutClients, asksAboutFit, asksAboutGovAssistant, wantsContact } from "./intent";
@@ -50,6 +51,9 @@ export async function handleChat(req: Request, env: Env, ctx: ExecutionContext, 
   const { messages, pageLang, turnstileToken, userChars, trimmed, device } = parsed.value;
 
   if (!env.GEMINI_API_KEY || !env.SESSION_SECRET || !env.TURNSTILE_SECRET) return reject(503, "unavailable");
+  // Fail closed: without the key of the unnamed client's hashed names the output guard can't run, so no answer.
+  const confidential = deps?.confidential ?? confidentialFor(env.CONFIDENTIAL_HMAC_KEY);
+  if (!confidential) return reject(503, "unavailable");
 
   // Session cookie (bound to this network and browser), or a Turnstile token to start one. A missing, expired or
   // moved session is a 401: the widget gets a fresh token silently and resends.
@@ -100,18 +104,20 @@ export async function handleChat(req: Request, env: Env, ctx: ExecutionContext, 
   const previousAnswer = messages.findLast((m) => m.role === "assistant")?.content;
   const fixedLang: Lang = reply === "latin" && previousAnswer ? scriptLang(previousAnswer) : lang;
   const jd = asksAboutFit(latest);
+  // R6-03: a question about who the unnamed client is, or a guess, gets the fixed deflection, decided without looking
+  // at any name, so a right guess and a wrong one look the same (and no per-turn hint singles out real names).
+  const deflect = asksAboutUnnamedClient(latest, previousAnswer ?? "");
   const turn = {
     reply,
     pageLang,
     now: new Date(),
     jd,
     device,
-    namesClient: (deps?.confidential ?? CONFIDENTIAL).mentions(latest),
     clients: asksAboutClients(latest),
     govAssistant: asksAboutGovAssistant(latest),
   };
   // GADD and the government assistant never share an answer: which one this turn may mention (apart.ts).
-  const apart = turn.govAssistant || turn.namesClient ? "gov" : turn.clients ? "clients" : /wakeb|وكب/i.test(latest) ? "first" : null;
+  const apart = turn.govAssistant ? "gov" : turn.clients ? "clients" : /wakeb|وكب/i.test(latest) ? "first" : null;
   const prompts = new Map<boolean, string>();
   const system = (model: string) => {
     const compact = usesCompactPrompt(model);
@@ -175,8 +181,10 @@ export async function handleChat(req: Request, env: Env, ctx: ExecutionContext, 
     jd,
     apart,
     ...deps,
+    confidential,
   };
-  const work = streamAnswer(system, contents, answerDeps, sink, abort.signal)
+  const answer = deflect ? Promise.resolve(sendDeflection(lang, sink, answerDeps.primary)) : streamAnswer(system, contents, answerDeps, sink, abort.signal);
+  const work = answer
     .then((r) => {
       track(env.EVENTS, {
         kind: "chat",

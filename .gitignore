@@ -2,11 +2,14 @@
 .env.*
 .dev.vars
 node_modules/
+# Worktrees symlink these (a trailing slash only matches real directories, not links to them).
+node_modules
 dist/
 .wrangler/
 .astro/
 .DS_Store
 _inputs/
+_inputs
 !.env.example
 # local QA output (large; regenerate with the scripts)
 site/screenshots/
@@ -16,3 +19,11 @@ test-results/
 playwright-report/
 **/test-results/
 **/playwright-report/
+
+# Local secrets and scratch (SEC-07)
+.dev.vars.*
+.playwright-mcp/
+*.log
+*.pem
+*.key
+.lighthouseci/

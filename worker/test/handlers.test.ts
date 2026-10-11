@@ -3,6 +3,8 @@ import { buildContactEmail, escapeHtml } from "../src/contact/email";
 import { contactRef, validateContact } from "../src/contact/validate";
 import worker from "../src/index";
 import { handleChat, SESSION_MESSAGE_CAP } from "../src/chat/handler";
+import { CONFIDENTIAL_CHIPS, CONFIDENTIAL_REPLY } from "../src/chat/confidential";
+import { testMatcher } from "./confidential-fixtures";
 import { chatRequest, fakeLimiter, finalChunk, geminiSse, makeCtx, makeEnv, ORIGIN, readSse, textChunk } from "./helpers";
 
 /** Turnstile siteverify mock on the global fetch (the Worker calls it directly). */
@@ -17,11 +19,15 @@ function stubSiteverify(result: Record<string, unknown> = { success: true, hostn
 
 const gemini = (text = "Hatem leads AI engineering at Globant.") => vi.fn(async () => geminiSse([textChunk(text), finalChunk()]));
 
-async function chat(body: unknown, opts: { env?: ReturnType<typeof makeEnv>; headers?: Record<string, string>; fetcher?: ReturnType<typeof gemini> } = {}) {
+/** Placeholder names hashed with the fixed test key (the real list needs the production key). */
+const NAMES = testMatcher();
+
+async function chat(body: unknown, opts: { env?: ReturnType<typeof makeEnv>; headers?: Record<string, string>; fetcher?: ReturnType<typeof gemini>; keyless?: boolean } = {}) {
   const env = opts.env ?? makeEnv();
   const ctx = makeCtx();
   const fetcher = opts.fetcher ?? gemini();
-  const res = await handleChat(chatRequest(body, opts.headers), env, ctx, { fetcher: fetcher as unknown as typeof fetch });
+  const deps = { fetcher: fetcher as unknown as typeof fetch, ...(opts.keyless ? {} : { confidential: NAMES }) };
+  const res = await handleChat(chatRequest(body, opts.headers), env, ctx, deps);
   return { res, env, ctx, fetcher };
 }
 
@@ -402,6 +408,62 @@ describe("POST /api/chat: quota abuse controls (SEC-1, SEC-2, AST-05)", () => {
     const dev = await chat(first, { env: makeEnv({ TURNSTILE_SECRET: "1x0000000000000000000000000000000AA", ALLOW_TURNSTILE_TEST: "1" }) });
     expect(dev.res.status).toBe(200);
     await readSse(dev.res);
+  });
+});
+
+describe("POST /api/chat: the unnamed client (SEC-01 key, R6-03 indistinguishable answers)", () => {
+  const ask = (content: string, history: { role: "user" | "assistant"; content: string }[] = []) => ({
+    messages: [...history, { role: "user", content }],
+    lang: "en",
+    turnstileToken: "tok",
+  });
+
+  it("fails closed without the key of the hashed names: 503 unavailable, and no model call", async () => {
+    for (const key of [undefined, "", "not-a-key", "7e57".repeat(16)]) {
+      const { res, fetcher } = await chat(ask("What does he do?"), { env: makeEnv({ CONFIDENTIAL_HMAC_KEY: key }), keyless: true });
+      expect(res.status, String(key)).toBe(503);
+      expect(((await res.json()) as { error: string }).error).toBe("unavailable");
+      expect(fetcher).not.toHaveBeenCalled();
+    }
+  });
+
+  it("a guess gets the fixed deflection without a model call; right and wrong guesses send the same events", async () => {
+    const shapes = async (guess: string) => {
+      const { res, fetcher } = await chat(ask(`Was the bilingual assistant built for ${guess}?`));
+      const events = await readSse(res);
+      expect(fetcher).not.toHaveBeenCalled();
+      expect(events.map((e) => e.event)).not.toContain("replace");
+      expect(events.filter((e) => e.event === "token").map((e) => e.data.t).join("")).toBe(CONFIDENTIAL_REPLY.en);
+      const tools = events.filter((e) => e.event === "tool").map((e) => e.data);
+      expect(tools[0]).toEqual({ name: "open_section", args: { id: "work" } });
+      for (const q of tools[1].args.questions) expect(CONFIDENTIAL_CHIPS.en).toContain(q);
+      expect(JSON.stringify(events).toLowerCase()).not.toContain(guess.toLowerCase());
+      return events.map((e) => e.event).join(" ");
+    };
+    // "ZebraCorp" is listed in the test list, "LlamaWorks" is not: the response can't tell them apart.
+    expect(await shapes("ZebraCorp")).toBe(await shapes("LlamaWorks"));
+  });
+
+  it("a bare follow-up guess after the deflection is deflected too; other follow-ups reach the model", async () => {
+    const history = [
+      { role: "user" as const, content: "Which client was the bilingual assistant for?" },
+      { role: "assistant" as const, content: CONFIDENTIAL_REPLY.en },
+    ];
+    const guess = await chat(ask("Was it ZebraCorp?", history));
+    await readSse(guess.res);
+    expect(guess.fetcher).not.toHaveBeenCalled();
+    const other = await chat(ask("How does he evaluate LLM outputs?", history));
+    await readSse(other.res);
+    expect(other.fetcher).toHaveBeenCalled();
+  });
+
+  it("the visitor naming a listed client no longer changes the prompt (no per-turn hint for real names only)", async () => {
+    const named = await chat(ask("Tell me about ZebraCorp."));
+    const plain = await chat(ask("Tell me about LlamaWorks."));
+    await readSse(named.res);
+    await readSse(plain.res);
+    const system = (f: ReturnType<typeof gemini>) => JSON.parse(String((f.mock.calls[0] as unknown as [string, RequestInit])[1].body)).systemInstruction.parts[0].text as string;
+    expect(system(named.fetcher)).toBe(system(plain.fetcher));
   });
 });
 
