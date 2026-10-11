@@ -31,12 +31,12 @@
  *                    codeRepository only on SoftwareSourceCode; og:image:alt describes each page's own card
  * Warnings (no failure): long titles/descriptions, pages not in the expected list.
  */
-import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cspHash, elements, fileForPath, pageText, parsePolicy, tags, walk, withoutCode } from "./lib/html.mjs";
 import { allPages } from "./lib/pages.mjs";
+import { loadConfidential } from "../../worker/src/chat/confidential-node.mjs";
 
 const args = process.argv.slice(2);
 const DIST = resolve(args.includes("--dist") ? args[args.indexOf("--dist") + 1] : fileURLToPath(new URL("../../dist", import.meta.url)));
@@ -84,19 +84,14 @@ const SECRETS = secretValues();
 const TEXT_FILE = /\.(html|js|mjs|css|txt|xml|json|webmanifest|vcf|svg|map)$|(^|\/)_headers$/;
 
 /* ------------------------------------------------------------------ honesty */
-// Hashes of the unnamed client's names: the repository's one list (worker/src/chat/confidential-hashes.json, shared
-// with content/scripts/check-content.mjs and the Worker's output guard); the names are never written.
-const CONFIDENTIAL = JSON.parse(readFileSync(fileURLToPath(new URL("../../worker/src/chat/confidential-hashes.json", import.meta.url)), "utf8"));
-const FORBIDDEN_SHA256 = new Set([...(CONFIDENTIAL.canonical ?? []), ...(CONFIDENTIAL.variants ?? [])]);
-if (!CONFIDENTIAL.canonical?.length) fail("confidential-hashes.json", "has no canonical hashes: the unnamed-client check would pass anything");
+// The unnamed client's names: the repository's one keyed list and matcher (worker/src/chat/confidential-node.mjs, shared
+// with content/scripts/check-content.mjs and the Worker's output guard); the names are never written. Fail closed: a
+// missing or wrong CONFIDENTIAL_HMAC_KEY (environment or ../.env) is an error, unless CONFIDENTIAL_KEY_OPTIONAL=1.
+const CONFIDENTIAL = loadConfidential({ optional: process.env.CONFIDENTIAL_KEY_OPTIONAL === "1" });
+if (CONFIDENTIAL.error) fail("confidential-hashes.json", `the unnamed-client check can't run: ${CONFIDENTIAL.error}`);
+if (CONFIDENTIAL.skipped) warn("confidential-hashes.json", `the unnamed-client check was skipped: ${CONFIDENTIAL.skipped}`);
 export function mentionsUnnamedClient(text) {
-  const words = text.normalize("NFKC").toLowerCase().replace(/\p{M}/gu, "").split(/[^\p{L}\p{N}]+/u).filter(Boolean);
-  for (let i = 0; i < words.length; i++)
-    for (let n = 1; n <= 3 && i + n <= words.length; n++) {
-      const gram = words.slice(i, i + n).join(" ");
-      if (FORBIDDEN_SHA256.has(createHash("sha256").update(gram).digest("hex"))) return true;
-    }
-  return false;
+  return CONFIDENTIAL.matcher?.mentions(text) ?? false;
 }
 const HELD_MSC = /\b(hold|holds|holding|has|completed|earned)\s+(an?\s+|his\s+|the\s+)?(m\.?\s?sc|master'?s)\b|حاصل على (درجة )?الماجستير|حصل على (درجة )?الماجستير/i;
 

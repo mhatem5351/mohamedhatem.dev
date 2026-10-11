@@ -62,7 +62,7 @@
     "GEMINI_HEDGE_MS": "3200",
   },
   // Secrets (wrangler secret put …; locally .dev.vars from `npm run dev-vars`):
-  //   GEMINI_API_KEY · TURNSTILE_SECRET · SESSION_SECRET
+  //   GEMINI_API_KEY · TURNSTILE_SECRET · SESSION_SECRET · CONFIDENTIAL_HMAC_KEY
   // Never set in production: ALLOW_MODEL_OVERRIDE, ALLOW_TURNSTILE_TEST (local .dev.vars only).
   // Only the Worker's own console lines are kept (no IPs, no message text); automatic invocation logs would store request
   // metadata such as the client IP, which /privacy/ promises is never logged.
