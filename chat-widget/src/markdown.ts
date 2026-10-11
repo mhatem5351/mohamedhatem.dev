@@ -104,10 +104,10 @@ export function renderMarkdown(src: string, opts: MdOptions = {}): DocumentFragm
       const li = el("li");
       inline(li, m[3]!, c);
       if (m[1]!.length >= 2 && item) {
-        if (sub?.tagName.toLowerCase() !== tag) item.append((sub = el(tag)));
+        if (sub?.localName !== tag) item.append((sub = el(tag)));
         sub.append(li);
       } else {
-        if (list?.tagName.toLowerCase() !== tag) {
+        if (list?.localName !== tag) {
           frag.append((list = el(tag)));
           const n = parseInt(m[2]!, 10);
           if (tag === "ol" && n > 1) list.setAttribute("start", String(n));
@@ -141,10 +141,10 @@ export function renderMarkdown(src: string, opts: MdOptions = {}): DocumentFragm
 
   if (opts.cursor) {
     let last = frag.lastElementChild;
-    while (last && /^(UL|OL)$/.test(last.tagName) && last.lastElementChild) {
+    while (last && last.matches("ul,ol") && last.lastElementChild) {
       last = last.lastElementChild;
       const nested = last.lastElementChild;
-      if (nested && /^(UL|OL)$/.test(nested.tagName)) last = nested;
+      if (nested && nested.matches("ul,ol")) last = nested;
     }
     if (last?.tagName === "PRE") last = last.firstElementChild;
     if (!last || last.tagName === "HR") frag.append((last = el("p")));

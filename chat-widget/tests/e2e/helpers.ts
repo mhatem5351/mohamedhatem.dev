@@ -65,7 +65,7 @@ export async function mock(page: Page, ...responses: MockResponse[]): Promise<vo
   await page.evaluate((r) => (window as unknown as { __queue: unknown[] }).__queue.push(...r), responses);
 }
 
-export async function requests(page: Page): Promise<{ messages: { role: string; content: string }[]; lang: string; turnstileToken?: string }[]> {
+export async function requests(page: Page): Promise<{ messages: { role: string; content: string }[]; lang: string; turnstileToken?: string; device?: string }[]> {
   return page.evaluate(() => (window as unknown as { __requests: never[] }).__requests);
 }
 

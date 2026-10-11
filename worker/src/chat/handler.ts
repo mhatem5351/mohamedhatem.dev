@@ -9,7 +9,8 @@ import { sendDeflection, streamAnswer, type AnswerDeps, type Sink } from "./answ
 import { asksAboutUnnamedClient, confidentialFor } from "./confidential";
 import { CooldownStore } from "./cooldown";
 import { usesCompactPrompt } from "./gemini";
-import { asksAboutClients, asksAboutFit, asksAboutGovAssistant, wantsContact } from "./intent";
+import { asksAboutClients, asksAboutFit, asksAboutGovAssistant, mentionsGovAssistant, wantsContact } from "./intent";
+import { hasUnknownName, maskNames, namesUnknownOrganisation } from "./names";
 import { detectLang, parseChatRequest, scriptLang } from "./parse";
 import { systemInstruction, toContents } from "./prompt";
 import { CHAT_LIMITS, type Lang, type MetaEvent } from "./protocol";
@@ -104,9 +105,11 @@ export async function handleChat(req: Request, env: Env, ctx: ExecutionContext, 
   const previousAnswer = messages.findLast((m) => m.role === "assistant")?.content;
   const fixedLang: Lang = reply === "latin" && previousAnswer ? scriptLang(previousAnswer) : lang;
   const jd = asksAboutFit(latest);
-  // R6-03: a question about who the unnamed client is, or a guess, gets the fixed deflection, decided without looking
-  // at any name, so a right guess and a wrong one look the same (and no per-turn hint singles out real names).
-  const deflect = asksAboutUnnamedClient(latest, previousAnswer ?? "");
+  // R6-03, R7-01: a question about who the government assistant's client is, or a guess at it, gets the fixed reply,
+  // decided without looking at any name, so a right guess and a wrong one look the same. A job description or fit
+  // question never does (R7-02): it gets its assessment, planted instructions are ignored, the guard stays the backstop.
+  const previousQuestion = messages.length >= 3 && messages.at(-3)!.role === "user" ? messages.at(-3)!.content : "";
+  const deflect = !jd && asksAboutUnnamedClient(latest, previousAnswer ?? "", previousQuestion);
   const turn = {
     reply,
     pageLang,
@@ -116,15 +119,25 @@ export async function handleChat(req: Request, env: Env, ctx: ExecutionContext, 
     clients: asksAboutClients(latest),
     govAssistant: asksAboutGovAssistant(latest),
   };
-  // GADD and the government assistant never share an answer: which one this turn may mention (apart.ts).
-  const apart = turn.govAssistant ? "gov" : turn.clients ? "clients" : /wakeb|وكب/i.test(latest) ? "first" : null;
+  // GADD and the government assistant never share an answer: which one this turn may mention (apart.ts). Every turn,
+  // whatever it names (R7-05: "What did he do before Globant?" and «واكب» used to go unfiltered).
+  const apart = turn.govAssistant ? "gov" : turn.clients ? "clients" : "first";
+  // Turns that may draw a name are held until the guard has seen the whole answer, so a caught name never shows
+  // first (R7-03). Decided by shape only: the same for a right guess and a wrong one.
+  const buffer =
+    turn.govAssistant || turn.clients || mentionsGovAssistant(previousAnswer ?? "") || namesUnknownOrganisation(latest) || hasUnknownName(latest);
   const prompts = new Map<boolean, string>();
   const system = (model: string) => {
     const compact = usesCompactPrompt(model);
     if (!prompts.has(compact)) prompts.set(compact, systemInstruction(turn, compact));
     return prompts.get(compact)!;
   };
-  const contents = toContents(messages);
+  // The model never sees an organisation name the knowledge base doesn't have, by shape ("Ministry of X") or because
+  // it is a listed name: it gets "[organisation]" instead, so it can't repeat a name, and a right guess and a wrong
+  // one of the same shape reach it as the same text (names.ts, R7-03).
+  const contents = toContents(
+    messages.map((m) => ({ role: m.role, content: maskNames(m.content, confidential, m.role === "user" && !asksAboutFit(m.content)) })),
+  );
 
   // The response stream. The visitor closing the tab / pressing Stop cancels it, which aborts Gemini.
   const abort = new AbortController();
@@ -180,10 +193,18 @@ export async function handleChat(req: Request, env: Env, ctx: ExecutionContext, 
     contactAllowed: wantsContact(latest),
     jd,
     apart,
+    buffer,
+    // On a turn about the government assistant the guard answers like the deflection; elsewhere like the model does
+    // for any organisation his profile doesn't name (R7-03).
+    redactWith: turn.govAssistant ? "confidential" : "notNamed",
+    diagnostics: env.ALLOW_MODEL_OVERRIDE === "1",
     ...deps,
     confidential,
   };
-  const answer = deflect ? Promise.resolve(sendDeflection(lang, sink, answerDeps.primary)) : streamAnswer(system, contents, answerDeps, sink, abort.signal);
+  // R6-18, R7-06: the fixed reply follows the conversation's language on a turn whose own language is unclear.
+  const answer = deflect
+    ? sendDeflection(fixedLang, sink, { pace: answerDeps.pace, diagnostics: answerDeps.diagnostics, signal: abort.signal })
+    : streamAnswer(system, contents, answerDeps, sink, abort.signal);
   const work = answer
     .then((r) => {
       track(env.EVENTS, {

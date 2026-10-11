@@ -354,7 +354,8 @@ export function createPanel(ctx: PanelContext): PanelApi {
       }
       const out = await streamChat(
         apiUrl,
-        { messages: outgoing(), lang: detectLang(question, lang), ...(turnstileToken ? { turnstileToken } : {}) },
+        // In the phone sheet the Worker asks for shorter answers; undefined fields are left out of the JSON body.
+        { messages: outgoing(), lang: detectLang(question, lang), turnstileToken, device: sheet.matches ? "phone" : undefined },
         ctrl.signal,
         (event, data) => onEvent(entry, event, data),
       );
@@ -557,11 +558,10 @@ export function createPanel(ctx: PanelContext): PanelApi {
       pushed = false;
       if (history.state?.mhChat) history.back();
     }
-    const listen = on ? addEventListener : removeEventListener;
-    listen("resize", measure);
-    listen("keydown", onKey as EventListener);
-    listen("focusin", onFocus as EventListener);
     const m = on ? "addEventListener" : "removeEventListener";
+    window[m]("resize", measure);
+    window[m]("keydown", onKey as EventListener);
+    window[m]("focusin", onFocus as EventListener);
     vv?.[m]("resize", fit);
     vv?.[m]("scroll", fit);
     fit();

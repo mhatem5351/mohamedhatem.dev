@@ -6,8 +6,9 @@
  *   allowed      → passed through unchanged;
  *   not allowed  → `[text](bad-url)` becomes `text`, a bare bad URL is dropped.
  * Catches the model "remembering" a URL slightly wrong (measured: `https://wa.co/201142070946` instead of wa.me),
- * guessing a page of the site (a case-study slug that may not exist, audit R6-10) or repeating a link a visitor tried
- * to plant.
+ * guessing a page of the site (a case-study slug that may not exist, audit R6-10), adding a query or a deeper path to
+ * a written link (a pre-filled WhatsApp message `?text=…`, which the instructions forbid, or a guessed globant.com
+ * page; audit R7-12) or repeating a link a visitor tried to plant.
  */
 const URL_IN_TEXT = /\b(?:https?:\/\/[^\s<>()[\]"'`]+|mailto:[^\s<>()[\]"'`]+)/gi;
 const TRAILING_PUNCT = /[.,;:!?]+$/;
@@ -18,26 +19,42 @@ export type LinkCheck = (url: string) => boolean;
 export const BASE_SITE_PATHS = ["/", "/ar/", "/cv/", "/ar/cv/"];
 
 /**
- * Builds the allow-list from texts that contain the trusted URLs (knowledge base, system prompt). Other origins: the
- * written URLs and their sub-paths. The site (`siteOrigins`): exactly the pages written in the sources, the
- * {@link BASE_SITE_PATHS} and `sitePaths` (with any #anchor or query), never a guessed path.
+ * The one third-party origin where a link may go deeper than a written URL: a file or folder of one of his own
+ * repositories (`…/staged-llm-evaluator/blob/main/README.md`), and only inside his account (R7-12).
+ */
+const GITHUB = "https://github.com";
+const GITHUB_OWNER = "/mhatem5351/";
+
+/**
+ * Builds the allow-list from texts that contain the trusted URLs (knowledge base, system prompt).
+ *   Other origins (R7-12): exactly the written URLs. The path is compared in full (trailing slash aside), and a query
+ *     or fragment only when that exact "?query#fragment" is written with that path: neither
+ *     `https://www.globant.com/careers` (only the home page is written) nor `https://wa.me/…?text=…` passes. On GitHub
+ *     a sub-path of a written path is allowed too, inside {@link GITHUB_OWNER} only and without a query or fragment.
+ *   The site (`siteOrigins`): exactly the pages written in the sources, the {@link BASE_SITE_PATHS} and `sitePaths`
+ *     (with any #anchor or query), never a guessed path.
+ *   mailto: the written addresses, never with a query (`?subject=`, `?body=`, `?cc=` pre-fill a message or add
+ *     recipients; R7-12). tel: the numbers written as wa.me links.
  */
 export function buildLinkCheck(
   sources: string[],
   siteOrigins: string[] = ["https://mohamedhatem.dev", "https://www.mohamedhatem.dev"],
   sitePaths: readonly string[] = [],
 ): LinkCheck {
-  const prefixes = new Map<string, Set<string>>(); // origin → path prefixes
+  const written = new Map<string, Map<string, Set<string>>>(); // origin → path → the "?query#fragment" written with it
   const mails = new Set<string>();
   const phones = new Set<string>();
   const pages = new Set<string>([...BASE_SITE_PATHS, ...sitePaths].map(pagePath));
-  const add = (origin: string, path: string) => {
-    if (siteOrigins.includes(origin)) {
-      pages.add(pagePath(path));
+  const add = (u: URL) => {
+    if (siteOrigins.includes(u.origin)) {
+      pages.add(pagePath(u.pathname));
       return;
     }
-    if (!prefixes.has(origin)) prefixes.set(origin, new Set());
-    prefixes.get(origin)!.add(path);
+    const paths = written.get(u.origin) ?? written.set(u.origin, new Map()).get(u.origin)!;
+    const path = trimSlash(u.pathname);
+    // The bare path is always allowed (""); a written query and fragment only together, exactly as written.
+    const suffixes = paths.get(path) ?? paths.set(path, new Set([""])).get(path)!;
+    suffixes.add(u.search + u.hash);
   };
   for (const text of sources) {
     for (const m of text.matchAll(URL_IN_TEXT)) {
@@ -48,7 +65,7 @@ export function buildLinkCheck(
       }
       try {
         const u = new URL(raw);
-        add(u.origin, u.pathname.replace(/\/+$/, ""));
+        add(u);
         if (u.hostname === "wa.me") phones.add(u.pathname.replace(/\D/g, ""));
       } catch {
         /* not a URL */
@@ -62,7 +79,7 @@ export function buildLinkCheck(
     // another site: any backslash, whitespace or control character inside a link refuses it outright.
     if (!link || /[\\\s\u0000-\u001F\u007F-\u009F\u2028\u2029]/.test(link)) return false;
     if (/^#[\w-]*$/.test(link)) return true; // in-page anchor
-    if (/^mailto:/i.test(link)) return mails.has(link.slice(7).split("?")[0]!.toLowerCase());
+    if (/^mailto:/i.test(link)) return !link.includes("?") && mails.has(link.slice(7).toLowerCase());
     if (/^tel:/i.test(link)) return phones.has(link.replace(/\D/g, ""));
     let u: URL;
     try {
@@ -74,12 +91,23 @@ export function buildLinkCheck(
     if (!/^[a-z][a-z0-9+.-]*:/i.test(link)) return siteOrigins.includes(u.origin) && pages.has(pagePath(u.pathname));
     if (u.protocol !== "https:" && u.protocol !== "http:") return false;
     if (siteOrigins.includes(u.origin)) return pages.has(pagePath(u.pathname));
-    const paths = prefixes.get(u.origin);
-    if (!paths) return false;
-    const path = u.pathname.replace(/\/+$/, "");
-    for (const p of paths) if (p === "" || path === p || path.startsWith(`${p}/`)) return true;
+    // Third parties: exactly as written (R7-12). No written URL carries a user name or password.
+    const paths = written.get(u.origin);
+    if (!paths || u.username || u.password) return false;
+    // The URL parser has already resolved "..", "%2e%2e" and the like: `path` is where the link really goes.
+    const path = trimSlash(u.pathname);
+    if (paths.get(path)?.has(u.search + u.hash)) return true;
+    // GitHub: a file or folder of one of his repositories. An encoded "/", "\" or "." left in the path is refused,
+    // whatever GitHub would make of it.
+    if (u.origin !== GITHUB || u.search || u.hash || !path.startsWith(GITHUB_OWNER) || /%(?:2f|5c|2e)/i.test(path)) return false;
+    for (const p of paths.keys()) if (path.startsWith(`${p}/`)) return true;
     return false;
   };
+}
+
+/** A path without its trailing slashes ("/" is ""), so "https://www.globant.com" and ".../" are the same link. */
+function trimSlash(path: string): string {
+  return path.replace(/\/+$/, "");
 }
 
 /** A site path compared without its trailing slash and case ("/cv" and "/CV/" are the page "/cv/"). */

@@ -63,7 +63,7 @@ const version = createHash("sha256").update(systemPrompt).update("\0").update(kn
 const knowledgeCompact = compactKnowledge(knowledge, COMPACT_BUDGET);
 // The facts the compact prompt's rules point to (audit R6-08: the case studies, education and fit guide were dropped).
 if (sources["knowledge.md"] === "content")
-  for (const needle of ["96 tools", "M.Sc. in Data Science", "Not in the sources", "GADD", "team of 7", "AWS Certified Machine Learning", "sta-tourism-assistants", "قاد هندسة الذكاء الاصطناعي"])
+  for (const needle of ["96 tools", "M.Sc. in Data Science", "Not in the sources", "GADD", "team of 7", "AWS Certified Machine Learning", "sta-tourism-assistants", "يقود هندسة الذكاء الاصطناعي"])
     if (!knowledgeCompact.includes(needle)) fail(`KNOWLEDGE_COMPACT lost "${needle}": adjust compactKnowledge's priorities or the budget`);
 // Site pages the assistant may link to (links.ts): the fixed pages plus every case-study page in content/profile.ts.
 const sitePaths = await loadSitePaths();

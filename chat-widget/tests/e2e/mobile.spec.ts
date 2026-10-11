@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { STRINGS } from "../../src/i18n";
-import { answer, ask, bubble, dialog, log, mock, openDemo, setup, shadowFocus } from "./helpers";
+import { answer, ask, bubble, dialog, log, mock, openDemo, requests, setup, shadowFocus } from "./helpers";
 
 test.beforeEach(async ({ page }) => setup(page));
 
@@ -70,6 +70,8 @@ test("a tapped chip keeps focus in the sheet without raising the keyboard (the l
   await page.locator("[data-mh-chat] .chip").first().tap();
   await expect(log(page)).toContainText("Sure.");
   expect(await shadowFocus(page)).toBe("div.log");
+  // The sheet asks the Worker for shorter answers.
+  expect((await requests(page))[0]!.device).toBe("phone");
 });
 
 test("the sheet is not reopened on the next page (it would cover it) @mobile", async ({ page }) => {

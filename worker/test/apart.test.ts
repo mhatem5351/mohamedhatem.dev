@@ -89,4 +89,51 @@ describe("GADD and the government assistant never share an answer (R6-01, R6-02)
   });
 });
 
+describe("R7-05: paraphrases of either side, and sentences that relate the two", () => {
+  // Seen offline in round 7: each of these passed the filter, so both sides reached the visitor.
+  const GOV = "He built a bilingual enterprise assistant for a Saudi government client (name confidential).";
+  it("GADD's other names count as GADD", () => {
+    for (const gadd of [
+      "His Wakeb role also served the General Authority for Defense Development.",
+      "The Saudi MoD is a client of his Wakeb role as a whole.",
+      "كما خدم دوره في Wakeb Data الهيئة العامة للتطوير الدفاعي.",
+      "The Saudi Defence Ministry is a client of the role.",
+    ])
+      expect(run("first", `${GOV} ${gadd}`), gadd).toBe(`${GOV} `);
+  });
+
+  it("the government assistant's other wordings count as it, the fixed reply's own included", () => {
+    for (const gov of [
+      "He also delivered an Arabic/English enterprise assistant for a public-sector organisation in Saudi Arabia.",
+      "Separately, he built a bilingual (Arabic/English) enterprise assistant with LLM evaluation and observability monitoring.",
+      "He also worked for a second Saudi public body.",
+      "What is public: it is a bilingual (Arabic/English) enterprise assistant for a Saudi government client.",
+    ])
+      expect(run("first", `The Saudi Ministry of Defense (GADD) is a client of his role. ${gov}`), gov).toBe("The Saudi Ministry of Defense (GADD) is a client of his role. ");
+    expect(run("clients", "The Saudi Ministry of Defense (GADD) is a client of his Wakeb Data role. He also worked for a second Saudi public body.")).toBe(
+      "The Saudi Ministry of Defense (GADD) is a client of his Wakeb Data role. ",
+    );
+  });
+
+  it("a sentence relating organisations goes, even without either name", () => {
+    expect(run("gov", "No, that's a different organisation from his role-level client. For confidentiality, the client isn't named.")).toBe(
+      "For confidentiality, the client isn't named.",
+    );
+    expect(run("clients", "GADD is a client of his Wakeb role. It is not the same entity as any other client.")).toBe("GADD is a client of his Wakeb role. ");
+    // Other clients by name are not a relation.
+    expect(run("clients", "Other clients he worked for: the Saudi Tourism Authority (through Globant) and AestheticsPro.")).toBe(
+      "Other clients he worked for: the Saudi Tourism Authority (through Globant) and AestheticsPro.",
+    );
+  });
+
+  it("an answer about neither is untouched on a turn that names neither (the filter runs on every turn)", () => {
+    const text = "Before Globant he worked at Wakeb Data and ArabsStock.\n\n- **ArabsStock:** 14 agents.\n- **Wakeb Data:** a 6-agent chatbot.\n";
+    for (const size of [1, 5, text.length]) expect(run("first", text, size)).toBe(text);
+    // The Saudi Tourism Authority described as a government body is not the government assistant.
+    expect(run("clients", "The Saudi Tourism Authority, a government agency, is his current client. GADD is a client of his Wakeb role.")).toBe(
+      "The Saudi Tourism Authority, a government agency, is his current client. GADD is a client of his Wakeb role.",
+    );
+  });
+});
+
 beforeEach(() => resetCooldowns());

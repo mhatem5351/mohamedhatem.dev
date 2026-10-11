@@ -110,16 +110,16 @@ event: tool
 data: {"name":"suggest_followups","args":{"questions":["How does he serve LLMs?","Is he open to roles?"]}}
 
 event: done
-data: {"finish":"stop","usage":{"input":12866,"output":149,"thoughts":0,"cached":10201},"ms":{"first":905,"total":1443},"model":"gemini-3.5-flash-lite"}
+data: {"finish":"stop"}
 ```
 
 | Event | When | Data |
 |---|---|---|
 | `meta` | first | `id` (reply id), `lang` (answer language), `sessionExp` (epoch ms, when the cookie was set/refreshed), `trimmed` (only when the latest message was cut: characters read) |
 | `token` | 0..n | `t`: markdown text delta, append it |
-| `replace` | 0..1 | `t`: discard the text (and tools) received so far and show this instead: the confidentiality guard's fixed reply. `done` follows |
+| `replace` | 0..1 | `t`: discard the text (and tools) received so far and show this instead: the confidentiality guard's fixed reply on a turn that was streaming (turns that may draw a name are held until the guard has seen the whole answer, so they never need it). `done` follows |
 | `tool` | after the text, before `done` | a validated UI tool (below) |
-| `done` | last, on success | `finish` (`stop` · `length` = hit the output cap · `tools`), `usage` tokens, `ms.first` / `ms.total` (server-side), `model` |
+| `done` | last, on success | `finish` (`stop` · `length` = hit the output cap · `tools`). Nothing else in production: usage, timings and the model would tell a fixed reply from a model answer (audit R7-04); they go to the logs. The local Worker (`ALLOW_MODEL_OVERRIDE=1`) adds `usage`, `ms.first` / `ms.total` and `model` (`null` for a fixed reply) for the evaluation scripts |
 | `error` | last, on failure mid-stream | `code`, `retryable`, `retryAfter?` (seconds). Keep any partial text and offer Retry |
 | `: ping` | every 8 s | SSE comment keep-alive; ignore. The widget treats 30 s of silence as a dead stream |
 
@@ -147,8 +147,8 @@ Refused before streaming: JSON `{ "ok": false, "error": "<code>", "message": "<f
 In-stream `error` codes: `upstream_busy` (every model over quota or overloaded; `retryAfter` from Google, capped),
 `upstream_error`, `timeout`, `blocked` (output guard tripped on a canary or a prompt dump: the widget drops the
 partial answer and shows only a refusal), `safety` (model refused; same handling), `empty`, `internal`. The
-confidentiality guard is not an error: it sends `replace` (or, when nothing was shown yet, the fixed reply as tokens)
-and `done`.
+confidentiality guard is not an error: it sends the fixed reply as tokens (or `replace`, when part of a streamed answer
+was already shown) and `done`.
 
 ### How the UI tools reach the widget (the directive protocol)
 
@@ -240,7 +240,7 @@ with the `_headers` rules, and forwards it without conditional headers (a 404 is
 | Other sites using the API / CSRF | `Origin` must be the Worker's own origin or in `ALLOWED_ORIGINS` (browsers always send it on POST); CORS headers only for allowed origins; session cookie is `HttpOnly; Secure; SameSite=Strict; Path=/api/chat` |
 | Bots and scripted abuse | Turnstile on the first chat message (then a session) and on every contact form post; honeypot; per-IP rate limits (IPv6 keyed by /64). Sessions are bound to the visitor's network (IPv4 /24, IPv6 /48) and browser (user agent), last 1 h at most and 40 messages; a copied cookie is refused (see "Threat model: free-tier quota" below) |
 | Cost / quota exhaustion | 3 per 10 s and 8/min per IP, 6/min per session, 40 messages per session, 60/min site-wide per location (spent only by verified requests), 3 contact posts/min per IP; 32 KB body cap; last 12 messages, 6,000 characters for the latest visitor message and 1,200 for earlier ones; 700 answer tokens per reply; one Gemini request per answer (another only when hedging or failing over); on the free tier Google's daily quotas are a hard cap, nothing can be billed |
-| Naming the unnamed client | Its names never appear in the repository: only SHA-256 hashes of their 1-3 word forms (`confidential-hashes.json`; canonical list shared with `content/scripts/check-content.mjs`). The output guard hashes every 1-3 word sequence of the answer as it streams, holding back the last words until the next chunk, so a name the model repeats from the visitor (audit AST-01) never reaches the browser: the answer is replaced by a fixed, localised reply (the client is described only as a Saudi government client; no name is confirmed or denied). Follow-up chips are checked too. A visitor message that names it adds a per-turn instruction not to repeat, confirm or deny it |
+| Naming the unnamed client | Its names never appear in the repository: only SHA-256 hashes of their 1-3 word forms (`confidential-hashes.json`; canonical list shared with `content/scripts/check-content.mjs`). The output guard hashes every 1-3 word sequence of the answer as it streams, holding back the last words until the next chunk, so a name the model repeats from the visitor (audit AST-01) never reaches the browser: the answer is replaced by a fixed, localised reply (on a turn about the government assistant the confidentiality reply, otherwise "that organisation isn't named in his profile"). Follow-up chips are checked too. Right and wrong guesses must look the same (R6-03, R7-01…R7-04): a question about who that assistant's client is, or a guess at it, gets the fixed reply without a model call, decided without looking at any name (`asksAboutUnnamedClient`; never for a job description, and never for questions about his other clients); the model never sees an organisation name the knowledge base doesn't have (`names.ts`: by shape, "Ministry of X", "X Authority", «وزارة X», a one-word name after "work for" / "mention" / "And …?", then any listed form, become "[organisation]"), so a right guess and a same-shape wrong one reach it as the same text; turns that may draw a name are held until the guard has seen the whole answer (no visible swap); and every path ends with the same events (`done` carries `finish` only; a fixed reply streams at a model's pace) |
 | Configuration slips | Turnstile's test secrets and test-key results are refused unless `ALLOW_TURNSTILE_TEST=1` (written only to `.dev.vars`), so a dev secret pushed to production can't silently switch Turnstile off; a real token must name an allowed hostname. The local Worker gets its own random `SESSION_SECRET` (never the production one from `.env`), so `wrangler dev` can't mint production cookies |
 | Prompt injection | Visitor turns are wrapped in `<visitor_message>` tags (forged tags stripped) and the system instruction says they are data; earlier assistant turns are declared untrusted (the browser stores them); control, bidi-override, zero-width and Unicode tag characters are stripped; tool arguments are validated against enums and lengths; contact details in the UI come from config, never from the model |
 | Prompt leaks | Canaries (a random one generated per checkout/CI build, plus any written in `system-prompt.md`) are blocked before any part reaches the browser; a verbatim dump (10-word runs from 3+ different blocks of the private instructions) is blocked mid-stream; chips are canary-checked too |
@@ -346,7 +346,7 @@ visitor, without billing.
   8 s. Visitor abort (Stop, closed tab) cancels the response stream, which aborts the Gemini request.
 - **Prompt assembly and caching:** `system-prompt.md` → the Worker's security rules (with the canary) → the UI
   directive → `knowledge.md` → per-request lines (server date, page language, reply language, and when they apply the
-  job-description rules and the confidential-client instruction) → a short reminder block (facts only from the knowledge base, "isn't stated in his profile" for gaps, copy links exactly, third
+  job-description rules, the clients or government-assistant hint, the phone line) → a short reminder block (facts only from the knowledge base, "isn't stated in his profile" for gaps, copy links exactly, third
   person, end with the directive). Everything before the per-request lines is byte-identical across requests, so
   Gemini's implicit caching applies (measured: ~10k of ~13.7k input tokens cached on repeat requests); the reminders
   sit last because, after ~10k tokens of knowledge, the smaller fallback models follow end-of-prompt rules more

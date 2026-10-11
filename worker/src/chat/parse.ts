@@ -95,8 +95,7 @@ export interface ParsedChat {
   turnstileToken: string | undefined;
   /**
    * Optional request field `device: "phone"`, sent while the widget shows its phone layout (the bottom sheet): the
-   * Worker asks for shorter answers (prompt.ts PHONE_LINE). Any other value is ignored. Not yet in protocol.ts's
-   * ChatRequest, which the widget bundles: it goes there together with the widget change that sends it.
+   * Worker asks for shorter answers (prompt.ts PHONE_LINE). Any other value is ignored (protocol.ts ChatRequest).
    */
   device?: "phone";
   /** Characters of the visitor's latest message (after sanitising and capping). */

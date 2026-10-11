@@ -1,7 +1,7 @@
 import { CANARIES, KNOWLEDGE, SITE_PATHS, SYSTEM_PROMPT } from "../generated/content";
 import { FRIENDLY } from "../http";
 import { ApartFilter, type ApartMode } from "./apart";
-import { confidentialDeflection, ConfidentialMatcher } from "./confidential";
+import { ConfidentialMatcher, fixedReply, type FixedReply } from "./confidential";
 import { DirectiveExtractor } from "./directive";
 import { CooldownStore, secondsToPacificMidnight } from "./cooldown";
 import {
@@ -20,7 +20,7 @@ import {
 import { buildFingerprints, OutputGuard } from "./guard";
 import { answerableFollowup, keepsClientsApart } from "./intent";
 import { buildLinkCheck, buildPhoneFormats, LinkFilter, PhoneFilter } from "./links";
-import { CLIENTS_HINT, COMPACT_RULES, CONFIDENTIAL_HINT, GOV_ASSISTANT_HINT, JD_RULES, PHONE_LINE, REMINDERS, SECURITY_RULES, UI_DIRECTIVE, type GeminiContent } from "./prompt";
+import { CLIENTS_HINT, COMPACT_RULES, GOV_ASSISTANT_HINT, JD_RULES, PHONE_LINE, REMINDERS, SECURITY_RULES, UI_DIRECTIVE, type GeminiContent } from "./prompt";
 import type { DoneEvent, ErrorCode, ErrorEvent, Lang, ToolEvent, ToolName } from "./protocol";
 import { TableFilter } from "./tables";
 
@@ -45,9 +45,16 @@ import { TableFilter } from "./tables";
  *     Flash-Lite 3.5 and 3.1.
  *   - Everything cooling or failing: `error upstream_busy` with a retry time; the widget offers the contact card.
  *
- * Confidentiality (confidential.ts): if the answer is about to name the unnamed client, it is replaced by the fixed,
- * localised deflection with the UI events of the model's own (a link to the work section, two chips from a pool):
- * `replace` when text was already shown, else plain tokens; never a generic error.
+ * Confidentiality (confidential.ts): if the answer is about to name the unnamed client, it is replaced by a fixed,
+ * localised reply with the UI events of the model's own (a section link, two chips from a pool): on a turn about the
+ * government assistant the confidentiality reply, on any other turn the "not named in his profile" reply (R7-03).
+ * Turns that may draw a name (handler.ts: about that assistant or his clients, a guess, an organisation the
+ * knowledge base doesn't name) are held whole until the guard has seen the end (`buffer`), then sent in word-sized
+ * chunks, so a replaced answer is never shown first: no `replace`. Elsewhere a late catch still sends `replace`.
+ *
+ * Every path ends the same way (R7-04): tokens, the UI events, then `done` with `finish` only. Usage, timings and the
+ * model stay in the logs (the local Worker adds them for the evaluation: `diagnostics`), and a fixed reply sent
+ * without a model call ({@link sendDeflection}) streams at a model's pace, not in 10 ms.
  */
 export interface Sink {
   send(event: "meta" | "token" | "replace" | "tool" | "done" | "error", data: unknown): void;
@@ -77,8 +84,46 @@ export interface AnswerDeps {
   jd?: boolean;
   /** Names to keep out of answers (tests inject their own). */
   confidential?: ConfidentialMatcher;
-  /** Keep GADD and the government assistant apart in this answer (apart.ts); null: the turn touches neither. */
+  /** Keep GADD and the government assistant apart in this answer (apart.ts); null: no filter. */
   apart?: ApartMode | null;
+  /** Hold the whole answer until the guard has seen its end, then send it paced (no visible `replace`). */
+  buffer?: boolean;
+  /** The fixed reply that replaces an answer the guard stops (default "confidential"). */
+  redactWith?: FixedReply;
+  /** Pacing of fixed replies and held answers (tests use {@link NO_PACE}). */
+  pace?: Pace;
+  /** Add usage, timings and the model to `done` (local development and evaluation only, never in production). */
+  diagnostics?: boolean;
+}
+
+/**
+ * How a fixed reply or a held answer is sent: the first chunk after `first` ms (a fixed reply: a model's usual
+ * first-token latency; a held answer: at once, the model's time already passed), then `words` words per chunk every
+ * `gap` ms, each drawn at random from its range.
+ */
+export interface Pace {
+  first: readonly [number, number];
+  gap: readonly [number, number];
+  words: readonly [number, number];
+  random?: () => number;
+}
+export const DEFAULT_PACE: Pace = { first: [1200, 3600], gap: [20, 80], words: [2, 7] };
+/** No waiting (unit tests): the same events, at once. */
+export const NO_PACE: Pace = { first: [0, 0], gap: [0, 0], words: [2, 7] };
+
+/** Sends `text` as token events in word-sized chunks at the given pace; `wait`: first the `first` delay. */
+export async function sendPaced(sink: Sink, text: string, pace: Pace, signal?: AbortSignal, wait = false): Promise<void> {
+  const random = pace.random ?? Math.random;
+  const pick = ([lo, hi]: readonly [number, number]) => lo + Math.floor(random() * (hi - lo + 1));
+  const pause = (ms: number) => (ms > 0 && !signal?.aborted ? new Promise<void>((r) => setTimeout(r, ms)) : Promise.resolve());
+  if (wait) await pause(pick(pace.first));
+  const words = text.split(/(?<=\s)(?=\S)/);
+  for (let i = 0; i < words.length && !signal?.aborted; ) {
+    const n = Math.max(1, pick(pace.words));
+    sink.send("token", { t: words.slice(i, i + n).join("") });
+    i += n;
+    if (i < words.length) await pause(pick(pace.gap));
+  }
 }
 
 /**
@@ -126,7 +171,7 @@ const RETRYABLE = new Set<ErrorCode>(["upstream_busy", "upstream_error", "timeou
  * the global scope (isolate startup, ~4 ms) rather than inside the first request's 10 ms CPU budget.
  */
 const FINGERPRINTS = buildFingerprints(
-  [SYSTEM_PROMPT, SECURITY_RULES, UI_DIRECTIVE, REMINDERS, COMPACT_RULES, JD_RULES, CONFIDENTIAL_HINT, CLIENTS_HINT, GOV_ASSISTANT_HINT, PHONE_LINE].join("\n\n"),
+  [SYSTEM_PROMPT, SECURITY_RULES, UI_DIRECTIVE, REMINDERS, COMPACT_RULES, JD_RULES, CLIENTS_HINT, GOV_ASSISTANT_HINT, PHONE_LINE].join("\n\n"),
   KNOWLEDGE,
 );
 export function promptFingerprints(): Map<string, number> {
@@ -188,6 +233,12 @@ export async function streamAnswer(
   let phones = new PhoneFilter(PHONE_FORMATS);
   /** The next text replaces what the widget already shows (a retry after an early stop). */
   let replacing = false;
+  const pace = deps.pace ?? DEFAULT_PACE;
+  /** Text sent to the browser so far. */
+  let shown = false;
+  /** `buffer`: text the guard has passed, not sent yet; and a cut answer kept while its retry runs. */
+  let held = "";
+  let heldCut = "";
   /** A retry after an early stop is running, and the widget still shows the cut answer. */
   let retrying = false;
   const usage: Usage = { input: 0, output: 0, thoughts: 0, cached: 0 };
@@ -213,7 +264,19 @@ export async function streamAnswer(
     answerChars: guard.answer.length,
     trace: trace.join(">"),
   });
-  const fail = (code: ErrorCode, retryAfter?: number): AnswerResult => {
+  const doneEvent = (finish: DoneEvent["finish"]): DoneEvent =>
+    deps.diagnostics ? { finish, usage, ms: { first: firstMs, total: Date.now() - t0 }, model } : { finish };
+  /** `buffer`: sends the held answer (what a streamed answer would have shown by now). */
+  const release = async () => {
+    if (!held) return;
+    const text = held;
+    held = "";
+    shown = true;
+    await sendPaced(sink, text, pace, signal);
+  };
+  const fail = async (code: ErrorCode, retryAfter?: number): Promise<AnswerResult> => {
+    // A partial answer stays, as it would have when streamed; a blocked one is dropped by the widget anyway.
+    if (code !== "blocked") await release();
     const data: ErrorEvent = { code, message: FRIENDLY[code], retryable: RETRYABLE.has(code), ...(retryAfter ? { retryAfter } : {}) };
     sink.send("error", data);
     return result(code);
@@ -221,6 +284,11 @@ export async function streamAnswer(
   const emit = (text: string) => {
     if (!text) return;
     if (firstMs === null) firstMs = Date.now() - t0;
+    if (deps.buffer) {
+      held += text;
+      return;
+    }
+    shown = true;
     if (replacing) {
       replacing = false;
       sink.send("replace", { t: text });
@@ -236,17 +304,21 @@ export async function streamAnswer(
     sentTools.push(ev.name);
     sink.send("tool", ev);
   };
-  /** The answer was about to name the unnamed client: show the fixed deflection instead of anything already streamed. */
-  const redact = (): AnswerResult => {
+  /**
+   * The answer was about to name the unnamed client: the fixed reply instead. Held text is dropped unseen and the
+   * reply streams like an answer; only text already shown (a turn that wasn't held) needs a `replace`.
+   */
+  const redact = async (): Promise<AnswerResult> => {
     const lang: Lang = deps.lang === "ar" ? "ar" : "en";
-    const { text, tools } = confidentialDeflection(lang);
-    if (guard.started) sink.send("replace", { t: text });
-    else emit(text);
+    const { text, tools } = fixedReply(deps.redactWith ?? "confidential", lang);
+    held = "";
+    heldCut = "";
     firstMs ??= Date.now() - t0;
+    if (shown) sink.send("replace", { t: text });
+    else await sendPaced(sink, text, pace, signal);
     trace.push("redacted");
     for (const ev of tools) tool(ev);
-    const data: DoneEvent = { finish: "stop", usage, ms: { first: firstMs, total: Date.now() - t0 }, model };
-    sink.send("done", data);
+    sink.send("done", doneEvent("stop"));
     return result("redacted", "stop");
   };
 
@@ -321,8 +393,11 @@ export async function streamAnswer(
         break;
       }
       retried = true;
-      replacing = guard.started;
+      replacing = guard.started && !deps.buffer;
       retrying = guard.started;
+      // Held: the cut answer waits aside; the retry's answer replaces it before anything is sent.
+      heldCut = held;
+      held = "";
       guard = new OutputGuard(CANARIES, promptFingerprints(), names);
       directive = new DirectiveExtractor();
       tables = new TableFilter();
@@ -335,12 +410,14 @@ export async function streamAnswer(
 
     const visible = guard.answer.trim();
     // The retry after an early stop gave nothing: the widget still shows the cut answer, which stays, marked as cut.
-    if (!visible && retrying && !guard.started) return done("length");
+    if (!visible && retrying && !guard.started) return done("length", true);
     if (blockReason || (SAFETY_REASONS.has(finishReason ?? "") && !visible)) return fail("safety");
     if (!visible) return fail("empty");
 
-    // UI events go out after the text (the widget shows them under the answer). Follow-up chips are visible text
-    // too: no canary, no confidential name, and only questions the knowledge base can answer.
+    // UI events go out after the text (the widget shows them under the answer), a held answer's text included.
+    // Follow-up chips are visible text too: no canary, no confidential name, and only questions the knowledge base
+    // can answer.
+    await release();
     const canaryFree = (q: string) => new OutputGuard(CANARIES, new Map()).push(q).ok;
     for (const ev of directive.events()) {
       if (ev.name === "show_contact_card" && !deps.contactAllowed) continue;
@@ -358,12 +435,23 @@ export async function streamAnswer(
     if (e instanceof Blocked) return e.message === "confidential" ? redact() : fail("blocked");
     // The retry after an early stop failed before showing anything: the widget still shows the cut answer, which
     // stays, marked as cut ("length"), instead of an error under visible text (audit R6-19).
-    if (retrying && !guard.started && !(e instanceof UpstreamError && e.kind === "aborted")) return done("length");
-    // Failed mid-answer: the words the guard was still holding back belong to the partial answer the widget keeps.
+    if (retrying && !guard.started && !(e instanceof UpstreamError && e.kind === "aborted")) return done("length", true);
+    // Failed mid-answer: the text the filters and the guard were still holding back (the end of a sentence the
+    // GADD / government-assistant filter waits for, the last words) belongs to the partial answer the widget keeps.
+    if (!(e instanceof UpstreamError && e.kind === "aborted")) {
+      try {
+        show(phones.push(links.push(shape(directive.flush(), true))));
+        show(phones.push(links.flush()));
+        show(phones.flush());
+      } catch (b) {
+        if (b instanceof Blocked) return b.message === "confidential" ? redact() : fail("blocked");
+        throw b;
+      }
+    }
     if (guard.answer) {
-      const held = guard.flush();
-      if (!held.ok) return held.reason === "confidential" ? redact() : fail("blocked");
-      emit(held.emit);
+      const rest = guard.flush();
+      if (!rest.ok) return rest.reason === "confidential" ? redact() : fail("blocked");
+      emit(rest.emit);
       // A retry that had replaced the cut answer and then failed: what it showed is kept, marked as cut.
       if (retrying && !(e instanceof UpstreamError && e.kind === "aborted")) return done("length");
     }
@@ -379,26 +467,36 @@ export async function streamAnswer(
     run.abort();
   }
 
-  function done(finish: DoneEvent["finish"]): AnswerResult {
-    const data: DoneEvent = { finish, usage, ms: { first: firstMs, total: Date.now() - t0 }, model };
-    sink.send("done", data);
+  /** The end of the answer; `restoreCut`: a retry gave nothing, so the cut answer it was to replace stands. */
+  async function done(finish: DoneEvent["finish"], restoreCut = false): Promise<AnswerResult> {
+    if (restoreCut && deps.buffer) held = heldCut;
+    await release();
+    sink.send("done", doneEvent(finish));
     return result("ok", finish);
   }
 }
 
 /**
- * R6-03: the fixed confidentiality answer for a turn that asks who the unnamed client is (or guesses), sent like a
- * normal answer (tokens, then the model's deflection UI events, then `done`) without calling the model, so a right
- * guess and a wrong one get the same events and no `replace`.
+ * R6-03, R7-04: the fixed confidentiality answer for a turn that asks who the government assistant's client is (or
+ * guesses), sent like a model's answer without calling one: after a model's usual first-token latency, in word-sized
+ * chunks, then the UI events and `done` with `finish` only, so neither a right guess and a wrong one nor this path and
+ * a model answer differ in their events.
  */
-export function sendDeflection(lang: Lang, sink: Sink, model: string, t0 = Date.now()): AnswerResult {
-  const { text, tools } = confidentialDeflection(lang);
-  for (const part of text.match(/[^.،!?؟]+[.،!?؟]*\s*/g) ?? [text]) sink.send("token", { t: part });
-  for (const ev of tools) sink.send("tool", ev);
+export async function sendDeflection(
+  lang: Lang,
+  sink: Sink,
+  opts: { kind?: FixedReply; pace?: Pace; diagnostics?: boolean; signal?: AbortSignal; random?: () => number } = {},
+): Promise<AnswerResult> {
+  const t0 = Date.now();
+  const { text, tools } = fixedReply(opts.kind ?? "confidential", lang, opts.random);
+  await sendPaced(sink, text, opts.pace ?? DEFAULT_PACE, opts.signal, true);
   const usage: Usage = { input: 0, output: 0, thoughts: 0, cached: 0 };
   const ms = Date.now() - t0;
-  sink.send("done", { finish: "stop", usage, ms: { first: ms, total: ms }, model } satisfies DoneEvent);
-  return { outcome: "redacted", model, fallback: false, finish: "stop", usage, firstMs: ms, totalMs: ms, tools: tools.map((t) => t.name), answerChars: text.length, trace: "deflected" };
+  const base = { model: "none", fallback: false, usage, firstMs: ms, totalMs: ms, tools: tools.map((t) => t.name), answerChars: text.length, trace: "deflected" };
+  if (opts.signal?.aborted) return { ...base, outcome: "aborted" };
+  for (const ev of tools) sink.send("tool", ev);
+  sink.send("done", (opts.diagnostics ? { finish: "stop", usage, ms: { first: ms, total: ms }, model: null } : { finish: "stop" }) satisfies DoneEvent);
+  return { ...base, outcome: "redacted", finish: "stop" };
 }
 
 function linked(parent: AbortSignal): AbortController {

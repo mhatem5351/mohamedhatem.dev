@@ -13,9 +13,10 @@
  *    model's own rules.
  * 3. Confidential names (confidential.ts): the unnamed client's names, checked by hash on every 1-3 word sequence.
  *    The last words are held back until the next chunk, so a name is caught before any part of it is sent; the
- *    caller then replaces the whole answer with a fixed reply.
+ *    caller then replaces the whole answer with a fixed reply. Runs of percent-escapes or HTML numeric entities are
+ *    decoded and checked too (audit R7-11), only when the answer contains one.
  */
-import { ConfidentialScanner, type ConfidentialMatcher } from "./confidential";
+import { ConfidentialScanner, escapedNameIn, type ConfidentialMatcher } from "./confidential";
 
 export const SHINGLE = 10;
 export const LEAK_BLOCKS = 3;
@@ -78,6 +79,7 @@ export class OutputGuard {
   private readonly canaries: string[];
   private readonly longest: number;
   private readonly names: ConfidentialScanner | null;
+  private readonly matcher: ConfidentialMatcher | null;
 
   constructor(
     canaries: string | readonly string[],
@@ -87,6 +89,7 @@ export class OutputGuard {
     this.canaries = (typeof canaries === "string" ? [canaries] : [...canaries]).filter(Boolean).map((c) => c.toLowerCase());
     this.longest = Math.max(0, ...this.canaries.map((c) => c.length));
     this.names = confidential ? new ConfidentialScanner(confidential) : null;
+    this.matcher = confidential ?? null;
   }
 
   /** Adds a chunk; returns the text that is now safe to send, or a block verdict. */
@@ -96,7 +99,7 @@ export class OutputGuard {
     if (this.canaryFrom(from)) return { ok: false, reason: "canary" };
     if (this.leaked(chunk, false)) return { ok: false, reason: "leak" };
     const namesEnd = this.names ? this.names.push(chunk) : this.text.length;
-    if (namesEnd < 0) return { ok: false, reason: "confidential" };
+    if (namesEnd < 0 || this.escapedName(chunk)) return { ok: false, reason: "confidential" };
     // Hold back a possible canary prefix and the last words (a name may still be completing) at the end.
     const safeEnd = Math.min(this.text.length - this.heldBack(), namesEnd);
     const emit = this.text.slice(this.emitted, Math.max(this.emitted, safeEnd));
@@ -109,6 +112,7 @@ export class OutputGuard {
     if (this.canaryFrom(Math.max(0, this.text.length - this.longest))) return { ok: false, reason: "canary" };
     if (this.leaked("", true)) return { ok: false, reason: "leak" };
     if (this.names && this.names.push("", true) < 0) return { ok: false, reason: "confidential" };
+    if (this.escapedName("%")) return { ok: false, reason: "confidential" };
     const emit = this.text.slice(this.emitted);
     this.emitted = this.text.length;
     return { ok: true, emit };
@@ -121,6 +125,12 @@ export class OutputGuard {
   /** True once any text has been released to the browser. */
   get started(): boolean {
     return this.emitted > 0;
+  }
+
+  /** An escaped run (it can't be told complete mid-stream, so the whole text is checked whenever one may grow). */
+  private escapedName(chunk: string): boolean {
+    if (!this.matcher || !/[%&#;0-9A-Fa-f]/.test(chunk)) return false;
+    return escapedNameIn(this.text, this.matcher) !== null;
   }
 
   private canaryFrom(from: number): boolean {

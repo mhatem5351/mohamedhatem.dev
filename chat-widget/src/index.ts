@@ -28,27 +28,28 @@ const VARS =
  * The bubble is lapis ink in both themes (the glyph's colours are the dark theme's category fills, tuned for it), with a
  * hairline ring for dark pages.
  * Its transparent border becomes the button's edge in forced colors (Windows High Contrast).
+ * Lines end in a backslash (a template-literal line continuation), as in panel-css.ts: no newlines ship.
  */
-const CSS = `${VARS}
-.b{position:fixed;z-index:var(--z);inset-block-end:max(1rem,env(safe-area-inset-bottom));inset-inline-end:max(1rem,env(safe-area-inset-right));display:flex;align-items:center;gap:.5rem;height:3.5rem;min-width:3.5rem;padding:0 1.125rem 0 .875rem;border:1px solid transparent;border-radius:999px;background:#131d36;color:#f7f6f3;font:600 .9375rem/1 var(--font);cursor:pointer;box-shadow:0 0 0 1px rgb(255 255 255/.14),0 18px 40px -12px rgb(19 29 54/.4),0 6px 12px -6px rgb(19 29 54/.2);transition:transform .25s var(--ease),padding .3s var(--ease),gap .3s var(--ease);animation:in .5s var(--ease) .4s both;-webkit-tap-highlight-color:transparent}
-:host([dir=rtl]) .b{padding:0 .875rem 0 1.125rem}
-@media (hover:hover){.b:hover{transform:translateY(-2px)}}
-.b:active{transform:scale(.94)}
-.b:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-.g,.x{flex:none;width:1.75rem;height:1.75rem}
-.x{display:none;width:1.375rem;margin:0 .1875rem}
-.b[aria-expanded=true] .g,.b[aria-expanded=true] .l{display:none}
-.b[aria-expanded=true] .x{display:block}
-.l{overflow:hidden;white-space:nowrap;max-width:12em;transition:max-width .35s var(--ease),opacity .25s}
-.b.c:not(:hover):not(:focus-visible),.b[aria-expanded=true]{gap:0;padding:0 .875rem}
-.b.c:not(:hover):not(:focus-visible) .l{max-width:0;opacity:0}
-.p{opacity:0;animation:mv 3.6s var(--ease) infinite}
-.p1{--x:-8.5px;--y:-7.5px}.p2{--x:8.5px;--y:7.5px;animation-delay:1.2s}.p3{--x:8.5px;--y:-7.5px;animation-delay:2.4s}
-@keyframes mv{0%{transform:none;opacity:0}12%,72%{opacity:1}100%{transform:translate(var(--x),var(--y));opacity:0}}
-@keyframes in{from{opacity:0;transform:translateY(.5rem) scale(.92)}}
-@media (max-width:639.98px){.l{display:none}.b,:host([dir=rtl]) .b{gap:0;padding:0 .875rem}}
-@media (prefers-reduced-motion:reduce){.b,.l{transition:none;animation:none}.p{display:none}}
-@media (forced-colors:active){.b{border-color:ButtonText}.b:focus-visible{outline-color:Highlight}}
+const CSS = `${VARS}\
+.b{position:fixed;z-index:var(--z);inset-block-end:max(1rem,env(safe-area-inset-bottom));inset-inline-end:max(1rem,env(safe-area-inset-right));display:flex;align-items:center;gap:.5rem;height:3.5rem;min-width:3.5rem;padding:0 1.125rem 0 .875rem;border:1px solid transparent;border-radius:999px;background:#131d36;color:#f7f6f3;font:600 .9375rem/1 var(--font);cursor:pointer;box-shadow:0 0 0 1px rgb(255 255 255/.14),0 18px 40px -12px rgb(19 29 54/.4),0 6px 12px -6px rgb(19 29 54/.2);transition:transform .25s var(--ease),padding .3s var(--ease),gap .3s var(--ease);animation:in .5s var(--ease) .4s both;-webkit-tap-highlight-color:transparent}\
+:host([dir=rtl]) .b{padding:0 .875rem 0 1.125rem}\
+@media (hover:hover){.b:hover{transform:translateY(-2px)}}\
+.b:active{transform:scale(.94)}\
+.b:focus-visible{outline:2px solid var(--focus);outline-offset:3px}\
+.g,.x{flex:none;width:1.75rem;height:1.75rem}\
+.x{display:none;width:1.375rem;margin:0 .1875rem}\
+.b[aria-expanded=true] .g,.b[aria-expanded=true] .l{display:none}\
+.b[aria-expanded=true] .x{display:block}\
+.l{overflow:hidden;white-space:nowrap;max-width:12em;transition:max-width .35s var(--ease),opacity .25s}\
+.b.c:not(:hover):not(:focus-visible),.b[aria-expanded=true]{gap:0;padding:0 .875rem}\
+.b.c:not(:hover):not(:focus-visible) .l{max-width:0;opacity:0}\
+.p{opacity:0;animation:mv 3.6s var(--ease) infinite}\
+.p1{--x:-8.5px;--y:-7.5px}.p2{--x:8.5px;--y:7.5px;animation-delay:1.2s}.p3{--x:8.5px;--y:-7.5px;animation-delay:2.4s}\
+@keyframes mv{0%{transform:none;opacity:0}12%,72%{opacity:1}100%{transform:translate(var(--x),var(--y));opacity:0}}\
+@keyframes in{from{opacity:0;transform:translateY(.5rem) scale(.92)}}\
+@media (max-width:639.98px){.l{display:none}.b,:host([dir=rtl]) .b{gap:0;padding:0 .875rem}}\
+@media (prefers-reduced-motion:reduce){.b,.l{transition:none;animation:none}.p{display:none}}\
+@media (forced-colors:active){.b{border-color:ButtonText}.b:focus-visible{outline-color:Highlight}}\
 @media print{.b{display:none}}`;
 
 /** The animated agent glyph: an orchestrator with four agents (turquoise/gold/carnelian/lapis) and pulses along the edges. */

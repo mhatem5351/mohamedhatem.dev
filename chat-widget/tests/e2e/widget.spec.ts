@@ -110,6 +110,7 @@ test.describe("conversation", () => {
     expect(req!.messages).toEqual([{ role: "user", content: first.prompt }]);
     expect(req!.lang).toBe("en");
     expect(req!.turnstileToken).toBeUndefined();
+    expect(req!.device).toBeUndefined(); // the desktop panel: full-length answers
   });
 
   test("Enter on a starter or follow-up chip keeps focus in the panel (on the textarea)", async ({ page }) => {

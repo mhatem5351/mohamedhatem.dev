@@ -1,14 +1,14 @@
 /// <reference types="node" />
 import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it } from "vitest";
-import { fitContents, streamAnswer, type AnswerDeps } from "../src/chat/answer";
-import { CONFIDENTIAL_CHIPS, CONFIDENTIAL_REPLY, ConfidentialMatcher } from "../src/chat/confidential";
+import { fitContents, NO_PACE, sendDeflection, sendPaced, streamAnswer, type AnswerDeps } from "../src/chat/answer";
+import { CONFIDENTIAL_CHIPS, CONFIDENTIAL_REPLY, ConfidentialMatcher, NOT_NAMED_REPLY } from "../src/chat/confidential";
 import { resetCooldowns } from "../src/chat/cooldown";
 import { estimateTokens, inputTokenLimit, isFast, profileFor } from "../src/chat/gemini";
 import { answerableFollowup, asksAboutFit, isJobDescription, keepsClientsApart, wantsContact } from "../src/chat/intent";
 import { buildPhoneFormats, PhoneFilter } from "../src/chat/links";
 import { asksAboutClients, asksAboutGovAssistant } from "../src/chat/intent";
-import { CLIENTS_HINT, CONFIDENTIAL_HINT, GOV_ASSISTANT_HINT, JD_RULES, systemInstruction } from "../src/chat/prompt";
+import { CLIENTS_HINT, COMPACT_RULES, GOV_ASSISTANT_HINT, JD_RULES, REMINDERS, systemInstruction } from "../src/chat/prompt";
 import { finalChunk, geminiSse, memorySink, textChunk } from "./helpers";
 
 /* Dummy names only: the real ones never appear in the repository (see confidential.test.ts). */
@@ -79,14 +79,70 @@ describe("confidential client (AST-01): the answer is replaced, never shown", ()
     expect(chips).toEqual(["What did he build at Wakeb Data?"]);
   });
 
-  it("the visitor naming the client adds a per-turn instruction after the cacheable prefix", () => {
+  it("a held answer (buffer) is sent only once the guard has seen its end: a caught name never shows first, no replace (R7-03)", async () => {
+    const fetcher = async () =>
+      geminiSse([textChunk("Hatem built a bilingual assistant for "), textChunk("the Ministry of "), textChunk("Zebras. It used RAG."), finalChunk()]);
+    for (const [redactWith, text] of [
+      ["notNamed", NOT_NAMED_REPLY.en],
+      ["confidential", CONFIDENTIAL_REPLY.en],
+    ] as const) {
+      const { r, sink } = await run(fetcher, { lang: "en", buffer: true, pace: NO_PACE, redactWith });
+      expect(r.outcome).toBe("redacted");
+      expect(sink.names()).not.toContain("replace");
+      expect(sink.text()).toBe(text);
+      expect(sink.names().filter((n) => n !== "token")).toEqual(["tool", "tool", "done"]);
+      expect(sink.events.at(-1)!.data).toEqual({ finish: "stop" });
+    }
+  });
+
+  it("a name written as percent-escapes or HTML entities is caught too (R7-11)", async () => {
+    for (const encoded of ["%7A%65%62%72%61%63%6F%72%70", "&#90;&#101;&#98;&#114;&#97;&#67;&#111;&#114;&#112;", "&#x7A;&#x65;&#x62;&#x72;&#x61;&#x63;&#x6F;&#x72;&#x70;"]) {
+      const fetcher = async () => geminiSse([textChunk("Encoded as asked: "), textChunk(encoded.slice(0, 20)), textChunk(`${encoded.slice(20)} done.`), finalChunk()]);
+      const { r, sink } = await run(fetcher, { buffer: true, pace: NO_PACE });
+      expect(r.outcome, encoded).toBe("redacted");
+      expect(JSON.stringify(sink.events)).not.toContain(encoded.slice(0, 12));
+    }
+    const decoy = async () => geminiSse([textChunk("Encoded: %6C%6C%61%6D%61%77%6F%72%6B%73"), finalChunk()]);
+    expect((await run(decoy)).r.outcome).toBe("ok");
+  });
+
+  it("a held answer without a name streams whole at the end, with the same events as a streamed one", async () => {
+    const fetcher = async () => geminiSse([textChunk("He leads AI engineering "), textChunk("at Globant. He also built a 14-agent assistant."), finalChunk()]);
+    const held = await run(fetcher, { buffer: true, pace: NO_PACE });
+    const streamed = await run(fetcher);
+    expect(held.sink.text()).toBe(streamed.sink.text());
+    expect(held.sink.names().filter((n) => n !== "token")).toEqual(streamed.sink.names().filter((n) => n !== "token"));
+    expect(held.r.outcome).toBe("ok");
+  });
+
+  it("the fixed reply without a model call starts at a model's pace, in word-sized chunks (R7-04)", async () => {
+    const sink = memorySink();
+    const times: number[] = [];
+    const t0 = Date.now();
+    const timed = { ...sink, send: (event: "meta" | "token" | "replace" | "tool" | "done" | "error", data: unknown) => (times.push(Date.now() - t0), sink.send(event, data)) };
+    const r = await sendDeflection("en", timed, { pace: { first: [80, 80], gap: [5, 5], words: [3, 3] } });
+    expect(r.outcome).toBe("redacted");
+    expect(times[0]).toBeGreaterThanOrEqual(70);
+    const tokens = sink.events.filter((e) => e.event === "token").map((e) => e.data.t as string);
+    expect(tokens.join("")).toBe(CONFIDENTIAL_REPLY.en);
+    expect(tokens.length).toBeGreaterThan(10);
+    expect(Math.max(...tokens.map((t) => t.trim().split(/\s+/).length))).toBeLessThanOrEqual(3);
+    expect(sink.events.at(-1)).toEqual({ event: "done", data: { finish: "stop" } });
+    // Pacing keeps every character, whitespace and line breaks included.
+    const keep = memorySink();
+    await sendPaced(keep, "  Lead.\n\n- one\n- two ", NO_PACE);
+    expect(keep.text()).toBe("  Lead.\n\n- one\n- two ");
+  });
+
+  it("every prompt tells the model not to repeat an organisation the profile doesn't name, nor its placeholder (R7-03)", () => {
     const base = { reply: "en" as const, pageLang: "en" as const, now: new Date("2026-10-10T00:00:00Z") };
-    const plain = systemInstruction(base);
-    const named = systemInstruction({ ...base, namesClient: true });
-    expect(plain).not.toContain(CONFIDENTIAL_HINT);
-    expect(named).toContain(CONFIDENTIAL_HINT);
-    // The stable prefix (everything before "# This conversation") is byte-identical, so Gemini's cache still applies.
-    expect(named.split("# This conversation")[0]).toBe(plain.split("# This conversation")[0]);
+    for (const text of [systemInstruction(base), systemInstruction(base, true)]) {
+      expect(text).toMatch(/never repeat its name/);
+      expect(text).toContain("[organisation]");
+      expect(text).toContain("«[جهة]»");
+    }
+    expect(REMINDERS).toMatch(/isn't named in his profile/);
+    expect(COMPACT_RULES).toMatch(/isn't named in his profile/);
   });
 });
 
@@ -110,9 +166,6 @@ describe("GADD and the government assistant: per-turn hints (R6-01, R6-02)", () 
     const text = systemInstruction({ ...base, clients: true, govAssistant: true });
     expect(text).toContain(GOV_ASSISTANT_HINT);
     expect(text).not.toContain(CLIENTS_HINT);
-    const named = systemInstruction({ ...base, clients: true, namesClient: true });
-    expect(named).toContain(CONFIDENTIAL_HINT);
-    expect(named).not.toContain(CLIENTS_HINT);
     expect(asksAboutGovAssistant("What did he build at Wakeb Data?")).toBe(false);
   });
 });
@@ -162,6 +215,26 @@ describe("contact card and follow-ups (AST-10)", () => {
     for (const q of ["What models power Noura?", "Which LLMs does Noura use?", "What models did he use for the assistant?", "What technologies did he use for the assistant?", "Which cloud hosts the STA project?", "Is Noura live yet?", "When will Noura launch?", "Which ministry was the assistant for?", "What are the client's initials?", "ما التقنيات المستخدمة في المشروع؟", "ما النموذج المستخدم في نورة؟", "متى سيطلق المساعد؟"])
       expect(answerableFollowup(q), q).toBe(false);
     for (const q of ["What tech stack did the STA project use?", "What models did he serve at Wakeb Data?", "What tools does the ArabsStock Assistant use?", "How many tools does Noura have?", "What did he build for the Saudi Tourism Authority?"])
+      expect(answerableFollowup(q), q).toBe(true);
+  });
+
+  it("chips never lead to what isn't public: the government client, where to try Noura, UAT results, the team, tool names (R7-07)", () => {
+    for (const q of [
+      "Who was the government client?",
+      "Where can I try Noura?",
+      "What results did Noura achieve in UAT?",
+      "What did the UAT measure?",
+      "How does he manage his team?",
+      "What does his team of 7 do?",
+      "What tools does Noura use?",
+      "What tools does the STA agent have?",
+      "What LLM evaluation tools does he use?",
+      "ما هي الأدوات المستخدمة في المشروع؟",
+      "ما الجهة الحكومية؟",
+      "ما أدوار أعضاء الفريق؟",
+    ])
+      expect(answerableFollowup(q), q).toBe(false);
+    for (const q of ["How many tools does Noura have?", "How big is his team at Globant?", "What tools does the ArabsStock Assistant use?", "Where has he worked?"])
       expect(answerableFollowup(q), q).toBe(true);
   });
 

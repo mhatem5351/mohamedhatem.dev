@@ -89,8 +89,8 @@ export async function streamChat(
     }
     parser.end();
   } catch {
+    // A failed read: aborted wins over a terminal event already received; otherwise as if the stream had ended.
     if (signal.aborted) return { kind: "aborted" };
-    return terminal ?? { kind: "error", code: stalled ? "timeout" : "network", pre: false };
   } finally {
     clearTimeout(watchdog);
   }

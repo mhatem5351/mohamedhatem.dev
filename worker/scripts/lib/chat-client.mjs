@@ -31,7 +31,11 @@ export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNS
 
   /**
    * Sends one turn and consumes the SSE stream.
-   * @returns {Promise<{status:number, text:string, tools:any[], meta:any, done:any, error:any, firstTokenMs:number|null, totalMs:number}>}
+   * `events` lists the stream's event names in order, consecutive `token` events collapsed into one `token*`;
+   * `eventShape` is the same list joined with "," (e.g. "meta,token*,tool,tool,done"), and `toolNames` the names of
+   * the `tool` events in the order they came (a `replace` resets `tools`, not these). Paired eval cases compare them
+   * (audit R7-14: a right and a wrong guess at the unnamed client must look the same on the wire).
+   * @returns {Promise<{status:number, text:string, tools:any[], meta:any, done:any, error:any, firstTokenMs:number|null, totalMs:number, replaced?:boolean, events:string[], eventShape:string, toolNames:string[]}>}
    */
   /**
    * Hard limits so a run can never hang: `timeoutMs` per request (default 45 s, the whole stream included), at most
@@ -41,7 +45,7 @@ export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNS
   async function ask(messages, { lang = "en", onToken, retries = 3, timeoutMs = 45_000 } = {}) {
     for (let attempt = 0; ; attempt++) {
       const t0 = performance.now();
-      if (calls >= maxCalls) return { status: 0, text: "", tools: [], meta: null, done: null, error: { code: "budget", message: `call budget of ${maxCalls} reached` }, firstTokenMs: null, totalMs: 0 };
+      if (calls >= maxCalls) return { status: 0, text: "", tools: [], meta: null, done: null, error: { code: "budget", message: `call budget of ${maxCalls} reached` }, firstTokenMs: null, totalMs: 0, ...NO_EVENTS() };
       let res;
       try {
         res = await fetch(`${base}/api/chat`, {
@@ -56,7 +60,7 @@ export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNS
           await new Promise((r) => setTimeout(r, 2000));
           continue;
         }
-        return { status: 0, text: "", tools: [], meta: null, done: null, error: { message: String(e) }, firstTokenMs: null, totalMs: performance.now() - t0 };
+        return { status: 0, text: "", tools: [], meta: null, done: null, error: { message: String(e) }, firstTokenMs: null, totalMs: performance.now() - t0, ...NO_EVENTS() };
       }
       const setCookie = res.headers.get("set-cookie");
       if (setCookie) cookie = setCookie.split(";")[0];
@@ -73,11 +77,11 @@ export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNS
       }
       if (!res.ok || !res.body) {
         const body = await res.text();
-        return { status: res.status, text: "", tools: [], meta: null, done: null, error: safeJson(body), firstTokenMs: null, totalMs: performance.now() - t0 };
+        return { status: res.status, text: "", tools: [], meta: null, done: null, error: safeJson(body), firstTokenMs: null, totalMs: performance.now() - t0, ...NO_EVENTS() };
       }
 
       calls++;
-      const out = { status: res.status, text: "", tools: [], meta: null, done: null, error: null, firstTokenMs: null, totalMs: 0, replaced: false };
+      const out = { status: res.status, text: "", tools: [], meta: null, done: null, error: null, firstTokenMs: null, totalMs: 0, replaced: false, ...NO_EVENTS() };
       const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
       let buf = "";
       let broken = false;
@@ -100,6 +104,8 @@ export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNS
           const data = /^data: (.+)$/m.exec(block)?.[1];
           if (!ev || !data) continue;
           const payload = JSON.parse(data);
+          if (ev !== "token" || out.events.at(-1) !== "token*") out.events.push(ev === "token" ? "token*" : ev);
+          if (ev === "tool") out.toolNames.push(String(payload?.name ?? ""));
           if (ev === "token") {
             if (out.firstTokenMs === null) out.firstTokenMs = performance.now() - t0;
             out.text += payload.t;
@@ -117,6 +123,7 @@ export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNS
         }
       }
       out.totalMs = performance.now() - t0;
+      out.eventShape = out.events.join(",");
       // A stream that ended without done/error (dropped connection, timeout): ask again, once (within the budget).
       if ((broken || (!out.done && !out.error)) && attempt < Math.min(1, retries) && calls < maxCalls) continue;
       if (broken || (!out.done && !out.error)) out.error ??= { code: "timeout", message: `no answer within ${timeoutMs / 1000} s` };
@@ -132,6 +139,9 @@ export function createClient(base, { origin = base, turnstileToken = DUMMY_TURNS
     },
   };
 }
+
+/** The event record of a request that never streamed (fresh arrays per result). */
+const NO_EVENTS = () => ({ events: [], eventShape: "", toolNames: [] });
 
 function safeJson(s) {
   try {

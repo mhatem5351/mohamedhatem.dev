@@ -51,6 +51,8 @@ export interface ChatRequest {
    * max, bound to the visitor's network and browser) so later messages need no Turnstile.
    */
   turnstileToken?: string;
+  /** Sent while the widget shows its phone layout (the bottom sheet): the Worker asks for shorter answers. */
+  device?: "phone";
 }
 
 /* ------------------------------------------------------------------ SSE events */
@@ -96,14 +98,20 @@ export type ToolName = ToolEvent["name"];
 export const SECTION_IDS = ["about", "work", "experience", "projects", "skills", "education", "contact"] as const;
 export type SectionId = (typeof SECTION_IDS)[number];
 
+/**
+ * In production `done` carries `finish` only: token usage, timings and the model would tell a fixed reply (the
+ * confidentiality deflection, no model call) from a model answer (audit R7-04), so they stay in the content-free logs.
+ * The local Worker (ALLOW_MODEL_OVERRIDE=1, never set in production) adds them for the evaluation scripts.
+ */
 export interface DoneEvent {
   /** "stop" normal end · "length" hit the output cap (answer may be cut) · "tools" reserved (UI only, no text) */
   finish: "stop" | "length" | "tools";
-  usage: { input: number; output: number; thoughts: number; cached: number };
-  /** Milliseconds: request start → first token, and → done (server side). */
-  ms: { first: number | null; total: number };
-  /** Model that produced the answer (a fallback model may answer when the primary is slow or over quota). */
-  model: string;
+  /** Local development only. */
+  usage?: { input: number; output: number; thoughts: number; cached: number };
+  /** Local development only. Milliseconds: request start → first token, and → done (server side). */
+  ms?: { first: number | null; total: number };
+  /** Local development only. Model that produced the answer (null: a fixed reply, no model call). */
+  model?: string | null;
 }
 
 export interface ErrorEvent {

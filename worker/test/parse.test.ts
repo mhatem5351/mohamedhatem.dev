@@ -171,7 +171,7 @@ describe("prompt assembly", () => {
 
   it("the compact knowledge keeps the facts its rules point to: 96/27, degrees, fit guide, GADD, team of 7, terminology (R6-08)", () => {
     if (CONTENT_SOURCE !== "content") return; // fixture runs have no real knowledge base
-    for (const needle of ["96 tools", "27 of them visible", "M.Sc. in Data Science", "B.Eng.", "AWS Certified Machine Learning", "Not in the sources", "GADD", "team of 7", "sta-tourism-assistants", "4.4 Bilingual enterprise assistant", "قاد هندسة الذكاء الاصطناعي"])
+    for (const needle of ["96 tools", "27 of them visible", "M.Sc. in Data Science", "B.Eng.", "AWS Certified Machine Learning", "Not in the sources", "GADD", "team of 7", "sta-tourism-assistants", "4.4 Bilingual enterprise assistant", "يقود هندسة الذكاء الاصطناعي"])
       expect(KNOWLEDGE_COMPACT, needle).toContain(needle);
   });
 

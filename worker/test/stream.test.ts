@@ -333,7 +333,7 @@ describe("streamAnswer: SSE assembly with a mocked Gemini", () => {
   const modelOf = (url: string) => /models\/([^:]+):/.exec(url)![1]!;
   const directive = '<ui>{"contact":null,"section":"experience","followups":["What did he build at Wakeb?","","Is he open to roles?"]}</ui>';
 
-  it("streams the text without the directive, then validated UI events, then done with usage", async () => {
+  it("streams the text without the directive, then validated UI events, then done with `finish` only (R7-04)", async () => {
     const sink = memorySink();
     const fetcher = async () =>
       geminiSse([
@@ -352,8 +352,14 @@ describe("streamAnswer: SSE assembly with a mocked Gemini", () => {
       { name: "open_section", args: { id: "experience" } },
       { name: "suggest_followups", args: { questions: ["What did he build at Wakeb?", "Is he open to roles?"] } },
     ]);
-    expect(sink.events.at(-1)!.data).toMatchObject({ finish: "stop", model: "primary", usage: { input: 900, output: 40, thoughts: 3, cached: 800 } });
+    // Usage, timings and the model would tell a model answer from a fixed reply: production sends `finish` only.
+    expect(sink.events.at(-1)!.data).toEqual({ finish: "stop" });
     expect(r).toMatchObject({ outcome: "ok", model: "primary", fallback: false, tools: ["open_section", "suggest_followups"], trace: "primary:ok" });
+    expect(r.usage).toEqual({ input: 900, output: 40, thoughts: 3, cached: 800 }); // still logged
+    // The local Worker (diagnostics) adds them for the evaluation scripts.
+    const local = memorySink();
+    await streamAnswer("SYS", contents, deps(fetcher, { diagnostics: true }), local, new AbortController().signal);
+    expect(local.events.at(-1)!.data).toMatchObject({ finish: "stop", model: "primary", usage: { input: 900, output: 40, thoughts: 3, cached: 800 }, ms: { total: expect.any(Number) } });
   });
 
   it("sends one request per answer with the model's own generation settings", async () => {

@@ -16,21 +16,23 @@ const run = (pieces: string[]) => {
 };
 
 describe("link allow-list", () => {
-  it("allows the knowledge base's URLs (and sub-paths), the site, in-site anchors, its mailto and tel numbers", () => {
+  it("allows the knowledge base's URLs (and his repos' files), the site, in-site anchors, its mailto and tel numbers", () => {
     for (const ok of [
       "https://wa.me/201142070946",
-      "https://wa.me/201142070946?text=Hi",
       "https://www.linkedin.com/in/mohamed-hatem-6a5790173/",
       "https://github.com/mhatem5351/staged-llm-evaluator/blob/main/README.md",
       "https://mohamedhatem.dev/ar/#contact",
       "#experience",
       "/ar/#work",
       "mailto:hatem@mohamedhatem.dev",
-      "mailto:Hatem@MohamedHatem.dev?subject=Hi",
+      "mailto:Hatem@MohamedHatem.dev",
       "tel:+201142070946",
     ]) {
       expect(check(ok), ok).toBe(true);
     }
+    // R7-12: these two used to pass. A query pre-fills a WhatsApp message (forbidden by the instructions) or an email.
+    expect(check("https://wa.me/201142070946?text=Hi")).toBe(false);
+    expect(check("mailto:Hatem@MohamedHatem.dev?subject=Hi")).toBe(false);
   });
 
   it("refuses look-alikes, other paths, other origins and other schemes", () => {
@@ -95,6 +97,85 @@ describe("link allow-list", () => {
     for (const p of SITE_PATHS) expect(real(`https://mohamedhatem.dev${p}`), p).toBe(true);
     expect(real("https://mohamedhatem.dev/work/wakeb-chatbot/")).toBe(false);
     for (const m of KNOWLEDGE.matchAll(/https:\/\/mohamedhatem\.dev\/work\/([a-z0-9-]+)\//g)) expect(SITE_PATHS, m[1]).toContain(`/work/${m[1]}/`);
+  });
+
+  it("third-party links only exactly as written: no deeper path, no query or fragment that isn't written (R7-12)", () => {
+    const sources = [
+      `${KB} Employer: [globant.com](https://www.globant.com). Client site: https://logic-controls.com.`,
+      "Profile: [GitHub](https://github.com/mhatem5351). Docs: https://docs.example.org/guide?lang=en#setup.",
+    ];
+    const strict = buildLinkCheck(sources);
+    for (const ok of [
+      "https://wa.me/201142070946",
+      "https://wa.me/201142070946/",
+      "https://www.globant.com",
+      "https://www.globant.com/",
+      "https://logic-controls.com/",
+      "https://www.linkedin.com/in/mohamed-hatem-6a5790173",
+      // His own repositories, written or not, and their files: anything under github.com/mhatem5351/.
+      "https://github.com/mhatem5351",
+      "https://github.com/mhatem5351/staged-llm-evaluator",
+      "https://github.com/mhatem5351/rag-answering-service/tree/main/src",
+      // A query and fragment written in the sources pass exactly as written; the bare path passes too.
+      "https://docs.example.org/guide?lang=en#setup",
+      "https://docs.example.org/guide",
+    ])
+      expect(strict(ok), ok).toBe(true);
+    for (const bad of [
+      // queries and fragments that aren't written
+      "https://wa.me/201142070946?text=hi",
+      "https://wa.me/201142070946?text=",
+      "https://wa.me/201142070946#chat",
+      "https://www.globant.com/?utm_source=chat",
+      "https://www.linkedin.com/in/mohamed-hatem-6a5790173?trk=chat",
+      "https://github.com/mhatem5351/staged-llm-evaluator?tab=readme-ov-file",
+      "https://github.com/mhatem5351/staged-llm-evaluator#readme",
+      "https://docs.example.org/guide?lang=ar#setup",
+      "https://docs.example.org/guide?lang=en",
+      "https://docs.example.org/guide#setup",
+      // deeper paths than written, outside his GitHub account
+      "https://www.globant.com/careers",
+      "https://logic-controls.com/en/products/",
+      "https://www.linkedin.com/in/mohamed-hatem-6a5790173/details/experience/",
+      "https://wa.me/201142070946/extra",
+      // GitHub look-alikes and ".." tricks (the URL parser resolves them before the check)
+      "https://github.com/mhatem5351evil",
+      "https://github.com/mhatem5351evil/repo",
+      "https://github.com/mhatem5351/../evil/repo",
+      "https://github.com/mhatem5351/x/%2e%2e/%2e%2e/evil",
+      "https://github.com/mhatem5351/x/..%2f..%2fevil",
+      "https://github.com/someone-else/mhatem5351/repo",
+      // same host, other scheme or credentials
+      "http://www.globant.com/",
+      "https://evil@github.com/mhatem5351",
+      // mailto with a query or another address
+      "mailto:hatem@mohamedhatem.dev?subject=Hello",
+      "mailto:hatem@mohamedhatem.dev?cc=someone@example.com",
+      "mailto:hatem@mohamedhatem.dev,someone@example.com",
+    ])
+      expect(strict(bad), bad).toBe(false);
+    // A written repo without the account page written: other repos of his are not allowed (only the written path's
+    // sub-paths), so "-fake" stays refused as before.
+    expect(check("https://github.com/mhatem5351/staged-llm-evaluator-fake")).toBe(false);
+    expect(check("https://github.com/mhatem5351/other-repo")).toBe(false);
+  });
+
+  it("every link written in the shipped knowledge base and instructions passes the Worker's own check (R7-12)", () => {
+    if (CONTENT_SOURCE !== "content") return; // fixture runs
+    const real = buildLinkCheck([KNOWLEDGE, SYSTEM_PROMPT], undefined, SITE_PATHS ?? []);
+    const written = new Set<string>();
+    for (const text of [KNOWLEDGE, SYSTEM_PROMPT]) {
+      for (const m of text.matchAll(/\]\(([^)\s]+)\)/g)) written.add(m[1]!);
+      for (const m of text.matchAll(/\b(?:https?:\/\/|mailto:)[^\s<>()[\]"'`]+/g)) written.add(m[0].replace(/[.,;:!?]+$/, ""));
+    }
+    const urls = [...written].filter((u) => /^(?:https?:|mailto:|tel:|#|\/)/i.test(u));
+    // The third parties the chat content links to today: none may become refused by the exact-match rule.
+    for (const host of ["wa.me", "www.linkedin.com", "github.com", "www.globant.com", "logic-controls.com"])
+      expect(urls.some((u) => u.includes(`//${host}/`) || u.endsWith(`//${host}`)), host).toBe(true);
+    for (const u of urls) {
+      expect(real(u), u).toBe(true);
+      if (/^https?:\/\/[^/]+\/.*[^/]$/.test(u) && !/[?#]/.test(u)) expect(real(`${u}/`), `${u}/`).toBe(true);
+    }
   });
 
   it("the streaming filter judges a markdown link even when its target contains whitespace", () => {
