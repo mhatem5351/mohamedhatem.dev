@@ -29,16 +29,16 @@
     "deploy:seed-previous": "node site/scripts/keep-previous-assets.mjs --seed"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.13.0",
-    "@cloudflare/workers-types": "^5.20261009.1",
-    "@playwright/test": "^1.64.0",
-    "@types/node": "^26.6.4",
+    "@axe-core/playwright": "^4.14.0",
+    "@cloudflare/workers-types": "^5.20261016.1",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
     "esbuild": "^0.28.2",
     "fflate": "^0.8.3",
     "happy-dom": "^20.14.6",
     "tsx": "4.23.15",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.3",
-    "wrangler": "^4.149.0"
+    "vitest": "^5.0.5",
+    "wrangler": "^4.151.0"
   }
 }
