@@ -1876,8 +1876,8 @@ const caseStudies: readonly CaseStudy[] = [
     featured: true,
     depth: "full",
     title: l(
-      "Al Majed Oud: an Arabic-first AI sales assistant with 9 agents, eval-gated",
-      "الماجد للعود: مساعد مبيعات ذكي بالعربية أولًا من 9 وكلاء، بإصدارات تحرسها التقييمات",
+      "Al Majed Oud: an Arabic-first AI sales assistant grounded in real data",
+      "الماجد للعود: مساعد ذكي للمبيعات يجيب بالعربية من بيانات الشركة نفسها",
     ),
     shortTitle: l("Al Majed Oud: AI sales assistant", "الماجد للعود: مساعد المبيعات الذكي"),
     context: l("Al Majed Oud, a Saudi oud and fragrance house (contract)", "الماجد للعود، دار سعودية للعود والعطور (عمل بعقد)"),
