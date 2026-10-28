@@ -552,8 +552,12 @@
           "founder",
           "owner"
         ],
+        "mustNotMatch": [
+          "(STA|Saudi Tourism|Noura)[^.]{0,120}(interface|frontend|front-end|\\bUI\\b)"
+        ],
         "facts": [
-          "Freelance logic-controls.com: 4 languages, Astro + TypeScript + Tailwind on Cloudflare Workers, WCAG 2.2 AA, Lighthouse 98-100 mobile, ~950 unit + ~900 E2E tests"
+          "Freelance logic-controls.com: 4 languages, Astro + TypeScript + Tailwind on Cloudflare Workers, WCAG 2.2 AA, Lighthouse 98-100 mobile, ~950 unit + ~900 E2E tests",
+          "The Al Majed Oud assistant's Next.js chat UI (contract, 2026); on STA he leads the AI engineering, not the interface"
         ],
         "behaviour": "Positions it as freelance work alongside his AI focus; never mentions the Logic Controls founder."
       }
@@ -972,6 +976,8 @@
             "neither",
             "outside his",
             "outside Hatem's",
+            "does not include",
+            "doesn't include",
             "does not list",
             "doesn't list",
             "not something he lists",
@@ -987,7 +993,7 @@
         ],
         "facts": [
           "Weak fit: his focus is AI/LLM engineering",
-          "His frontend work is Astro + TypeScript (logic-controls.com)",
+          "His frontend work is Astro + TypeScript (logic-controls.com) and the Next.js chat UI of the Al Majed Oud assistant; no mobile or React Native",
           "React Native, Swift, Kotlin not in his profile"
         ],
         "behaviour": "Kind, honest, brief; mentions what he does focus on."
