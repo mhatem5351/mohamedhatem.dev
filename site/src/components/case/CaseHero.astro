@@ -17,7 +17,7 @@ import { messages, tr, type Locale } from "~/lib/i18n";
 import { byLocale, profile } from "~/lib/site";
 import { noBreakHtml } from "~/lib/nobreak";
 import { bidiUnits } from "~/lib/bidi";
-import { askQuestion, contextDetail, eyebrowParts, periodInfo, roleOf, stackLabel, techAccent } from "~/lib/case";
+import { askQuestion, caseLogo, contextDetail, eyebrowParts, periodInfo, roleOf, stackLabel, techAccent } from "~/lib/case";
 
 interface Props {
   locale: Locale;
@@ -30,8 +30,9 @@ const m = messages(locale);
 const role = roleOf(cs);
 const eb = eyebrowParts(cs, locale);
 const period = periodInfo(cs, locale);
-// The same tile as the work cards: the employer's for client work, Logic Controls for the freelance site.
-const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monogram } : { file: "logic-controls", monogram: "LC" };
+// The same tile as the work cards: the employer's for work in a role, the client's own for contract or freelance work
+// (Al Majed Oud; Logic Controls for the freelance site).
+const logo = caseLogo(cs);
 const detail = contextDetail(cs, locale);
 const isLatin = (s: string) => !/[؀-ۿ]/.test(s);
 const employment = role ? m.experience.employmentType[role.employmentType] : m.work.freelance;

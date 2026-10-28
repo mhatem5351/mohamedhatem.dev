@@ -101,12 +101,21 @@ describe("JSON-LD", () => {
     }
   });
 
-  it("names a client (about.sponsor) only where it approved being named: the Saudi Tourism Authority", () => {
+  it("names a client (about.sponsor) only where it approved being named: the Saudi Tourism Authority and Al Majed Oud", () => {
     for (const cs of profile.caseStudies)
       for (const l of ["en", "ar"] as const) {
         const article = caseStudyJsonLd(cs.slug, l).find((n) => (n as Node)["@type"] === "Article") as Node;
         const about = article.about as Node;
         expect(about["@type"]).toBe("CreativeWork");
+        if (cs.slug === "almajed-sales-assistant") {
+          // Contract work outside the experience list: the client is the organisation and the sponsor; dated by its own period.
+          const sponsor = about.sponsor as Node;
+          expect(sponsor.name).toBe(l === "en" ? "Al Majed Oud" : "الماجد للعود");
+          expect(sponsor.alternateName).toContain(l === "en" ? "الماجد للعود" : "Al Majed Oud");
+          expect((about.producer as Node).name).toBe(l === "en" ? "Al Majed Oud" : "الماجد للعود");
+          expect(about).toHaveProperty("dateCreated", "2026");
+          continue;
+        }
         if (cs.slug !== "sta-tourism-assistants") {
           expect(about, cs.slug).not.toHaveProperty("sponsor");
           continue;

@@ -35,7 +35,7 @@ describe('"Worked at" logos (design/assets/logos/brand)', () => {
       expect(SOURCES, key).toContain(`\`${e.files.light.file}\``);
       expect(SOURCES, key).toContain(`\`${e.files.dark.file}\``);
     }
-    for (const tile of ["wakeb", "empoweromics", "tabaqat", "logic-controls"]) {
+    for (const tile of ["wakeb", "empoweromics", "tabaqat", "logic-controls", "almajed"]) {
       expect(SOURCES).toContain(`\`${tile}\``);
       expect(existsSync(SITE(`tiles/${tile}-160.webp`)), tile).toBe(true);
     }

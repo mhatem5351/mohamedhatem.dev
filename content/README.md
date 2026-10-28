@@ -111,7 +111,11 @@ Contact details and the binding decisions (title, "7 years", no Logic Controls f
   visitors", accepted in the client's UAT in September 2026, never "multi-agent" or "in production"), Wakeb Data ("the
   AIP project"; the Saudi Ministry of Defense (GADD) is a client of the role as a whole, never tied to one Wakeb
   project), ArabsStock, Empoweromics, Tabaqat,
-  AestheticsPro, MDP, the universities and Logic Controls (never its founder or owner). One client is deliberately
+  AestheticsPro, MDP, the universities, Logic Controls (never its founder or owner) and Al Majed Oud («الماجد للعود»,
+  named with its branded sign-in screen by Mohamed's decision, 2026-10-28: contract work, `roleId: null`, "Sole AI
+  engineer, end to end (contract)", never employment; status "went into production on Azure in June 2026, delivered and
+  handed over in August 2026", never "live today"; no usage or adoption numbers, store counts, business figures,
+  infrastructure names, people or costs; its chat screens run on illustrative demo data and their captions say so). One client is deliberately
   unnamed: "a Saudi government client" (the bilingual assistant at Wakeb). Its names appear nowhere in this
   repository; `check-content.mjs` enforces that with SHA-256 hashes of the forbidden names
   (`worker/src/chat/confidential-hashes.json`, shared with the Worker), so the check itself doesn't publish them. It
@@ -143,12 +147,13 @@ Contact details and the binding decisions (title, "7 years", no Logic Controls f
   the rest go under "Earlier roles" (`m.experience.earlierTitle`). Logic Controls is freelance work shown as a case
   study and a project, as on his GitHub profile, not as a timeline role.
 - **Case studies.** `order` sets display order (featured ones first); `featured` ones form the main grid (the feature card
-  (the Saudi Tourism Authority assistants), three equal cards led by ArabsStock, and logic-controls.com as a wide card
-  because a fifth card would sit alone in its row); `depth: "brief"` ones (the government assistant, AIP, Tabaqat)
+  (the Saudi Tourism Authority assistants), three equal cards led by Al Majed Oud's sales assistant, and Empoweromics as
+  a wide card because a fifth card would sit alone in its row; logic-controls.com sits in "More work"); `depth: "brief"` ones (the government assistant, AIP, Tabaqat)
   are not featured: they sit in "More work" ("Read the brief") and their pages use the compact brief template with `m.work.briefNote`. `figures` holds
   2–4 sourced facts for full case studies (the strip is omitted below two); a figure may carry a small `unit`
   ("21" + "months"). Show `m.work.architectureNote` near diagrams. `client` names the client in JSON-LD (only where it
-  approved being named). `screens` lists product screens for the page's gallery (only with the client's approval):
+  approved being named); `client.tile` gives contract or freelance work without a role its client's logo tile in the
+  hero eyebrow and on the work card (Al Majed Oud's typographic «م» tile). `screens` lists product screens for the page's gallery (only with the client's approval):
   cleaned captures in `site/src/assets/screens/<slug>/`, each with its `density` (2 for the desktop captures; 1 for the
   phone screen and the dialog, which are never shown wider than captured), `frame`, `product`, `alt` and `caption`.
   Captions say what a screen shows, never how it was captured ("Screens from the apps").

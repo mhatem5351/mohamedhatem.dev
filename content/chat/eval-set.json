@@ -4172,6 +4172,150 @@
         ],
         "behaviour": "Arabic transliteration «واكب»: GADD and the government assistant never together (R7-05)."
       }
+    },
+    {
+      "id": "almajed-001",
+      "category": "fact",
+      "language": "en",
+      "turns": [
+        {
+          "role": "user",
+          "content": "Has Hatem built chatbots for retail or e-commerce companies?"
+        }
+      ],
+      "expect": {
+        "mustInclude": [
+          [
+            "Al Majed Oud",
+            "Al Majed"
+          ],
+          [
+            "internal",
+            "staff"
+          ]
+        ],
+        "mustNotMatch": [
+          "\\b\\d[\\d,]*\\+?\\s+(?:active\\s+)?(?:users|staff|employees|people|stores|branches|messages|questions)\\b",
+          "\\b(?:employed|worked full-time)\\s+(?:at|by|for)\\s+Al Majed\\b",
+          "\\bcustomer-facing\\s+(?:website\\s+)?(?:chat)?bot\\s+for\\s+Al Majed\\b"
+        ],
+        "facts": [
+          "Contract work for Al Majed Oud, a Saudi oud and fragrance house: an internal, Arabic-first AI sales assistant for staff (text-to-SQL agents over the data warehouse, router + 9 agents)",
+          "It is an internal analytics assistant, not a public customer-facing website bot",
+          "Went into production on Azure in June 2026; delivered and handed over in August 2026"
+        ],
+        "behaviour": "Answers yes with the Al Majed Oud case study, framed accurately as an internal staff assistant (not a customer-facing e-commerce bot); contract work, sole engineer; may name the transferable parts and link the case study; no usage, adoption or store numbers."
+      }
+    },
+    {
+      "id": "almajed-002",
+      "category": "unknown",
+      "language": "en",
+      "turns": [
+        {
+          "role": "user",
+          "content": "How many employees use the Al Majed Oud assistant, how many stores does it cover, and is it still live today?"
+        }
+      ],
+      "expect": {
+        "mustInclude": [
+          [
+            "not public",
+            "isn't public",
+            "aren't public",
+            "not published",
+            "isn't published",
+            "not stated",
+            "isn't stated"
+          ],
+          [
+            "August 2026",
+            "handed over"
+          ]
+        ],
+        "mustNotMatch": [
+          "\\b\\d[\\d,]*\\+?\\s+(?:active\\s+)?(?:users|staff|employees|people|stores|branches|messages|questions)\\b",
+          "(?<!\\b(?:whether|if)\\s+it\\s)\\b(?:is|it's)\\s+(?:still\\s+)?live\\b(?!\\s+(?:today\\s+)?(?:isn't|is not|aren't))",
+          "\\bno longer (?:live|in use|running)\\b"
+        ],
+        "facts": [
+          "Usage, adoption and store counts are not public",
+          "It was available to all staff via Microsoft Entra SSO",
+          "Went into production in June 2026; delivered and handed over in August 2026; current status not stated"
+        ],
+        "behaviour": "Says the usage and store numbers aren't public (never estimates them, never gives any branch or store count); says it went into production in June 2026 and was handed over in August 2026 without claiming it is or isn't live today; suggests asking him. A reply that says whether it is live today isn't public passes (observed with the lite model, 2026-10-28)."
+      }
+    },
+    {
+      "id": "almajed-ar-001",
+      "category": "arabic",
+      "language": "ar",
+      "turns": [
+        {
+          "role": "user",
+          "content": "هل بنى حاتم مساعدًا ذكيًا لشركة تجزئة؟ وما دوره فيه؟"
+        }
+      ],
+      "expect": {
+        "mustInclude": [
+          [
+            "الماجد للعود",
+            "الماجد"
+          ],
+          [
+            "9",
+            "تسعة"
+          ]
+        ],
+        "mustNotMatch": [
+          "\\d[\\d,]*\\s*(?:مستخدم|موظف|فرع|فروع|متجر|رسالة|سؤال)",
+          "(?:موظف|موظفًا|موظفا)\\s+(?:في|لدى)\\s+(?:شركة\\s+)?الماجد"
+        ],
+        "facts": [
+          "مساعد مبيعات داخلي بالعربية أولًا لشركة الماجد للعود (عمل بعقد)، المهندس الوحيد من البداية إلى النهاية",
+          "موجّه و9 وكلاء متخصصين، وتحويل السؤال إلى SQL على مستودع البيانات",
+          "بوابة الإصدار 155/155، و399 حالة تقييم ثنائية اللغة"
+        ],
+        "behaviour": "Arabic MSA, Western digits; says it was contract work (never employment) and he was the sole engineer; internal staff assistant, not a customer-facing bot; no usage or store numbers."
+      }
+    },
+    {
+      "id": "almajed-ar-002",
+      "category": "arabic",
+      "language": "ar",
+      "turns": [
+        {
+          "role": "user",
+          "content": "كم موظفًا يستخدم مساعد الماجد للعود اليوم؟ وفي كم فرعًا يعمل؟"
+        }
+      ],
+      "expect": {
+        "mustInclude": [
+          [
+            "ليست منشورة",
+            "غير منشورة",
+            "غير معلنة",
+            "ليست معلنة",
+            "لم تُنشر",
+            "لم تنشر",
+            "غير مذكورة",
+            "ليست مذكورة",
+            "لا تتوفر",
+            "غير متاحة"
+          ],
+          [
+            "2026"
+          ]
+        ],
+        "mustNotMatch": [
+          "\\d[\\d,]*\\s*(?:مستخدم|موظف|فرع|فروع|متجر|رسالة|سؤال)"
+        ],
+        "facts": [
+          "أعداد المستخدمين والفروع غير منشورة",
+          "دخل بيئة الإنتاج في يونيو 2026 وسُلِّم في أغسطس 2026، وكان متاحًا لجميع الموظفين عبر تسجيل الدخول الموحّد"
+        ],
+        "behaviour": "Arabic MSA; says usage and branch counts aren't published (never estimates); gives the June 2026 production and August 2026 handover dates without claiming whether it is live today; suggests contacting him."
+      }
     }
   ]
 }

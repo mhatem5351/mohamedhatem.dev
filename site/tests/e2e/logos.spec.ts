@@ -1,7 +1,7 @@
 /**
  * Company logos: the "Worked at" row shows each company's official logo in its real colours, the right file for the
  * page's theme (dark by default), named by its alt text; the work cards carry the company's tile beside the eyebrow
- * (the employer's for client work, Logic Controls for the freelance site).
+ * (the employer's for work in a role; for contract or freelance work, the client's own: Al Majed Oud, Logic Controls).
  */
 import { expect, test, useTheme } from "./fixtures";
 
@@ -68,12 +68,14 @@ test("every work card carries its company's logo tile beside the eyebrow", async
   expect(tileOf(/ArabsStock Assistant/)).toMatch(/arabsstock/);
   expect(tileOf(/bilingual enterprise assistant/)).toMatch(/wakeb/); // the employer, never the client
   expect(tileOf(/logic-controls\.com/)).toMatch(/logic-controls/);
+  expect(tileOf(/Al Majed Oud/)).toMatch(/almajed/); // contract work: the client's own tile, not Logic Controls
   expect(tileOf(/GIS data pipelines/)).toMatch(/tabaqat/);
   expect(tileOf(/real-estate platform/)).toMatch(/empoweromics/);
 });
 
 const CASE_TILES: Record<string, RegExp> = {
   "sta-tourism-assistants": /globant/,
+  "almajed-sales-assistant": /almajed/, // contract work outside the experience list: the client's tile
   "arabsstock-assistant": /arabsstock/,
   "wakeb-bilingual-chatbot": /wakeb/,
   "gov-bilingual-assistant": /wakeb/, // the employer, never the client

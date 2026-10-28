@@ -14,6 +14,7 @@
  * "Wakeb Data / during 2024–2026", so the role's years don't pass for the project's own (audit FC-7).
  */
 import type { CaseStudy } from "@content/profile.ts";
+import type { ImageMetadata } from "astro";
 import { Picture } from "astro:assets";
 import lcEn from "~/assets/showcase/lc-desktop-en-1440.webp";
 import lcAr from "~/assets/showcase/lc-desktop-ar-1440.webp";
@@ -24,7 +25,7 @@ import LogoTile from "~/components/ui/LogoTile.astro";
 import MotionToggle from "~/components/ui/MotionToggle.astro";
 import { CASE_DIAGRAMS, diagramSvg } from "~/lib/diagrams";
 import { formatYears, localePath, messages, type Locale } from "~/lib/i18n";
-import { sharesRolePeriod } from "~/lib/case";
+import { caseLogo, companyOf, sharesRolePeriod } from "~/lib/case";
 import { PATHS, profile } from "~/lib/site";
 import { CASE_ACCENT } from "~/lib/home-work";
 import { noBreakHtml } from "~/lib/nobreak";
@@ -46,10 +47,25 @@ const role = cs.roleId ? profile.experience.find((r) => r.id === cs.roleId) : un
 const honors = role ? profile.honors.filter((h) => h.roleId === role.id) : [];
 const href = localePath(PATHS.work(cs.slug), locale);
 const diagramId = CASE_DIAGRAMS[cs.slug]?.[0];
+/**
+ * No designed diagram but approved product screens (Al Majed Oud): the first desktop screen in the small browser frame,
+ * like the logic-controls.com site, instead of a drawing squeezed from a large architecture (13 parts read as clutter
+ * at thumbnail size).
+ */
+const screenFiles = import.meta.glob<{ default: ImageMetadata }>("../../assets/screens/*/*.webp", { eager: true });
+const firstScreen = diagramId ? undefined : cs.screens?.find((sc) => sc.frame === "desktop");
+const screenImg = firstScreen ? screenFiles[`../../assets/screens/${cs.slug}/${firstScreen.file}`]?.default : undefined;
 const big = variant === "feature" || variant === "wide";
 const facts = big ? cs.outcome.slice(0, 3) : [];
 const chips = cs.stack.slice(0, big ? 5 : 4);
 const company = role ? role.company[locale] : null;
+/**
+ * Contract or freelance work outside the experience list: a named client (`client`, Al Majed Oud) leads the eyebrow
+ * like an employer, with "Freelance" in the role slot of the big cards; the freelance site (no `client` entry) keeps
+ * "Freelance" first and its client, Logic Controls, in the role slot.
+ */
+const client = role ? null : companyOf(cs, locale);
+const org = company ?? (cs.client ? client : null);
 const years = formatYears(cs.period);
 /** "during 2024–2026" for work dated only by a shared role; split around {years} so the range stays isolated. */
 const yearsParts = company && sharesRolePeriod(cs) ? m.work.page.atRole.split(/(\{years\})/).filter(Boolean) : ["{years}"];
@@ -63,8 +79,9 @@ const lc = locale === "ar" ? lcAr : lcEn;
 const title = noBreakHtml(cs.title[locale], "nowrap");
 const brief = cs.depth === "brief";
 /** The company's tile beside the eyebrow: the employer's (the government assistant shows Wakeb Data, never its client);
- * freelance work shows its client's, Logic Controls. Decorative: the eyebrow names the company. */
-const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monogram } : { file: "logic-controls", monogram: "LC" };
+ * contract or freelance work shows its client's (Al Majed Oud, Logic Controls). Decorative: the eyebrow names the company. */
+const logo = caseLogo(cs);
+const isLatin = (t: string) => !/[\u0600-\u06FF]/.test(t);
 ---
 <article
   id={id}
@@ -81,7 +98,7 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
 >
   {
     variant !== "compact" && (
-      <div class:list={["work__media", !diagramId && cs.slug === "logic-controls-website" && "work__media--shot"]} dir="ltr" data-motion={diagramId ? "dg-play" : undefined}>
+      <div class:list={["work__media", !diagramId && (cs.slug === "logic-controls-website" || screenImg) && "work__media--shot"]} dir="ltr" data-motion={diagramId ? "dg-play" : undefined}>
         {diagramId ? (
           <>
             <Fragment set:html={diagramSvg(diagramId, "thumb", { locale, decorative: true, idSuffix: `card-${cs.slug}` })} />
@@ -96,6 +113,15 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
             </span>
             <Picture src={lc} formats={["avif", "webp"]} widths={[480, 720, 960]} sizes={big ? "(min-width: 64rem) 40rem, calc(100vw - 5rem)" : "(min-width: 64rem) 24rem, (min-width: 48rem) calc(50vw - 4rem), calc(100vw - 5rem)"} alt="" loading="lazy" decoding="async" />
           </div>
+        ) : screenImg ? (
+          <div class="mini-browser mini-browser--screen" aria-hidden="true">
+            <span class="mini-browser__bar">
+              <i />
+              <i />
+              <i />
+            </span>
+            <Picture src={screenImg} formats={["avif", "webp"]} widths={[480, 720, 960]} sizes={big ? "(min-width: 64rem) 40rem, calc(100vw - 5rem)" : "(min-width: 64rem) 24rem, (min-width: 48rem) calc(50vw - 4rem), calc(100vw - 5rem)"} alt="" loading="lazy" decoding="async" />
+          </div>
         ) : (
           <ArchThumb cs={cs} />
         )}
@@ -108,8 +134,10 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
       {/* Company / role / years as a separator list: a "/" never ends a line or starts one (audit H-07). */}
       <span class="eyebrow sep-list sep-list--slash">
         <span class="sep-list__in">
-          {company ? <span lang="en" class="latin">{company}</span> : <span>{m.work.freelance}</span>}
-          {big && (role ? <span>{role.title[locale]}</span> : <span lang="en" class="latin">Logic Controls</span>)}
+          {/* Every Latin part is set the same way (lang + .latin), "Freelance" included, so a freelance card's eyebrow has
+              its neighbours' line box and the row's eyebrows line up to the pixel. */}
+          {[org ?? m.work.freelance].map((t) => (isLatin(t) ? <span lang="en" class="latin">{t}</span> : <span>{t}</span>))}
+          {big && (role ? <span>{role.title[locale]}</span> : cs.client ? <span>{m.work.freelance}</span> : client && (isLatin(client) ? <span lang="en" class="latin">{client}</span> : <span>{client}</span>))}
           <span>{yearsParts.map((part) => (part === "{years}" ? <Ltr>{years}</Ltr> : part))}</span>
         </span>
       </span>
@@ -164,7 +192,7 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
   .work__body {
     align-content: start;
   }
-  /* logic-controls.com: a framed screenshot instead of a diagram. */
+  /* logic-controls.com and the product screens (Al Majed Oud): a framed screenshot instead of a diagram. */
   .work__media--shot {
     --media-pad: 1.25rem;
   }
@@ -198,6 +226,22 @@ const logo = role ? { file: role.logo.file ?? role.id, monogram: role.logo.monog
     aspect-ratio: 1440 / 828;
     object-fit: cover;
     object-position: top;
+  }
+  /* A product screen fills the 16 : 10 media box (its top shown, the bottom cropped by the frame), and never sizes the
+     box itself: content taller than an aspect-ratio box would grow it and push this card's eyebrow below its row's. */
+  .mini-browser--screen {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .mini-browser--screen :global(picture) {
+    display: block;
+    flex: 1 1 0;
+    min-height: 0;
+  }
+  .mini-browser--screen :global(img) {
+    height: 100%;
+    aspect-ratio: auto;
   }
   @media (min-width: 64rem) {
     .work--reverse {

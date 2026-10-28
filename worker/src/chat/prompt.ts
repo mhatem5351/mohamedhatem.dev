@@ -90,7 +90,7 @@ export const JD_RULES = `# This message asks about his fit for a role
 export const CLIENTS_HINT = `# This message asks about his clients
 - Name the Wakeb role's client in its own sentence: "The Saudi Ministry of Defense (GADD) is a client of his Wakeb Data role as a whole, not of any one project." (Arabic: «وزارة الدفاع السعودية (GADD) عميل لدوره في Wakeb Data ككل، لا لمشروع بعينه.»)
 - In this answer, never mention the bilingual enterprise assistant or any "government client", not even to say it is separate, confidential or another client, and never count his clients or hint at one you don't name ("two clients", "a client that isn't named"). If you list his Wakeb work, list only the 6-agent bilingual chatbot and its model serving (MLOps), AIP semantic search v2, the Wakeb Papers Research Agent, gRPC and CI/CD.
-- Other clients the knowledge base names: the Saudi Tourism Authority (through Globant), AestheticsPro (freelance) and Logic Controls (freelance).`;
+- Other clients the knowledge base names: the Saudi Tourism Authority (through Globant), Al Majed Oud (contract), AestheticsPro (freelance) and Logic Controls (freelance).`;
 
 /** Added when the visitor asks about the bilingual assistant for the unnamed Saudi government client. */
 export const GOV_ASSISTANT_HINT = `# This message asks about the bilingual assistant for a Saudi government client

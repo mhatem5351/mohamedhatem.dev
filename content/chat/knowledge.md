@@ -2,7 +2,8 @@
 
 This is everything the assistant on mohamedhatem.dev knows about Mohamed Hatem. It is compiled from his CV
 (October 2026), his LinkedIn profile (9 October 2026), his GitHub profile and repositories, the published facts
-about his freelance Logic Controls website, and answers he confirmed directly (degree status, work arrangements,
+about his freelance Logic Controls website, the public facts of his contract work for Al Majed Oud, and answers he
+confirmed directly (degree status, work arrangements,
 which clients are named). Facts are current as of October 2026.
 
 If something is not written here, it is not known. Section 15 lists the common questions that the sources don't
@@ -72,6 +73,9 @@ Share this when a visitor asks about availability, location, remote work or relo
 - **3,008+:** real-estate developers whose differently structured data he unified at Empoweromics.
 - **4 languages:** logic-controls.com (English, Arabic RTL, Chinese, Turkish), Lighthouse 98–100 on mobile.
 - **Team of 7:** the team he leads at Globant.
+- **9 agents / 155/155 / 399:** Al Majed Oud's internal sales assistant (contract work, 2026): a router and 9
+  specialist agents; its final release passed the 155-case release gate at 155/155; its eval suite has 399 bilingual
+  cases (248 Arabic, 151 English).
 
 These are the headline work figures. Other numbers in this file may be quoted exactly as written. Don't estimate any
 other figure (latency, accuracy, users, cost) for employer or client work.
@@ -253,6 +257,12 @@ whole markdown link; never shorten a URL to a path.
 - Developed and optimised complex SQL stored procedures for production payment systems; query performance tuning and
   database administration, including integrity and security.
 
+### Contract: Al Majed Oud internal sales assistant · April – August 2026
+- Contract work (not employment) for **Al Majed Oud** (Arabic: **الماجد للعود**, also «شركة الماجد للعود»), a Saudi
+  oud and fragrance house. He was the sole engineer, end to end. See case study 4.9.
+- Its dates overlap his Globant role; the sources don't say how his time was split. Don't speculate; suggest asking
+  him.
+
 ### Freelance: Logic Controls website · 2026
 - Freelance frontend work for **Logic Controls**, an industrial-automation company in Egypt (PLC, HMI and SCADA
   programming, control panels, machine automation). See case study 4.8.
@@ -262,6 +272,7 @@ whole markdown link; never shorten a URL to a path.
 ### Timeline
 
 - Apr 2026 – present: AI Team Lead, Globant (full-time, remote).
+- Apr 2026 – Aug 2026: Al Majed Oud internal sales assistant (contract work, sole engineer; case study 4.9).
 - Sep 2024 – Apr 2026: Senior AI & MLOps Engineer, Wakeb Data (full-time, hybrid).
 - Apr 2023 – Dec 2024: AI Engineer, ArabsStock (full-time, remote).
 - Feb 2023 – May 2024: Software Engineer, Tabaqat (part-time, remote).
@@ -394,6 +405,63 @@ study has its own page on the site, linked below (English page, then the Arabic 
 - Code: [github.com/mhatem5351/logic-controls-website](https://github.com/mhatem5351/logic-controls-website).
 - This shows frontend skills alongside his AI work; his main focus remains AI engineering.
 
+### 4.9 Al Majed Oud internal sales assistant (contract, April – August 2026)
+- **Page:** [the case study](https://mohamedhatem.dev/work/almajed-sales-assistant/) (Arabic:
+  [دراسة الحالة](https://mohamedhatem.dev/ar/work/almajed-sales-assistant/)). It is the second case study on his site.
+- **Client:** Al Majed Oud (الماجد للعود), a Saudi oud and fragrance house with markets across the GCC. Named on his
+  site with the client's branded sign-in screen.
+- **His part:** contract work, sole engineer end to end: data pipeline, AI agents, backend, frontend, cloud
+  infrastructure, CI/CD, evaluation and observability. The company's IT team handled tenant-level tasks (app
+  registration, DNS, access). Never call it a job or say he was employed there.
+- **What it is:** an **internal**, Arabic-first AI assistant for the company's staff, not a public customer-facing
+  website bot. Staff sign in with their corporate Microsoft account (Microsoft Entra SSO) and ask business questions
+  in Arabic or English, such as "How much did a branch sell in January?" or "Who were the top sellers in Riyadh this
+  month?". Answers cover sales, customers, products, staff performance, stores, loyalty cards, payment methods and
+  discounts. They stream in as they are written, with a chart. The assistant's persona is called "Majid" (مَجِد).
+- **Problem:** staff depended on analysts and Power BI reports for everyday numbers, mostly in English, while most
+  of them work in Arabic. A chatbot that improvises numbers would do more harm than good: a plausible wrong figure is
+  worse than no answer.
+- **Approach:** text-to-SQL agents over the company's data warehouse, **not RAG over documents** (sales questions are
+  arithmetic with one right answer, so every figure comes from SQL against the system of record, never from the
+  model's memory). LangGraph orchestration: a router and **9 specialist agents** (sales, customers, products, staff,
+  stores, loyalty, payments, discounts, and an "unknown" agent that clarifies or declines), plus a multi-hop planner
+  that splits compound questions across agents. Every query passes an **SQL safety layer**: read-only, one statement,
+  a table whitelist per agent, bound parameters, a row cap and a statement time limit. The answer layer never states
+  a figure that isn't in the returned rows. **Clarifying or declining is a tested feature**: with no period in the
+  question it asks for one; 64 test cases check only that it declines or clarifies correctly. Follow-up questions
+  ("…and last month?") work through conversation memory, always scoped to the individual user.
+- **Arabic first:** hybrid name search (Qdrant, dense BGE-M3 embeddings plus sparse vectors, reciprocal-rank fusion)
+  because Arabic names have several legitimate spellings; staff names indexed in Arabic and Latin script; Hijri
+  (Umm al-Qura) dates with Ramadan, Eid al-Fitr, Eid al-Adha and Hajj season, so "Ramadan 2026" works without
+  hard-coded Gregorian ranges; the Friday–Saturday weekend; a full right-to-left UI. 248 of the 399 eval cases are in
+  Arabic, written natively, not translated.
+- **Data:** a query-optimised PostgreSQL copy of the company's **Microsoft Fabric** warehouse; today's sales refresh
+  every 15 minutes, other tiers hourly or daily, with a weekly reconciliation against the source of record. Sales
+  figures are built to match the company's financial reports.
+- **Stack:** Python, FastAPI with SSE streaming, LangGraph, tiered Azure OpenAI models (a small model routes and
+  extracts, a larger one composes, temperature 0), Qdrant, PostgreSQL, Next.js, React and Tailwind on the frontend,
+  Microsoft Entra ID, Azure Container Apps, Azure Key Vault, Azure DevOps CI/CD, Langfuse.
+- **Quality and operations:** a **bilingual eval suite of 399 cases** (248 Arabic, 151 English), each anchored on a
+  figure verified against the company's data, in three tiers: 86 cases on every pull request, a **155-case release
+  gate that blocks every deploy** (it runs against the freshly built image inside the production environment), and
+  the full 399 nightly. Langfuse traces every request (nested spans, tokens, cost); an admin dashboard shows request
+  volume, latency, quality scores, negative feedback and error traces. The heaviest analytical query went from 432 s
+  to 1.6 s after indexing and database tuning.
+- **Outcome (exact wording):** it went into production on Azure in **June 2026**, behind Microsoft Entra SSO and
+  available to all staff, and was **delivered and handed over in August 2026**. The final release passed its release
+  gate at **155/155**; the full nightly suite of 399 bilingual cases reached **399/399**. Handed over with an
+  engineering handover pack and runbooks, a **mobile integration kit** for the company's app team (API reference with
+  the SSE protocol, design tokens, reusable components, a backend-proxy pattern so no secret ships in the app), and a
+  disaster-recovery path rehearsed with a restore in **about 2 minutes**.
+- **Not public (say so; never estimate):** how many people use or used it, message counts, adoption or business
+  impact, the number of stores or branches, sales or any other business figures, costs, infrastructure names, the
+  production address, and the names of anyone at the company. Don't say whether it is live today, in either
+  direction: say it went into production in June 2026 and was delivered and handed over in August 2026.
+- **Why it matters for other projects:** bilingual Arabic/English with RTL, answers grounded in the client's own data
+  instead of model memory, guardrails and "decline when unsure", an eval gate before every release, tracing and an
+  admin dashboard to watch quality and cost, and SSO or embed options. It was an internal analytics assistant, not a
+  public customer-facing chatbot.
+
 ---
 
 ## 5. Open-source projects
@@ -455,21 +523,21 @@ GitHub skill lists **without** any project in the sources: never tie those to a 
 
 | Area | Skills | Shown in |
 | --- | --- | --- |
-| Multi-agent LLM systems | LangGraph, multi-agent design, Command-based routing, subgraphs, agent memory, MCP | ArabsStock Assistant (14 agents); Wakeb chatbot (6 agents, MCP); Wakeb Papers Research Agent (memory); staged-llm-evaluator; Globant (LangGraph only: the STA project's single agentic runtime, not multi-agent) |
-| LLMs and APIs | OpenAI API, Qwen | ArabsStock (OpenAI embeddings); Wakeb (Qwen); open-source tools (OpenAI API) |
-| Retrieval / RAG | RAG pipelines, hybrid search (vector + BM25), LLM reranking, semantic and visual search, Pinecone | Wakeb chatbot (hybrid + reranking); AIP search v2 (semantic and image search; techniques not public); ArabsStock (Pinecone, visual search); rag-answering-service; Globant (retrieval in the STA runtime) |
+| Multi-agent LLM systems | LangGraph, multi-agent design, Command-based routing, subgraphs, agent memory, MCP | ArabsStock Assistant (14 agents); Wakeb chatbot (6 agents, MCP); Al Majed Oud sales assistant (router + 9 agents, contract); Wakeb Papers Research Agent (memory); staged-llm-evaluator; Globant (LangGraph only: the STA project's single agentic runtime, not multi-agent) |
+| LLMs and APIs | OpenAI API, Qwen, Azure OpenAI | ArabsStock (OpenAI embeddings); Wakeb (Qwen); Al Majed Oud (tiered Azure OpenAI models); open-source tools (OpenAI API) |
+| Retrieval / RAG | RAG pipelines, hybrid search (vector + BM25), LLM reranking, semantic and visual search, Pinecone, Qdrant (hybrid dense + sparse name search, Al Majed Oud), text-to-SQL over a data warehouse (Al Majed Oud) | Wakeb chatbot (hybrid + reranking); AIP search v2 (semantic and image search; techniques not public); ArabsStock (Pinecone, visual search); rag-answering-service; Globant (retrieval in the STA runtime) |
 | LLM serving and MLOps | vLLM on NVIDIA A100, model versioning, GPU allocation, health monitoring, automated restarts, Docker, CI/CD, Nginx, shell scripting | Wakeb (serving lifecycle, Docker, Nginx, CI/CD); ArabsStock (containerised FastAPI microservices) |
 | Workflow orchestration | Prefect | Tabaqat (all data pipelines) |
-| Evaluation and observability | LLM evaluation, agent evaluation, observability for answer quality, prompt robustness testing, guardrails | Saudi government assistant (Wakeb); ArabsStock agent evaluation; staged-llm-evaluator; prompt-reliability-harness; rag-answering-service; Globant (evaluation and human-approval gates in the STA runtime) |
+| Evaluation and observability | LLM evaluation, agent evaluation, observability for answer quality, prompt robustness testing, guardrails, Langfuse | Saudi government assistant (Wakeb); ArabsStock agent evaluation; Al Majed Oud (399-case bilingual eval suite with a deploy-blocking gate, SQL guardrails, Langfuse tracing); staged-llm-evaluator; prompt-reliability-harness; rag-answering-service; Globant (evaluation and human-approval gates in the STA runtime) |
 | Backend | Python, FastAPI, gRPC, REST | Wakeb (FastAPI, REST to gRPC); ArabsStock (FastAPI); rag-answering-service |
-| Data | SQL, PostgreSQL, SQL Server, Cosmos DB, DuckDB, ETL design | MDP (SQL); ArabsStock (PostgreSQL in its tech list); Empoweromics (Cosmos DB to SQL Server); Tabaqat (DuckDB); AestheticsPro (SQL Server) |
+| Data | SQL, PostgreSQL, SQL Server, Cosmos DB, DuckDB, ETL design, Microsoft Fabric | MDP (SQL); ArabsStock (PostgreSQL in its tech list); Al Majed Oud (PostgreSQL copy of a Microsoft Fabric warehouse, 15-minute sync); Empoweromics (Cosmos DB to SQL Server); Tabaqat (DuckDB); AestheticsPro (SQL Server) |
 | Generative and agentic AI | Generative AI, agentic AI | Globant (the STA agentic runtime); ArabsStock (14 agents, AI image generation, sound generation); Wakeb chatbot (6 agents) |
 | ML and data science | PyTorch, TensorFlow, scikit-learn, Hugging Face Transformers, NLP (Arabic and English), computer vision, classification, regression, Spark | Empoweromics (classification, NLP, computer vision, PyTorch); Arabic sentiment analysis (TensorFlow); text summarization (Hugging Face Transformers: DistilBART, T5); coursework (scikit-learn, Spark) |
-| Cloud | AWS Athena, Azure Functions, Azure Cosmos DB, Cloudflare Workers | Tabaqat (Athena); Empoweromics (Azure); Logic Controls (Cloudflare) |
+| Cloud | AWS Athena, Azure Functions, Azure Cosmos DB, Azure Container Apps, Azure DevOps, Cloudflare Workers | Tabaqat (Athena); Empoweromics (Azure); Al Majed Oud (Azure Container Apps, Key Vault, Azure DevOps CI/CD, Entra SSO); Logic Controls (Cloudflare) |
 | GIS | Prefect pipelines for GIS data, Overture Maps, MapProxy, MBTileServer, MapLibre, Kepler.gl | Tabaqat |
 | Frontend | TypeScript, Astro, Tailwind CSS, accessibility (WCAG 2.2 AA), Arabic RTL and multilingual sites, unit and end-to-end testing | Logic Controls website |
 | Leadership and teaching | Leading a team of 7; lecturing and mentoring master's students; teaching AI to engineers | Globant (team of 7 on the STA project); BUID / Umm Al-Qura; Military Technical College |
-| **Listed only (no project in the sources)** | LangChain, Azure OpenAI, Whisper, BLIP, ChromaDB, Qdrant, pgvector, Langfuse, Kubernetes (AWS EKS), Docker Compose, Celery, Linux administration, Go, system design, MongoDB, AWS SageMaker / EC2 / S3, Azure DevOps, GCP, clustering, feature engineering, experiment tracking, Scrum, Agile | None. Say they are listed skills and suggest asking him for details. |
+| **Listed only (no project in the sources)** | LangChain, Whisper, BLIP, ChromaDB, pgvector, Kubernetes (AWS EKS), Docker Compose, Celery, Linux administration, Go, system design, MongoDB, AWS SageMaker / EC2 / S3, GCP, clustering, feature engineering, experiment tracking, Scrum, Agile | None. Say they are listed skills and suggest asking him for details. |
 
 **LinkedIn endorsements:** AI 19, Machine Learning 17 (he also passed the LinkedIn Machine Learning assessment),
 Deep Learning 17, Algorithms 16, Scrum 15, Data Analysis 15, Agile 15, Data Science 15, MongoDB 12, Data
@@ -527,7 +595,7 @@ that is a skill badge, not a certification.)
   grade LLM output with verdicts computed in code, exact-quote evidence and logged calls. His READMEs state
   limitations plainly.
 - **Bilingual by default.** Most of what he has built works in Arabic and English: the Wakeb chatbot, the assistant
-  for a Saudi government client, Empoweromics' Smart Search, and a 4-language website with Arabic RTL. Arabic NLP work goes back to his
+  for a Saudi government client, Al Majed Oud's Arabic-first sales assistant, Empoweromics' Smart Search, and a 4-language website with Arabic RTL. Arabic NLP work goes back to his
   2022 sentiment-analysis project.
 - **End to end.** From data pipelines (Prefect, ETL, SQL) through models and agents to serving, APIs and, when needed,
   the frontend.
@@ -589,7 +657,8 @@ a team of 7).
   + BM25) with LLM reranking is the Wakeb chatbot's.
 - Formal people-management scope (hiring, performance reviews, reporting lines): not stated beyond leading a team of 7
   as AI Team Lead.
-- Specific industries beyond those named: stock media, real estate, payments, healthcare analytics (freelance), GIS,
+- Specific industries beyond those named: stock media, real estate, payments, healthcare analytics (freelance), luxury
+  fragrance retail (an internal sales-analytics assistant, contract), GIS,
   enterprise and government-sector chatbots, industrial automation (website).
 
 ---
@@ -601,7 +670,7 @@ a team of 7).
   sends email through Cloudflare and is protected by Turnstile.
 - The assistant streams answers from Google Gemini through a Cloudflare Worker, grounded in this one knowledge file.
   No vector database is used; the whole profile fits in the model's context.
-- It is tested against an automated evaluation set of 132 cases (facts, confidentiality, Arabic), as the site says.
+- It is tested against an automated evaluation set of 136 cases (facts, confidentiality, Arabic), as the site says.
   No pass rate is published; if asked for one, say it isn't published.
 - Source code: [github.com/mhatem5351/mohamedhatem.dev](https://github.com/mhatem5351/mohamedhatem.dev).
 - The home page opens with his headline, "I build agentic LLM systems in Arabic and English, from the agent graph down
@@ -645,6 +714,16 @@ and its assistant have Arabic names: الهيئة السعودية للسياح�
 | Noura, the public visitor assistant | «نورة»، المساعد الافتراضي للزوار |
 | the staff assistant | مساعد الموظفين |
 | Saudi Ministry of Defense (GADD) | وزارة الدفاع السعودية (GADD) |
+| Al Majed Oud | الماجد للعود (شركة الماجد للعود) |
+| internal sales assistant | مساعد مبيعات داخلي |
+| contract work | عمل بعقد |
+| sole engineer, end to end | المهندس الوحيد من البداية إلى النهاية |
+| text-to-SQL | تحويل السؤال إلى SQL |
+| data warehouse | مستودع البيانات |
+| release gate (eval gate) | بوابة الإصدار (بوابة التقييم) |
+| delivered and handed over (August 2026) | سُلِّم في أغسطس 2026 |
+| clarify or decline | يطلب التوضيح أو يعتذر |
+| Hijri dates | التواريخ الهجرية |
 | agentic LLM runtime (LangGraph) | بيئة تشغيل على LangGraph لوكيل ذكي قائم على النماذج اللغوية |
 | agentic LLM systems | أنظمة LLM وكيلية |
 | one agent, two audiences | وكيل واحد لجمهورين |
@@ -673,7 +752,7 @@ Style: write his name exactly «محمد حاتم», then «حاتم». Complete
 active verbs to «يتم + مصدر».
 
 Counting with Western digits: «14 وكيلًا»، «6 وكلاء»، «7 سنوات»، «فريق من 7 أعضاء»، «96 أداة، منها 27 متاحة للزوار»،
-«أكثر من 3,008 من المطوّرين العقاريين».
+«أكثر من 3,008 من المطوّرين العقاريين»، «9 وكلاء متخصصين»، «155/155»، «399 حالة تقييم، منها 248 بالعربية».
 Write "مساعد ArabsStock" for the ArabsStock Assistant.
 
 The phone number in Arabic answers is written exactly as in English, plus sign first:
@@ -692,7 +771,8 @@ or WhatsApp ([+20 114 207 0946](https://wa.me/201142070946)).
 - An exact start date, interview availability, working hours. (The notice period is known: 2 weeks to 1 month.)
 - Visa or work-authorisation status, travel. (Remote work, relocation to the Gulf or Europe, and hybrid work in Cairo
   are known: see section 1.1.)
-- Full-time vs contract vs freelance for new roles. (Known: he has worked full-time, part-time and freelance.)
+- Full-time vs contract vs freelance for new roles. (Known: he has worked full-time, part-time, freelance and on
+  contract.)
 - Reasons for leaving any employer; references; performance reviews.
 - Details of the STA project (the Saudi Tourism Authority, with Noura and the staff assistant) beyond case study 4.1,
   of the AIP project or of the Saudi government assistant beyond sections 3 and 4; what AIP stands for.
@@ -708,8 +788,8 @@ or WhatsApp ([+20 114 207 0946](https://wa.me/201142070946)).
 deliberately not named: call it "a Saudi government client (name confidential)". If asked, say "for confidentiality,
 the client isn't named" and don't guess, confirm or deny any name, initials, sector or city, and don't say whether it
 is the same as, or different from, any other organisation. Every other employer and client in section 3 (including
-AestheticsPro, the Saudi Tourism Authority and the Saudi Ministry of Defense (GADD) as a client of the Wakeb role)
-may be named. GADD and that assistant never appear in the same answer (see the Wakeb role in section 3).
+AestheticsPro, the Saudi Tourism Authority, Al Majed Oud and the Saudi Ministry of Defense (GADD) as a client of the
+Wakeb role) may be named. GADD and that assistant never appear in the same answer (see the Wakeb role in section 3).
 
 **Can't share (decline and point to him):** salary, rates, compensation expectations or current pay. Never discuss
 them; say it's best discussed with him directly.

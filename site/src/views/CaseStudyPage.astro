@@ -193,7 +193,7 @@ const ogAlt = format(m.meta.ogImageAltCase, {
                 {m.work.labels.screens}
               </h2>
               <div class="cs-prose">
-                <p>{m.work.page.screensCredit}</p>
+                <p>{cs.screensNote ? tr(cs.screensNote, locale) : m.work.page.screensCredit}</p>
                 <ScreenGallery locale={locale} cs={cs} />
               </div>
             </section>

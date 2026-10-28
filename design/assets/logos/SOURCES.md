@@ -28,7 +28,7 @@ Empoweromics' blue 3.3:1, Tabaqat's red 3.7:1).
 
 ## Symbol tiles (work cards, experience trace)
 
-Built by `brand-logos.mjs` on a white tile in the design's tile shape (22 % radius, inner hairline), 96 and 160 px:
+Built by `brand-logos.mjs` on a white tile (Al Majed Oud: warm ink) in the design's tile shape (22 % radius, inner hairline), 96 and 160 px:
 
 | Tile | Artwork | Source |
 | --- | --- | --- |
@@ -36,6 +36,7 @@ Built by `brand-logos.mjs` on a white tile in the design's tile shape (22 % radi
 | `empoweromics` | The house symbol | [homelogo.png](https://empoweromics.com/go/assets/homelogo.png) |
 | `tabaqat` | Tabaqat's app icon (its map mark) | [apple-touch-icon.png](https://tabaqat.net/static/apple-touch-icon.png) |
 | `logic-controls` | The Logic Controls mark (the client's own artwork, light-background version) | `src/assets/brand/mark.svg` in [logic-controls-website](https://github.com/mhatem5351/logic-controls-website), the site of [logic-controls.com](https://logic-controls.com) |
+| `almajed` | A typographic monogram, not an official logo: «م» outlined from IBM Plex Sans Arabic 700, gold on warm ink (`#1A1410`), after the gold «م» crest of the sales assistant he built for Al Majed Oud. Used beside the Al Majed Oud case study (contract work, no role) | `brand/src/almajed-mark.svg`, from `design/scripts/brand/almajed-mark.mjs` (needs `fontkit` via `BRAND_NODE_MODULES`) |
 
 The other tiles (Globant, ArabsStock, MDP, AestheticsPro, the universities, AWS) are the official LinkedIn logos
 from `_inputs/logos/`, built by `design/scripts/brand/logos.mjs`; MTC and Umm Al-Qura use monograms (see

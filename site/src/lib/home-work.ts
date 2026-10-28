@@ -2,7 +2,8 @@
  * Presentation data for the home page's "Selected work" (which card style and accent each case study gets).
  * Facts stay in content/profile.ts; this only maps slugs to the design's category colours (DESIGN.md 3.2):
  * teal = the current role (the Saudi Tourism Authority assistants at Globant, as in the trace), coral = generation
- * (the ArabsStock assistant), saffron = Wakeb (as in the trace), sage = bilingual / guarded assistant, sky =
+ * (the ArabsStock assistant), saffron = Wakeb (as in the trace), sage = bilingual / guarded assistants (the government
+ * assistant; Al Majed Oud's sales assistant, whose SQL guardrails and clarify-or-decline are its story), sky =
  * Empoweromics (as in the trace), teal = front-end craft, slate = data platforms.
  */
 import type { CaseStudy, CaseStudySlug } from "@content/profile.ts";
@@ -12,6 +13,7 @@ export type Accent = "teal" | "saffron" | "coral" | "sky" | "sage" | "slate";
 
 export const CASE_ACCENT: Record<CaseStudySlug, Accent> = {
   "sta-tourism-assistants": "teal",
+  "almajed-sales-assistant": "sage",
   "arabsstock-assistant": "coral",
   "wakeb-bilingual-chatbot": "saffron",
   "gov-bilingual-assistant": "sage",

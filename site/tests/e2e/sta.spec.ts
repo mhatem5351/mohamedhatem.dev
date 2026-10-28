@@ -193,7 +193,7 @@ test.describe("STA case study", () => {
 
 test.describe("home and trace", () => {
   for (const [locale, prefix] of [["en", ""], ["ar", "/ar"]] as const)
-    test(`${prefix || "/"}: the STA case study is the feature card with the Globant tile; ArabsStock leads the grid`, async ({ page }) => {
+    test(`${prefix || "/"}: the STA case study is the feature card with the Globant tile; Al Majed Oud's assistant leads the grid, then ArabsStock`, async ({ page }) => {
       await page.goto(`${prefix}/`);
       const feature = page.locator(".work-list > .work").first();
       await expect(feature).toHaveClass(/work--feature/);
@@ -201,7 +201,9 @@ test.describe("home and trace", () => {
       await expect(feature.locator(".work__logo")).toHaveAttribute("src", /globant/);
       await expect(feature.locator(".work__meta .eyebrow")).toContainText("Globant");
       const second = page.locator(".work-list > .work").nth(1);
-      await expect(second.locator("a.stretched")).toHaveAttribute("href", `${prefix}/work/arabsstock-assistant/`);
+      await expect(second.locator("a.stretched")).toHaveAttribute("href", `${prefix}/work/almajed-sales-assistant/`);
+      await expect(second.locator(".work__logo")).toHaveAttribute("src", /almajed/);
+      await expect(page.locator(".work-list > .work").nth(2).locator("a.stretched")).toHaveAttribute("href", `${prefix}/work/arabsstock-assistant/`);
       // The Globant role in the experience trace links to the case study.
       await expect(page.locator(`#experience a[href="${prefix}/work/${SLUG}/"]`)).toHaveCount(1);
       // About mentions the work for the Saudi Tourism Authority.

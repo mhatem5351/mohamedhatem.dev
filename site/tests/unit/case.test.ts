@@ -59,8 +59,21 @@ describe("case-study helpers", () => {
 describe("screens gallery", () => {
   const sta = profile.caseStudies.find((c) => c.slug === "sta-tourism-assistants")!;
 
-  it("has screens only where the client approved publishing them (the named STA case study), each file present", () => {
-    for (const cs of profile.caseStudies) expect(!!cs.screens?.length, cs.slug).toBe(cs.slug === "sta-tourism-assistants");
+  it("has screens only where publishing them was approved (the named STA and Al Majed Oud case studies), each file present", () => {
+    const WITH_SCREENS = ["sta-tourism-assistants", "almajed-sales-assistant"];
+    for (const cs of profile.caseStudies) expect(!!cs.screens?.length, cs.slug).toBe(WITH_SCREENS.includes(cs.slug));
+    // Al Majed Oud: demo-data chat screens, each captioned as such (the sign-in screen has no data), files present.
+    const almajed = profile.caseStudies.find((c) => c.slug === "almajed-sales-assistant")!;
+    const almajedFiles = readdirSync(new URL("../../src/assets/screens/almajed-sales-assistant/", import.meta.url));
+    for (const s of almajed.screens!) {
+      expect(almajedFiles, s.file).toContain(s.file);
+      expect(s.density, s.file).toBe(s.frame === "desktop" ? 2 : 1);
+      if (!/sign-in/.test(s.file)) {
+        expect(s.caption.en, s.file).toMatch(/illustrative demo data/);
+        expect(s.caption.ar, s.file).toMatch(/بيانات توضيحية/);
+      }
+    }
+    expect(almajed.screensNote?.en).toMatch(/illustrative demo data/);
     const files = readdirSync(new URL("../../src/assets/screens/sta-tourism-assistants/", import.meta.url));
     expect(sta.screens!.length).toBeGreaterThanOrEqual(4);
     expect(sta.screens!.length).toBeLessThanOrEqual(6);

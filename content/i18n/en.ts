@@ -536,7 +536,7 @@ export const en = {
     lead: "My assistant has read my CV, LinkedIn and GitHub. Ask it about my experience, or paste a public job posting to check the fit. It answers in English or Arabic.",
     /** Round 7 (BM-02): how it is tested, with the set's real size (content/chat/eval-set.json) and no pass rate. */
     howItWorks:
-      "How it works: one knowledge file, a Cloudflare Worker and Google Gemini. No vector database; the whole profile fits in the model's context. Tested against an automated evaluation set of 132 cases (facts, confidentiality, Arabic).",
+      "How it works: one knowledge file, a Cloudflare Worker and Google Gemini. No vector database; the whole profile fits in the model's context. Tested against an automated evaluation set of 136 cases (facts, confidentiality, Arabic).",
     open: "Start a conversation",
     howBuilt: "How it's built",
     flowLabel: "How the assistant works",

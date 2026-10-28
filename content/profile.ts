@@ -138,6 +138,7 @@ export type RoleId =
 /** URL slug of a case study (also its anchor id). */
 export type CaseStudySlug =
   | "sta-tourism-assistants"
+  | "almajed-sales-assistant"
   | "arabsstock-assistant"
   | "wakeb-bilingual-chatbot"
   | "aip-semantic-search"
@@ -448,6 +449,12 @@ export interface Client {
   readonly name: L10n;
   /** Abbreviation used in the sources (e.g. "STA"). */
   readonly abbreviation?: string;
+  /**
+   * Optional: the client's logo tile (`design/assets/logos/tiles/<file>-160.webp`, built by
+   * `design/scripts/brand/brand-logos.mjs`), shown beside the eyebrow of contract or freelance work that has no role
+   * (`roleId: null`): the case-study hero and the work card. Client work done in a role shows the employer's tile.
+   */
+  readonly tile?: { readonly file: string; readonly monogram: string };
 }
 
 /** A case study: problem -> approach -> architecture -> outcome. */
@@ -499,6 +506,11 @@ export interface CaseStudy {
   readonly client?: Client;
   /** Screens of the product (a gallery on the case-study page), where the client approved publishing them. */
   readonly screens?: readonly Screen[];
+  /**
+   * Optional: the line under the gallery, where the default (`m.work.page.screensCredit`: "shown with the client's
+   * approval, with personal data removed") doesn't fit, e.g. screens that run on illustrative demo data.
+   */
+  readonly screensNote?: L10n;
   /** Provenance of the case study as a whole. */
   readonly source: Sources;
 }
@@ -1840,9 +1852,219 @@ const caseStudies: readonly CaseStudy[] = [
     ],
     source: ["mohamed"],
   },
+  // Al Majed Oud (الماجد للعود): contract work outside the experience list (roleId null), April to August 2026. Named,
+  // with the branded login screen, by Mohamed's decision (2026-10-28). Public-safe facts only (the fact sheet's
+  // sections 1, 2 and 4): no infrastructure names, schema, row counts, business figures, store count ("across the
+  // GCC"), usage or adoption numbers, incidents, people or costs. Status: went into production on Azure in June 2026
+  // and was delivered and handed over in August 2026; never "live today" and never "used by N staff". He was the sole
+  // engineer on the codebase ("Sole AI engineer, end to end"); never imply employment.
+  {
+    slug: "almajed-sales-assistant",
+    order: 2,
+    featured: true,
+    depth: "full",
+    title: l(
+      "Al Majed Oud: an Arabic-first AI sales assistant with 9 agents, eval-gated",
+      "الماجد للعود: مساعد مبيعات ذكي بالعربية أولًا من 9 وكلاء، بإصدارات تحرسها التقييمات",
+    ),
+    shortTitle: l("Al Majed Oud: AI sales assistant", "الماجد للعود: مساعد المبيعات الذكي"),
+    context: l("Al Majed Oud, a Saudi oud and fragrance house (contract)", "الماجد للعود، دار سعودية للعود والعطور (عمل بعقد)"),
+    roleId: null,
+    contribution: l("Sole AI engineer, end to end (contract)", "مهندس الذكاء الاصطناعي الوحيد، من البداية إلى النهاية (بعقد)"),
+    period: { start: "2026-04", end: "2026-08" },
+    published: "2026-10-28",
+    updated: "2026-10-28",
+    summary: l(
+      "Built Al Majed Oud's Arabic-first AI sales assistant end to end on contract: 9 agents answer from the warehouse; a 155-case eval gate guards each deploy.",
+      "بناء مساعد مبيعات ذكي بالعربية أولًا لشركة الماجد للعود من البداية إلى النهاية (بعقد): 9 وكلاء يجيبون من المستودع، وبوابة تقييم من 155 حالة تحرس كل نشر.",
+    ),
+    problem: l(
+      "Al Majed Oud's staff across the GCC relied on analysts and Power BI reports for everyday sales numbers, mostly in English, while most of them work in Arabic. An assistant that improvises figures would do more harm than good: a plausible wrong number is worse than no answer.",
+      "كان موظفو الماجد للعود في دول الخليج يعتمدون على المحللين وتقارير Power BI لمعرفة أرقام المبيعات اليومية، ومعظمها بالإنجليزية، بينما يعمل أغلبهم بالعربية. ومساعد يرتجل الأرقام يضرّ أكثر مما ينفع: فالرقم الخاطئ المقنع أسوأ من غياب الإجابة.",
+    ),
+    approach: [
+      fact(
+        "Text-to-SQL over the warehouse, not RAG over documents: sales questions are arithmetic with one right answer, so every figure comes from SQL run against the company's own data, never from the model's memory.",
+        "تحويل السؤال إلى SQL على مستودع البيانات بدل RAG على المستندات: أسئلة المبيعات حسابية ولها إجابة صحيحة واحدة، لذا يأتي كل رقم من استعلام SQL على بيانات الشركة نفسها، لا من ذاكرة النموذج.",
+        "mohamed",
+      ),
+      fact(
+        "A router and 9 specialist agents on LangGraph: sales, customers, products, staff, stores, loyalty, payments, discounts, and one that clarifies or declines. A planner splits compound questions across agents.",
+        "موجّه و9 وكلاء متخصصين على LangGraph: المبيعات، والعملاء، والمنتجات، والموظفون، والفروع، والولاء، وطرق الدفع، والخصومات، ووكيل يطلب التوضيح أو يعتذر. ومخطِّط يوزّع الأسئلة المركّبة على أكثر من وكيل.",
+        "mohamed",
+      ),
+      fact(
+        "SQL guardrails on every query: read-only, one statement, a table whitelist per agent, a row cap and a time limit. An answer never states a figure that isn't in the returned rows.",
+        "حواجز حماية على كل استعلام SQL: قراءة فقط، وعبارة واحدة، وقائمة جداول مسموح بها لكل وكيل، وحدّ لعدد الصفوف وآخر للوقت. ولا تذكر الإجابة أي رقم غير موجود في الصفوف المسترجعة.",
+        "mohamed",
+      ),
+      fact(
+        "Clarifying or declining is a feature: with no period in the question, it asks for one; when the data can't answer, it says so. 64 test cases check exactly that.",
+        "التوضيح أو الاعتذار ميزة مقصودة: إذا خلا السؤال من فترة زمنية سأل عنها، وإذا لم تكفِ البيانات قال ذلك صراحة. و64 حالة اختبار تتحقق من ذلك تحديدًا.",
+        "mohamed",
+      ),
+      fact(
+        "Arabic first: hybrid name search (dense and sparse vectors) for the many spellings of Arabic names, Hijri dates with Ramadan and Eid, and a right-to-left interface.",
+        "العربية أولًا: بحث هجين عن الأسماء (متجهات كثيفة ومتناثرة) يتعامل مع تعدد كتابات الأسماء العربية، وتواريخ هجرية تشمل رمضان والعيد، وواجهة من اليمين إلى اليسار.",
+        "mohamed",
+      ),
+      fact(
+        "A query-optimised copy of the Microsoft Fabric warehouse in PostgreSQL, with today's sales refreshed every 15 minutes.",
+        "نسخة من مستودع Microsoft Fabric على PostgreSQL مهيّأة للاستعلام، تُحدَّث فيها مبيعات اليوم كل 15 دقيقة.",
+        "mohamed",
+      ),
+      fact(
+        "Answers stream in as they are written (SSE), with a chart the backend picks from the same rows, behind Microsoft Entra single sign-on.",
+        "إجابات تظهر أثناء كتابتها (SSE) مع رسم بياني يختاره الخادم من الصفوف نفسها، خلف تسجيل الدخول الموحّد عبر Microsoft Entra.",
+        "mohamed",
+      ),
+      fact(
+        "Eval-gated CI/CD and tracing: a bilingual test suite runs against each new build in the production environment and blocks any deploy that regresses; Langfuse traces every request, and an admin dashboard shows latency, quality scores and negative feedback.",
+        "تكامل ونشر مستمران تحرسهما التقييمات، مع تتبّع كامل: مجموعة اختبارات ثنائية اللغة تعمل على كل بناء جديد داخل بيئة الإنتاج وتوقف أي نشر يتراجع أداؤه، وLangfuse يتتبّع كل طلب، ولوحة إدارة تعرض زمن الاستجابة ودرجات الجودة والتقييمات السلبية.",
+        "mohamed",
+      ),
+    ],
+    architecture: {
+      caption: l(
+        "Capability view: staff sign in with Microsoft Entra; a router sends each question to one of 9 agents, which write SQL through a guardrail layer over a PostgreSQL copy of the Fabric warehouse; an eval gate blocks any deploy that regresses.",
+        "عرض للقدرات: يسجّل الموظفون دخولهم عبر Microsoft Entra، ويوجّه الموجّه كل سؤال إلى أحد 9 وكلاء يكتبون SQL عبر طبقة حماية فوق نسخة PostgreSQL من مستودع Fabric، وبوابة تقييم توقف أي نشر يتراجع أداؤه.",
+      ),
+      nodes: [
+        { id: "staff", label: l("Company staff (Arabic or English)", "موظفو الشركة (بالعربية أو الإنجليزية)"), kind: "user" },
+        { id: "sso", label: l("Microsoft Entra SSO", "الدخول الموحّد عبر Microsoft Entra"), kind: "quality" },
+        { id: "chat", label: l("Chat: streamed answers and charts", "المحادثة: إجابات متدفقة ورسوم بيانية"), kind: "service" },
+        { id: "router", label: l("Router", "الموجّه"), kind: "orchestrator", note: l("Picks the agent and the language", "يختار الوكيل واللغة") },
+        {
+          id: "agents",
+          label: l("9 specialist agents", "9 وكلاء متخصصين"),
+          kind: "agent",
+          note: l("Sales, customers, products, staff, stores, loyalty, payments, discounts, clarify or decline", "المبيعات والعملاء والمنتجات والموظفون والفروع والولاء وطرق الدفع والخصومات، والتوضيح أو الاعتذار"),
+        },
+        { id: "models", label: l("Tiered Azure OpenAI models", "نماذج Azure OpenAI متدرّجة"), kind: "model" },
+        { id: "names", label: l("Hybrid name search", "بحث هجين عن الأسماء"), kind: "retrieval", note: l("Arabic and Latin spellings", "الكتابة العربية واللاتينية") },
+        { id: "guard", label: l("SQL guardrails", "حواجز حماية SQL"), kind: "quality", note: l("Read-only, whitelisted, row and time limits", "قراءة فقط، جداول مسموح بها، حدود للصفوف والوقت") },
+        { id: "warehouse", label: l("PostgreSQL copy of the warehouse", "نسخة PostgreSQL من المستودع"), kind: "data" },
+        { id: "sync", label: l("Sync every 15 minutes", "مزامنة كل 15 دقيقة"), kind: "pipeline" },
+        { id: "fabric", label: l("Microsoft Fabric warehouse", "مستودع Microsoft Fabric"), kind: "data" },
+        { id: "evals", label: l("Eval gate in CI/CD", "بوابة التقييم في CI/CD"), kind: "quality", note: l("155 cases block every deploy", "155 حالة تحرس كل نشر") },
+        { id: "tracing", label: l("Langfuse tracing and admin dashboard", "تتبّع Langfuse ولوحة الإدارة"), kind: "quality" },
+      ],
+      edges: [
+        { from: "staff", to: "sso" },
+        { from: "sso", to: "chat" },
+        { from: "chat", to: "router" },
+        { from: "router", to: "agents" },
+        { from: "agents", to: "models" },
+        { from: "agents", to: "names", label: l("names to ids", "من الاسم إلى المعرّف") },
+        { from: "agents", to: "guard", label: l("generated SQL", "SQL المولَّد") },
+        { from: "guard", to: "warehouse" },
+        { from: "fabric", to: "sync" },
+        { from: "sync", to: "warehouse" },
+        { from: "evals", to: "router", label: l("blocks a deploy that regresses", "يوقف النشر المتراجع") },
+        { from: "tracing", to: "router", label: l("every request", "كل طلب") },
+      ],
+    },
+    outcome: [
+      fact(
+        "Went into production on Azure in June 2026, behind Microsoft Entra SSO and available to all staff; delivered and handed over in August 2026.",
+        "دخل بيئة الإنتاج على Azure في يونيو 2026 خلف تسجيل الدخول الموحّد عبر Microsoft Entra ومتاحًا لجميع الموظفين، ثم سُلِّم في أغسطس 2026.",
+        "mohamed",
+      ),
+      fact(
+        "The final release passed its release gate at 155/155, and the full nightly suite of 399 bilingual cases (248 Arabic, 151 English) reached 399/399.",
+        "اجتاز الإصدار الأخير بوابة الإصدار بنتيجة 155/155، وبلغت المجموعة الليلية الكاملة من 399 حالة ثنائية اللغة (248 بالعربية و151 بالإنجليزية) نتيجة 399/399.",
+        "mohamed",
+      ),
+      fact(
+        "Answers in Arabic or English, streamed with charts, with figures built to match the company's financial reports.",
+        "إجابات بالعربية أو الإنجليزية، متدفقة ومعها رسوم بيانية، وأرقام مصمَّمة لتطابق التقارير المالية للشركة.",
+        "mohamed",
+      ),
+      fact(
+        "Handed over with runbooks, a mobile integration kit for the company's app team, and a disaster-recovery path rehearsed with a restore in about 2 minutes.",
+        "التسليم مع أدلة التشغيل، وحزمة تكامل لفريق تطبيق الجوال في الشركة، ومسار للتعافي من الكوارث جرى التدرّب عليه باستعادة في نحو دقيقتين.",
+        "mohamed",
+      ),
+    ],
+    figures: [
+      { value: same("9"), unit: l("agents", "وكلاء"), label: l("specialists behind one router", "متخصصون خلف موجّه واحد"), source: ["mohamed"] },
+      { value: same("155/155"), label: l("on the release gate that blocks every deploy", "في بوابة الإصدار التي تحرس كل نشر"), source: ["mohamed"] },
+      { value: same("399"), label: l("bilingual eval cases, 248 of them in Arabic", "حالة تقييم ثنائية اللغة، منها 248 بالعربية"), source: ["mohamed"] },
+      { value: same("15"), unit: l("min", "دقيقة"), label: l("data sync from Microsoft Fabric", "لمزامنة البيانات من Microsoft Fabric"), source: ["mohamed"] },
+    ],
+    stack: ["LangGraph", "Azure OpenAI", "PostgreSQL", "Qdrant", "FastAPI", "Next.js", "Langfuse", "Microsoft Fabric", "Microsoft Entra ID", "Azure Container Apps", "Python"],
+    // The product is internal: no public link.
+    links: [],
+    client: { name: l("Al Majed Oud", "الماجد للعود"), tile: { file: "almajed", monogram: "م" } },
+    // The sign-in screen is the product's own (the framework's dev badge and the e-mail domain hint removed in the
+    // pixels; the desktop sign-in's brand panel is not used: it carries a store count). The chat screens run on
+    // illustrative demo data ("Demo branch 1", made-up figures), never company data, and their captions say so.
+    screensNote: l(
+      "Screens from the app. The chat screens run on illustrative demo data, not company figures.",
+      "لقطات من التطبيق، وشاشات المحادثة فيها ببيانات توضيحية لا بأرقام الشركة.",
+    ),
+    screens: [
+      {
+        file: "01-arabic-answer-chart.webp",
+        density: 2,
+        frame: "desktop",
+        product: l("The sales assistant", "مساعد المبيعات"),
+        alt: l("An Arabic answer about a branch's sales, with its sources and a bar chart", "إجابة بالعربية عن مبيعات فرع، مع مصادرها ورسم بياني بالأعمدة"),
+        caption: l(
+          "An Arabic answer, right to left: the figure, its sources and a chart drawn from the same rows, with illustrative demo data, not company figures.",
+          "إجابة بالعربية من اليمين إلى اليسار: الرقم ومصادره ورسم بياني من الصفوف نفسها، ببيانات توضيحية لا بأرقام الشركة.",
+        ),
+      },
+      {
+        file: "02-chat-home-desktop.webp",
+        density: 2,
+        frame: "desktop",
+        product: l("The sales assistant", "مساعد المبيعات"),
+        alt: l("The assistant's home screen with starter questions in Arabic and English", "الشاشة الرئيسية للمساعد مع أسئلة مقترحة بالعربية والإنجليزية"),
+        caption: l(
+          "The home screen: starter questions in Arabic and English and past conversations, with illustrative demo data, not company figures.",
+          "الشاشة الرئيسية: أسئلة مقترحة بالعربية والإنجليزية والمحادثات السابقة، ببيانات توضيحية لا بأرقام الشركة.",
+        ),
+      },
+      {
+        file: "03-english-table.webp",
+        density: 2,
+        frame: "desktop",
+        product: l("The sales assistant", "مساعد المبيعات"),
+        alt: l("An English follow-up answered by the sales agent with a comparison table", "سؤال متابعة بالإنجليزية يجيب عنه وكيل المبيعات بجدول مقارنة"),
+        caption: l(
+          "An English follow-up in the same conversation: the sales agent compares branches in a table and a chart, with illustrative demo data, not company figures.",
+          "سؤال متابعة بالإنجليزية في المحادثة نفسها: وكيل المبيعات يقارن الفروع في جدول ورسم بياني، ببيانات توضيحية لا بأرقام الشركة.",
+        ),
+      },
+      {
+        file: "04-sign-in-phone.webp",
+        density: 1,
+        frame: "phone",
+        product: l("The sales assistant", "مساعد المبيعات"),
+        alt: l("The Al Majed Oud sign-in screen with a Microsoft sign-in button", "شاشة الدخول إلى مساعد الماجد للعود مع زر الدخول بحساب Microsoft"),
+        caption: l(
+          "Sign-in on a phone: staff use their company Microsoft account (Entra single sign-on), with no password field.",
+          "الدخول على الهاتف: يستخدم الموظفون حساب Microsoft الخاص بالشركة (الدخول الموحّد عبر Entra) دون حقل لكلمة المرور.",
+        ),
+      },
+      {
+        file: "05-arabic-answer-phone.webp",
+        density: 1,
+        frame: "phone",
+        product: l("The sales assistant", "مساعد المبيعات"),
+        alt: l("The Arabic answer and its chart on a phone", "الإجابة العربية ورسمها البياني على الهاتف"),
+        caption: l(
+          "The same Arabic answer on a phone, with illustrative demo data, not company figures.",
+          "الإجابة العربية نفسها على الهاتف، ببيانات توضيحية لا بأرقام الشركة.",
+        ),
+      },
+    ],
+    source: ["mohamed"],
+  },
   {
     slug: "arabsstock-assistant",
-    order: 2,
+    order: 3,
     featured: true,
     depth: "full",
     title: l(
@@ -1981,7 +2203,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "wakeb-bilingual-chatbot",
-    order: 3,
+    order: 4,
     featured: true,
     depth: "full",
     title: l(
@@ -2110,7 +2332,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "gov-bilingual-assistant",
-    order: 5,
+    order: 6,
     featured: false,
     depth: "brief",
     title: l(
@@ -2181,7 +2403,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "empoweromics-ml",
-    order: 4,
+    order: 5,
     featured: true,
     depth: "full",
     title: l(
@@ -2293,7 +2515,7 @@ const caseStudies: readonly CaseStudy[] = [
   {
     slug: "logic-controls-website",
     // Round 6 (HM-14): in "More work", after the AI briefs; the case-study page stays.
-    order: 8,
+    order: 9,
     featured: false,
     depth: "full",
     title: l(
@@ -2395,7 +2617,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "aip-semantic-search",
-    order: 6,
+    order: 7,
     featured: false,
     depth: "brief",
     title: l("AIP semantic search, version 2", "الإصدار الثاني من البحث الدلالي لمشروع AIP"),
@@ -2458,7 +2680,7 @@ const caseStudies: readonly CaseStudy[] = [
   },
   {
     slug: "tabaqat-gis",
-    order: 7,
+    order: 8,
     featured: false,
     depth: "brief",
     title: l("GIS data pipelines and map serving", "خطوط بيانات GIS وخدمة الخرائط"),
@@ -2789,19 +3011,19 @@ const skills: readonly SkillGroup[] = [
       "أنظمة متعددة الوكلاء في بيئة الإنتاج، من 6 وكلاء إلى 14 وكيلًا.",
     ),
     skills: [
-      { name: same("LangGraph"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot", "role:globant", "project:staged-llm-evaluator"], source: ["cv", "linkedin", "github", "mohamed"] },
+      { name: same("LangGraph"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot", "role:globant", "project:staged-llm-evaluator", "case:almajed-sales-assistant"], source: ["cv", "linkedin", "github", "mohamed"] },
       // Round 6 (HM-17): "agentic AI" is in his LinkedIn About and the STA runtime; generative AI is the image and sound
       // generation at ArabsStock and the LLM systems themselves.
       { name: l("Agentic AI", "الذكاء الاصطناعي الوكيلي"), evidence: ["role:globant", "case:arabsstock-assistant", "case:wakeb-bilingual-chatbot"], source: ["linkedin", "mohamed"] },
       { name: l("Generative AI", "الذكاء الاصطناعي التوليدي"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin"] },
-      { name: l("Multi-agent systems", "الأنظمة متعددة الوكلاء"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
+      { name: l("Multi-agent systems", "الأنظمة متعددة الوكلاء"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot", "case:almajed-sales-assistant"], source: ["cv", "linkedin", "github"] },
       { name: same("LangChain"), evidence: [], source: ["cv", "linkedin"] },
       { name: same("OpenAI API"), evidence: ["role:arabsstock", "project:staged-llm-evaluator", "project:prompt-reliability-harness"], source: ["cv", "linkedin", "github"] },
       { name: same("Qwen"), evidence: ["case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
       { name: same("MCP (Model Context Protocol)"), evidence: ["case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
       { name: l("Agent memory", "ذاكرة الوكلاء"), evidence: ["role:wakeb"], source: ["cv", "linkedin"] },
       { name: l("Prompt engineering", "هندسة الموجّهات"), evidence: ["project:prompt-reliability-harness"], source: ["cv"] },
-      { name: same("Azure OpenAI"), evidence: [], source: ["github"] },
+      { name: same("Azure OpenAI"), evidence: ["case:almajed-sales-assistant"], source: ["github", "mohamed"] },
       { name: same("Hugging Face Transformers"), evidence: ["project:text-summarization"], source: ["github"] },
       // Two skills, not "Whisper وBLIP": a Latin-led Arabic phrase reads backwards in an isolate (round 6, A-01).
       { name: same("Whisper"), evidence: [], source: ["cv"] },
@@ -2822,7 +3044,7 @@ const skills: readonly SkillGroup[] = [
       { name: l("Semantic & visual search", "البحث الدلالي والبصري"), evidence: ["case:arabsstock-assistant", "case:aip-semantic-search"], source: ["cv", "linkedin", "github"] },
       { name: same("Pinecone"), evidence: ["case:arabsstock-assistant"], source: ["cv", "linkedin", "github"] },
       { name: same("ChromaDB"), evidence: [], source: ["cv", "linkedin"] },
-      { name: same("Qdrant"), evidence: [], source: ["github"] },
+      { name: same("Qdrant"), evidence: ["case:almajed-sales-assistant"], source: ["github", "mohamed"] },
       { name: same("pgvector"), evidence: [], source: ["github"] },
     ],
   },
@@ -2840,7 +3062,7 @@ const skills: readonly SkillGroup[] = [
       { name: l("Health monitoring & auto-restart", "مراقبة الحالة وإعادة التشغيل التلقائي"), evidence: ["role:wakeb"], source: ["cv", "linkedin", "github"] },
       { name: l("Docker & Docker Compose", "Docker وDocker Compose"), evidence: ["role:wakeb", "role:arabsstock"], source: ["cv", "linkedin", "github"] },
       { name: same("Kubernetes (AWS EKS)"), evidence: [], source: ["cv", "github"] },
-      { name: same("CI/CD"), evidence: ["role:wakeb", "case:logic-controls-website"], source: ["cv", "linkedin", "github"] },
+      { name: same("CI/CD"), evidence: ["role:wakeb", "case:logic-controls-website", "case:almajed-sales-assistant"], source: ["cv", "linkedin", "github"] },
       { name: same("Nginx"), evidence: ["case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
       { name: same("Prefect"), evidence: ["case:tabaqat-gis"], source: ["cv", "linkedin"] },
       { name: same("Celery"), evidence: [], source: ["cv", "linkedin"] },
@@ -2856,11 +3078,11 @@ const skills: readonly SkillGroup[] = [
       "أن تكتشف خطأ النموذج قبل أن يكتشفه المستخدم.",
     ),
     skills: [
-      { name: l("LLM evaluation", "تقييم النماذج اللغوية"), evidence: ["case:gov-bilingual-assistant", "role:arabsstock", "role:globant", "project:staged-llm-evaluator"], source: ["cv", "linkedin", "github", "mohamed"] },
-      { name: l("Observability & tracing", "المراقبة والتتبّع"), evidence: ["case:gov-bilingual-assistant"], source: ["cv", "linkedin", "github"] },
+      { name: l("LLM evaluation", "تقييم النماذج اللغوية"), evidence: ["case:gov-bilingual-assistant", "role:arabsstock", "role:globant", "project:staged-llm-evaluator", "case:almajed-sales-assistant"], source: ["cv", "linkedin", "github", "mohamed"] },
+      { name: l("Observability & tracing", "المراقبة والتتبّع"), evidence: ["case:gov-bilingual-assistant", "case:almajed-sales-assistant"], source: ["cv", "linkedin", "github"] },
       { name: l("Prompt robustness testing", "اختبار ثبات الموجّهات"), evidence: ["project:prompt-reliability-harness"], source: ["github"] },
-      { name: l("Guardrails", "حواجز الحماية"), evidence: ["project:rag-answering-service", "project:staged-llm-evaluator"], source: ["github"] },
-      { name: same("Langfuse"), evidence: [], source: ["github"] },
+      { name: l("Guardrails", "حواجز الحماية"), evidence: ["project:rag-answering-service", "project:staged-llm-evaluator", "case:almajed-sales-assistant"], source: ["github"] },
+      { name: same("Langfuse"), evidence: ["case:almajed-sales-assistant"], source: ["github", "mohamed"] },
     ],
   },
   {
@@ -2874,7 +3096,7 @@ const skills: readonly SkillGroup[] = [
       { name: same("Python"), endorsements: 10, evidence: ["role:wakeb", "role:arabsstock", "role:empoweromics"], source: ["cv", "linkedin", "github"] },
       { name: same("FastAPI"), evidence: ["case:wakeb-bilingual-chatbot", "case:arabsstock-assistant", "project:rag-answering-service"], source: ["cv", "linkedin", "github"] },
       { name: same("gRPC"), evidence: ["role:wakeb"], source: ["cv", "linkedin", "github"] },
-      { name: same("PostgreSQL"), endorsements: 11, evidence: ["role:arabsstock"], source: ["cv", "linkedin", "github"] },
+      { name: same("PostgreSQL"), endorsements: 11, evidence: ["role:arabsstock", "case:almajed-sales-assistant"], source: ["cv", "linkedin", "github"] },
       { name: same("SQL"), endorsements: 9, evidence: ["role:mdp", "role:empoweromics"], source: ["cv", "linkedin"] },
       { name: same("SQL Server"), evidence: ["role:empoweromics", "role:aestheticspro"], source: ["cv", "linkedin", "github"] },
       { name: same("Cosmos DB"), evidence: ["role:empoweromics"], source: ["cv", "linkedin"] },
@@ -2917,7 +3139,7 @@ const skills: readonly SkillGroup[] = [
     ),
     skills: [
       { name: same("AWS (SageMaker, EC2, S3, Athena, EKS)"), evidence: ["case:tabaqat-gis"], source: ["cv", "linkedin"] },
-      { name: same("Azure (Functions, Cosmos DB, DevOps)"), evidence: ["role:empoweromics"], source: ["cv", "linkedin"] },
+      { name: same("Azure (Functions, Cosmos DB, DevOps)"), evidence: ["role:empoweromics", "case:almajed-sales-assistant"], source: ["cv", "linkedin"] },
       { name: same("GCP"), evidence: [], source: ["cv"] },
       { name: same("Cloudflare Workers"), evidence: ["case:logic-controls-website"], source: ["logic-controls", "github"] },
     ],

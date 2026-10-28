@@ -8,7 +8,7 @@
 // Outputs: design/assets/logos/brand/<key>.(svg|png) and <key>-dark.(svg|png)   row artwork, light / dark page
 //          design/assets/logos/brand/brand.json                                 sizes for the row (optically balanced)
 //          design/assets/logos/tiles/<key>-(96|160).(png|webp)                   symbol tiles: wakeb, empoweromics,
-//                                                                                tabaqat, logic-controls
+//                                                                                tabaqat, logic-controls, almajed
 //          design/screens/assets/brand-logos-(light|dark).png                   contact sheets
 // Then copy brand/*.(svg|png) to site/src/assets/logos/brand/ and the 160 px tiles' WebP to site/src/assets/logos/tiles/.
 //
@@ -102,6 +102,8 @@ const TILE_SPECS = [
   { key: "empoweromics", src: "empoweromics-symbol.png", bg: "#FFFFFF", fit: 0.6 },
   { key: "tabaqat", src: "tabaqat-symbol.png", bg: "#FFFFFF", fit: 0.72 },
   { key: "logic-controls", src: "logic-controls-mark.svg", bg: "#FFFFFF", fit: 0.66 },
+  // Al Majed Oud: the typographic «م» monogram (almajed-mark.mjs), gold on the product's warm ink, like its own crest.
+  { key: "almajed", src: "almajed-mark.svg", bg: "#1A1410", fit: 0.6 },
 ];
 async function tile(S, { src, bg, fit }) {
   const F = S * 4;

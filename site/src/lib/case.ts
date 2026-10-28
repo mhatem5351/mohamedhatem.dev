@@ -28,6 +28,7 @@ export function contextDetail(cs: CaseStudy, locale: Locale): string | undefined
 /** Card / bar accent per case study (design: ArabsStock coral, Wakeb saffron, Empoweromics sky, freelance teal …). */
 const ACCENT: Record<string, Accent> = {
   "sta-tourism-assistants": "teal",
+  "almajed-sales-assistant": "sage",
   "arabsstock-assistant": "coral",
   "wakeb-bilingual-chatbot": "saffron",
   "gov-bilingual-assistant": "sage",
@@ -37,6 +38,19 @@ const ACCENT: Record<string, Accent> = {
   "tabaqat-gis": "slate",
 };
 export const accentOf = (cs: CaseStudy): Accent => ACCENT[cs.slug] ?? "teal";
+
+/**
+ * The organisation tile beside a case study's eyebrow (hero and work card): the employer's for work done in a role
+ * (the government assistant shows Wakeb Data, never its client); for contract or freelance work outside the experience
+ * list, the named client's own tile (Al Majed Oud), else Logic Controls' (the freelance site, whose client is not a
+ * `client` entry).
+ */
+export function caseLogo(cs: CaseStudy): { file: string; monogram: string } {
+  const role = roleOf(cs);
+  if (role) return { file: role.logo.file ?? role.id, monogram: role.logo.monogram };
+  if (cs.client?.tile) return cs.client.tile;
+  return { file: "logic-controls", monogram: "LC" };
+}
 
 /** Eyebrow parts: organisation / role title (or "Freelance") / years. */
 export function eyebrowParts(cs: CaseStudy, locale: Locale): { company: string; role: string; years: string } {
@@ -89,6 +103,7 @@ export function sourcesText(sources: readonly Source[], locale: Locale): string 
 
 const DECISION: Partial<Record<CaseStudy["slug"], number>> = {
   "sta-tourism-assistants": 0, // one agent for two audiences, behind an audience gate
+  "almajed-sales-assistant": 0, // text-to-SQL over the warehouse, not RAG over documents
   "arabsstock-assistant": 0, // 14 specialised agents behind one LangGraph orchestrator
   "wakeb-bilingual-chatbot": 0, // Command-based routing instead of fixed edges, fully async
   "logic-controls-website": 0, // static build on Workers, free tier
@@ -190,10 +205,12 @@ export function edgesOf(cs: CaseStudy, locale: Locale): EdgeText[] {
 const TECH_KIND: Record<string, ArchNodeKind> = {
   LangGraph: "orchestrator",
   "OpenAI API": "model",
+  "Azure OpenAI": "model",
   Qwen: "model",
   vLLM: "model",
   "LLM reranking": "retrieval",
   Pinecone: "retrieval",
+  Qdrant: "retrieval",
   BM25: "retrieval",
   "Brave Search": "retrieval",
   "Semantic search": "retrieval",
@@ -206,6 +223,7 @@ const TECH_KIND: Record<string, ArchNodeKind> = {
   SQLite: "data",
   "Cosmos DB": "data",
   "SQL Server": "data",
+  "Microsoft Fabric": "data",
   Prefect: "pipeline",
   "Azure Functions": "pipeline",
   "CI/CD": "pipeline",
@@ -213,6 +231,7 @@ const TECH_KIND: Record<string, ArchNodeKind> = {
   Docker: "infra",
   Nginx: "infra",
   "Cloudflare Workers": "infra",
+  "Azure Container Apps": "infra",
   MapProxy: "service",
   MBTileServer: "service",
   MapLibre: "service",
@@ -231,6 +250,9 @@ const TECH_KIND: Record<string, ArchNodeKind> = {
   RAG: "retrieval",
   React: "service",
   Observability: "quality",
+  Langfuse: "quality",
+  "Microsoft Entra ID": "quality",
+  "Next.js": "service",
   Turnstile: "quality",
   Vitest: "quality",
   Playwright: "quality",
