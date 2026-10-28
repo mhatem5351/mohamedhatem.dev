@@ -468,9 +468,9 @@ export const SAMPLES = [
     NAME: "Mohamed Hatem", ROLE: "AI Team Lead", ORG: "Globant",
     FOCUS: ["Multi-agent LLM systems", "RAG", "LLM serving"] } },
   { name: "og-home-ar", kind: "home", lang: "ar", data: {
-    ALT: "محمد حاتم، قائد فريق الذكاء الاصطناعي في Globant. أنظمة LLM متعددة الوكلاء، وRAG، وخدمة النماذج اللغوية. mohamedhatem.dev",
-    NAME: "محمد حاتم", ROLE: "قائد فريق الذكاء الاصطناعي", ORG: "Globant",
-    FOCUS: ["أنظمة LLM متعددة الوكلاء", "RAG", "خدمة النماذج اللغوية"] } },
+    ALT: "محمد حاتم، قائد فريق ذكاء اصطناعي في Globant: أنظمة وكيلية قائمة على النماذج اللغوية الكبيرة، وRAG، وخدمة النماذج اللغوية. mohamedhatem.dev",
+    NAME: "محمد حاتم", ROLE: "قائد فريق ذكاء اصطناعي", ORG: "Globant",
+    FOCUS: ["أنظمة وكيلية", "RAG", "خدمة النماذج اللغوية"] } },
   { name: "og-case-arabsstock-en", kind: "case", lang: "en", data: {
     ALT: "Case study: ArabsStock Assistant, a 14-agent LangGraph system by Mohamed Hatem. mohamedhatem.dev",
     EYEBROW: "CASE STUDY", TITLE: "ArabsStock Assistant: a 14-agent LangGraph system",
@@ -478,9 +478,9 @@ export const SAMPLES = [
     CHIPS: ["LangGraph:teal", "OpenAI embeddings:saffron", "Pinecone:saffron", "FastAPI:slate"],
     META_ROLE: "AI Engineer", META_ORG: "ArabsStock", META_PERIOD: "2023–2024" } },
   { name: "og-case-arabsstock-ar", kind: "case", lang: "ar", data: {
-    ALT: "دراسة حالة: مساعد ArabsStock، نظام من 14 وكيلًا على LangGraph، من محمد حاتم. mohamedhatem.dev",
+    ALT: "دراسة حالة لمحمد حاتم: مساعد ArabsStock، نظام من 14 وكيلًا على LangGraph. mohamedhatem.dev",
     EYEBROW: "دراسة حالة", TITLE: "مساعد ArabsStock: نظام من 14 وكيلًا على LangGraph",
-    SUMMARY: "بحث دلالي، وتوليد صور، وعمليات قواعد بيانات، وإشراف على المحتوى في مساعد واحد.",
+    SUMMARY: "البحث الدلالي وتوليد الصور وعمليات قواعد البيانات والإشراف على المحتوى، في مساعد واحد.",
     CHIPS: ["LangGraph:teal", "OpenAI embeddings:saffron", "Pinecone:saffron", "FastAPI:slate"],
     META_ROLE: "مهندس ذكاء اصطناعي", META_ORG: "ArabsStock", META_PERIOD: "2023–2024" } },
 ];

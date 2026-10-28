@@ -16,7 +16,7 @@ type Lang = "en" | "ar";
 const PAGES: [path: string, lang: Lang][] = [["/", "en"], ["/ar/", "ar"]];
 const copy = { en, ar };
 /** The widget's own strings (chat-widget/src/i18n.ts) that the content doesn't override. */
-const UI = { en: { close: "Close", undo: "Undo", cleared: "Conversation cleared." }, ar: { close: "إغلاق", undo: "تراجع", cleared: "تم مسح المحادثة." } };
+const UI = { en: { close: "Close", undo: "Undo", cleared: "Conversation cleared." }, ar: { close: "إغلاق", undo: "تراجع", cleared: "مُسحت المحادثة." } };
 
 const host = (page: Page) => page.locator("[data-mh-chat]");
 const sheet = (page: Page) => host(page).getByRole("dialog");

@@ -508,7 +508,7 @@ test.describe("conversation", () => {
     await openDemo(page, "lang=ar");
     await bubble(page).click();
     await input(page).fill("ن".repeat(6100));
-    await expect(page.locator("[data-mh-chat] .ln")).toHaveText("ستُقرأ أول 6,000 حرف فقط. إذا كان النص أطول، فالصق جزء المتطلبات.");
+    await expect(page.locator("[data-mh-chat] .ln")).toHaveText("لن يُقرأ إلا أول 6,000 حرف. وإن كان النص أطول، فالصق قسم المتطلبات وحده.");
   });
 
   test("offline: banner shown and sending disabled", async ({ page, context }) => {

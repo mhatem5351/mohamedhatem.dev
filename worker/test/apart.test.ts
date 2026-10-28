@@ -56,8 +56,8 @@ describe("GADD and the government assistant never share an answer (R6-01, R6-02)
       "He built a bilingual enterprise assistant for a Saudi government client. He also served Qwen.",
     );
     expect(run("first", "GADD and a different Saudi government client were his clients. He served Qwen with vLLM.")).toBe("He served Qwen with vLLM.");
-    expect(run("clients", "وزارة الدفاع السعودية (GADD) عميل لدوره في Wakeb Data ككل.\n- **مساعد مؤسسي ثنائي اللغة:** لجهة حكومية سعودية.\n- **روبوت محادثة:** 6 وكلاء.\n")).toBe(
-      "وزارة الدفاع السعودية (GADD) عميل لدوره في Wakeb Data ككل.\n- **روبوت محادثة:** 6 وكلاء.\n",
+    expect(run("clients", "وزارة الدفاع السعودية (GADD) عميل لدوره في Wakeb Data عمومًا.\n- **مساعد مؤسسي ثنائي اللغة:** لجهة حكومية سعودية.\n- **روبوت محادثة:** 6 وكلاء.\n")).toBe(
+      "وزارة الدفاع السعودية (GADD) عميل لدوره في Wakeb Data عمومًا.\n- **روبوت محادثة:** 6 وكلاء.\n",
     );
   });
 

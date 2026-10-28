@@ -191,8 +191,8 @@ export const CONFIDENTIAL_REPLY: Record<Lang, string> = {
     "If you mean the bilingual enterprise assistant Hatem built at Wakeb Data: its client isn't named publicly, so I can't confirm or deny any name, initials or sector. " +
     "What is public: it is a bilingual (Arabic/English) enterprise assistant for a Saudi government client, with LLM evaluation and observability monitoring for response quality.",
   ar:
-    "إن كنت تقصد المساعد المؤسسي ثنائي اللغة الذي بناه حاتم في Wakeb Data، فاسم عميله غير معلن، لذلك لا يمكنني تأكيد أي اسم أو نفيه، ولا ذكر قطاعه أو اختصاره. " +
-    "المعلَن أنه مساعد مؤسسي ثنائي اللغة (العربية والإنجليزية) لجهة حكومية سعودية، مع تقييم النماذج اللغوية ومراقبة جودة الإجابات.",
+    "إن كنت تقصد المساعد المؤسسي ثنائي اللغة الذي بناه حاتم في Wakeb Data، فاسم عميله غير معلن، ولذلك لا يمكنني تأكيد أي اسم أو نفيه، ولا ذكر قطاعه أو اختصار اسمه. " +
+    "والمعلَن أنه مساعد مؤسسي ثنائي اللغة (العربية والإنجليزية) لجهة حكومية سعودية، يشمل تقييم النماذج اللغوية ومراقبة جودة الإجابات.",
 };
 
 /**
@@ -202,7 +202,7 @@ export const CONFIDENTIAL_REPLY: Record<Lang, string> = {
  */
 export const NOT_NAMED_REPLY: Record<Lang, string> = {
   en: "That organisation isn't named in Mohamed Hatem's profile, so I can't say anything about it. His employers and clients are listed in [Experience](https://mohamedhatem.dev/#experience).",
-  ar: "لا يرد اسم هذه الجهة في ملف محمد حاتم، لذلك لا يمكنني قول شيء عنها. جهات عمله وعملاؤه مذكورة في قسم [الخبرات](https://mohamedhatem.dev/ar/#experience).",
+  ar: "لا يرد اسم هذه الجهة في ملف محمد حاتم، ولذلك لا يمكنني أن أقول عنها شيئًا. وتجد جهات عمله وعملاءه في قسم [الخبرات](https://mohamedhatem.dev/ar/#experience).",
 };
 
 /**

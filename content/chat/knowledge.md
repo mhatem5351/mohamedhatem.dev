@@ -697,10 +697,11 @@ and its assistant have Arabic names: الهيئة السعودية للسياح�
 | reranking | إعادة الترتيب |
 | model serving | خدمة النماذج |
 | production | بيئة الإنتاج |
-| evaluation / observability | التقييم / المراقبة |
+| evaluation / observability and tracing | التقييم / المراقبة والتتبّع |
+| monitoring | المراقبة |
 | data pipeline | خط بيانات |
 | pipeline (processing) | خط معالجة |
-| open to (roles, arrangements) | يرحّب بـ (أدوار، ترتيبات عمل) |
+| open to (roles, arrangements) | يرحّب بـ (أدوار، أنماط عمل) |
 | notice period: 2 weeks to 1 month | فترة الإشعار: من أسبوعين إلى شهر |
 | bilingual | ثنائي اللغة |
 | Cairo University | جامعة القاهرة |
@@ -725,7 +726,9 @@ and its assistant have Arabic names: الهيئة السعودية للسياح�
 | clarify or decline | يطلب التوضيح أو يعتذر |
 | Hijri dates | التواريخ الهجرية |
 | agentic LLM runtime (LangGraph) | بيئة تشغيل على LangGraph لوكيل ذكي قائم على النماذج اللغوية |
-| agentic LLM systems | أنظمة LLM وكيلية |
+| agentic LLM systems | أنظمة وكيلية قائمة على النماذج اللغوية الكبيرة |
+| agentic | وكيلي / وكيلية |
+| orchestrator | المنسّق |
 | one agent, two audiences | وكيل واحد لجمهورين |
 | audience gate (the permission layer) | طبقة الصلاحيات |
 | typed tools | أدوات محددة الأنواع |
@@ -736,11 +739,18 @@ and its assistant have Arabic names: الهيئة السعودية للسياح�
 | Noura was accepted in the client's UAT | اعتمد العميل «نورة» في اختبار قبول المستخدم (UAT) |
 | fully async | غير متزامن بالكامل |
 | Best Engineer of the Year | أفضل مهندس للعام |
-| LLM | النماذج اللغوية الكبيرة (LLM) |
+| LLM / LLMs | نموذج لغوي كبير / النماذج اللغوية الكبيرة (LLM) |
 | self-hosted | ذاتي الاستضافة |
 | embeddings | التضمينات |
-| prompt | الموجّه |
+| prompt / prompt injection | الموجّه / حقن الموجّهات |
 | guardrails | حواجز الحماية |
+| retrieval / RAG | الاسترجاع / RAG |
+| vector database | قاعدة بيانات متجهية |
+| case study | دراسة حالة |
+| deploy, deployment | النشر |
+| open source | مفتوح المصدر |
+| source code | الشيفرة المصدرية |
+| job description | الوصف الوظيفي |
 | stock media | الصور ومقاطع الفيديو المرخّصة |
 | lead (sales) | عميل محتمل |
 | fine-tuning | الضبط الدقيق |
@@ -748,8 +758,9 @@ and its assistant have Arabic names: الهيئة السعودية للسياح�
 | accessibility | إتاحة الوصول |
 | data visualisation | التمثيل المرئي للبيانات |
 
-Style: write his name exactly «محمد حاتم», then «حاتم». Complete «أما … فـ…» («أما التقنيات فليست معلنة»). Prefer
-active verbs to «يتم + مصدر».
+Style: correct, natural فصحى معاصرة, even when the visitor writes in dialect. Write his name exactly «محمد حاتم», then
+«حاتم». Complete «أما … فـ…» («أما التقنيات فليست معلنة»). Prefer active verbs to «يتم + مصدر», and avoid calques
+(«ككل» → «عمومًا»؛ «بشكل مختلف» → «بصياغة أخرى»). Use Arabic punctuation («،» «؛» «؟») and «» for quoted names.
 
 Counting with Western digits: «14 وكيلًا»، «6 وكلاء»، «7 سنوات»، «فريق من 7 أعضاء»، «96 أداة، منها 27 متاحة للزوار»،
 «أكثر من 3,008 من المطوّرين العقاريين»، «9 وكلاء متخصصين»، «155/155»، «399 حالة تقييم، منها 248 بالعربية».
@@ -759,7 +770,7 @@ The phone number in Arabic answers is written exactly as in English, plus sign f
 «واتساب: [+20 114 207 0946](https://wa.me/201142070946)».
 
 Job-description assessments in Arabic use these labels: **الملاءمة العامة:** (Overall fit), **نقاط التوافق:**
-(Strong matches), **فجوات أو غير مذكور في ملفه:** (Gaps or not shown), **يستحق أن تسأله عنه:** (Worth asking him).
+(Strong matches), **فجوات أو ما لا يظهر في ملفه:** (Gaps or not shown), **يُستحسن أن تسأله عن:** (Worth asking him).
 
 ---
 
