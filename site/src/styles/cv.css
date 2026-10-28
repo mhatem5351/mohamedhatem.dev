@@ -357,6 +357,12 @@
   @media screen and (min-width: 48rem) and (max-width: 63.99rem) {
     .cv-side > .cv-sec:not(.cv-sec--keep) { break-inside: auto; }
     .cv-side .skill-g { break-inside: avoid; }
+    /* Since the sidebar also holds Open source (2026-10-28), whole kept sections left the columns up to 170 px apart:
+       on screen they may continue between entries, as Skills does (a degree or entry never splits, a heading stays
+       with its first entry). The PDF's keep rules are print-only and unchanged. */
+    .cv-side > .cv-sec--keep { break-inside: auto; }
+    .cv-side .cv-h { break-after: avoid; }
+    .cv-side .side-list > li { break-inside: avoid; }
   }
   /* Phones (audit R7-DOC-05): the title line never ends on a separator. The employer carries its own "·" glued to it
      (so a narrow line breaks before the dot, never after it), and the focus starts its own line without a second dot.
