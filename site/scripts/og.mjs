@@ -148,7 +148,9 @@ function cards(locale) {
       title: b.name[locale],
       // The meta description is a page summary ("Read it here or download the PDF"); the card has its own line.
       summary: m.seo.ogCvSummary,
-      chips: ["LangGraph", "RAG", "vLLM", "Python", "LLM evaluation"].map((s) => [s, chipCategory(s)]),
+      // The last chip is a phrase, not a product name, so the Arabic card says it in Arabic (its colour comes from the
+      // English name).
+      chips: ["LangGraph", "RAG", "vLLM", "Python", "LLM evaluation"].map((s) => [s === "LLM evaluation" && locale === "ar" ? "تقييم النماذج اللغوية" : s, chipCategory(s)]),
       meta: [b.title[locale], b.employer, b.location.city[locale]],
     },
     {
@@ -206,6 +208,7 @@ body{-webkit-font-smoothing:antialiased;font-kerning:normal;text-rendering:geome
 [lang=ar] .summary{line-height:1.55}
 .chips{margin-top:24px;display:flex;flex-wrap:nowrap;gap:12px;max-width:1056px}
 .chip{display:inline-flex;align-items:center;height:52px;padding:0 18px;border-radius:10px;border:1.5px solid;font:500 28px/1 "OG Mono",monospace;white-space:nowrap;direction:ltr}
+.chip.ar{font:500 28px/1 "OG Arabic","OG Sans",sans-serif;direction:rtl}
 .meta{margin-top:26px;max-width:856px;display:flex;align-items:baseline;gap:12px;font:500 30px/1.2 "OG Display","OG Arabic",sans-serif;color:${C("ink-2")};white-space:nowrap}
 [lang=ar] .meta{font-family:"OG Display","OG Arabic",sans-serif}
 .meta .sep{color:${C("teal")}}.meta .org{color:${C("accent")}}.meta .yrs{font:500 28px/1 "OG Mono",monospace;color:${C("muted")};direction:ltr;unicode-bidi:isolate}
@@ -253,7 +256,7 @@ function cardHtml(card, locale) {
     const chips = card.chips
       .map(([label, cat]) => {
         const [fg, bgc, line] = CHIP[cat];
-        return `<span class="chip" data-fg="${fg}" data-bg="${bgc}" data-line="${line}">${esc(label)}</span>`;
+        return `<span class="chip${/[\u0600-\u06ff]/.test(label) ? " ar" : ""}" data-fg="${fg}" data-bg="${bgc}" data-line="${line}">${esc(label)}</span>`;
       })
       .join("");
     flow = `<div class="flow">
