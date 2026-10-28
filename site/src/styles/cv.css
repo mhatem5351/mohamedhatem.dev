@@ -126,6 +126,10 @@
   .earlier__row em { font-style: normal; font-family: var(--font-mono); font-size: 7.9pt; color: var(--muted); white-space: nowrap; }
   :lang(ar) .earlier__row em { font-family: var(--font-sans); font-size: 8.3pt; }
   .earlier__row p { grid-column: 1 / -1; margin: 0; }
+  /* Open source in the narrow sidebar: the year right after the name, or on the next line when both don't fit. Never
+     flush with the column's end, which is the sheet's edge: the print face's "6" overhangs it and would be clipped. */
+  .cv-side .cv-oss .earlier__row { display: flex; flex-wrap: wrap; align-items: baseline; gap: .3mm 2.5mm; }
+  .cv-side .cv-oss .earlier__row p { flex-basis: 100%; }
 
   /* sidebar */
   .side-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2.2mm; }

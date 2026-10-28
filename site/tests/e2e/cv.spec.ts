@@ -117,7 +117,7 @@ test.describe("CV", () => {
       await page.waitForFunction(() => [...document.querySelectorAll<HTMLImageElement>(".sheet img.cv-logo")].every((i) => i.complete));
       // One row per role: the main roles (with Tabaqat, which overlaps them) and the condensed "Earlier roles" (the
       // Open source block reuses the earlier-row layout for repositories, which have no logo).
-      const rows = page.locator(".sheet .job:not(.job--brief), .sheet .job--brief .earlier__row");
+      const rows = page.locator(".sheet .job:not(.job--brief):not(.job--contract), .sheet .job--brief .earlier__row");
       await expect(rows).toHaveCount(profile.experience.length);
       const logos = await rows.evaluateAll((els) =>
         els.map((row) => {
@@ -182,6 +182,23 @@ test.describe("CV", () => {
       const tops = await block.locator(".open-to span").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
       expect(tops).toHaveLength(profile.cv.openTo.roles.length + profile.cv.openTo.arrangements.length + 1);
       for (let i = 1; i < tops.length; i++) expect(tops[i]!).toBeGreaterThan(tops[i - 1]!);
+    });
+
+    test(`${path}: Contract work lists the case studies done outside a role, with the client's tile and case-study link`, async ({ page }) => {
+      await page.goto(path, { waitUntil: "networkidle" });
+      const jobs = page.locator(".sheet .job--contract");
+      await expect(jobs).toHaveCount(profile.cv.contract.length);
+      for (const [i, c] of profile.cv.contract.entries()) {
+        const cs = profile.caseStudies.find((x) => x.slug === c.slug)!;
+        const job = jobs.nth(i);
+        await expect(job.locator(".job__role")).toHaveText(c.title[locale]);
+        await expect(job.locator(".job__org")).toHaveText(cs.client!.name[locale]);
+        await expect(job.locator("img.cv-logo")).toHaveAttribute("alt", "");
+        await expect(job.locator("a.job__case")).toHaveAttribute("href", new RegExp(`/work/${c.slug}/$`));
+        await expect(job.locator("li")).toHaveCount(c.bullets.length);
+      }
+      // Public-safe: no usage numbers or store counts on the CV.
+      expect(await jobs.first().innerText()).not.toMatch(/\b(users?|staff of|branches|stores)\b|490/i);
     });
 
     test(`${path}: Open source lists the repositories with a result, each name linking to its repository (R7-06)`, async ({ page }) => {
@@ -289,7 +306,7 @@ test.describe("CV", () => {
         .map((r) => ({ r, cs: profile.caseStudies.find((c) => r.caseStudies.includes(c.slug) && c.featured && c.depth === "full") }))
         .filter((x) => x.cs);
       expect(featured.find((x) => x.r.id === "globant")?.cs?.slug).toBe("sta-tourism-assistants");
-      const links = page.locator(".job__where a.job__case");
+      const links = page.locator(".job:not(.job--contract) .job__where a.job__case");
       await expect(links).toHaveCount(featured.length);
       for (const [i, { cs }] of featured.entries()) {
         await expect(links.nth(i)).toHaveAttribute("href", `https://mohamedhatem.dev${prefix}/work/${cs!.slug}/`);
@@ -298,6 +315,8 @@ test.describe("CV", () => {
       // The PDF keeps the links (URI annotations) to every featured case study.
       const pdf = Buffer.from(await (await request.get(file)).body()).toString("latin1");
       for (const { cs } of featured) expect(pdf, `${file}: ${cs!.slug}`).toContain(`${prefix}/work/${cs!.slug}/`);
+      // and to each contract work's case study.
+      for (const c of profile.cv.contract) expect(pdf, `${file}: ${c.slug}`).toContain(`${prefix}/work/${c.slug}/`);
     }
   });
 

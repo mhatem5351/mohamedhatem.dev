@@ -705,6 +705,16 @@ export interface CvProject {
   readonly source: Sources;
 }
 
+/** Contract work on the CV: a case study done outside the experience list (`roleId: null`), with its own bullets. */
+export interface CvContract {
+  /** The case study (its client, period, tile and page come from `caseStudies`). */
+  readonly slug: CaseStudySlug;
+  /** His title on that work. */
+  readonly title: L10n;
+  /** Bullets for the CV (1 to 3), strongest first. */
+  readonly bullets: readonly Fact[];
+}
+
 /** Data used only by the generated CV. */
 export interface Cv {
   /** Header summary paragraph (3-4 sentences, no pronoun, outcome first). */
@@ -718,6 +728,8 @@ export interface Cv {
    * experience. Text from `projects` (the repositories' READMEs), nothing new.
    */
   readonly openSource: readonly CvProject[];
+  /** Contract work, after the experience (2026-10-28): the case studies done outside a role, newest first. */
+  readonly contract: readonly CvContract[];
   /**
    * "Open to" on the CV: the roles of `basics.openTo` (one list everywhere), team lead first, then the arrangements in
    * three short lines (the site's About splits relocation by region).
@@ -3391,7 +3403,7 @@ const cvData: Cv = {
       id: "prompt-reliability-harness",
       line: l(
         "Measures how consistently an LLM answers paraphrased, noisy or reordered questions. Result (gpt-4o-mini): regex correctness 1.00, yet mean consistency 0.49.",
-        "يقيس ثبات إجابات النموذج اللغوي حين يُعاد طرح السؤال بصياغة أخرى أو مع ضوضاء أو بترتيب مختلف. النتيجة (gpt-4o-mini): صحة 1.00 وفق التعبيرات النمطية، لكن متوسط الثبات 0.49.",
+        "يقيس ثبات إجابات النموذج حين يُعاد السؤال بصياغة أخرى أو بضوضاء أو بترتيب مختلف. النتيجة (gpt-4o-mini): صحة 1.00 وفق التعبيرات النمطية، لكن متوسط الثبات 0.49.",
       ),
       source: ["github"],
     },
@@ -3399,9 +3411,31 @@ const cvData: Cv = {
       id: "staged-llm-evaluator",
       line: l(
         "Replayable LangGraph grading in quality, safety and retry stages; the verdict is computed in plain Python, and every LLM call is logged with a SHA-256 prompt hash.",
-        "تقييم قابل لإعادة التشغيل على LangGraph بمراحل للجودة والسلامة وإعادة المحاولة، يُحسب حكمه النهائي بشيفرة Python عادية، ويُسجَّل كل استدعاء للنموذج مع بصمة SHA-256 للموجّه.",
+        "تقييم على LangGraph قابل لإعادة التشغيل بمراحل للجودة والسلامة وإعادة المحاولة، حكمه النهائي بشيفرة Python عادية، وكل استدعاء للنموذج مسجَّل مع بصمة SHA-256 للموجّه.",
       ),
       source: ["github"],
+    },
+  ],
+  // Contract work (2026-10-28): Al Majed Oud, from its case study's public-safe facts only (no usage numbers, no store
+  // count, never "live today": in production from June 2026, handed over in August 2026).
+  contract: [
+    {
+      slug: "almajed-sales-assistant",
+      title: l("Sole AI Engineer", "مهندس الذكاء الاصطناعي الوحيد"),
+      bullets: [
+        factB(
+          ["a LangGraph router and 9 specialist agents", "موجّه LangGraph و9 وكلاء متخصصين"],
+          "Arabic-first sales assistant, built end to end: a LangGraph router and 9 specialist agents answer staff in Arabic and English via guarded text-to-SQL over data synced from Microsoft Fabric every 15 minutes.",
+          "مساعد مبيعات بالعربية أولًا من البداية إلى النهاية: موجّه LangGraph و9 وكلاء متخصصين يجيبون الموظفين بالعربية والإنجليزية عبر SQL محميّ على بيانات من Microsoft Fabric تُحدَّث كل 15 دقيقة.",
+          "mohamed",
+        ),
+        factB(
+          ["155/155", "155/155"],
+          "Releases gated by 399 bilingual evals; the final one passed its 155-case gate 155/155. On Azure with Entra SSO and Langfuse from June 2026; handed over in August 2026.",
+          "إصدارات تحرسها 399 حالة تقييم ثنائية اللغة، واجتاز آخرها بوابة الـ155 حالة بنتيجة 155/155. على Azure مع Entra SSO وLangfuse منذ يونيو 2026، وسُلِّم في أغسطس 2026.",
+          "mohamed",
+        ),
+      ],
     },
   ],
   // Round 6 (HM-13): the same roles as the site (basics.openTo) and three arrangements: "AI/ML Team Lead or Senior
@@ -3418,7 +3452,7 @@ const cvData: Cv = {
   },
   // The file name a recruiter's downloads folder or ATS shows: name and role (round 6, HM-39).
   fileName: l("Mohamed-Hatem-AI-Team-Lead-CV.pdf", "Mohamed-Hatem-AI-Team-Lead-CV-Arabic.pdf"),
-  updated: "2026-10-11",
+  updated: "2026-10-28",
 };
 
 /** The profile the whole site renders from. */

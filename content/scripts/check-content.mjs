@@ -121,6 +121,12 @@ for (const r of profile.experience) {
 }
 if (!profile.cv.skills.length) fail("cv.skills is empty");
 if (!profile.cv.openTo.roles.length || !profile.cv.openTo.arrangements.length) fail("cv.openTo needs roles and arrangements");
+for (const c of profile.cv.contract) {
+  const cs = profile.caseStudies.find((x) => x.slug === c.slug);
+  if (!cs) fail(`cv.contract: unknown case study ${c.slug}`);
+  else if (cs.roleId !== null) fail(`cv.contract: ${c.slug} belongs to a role (list it under the role instead)`);
+  if (c.bullets.length < 1 || c.bullets.length > 3) fail(`cv.contract ${c.slug}: 1 to 3 bullets`);
+}
 // A client is named at the role level only, and never on the bullet about the unnamed Saudi government client.
 for (const r of profile.experience) {
   if (!r.client) continue;

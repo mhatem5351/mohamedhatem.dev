@@ -4,7 +4,8 @@
  * header (monogram, name, title · employer · focus, contact row, stripe), summary (profile.cv.summary),
  * Experience (the main roles with their cvBullets; non-primary roles that ended before every main role are condensed
  * under "Earlier roles", a part-time one labelled so; a role's client, where one is named, on its own line under the
- * role head), Open source (profile.cv.openSource: the LLM-evaluation repositories, with their one measured result),
+ * role head), Contract work (profile.cv.contract: case studies done outside a role, each with its client's tile, period,
+ * bullets and case-study link), Open source (profile.cv.openSource: the LLM-evaluation repositories, with their one measured result),
  * and a sidebar with Skills (profile.cv.skills; listed-only skills after "also used"), Education (status-aware: an
  * in-progress degree shows "(expected)" and is never described as held), Certifications (those marked onCv, as plain
  * entries: "AWS Certified Machine Learning – Specialty (2022)"), Awards, Languages and Open to (profile.cv.openTo, with
@@ -201,6 +202,13 @@ const listSep = locale === "ar" ? "؛ " : "; ";
 const skillLine = (g: (typeof profile.cv.skills)[number]): string =>
   g.items.map((item) => label(t(item))).join(esc(sep)) +
   (g.alsoUsed?.length ? esc(`${listSep}${m.cv.alsoUsed}: `) + g.alsoUsed.map((item) => label(t(item))).join(esc(sep)) : "");
+/** The CV's contract work: each entry's case study (client, period, tile, page) with its own title and bullets. */
+const contract = await Promise.all(
+  profile.cv.contract.map(async (c) => {
+    const cs = profile.caseStudies.find((x) => x.slug === c.slug)!;
+    return { ...c, cs, logo: await logoSrc(cs.client?.tile?.file ?? null) };
+  }),
+);
 /** The CV's open-source block: each repository's name (a link) and year, then its line. */
 const oss = profile.cv.openSource.map((o) => ({ ...o, project: profile.projects.find((p) => p.id === o.id)! }));
 
@@ -295,22 +303,30 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
         </div>
       </section>
 
-      {/* Open source (round 7, R7-06): after the experience, the repositories with a measured result. Each row reads
-          name, year, line, like an earlier role. */}
-      <section class="cv-sec cv-oss" aria-labelledby="cv-oss">
-        <h2 class="cv-h" id="cv-oss">{m.cv.openSource}</h2>
-        <div class="earlier">
-          {
-            oss.map((o) => (
-              <div class="earlier__row">
-                <span><b><a href={o.project.repo} dir="ltr">{o.project.name}</a></b></span>
-                <em>{o.project.year}</em>
-                <p set:html={html(runs(t(o.line)))} />
+      {/* Contract work (2026-10-28): laid out like a role, with "Freelance" and the case-study link on its where-line. */}
+      {contract.length > 0 && (
+        <section class="cv-sec" aria-labelledby="cv-contract">
+          <h2 class="cv-h" id="cv-contract">{m.cv.contractWork}</h2>
+          {contract.map((c) => (
+            <div class="job job--contract">
+              <div class:list={["job__head", c.logo && "job__head--logo"]}>
+                {c.logo && <img class="cv-logo" src={c.logo} alt="" width="15" height="15" loading="eager" decoding="async" />}
+                <span class="job__name">
+                  <span><span class="job__role">{t(c.title)}</span> <span class="job__org" set:html={isolateLatin(t(c.cs.client?.name ?? c.cs.context))} /></span>
+                </span>
+                <span class="job__when">{formatPeriod(c.cs.period, locale, { compact: false })}</span>
+                <span class="job__where">{m.experience.employmentType.freelance} · <a class="job__case" href={caseHref(c.slug)} aria-label={`${m.experience.caseStudy}: ${t(c.cs.title)}`}>{m.experience.caseStudy}<Icon name="arrow-up-right" /></a></span>
               </div>
-            ))
-          }
-        </div>
-      </section>
+              <ul>
+                {c.bullets.map((f) => (
+                  <li set:html={html(factRuns(f))} />
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+
     </div>
 
     {/* Skills first (round 7, R7-15): every group on page 1, under one heading, so a parser never reads the last groups
@@ -368,6 +384,23 @@ const [footBefore, footAfter = ""] = m.cv.footer.split(link("website").display);
             ))
           }
         </ul>
+      </section>
+
+      {/* Open source (round 7, R7-06): the repositories with a measured result, each row reading name, year, line like an
+          earlier role. In the sidebar since 2026-10-28 (the contract work filled the main column's second page). */}
+      <section class="cv-sec cv-sec--keep cv-oss" aria-labelledby="cv-oss">
+        <h2 class="cv-h" id="cv-oss">{m.cv.openSource}</h2>
+        <div class="earlier">
+          {
+            oss.map((o) => (
+              <div class="earlier__row">
+                <span><b><a href={o.project.repo} dir="ltr">{o.project.name}</a></b></span>
+                <em>{o.project.year}</em>
+                <p set:html={html(runs(t(o.line)))} />
+              </div>
+            ))
+          }
+        </div>
       </section>
 
       <section class="cv-sec cv-sec--keep" aria-labelledby="cv-awards">

@@ -503,6 +503,8 @@ export const en = {
     earlierRoles: "Earlier roles",
     /** The CV's open-source block (round 7, R7-06). */
     openSource: "Open source",
+    /** The CV's contract-work block (profile.cv.contract). */
+    contractWork: "Contract work",
     /** Before a skill group's listed-only skills: "…; also used: LangChain, Azure OpenAI" (round 7, HM-17). */
     alsoUsed: "also used",
     /** The notice period in the CV's Open to block (round 7). */

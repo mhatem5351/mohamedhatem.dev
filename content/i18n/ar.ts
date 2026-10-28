@@ -470,6 +470,7 @@ export const ar: Messages = {
     },
     earlierRoles: "أدوار سابقة",
     openSource: "مشروعات مفتوحة المصدر",
+    contractWork: "عمل بعقد",
     alsoUsed: "واستخدمت أيضًا",
     noticePeriod: "فترة الإشعار: {period}",
     atsNote: "لأنظمة التوظيف الإلكترونية (ATS) استخدم النسخة الإنجليزية (PDF).",
