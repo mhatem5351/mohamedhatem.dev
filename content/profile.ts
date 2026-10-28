@@ -784,6 +784,18 @@ function l(en: string, ar: string): L10n {
 /* Data                                                                                                         */
 /* ------------------------------------------------------------------------------------------------------------ */
 
+/*
+ * Arabic glossary (2026-10-28 copy edit; use the same term everywhere): LLM «النماذج اللغوية (الكبيرة)» (Latin
+ * "LLM" only in titles and tags); agent «وكيل» / agentic «وكيلي(ة)» / multi-agent «متعدد الوكلاء»; production «بيئة
+ * الإنتاج»; RAG «التوليد المعزّز بالاسترجاع (RAG)» once per block, then «أنظمة RAG» (the Wakeb CV bullet keeps
+ * «لـRAG»: it holds the CV to two pages); self-hosted «مستضاف ذاتيًا»; served with vLLM «المُشغَّل عبر vLLM»; model serving «خدمة النماذج»; vector «المتجهات» (never «متجهي»);
+ * evaluation «التقييم»; eval gate «بوابة التقييم» (a deploy «يمرّ بها»); guardrails «حواجز الحماية»; observability
+ * «المراقبة»; tracing «التتبّع»; SSO «تسجيل الدخول الموحّد عبر …»; schema «مخطط بيانات»; graph «مخطط»; router and
+ * prompt «الموجّه» (never on the same page); leads «العملاء المحتملون»; stakeholders «أصحاب المصلحة»; end-to-end
+ * tests «اختبار من طرف إلى طرف»; UAT «اختبار قبول المستخدم (UAT)», which Noura «اجتازت» (never «أُطلقت»). "As"
+ * («كـ») is written «في صورة» and "behind" («خلف») is avoided except for a real proxy (خلف Nginx).
+ */
+
 /**
  * The roles he is open to, team lead first: one list for the site's About, the CV, llms.txt and the assistant
  * (round 6, HM-13: "AI/ML Team Lead or Senior AI / LLM Engineer, remote, relocation to the Gulf or Europe, or hybrid in
@@ -804,7 +816,7 @@ const basics: Basics = {
   headline: l("AI Team Lead at Globant", "قائد فريق ذكاء اصطناعي في Globant"),
   tagline: l(
     "I build agentic LLM systems in Arabic and English, from the agent graph down to the GPU.",
-    "أبني أنظمة LLM وكيلية بالعربية والإنجليزية، من مخطط الوكلاء حتى وحدات GPU.",
+    "أبني أنظمة LLM وكيلية بالعربية والإنجليزية، من مخطط الوكلاء إلى وحدات GPU.",
   ),
   // Round 6 (HM-05, HM-08): the Saudi Tourism Authority and the team of 7 on the first screen; the multi-agent work
   // comes after "Before that", so it never reads as the Globant work.
@@ -814,13 +826,13 @@ const basics: Basics = {
   // the headline's "in Arabic and English").
   intro: l(
     "7 years in data and AI. At Globant I lead a team of 7 on the Saudi Tourism Authority's AI assistants. Before that, I built a 14-agent assistant for ArabsStock and a 6-agent chatbot on self-hosted Qwen and A100 GPUs at Wakeb Data.",
-    "لديّ 7 سنوات من الخبرة في البيانات والذكاء الاصطناعي، وأقود اليوم في Globant فريقًا من 7 أعضاء يعمل على مساعدَي الهيئة السعودية للسياحة. وقبل ذلك بنيت مساعدًا من 14 وكيلًا لمنصة ArabsStock، وفي Wakeb Data روبوت محادثة ثنائي اللغة من 6 وكلاء على Qwen مستضاف ذاتيًا بوحدات A100.",
+    "أعمل منذ 7 سنوات في البيانات والذكاء الاصطناعي. وأقود اليوم في Globant فريقًا من 7 أعضاء يبني مساعدَي الهيئة السعودية للسياحة. وقبل ذلك بنيت مساعدًا من 14 وكيلًا لمنصة ArabsStock، وروبوت محادثة ثنائي اللغة من 6 وكلاء في Wakeb Data على نماذج Qwen مستضافة ذاتيًا ووحدات A100.",
   ),
   // Round 7 (R7-13): two systems, not one ("14- and 6-agent" read as a single system). Three lines on an iPhone SE, so
   // the ask bar stays inside Safari's visible area.
   introShort: l(
     "Leading a team of 7 on the Saudi Tourism Authority's AI assistants. Before: 14-agent and 6-agent systems.",
-    "أقود فريقًا من 7 أعضاء يعمل على مساعدَي الهيئة السعودية للسياحة. وقبلها بنيت نظامين من 14 وكيلًا و6 وكلاء.",
+    "أقود فريقًا من 7 أعضاء يبني مساعدَي الهيئة السعودية للسياحة. وقبل ذلك بنيت نظامًا من 14 وكيلًا وآخر من 6 وكلاء.",
   ),
   bio: [
     // Round 6 (HM-01): the Globant paragraph opens with the approved STA sentence; "multi-agent … in production" is
@@ -828,14 +840,14 @@ const basics: Basics = {
     // Round 7 (R7-19): the runtime follows "the AI engineering", not "a team of 7".
     fact(
       "I'm an AI Team Lead at Globant, based in Cairo. On the Saudi Tourism Authority (STA) project I lead a team of 7 and the AI engineering: an agentic LLM runtime (LangGraph) with retrieval, human-approval gates and evaluation, serving Noura, the public visitor assistant, and an internal staff assistant, in Arabic and English. Before Globant, I designed, shipped and ran multi-agent LLM systems in production, with retrieval, self-hosted model serving, and the evaluation and monitoring that keep them honest.",
-      "أعمل قائدًا لفريق ذكاء اصطناعي في Globant، وأقيم في القاهرة. وفي مشروع الهيئة السعودية للسياحة (STA) أقود فريقًا من 7 أعضاء وهندسة الذكاء الاصطناعي: بيئة تشغيل على LangGraph لوكيل ذكي قائم على النماذج اللغوية، تجمع الاسترجاع ونقاط الموافقة البشرية والتقييم، وتخدم «نورة»، المساعد الافتراضي للزوار، ومساعدًا داخليًا للموظفين، بالعربية والإنجليزية. وقبل Globant صمّمت أنظمة LLM متعددة الوكلاء وأطلقتها وشغّلتها في بيئة الإنتاج، مع الاسترجاع وخدمة النماذج ذاتية الاستضافة والتقييم والمراقبة اللذين يضمنان موثوقية إجاباتها.",
+      "أعمل قائدًا لفريق ذكاء اصطناعي في Globant، وأقيم في القاهرة. وفي مشروع الهيئة السعودية للسياحة (STA) أقود فريقًا من 7 أعضاء وهندسة الذكاء الاصطناعي: بيئة تشغيل على LangGraph لوكيل ذكي قائم على النماذج اللغوية، تجمع الاسترجاع ونقاط الموافقة البشرية والتقييم، وتخدم «نورة»، المساعد الافتراضي للزوار، ومساعدًا داخليًا للموظفين، بالعربية والإنجليزية. وقبل Globant صمّمت أنظمة متعددة الوكلاء قائمة على النماذج اللغوية، وأطلقتها وشغّلتها في بيئة الإنتاج، بما فيها من استرجاع وخدمة لنماذج مستضافة ذاتيًا، ومن تقييم ومراقبة يضمنان صدق إجاباتها.",
       "mohamed",
       "github",
       "linkedin",
     ),
     fact(
       "I came to AI through data: I started in 2020 writing SQL for a payments company, moved into data science, then built AI platforms in production. At ArabsStock I architected a 14-agent assistant, and at Wakeb Data a 6-agent bilingual chatbot whose Qwen models I served with vLLM on A100 GPUs.",
-      "دخلت مجال الذكاء الاصطناعي من باب البيانات: بدأت عام 2020 بكتابة SQL لشركة مدفوعات رقمية، ثم انتقلت إلى علم البيانات، ثم إلى بناء منصات ذكاء اصطناعي تعمل في بيئة الإنتاج. صمّمت في ArabsStock مساعدًا من 14 وكيلًا، وبنيت في Wakeb Data روبوت محادثة ثنائي اللغة من 6 وكلاء، وتولّيت تشغيل نماذج Qwen الخاصة به عبر vLLM على وحدات A100.",
+      "دخلت الذكاء الاصطناعي من باب البيانات: بدأت عام 2020 بكتابة استعلامات SQL لشركة مدفوعات رقمية، ثم انتقلت إلى علم البيانات، ثم إلى بناء منصات ذكاء اصطناعي تعمل في بيئة الإنتاج. صمّمت في ArabsStock مساعدًا من 14 وكيلًا، وبنيت في Wakeb Data روبوت محادثة ثنائي اللغة من 6 وكلاء، وتولّيت تشغيل نماذجه من Qwen عبر vLLM على وحدات A100.",
       "github",
       "cv",
       "linkedin",
@@ -845,7 +857,7 @@ const basics: Basics = {
     // from the BUID and MTC roles).
     fact(
       "Most of what I ship works in Arabic and English, and I've worked remotely with teams in the Gulf and the US. In 2022 I lectured master's students at The British University in Dubai on machine learning, deep learning, natural language understanding and recommender systems, mentored master's research there and at Umm Al-Qura University, and taught AI to engineers at the Military Technical College. I'm completing an M.Sc. in Data Science at Cairo University (expected 2027).",
-      "معظم ما أطلقه يعمل بالعربية والإنجليزية، وقد عملت عن بُعد مع فرق في الخليج والولايات المتحدة. وفي عام 2022 حاضرتُ طلاب ماجستير في الجامعة البريطانية في دبي في تعلّم الآلة والتعلّم العميق وفهم اللغة الطبيعية ونظم التوصية، ووجّهتُ أبحاث ماجستير فيها وفي جامعة أم القرى، ودرّستُ الذكاء الاصطناعي لمهندسين في الكلية الفنية العسكرية. وأستكمل حاليًا ماجستير علم البيانات في جامعة القاهرة (التخرج المتوقع عام 2027).",
+      "يعمل معظم ما أطلقه بالعربية والإنجليزية، وقد عملت عن بُعد مع فرق في الخليج والولايات المتحدة. وفي عام 2022 ألقيت على طلاب ماجستير في الجامعة البريطانية في دبي محاضرات في تعلّم الآلة والتعلّم العميق وفهم اللغة الطبيعية ونظم التوصية، ووجّهت أبحاث ماجستير فيها وفي جامعة أم القرى، ودرّست الذكاء الاصطناعي لمهندسين في الكلية الفنية العسكرية. وأُكمل حاليًا درجة الماجستير في علم البيانات بجامعة القاهرة (يُتوقع التخرج عام 2027).",
       "github",
       "cv",
       "linkedin",
@@ -942,7 +954,7 @@ const basics: Basics = {
     noticePeriod: l("2 weeks to 1 month", "من أسبوعين إلى شهر"),
     line: l(
       "Open to AI/ML Team Lead or Senior AI / LLM Engineer roles: remote, relocation to the Gulf or Europe, or hybrid in Cairo. Notice period: 2 weeks to 1 month.",
-      "أرحّب بأدوار قائد فريق ذكاء اصطناعي / تعلّم آلة أو مهندس ذكاء اصطناعي أول (LLM): عن بُعد، أو بالانتقال إلى الخليج أو أوروبا، أو بنظام هجين في القاهرة. فترة الإشعار: من أسبوعين إلى شهر.",
+      "أرحّب بفرص العمل في منصب قائد فريق ذكاء اصطناعي / تعلّم آلة أو مهندس ذكاء اصطناعي أول (LLM): عن بُعد، أو بالانتقال إلى الخليج أو أوروبا، أو بنظام هجين في القاهرة. فترة الإشعار: من أسبوعين إلى شهر.",
     ),
     source: ["mohamed", "linkedin"],
   },
@@ -952,7 +964,7 @@ const metrics: readonly Metric[] = [
   {
     id: "years",
     value: same("7"),
-    label: l("years in data and AI, now leading an AI team", "سنوات في البيانات والذكاء الاصطناعي، وأقود اليوم فريق ذكاء اصطناعي"),
+    label: l("years in data and AI, now leading an AI team", "سنوات في البيانات والذكاء الاصطناعي، وأقود اليوم فريقًا للذكاء الاصطناعي"),
     detail: l(
       "From SQL development in 2020 to data science, production AI platforms, and now leading an AI engineering team.",
       "من تطوير SQL عام 2020 إلى علم البيانات، ثم منصات الذكاء الاصطناعي في بيئة الإنتاج، وصولًا إلى قيادة فريق هندسة ذكاء اصطناعي.",
@@ -974,7 +986,7 @@ const metrics: readonly Metric[] = [
     ),
     detail: l(
       "Noura, the visitor assistant, and a staff assistant run on one LangGraph agent; 27 of its 96 tools are visible to visitors.",
-      "يعمل مساعدا الهيئة، «نورة» للزوار ومساعد الموظفين، على وكيل LangGraph واحد، و27 من أدواته الـ96 متاحة للزوار.",
+      "يقوم مساعدا الهيئة، «نورة» للزوار ومساعد الموظفين، على وكيل LangGraph واحد، و27 أداة من أدواته الـ96 متاحة للزوار.",
     ),
     featured: true,
     evidence: ["case:sta-tourism-assistants", "role:globant"],
@@ -986,7 +998,7 @@ const metrics: readonly Metric[] = [
     label: l("agents in ArabsStock's LangGraph assistant", "وكيلًا في مساعد ArabsStock على LangGraph"),
     detail: l(
       "The ArabsStock Assistant: semantic search, AI image generation, database operations and content moderation.",
-      "مساعد ArabsStock: بحث دلالي، وتوليد صور بالذكاء الاصطناعي، وعمليات قواعد بيانات، وإشراف على المحتوى.",
+      "مساعد ArabsStock: بحث دلالي، وتوليد للصور بالذكاء الاصطناعي، وعمليات قواعد البيانات، وإشراف على المحتوى.",
     ),
     featured: true,
     evidence: ["case:arabsstock-assistant", "role:arabsstock"],
@@ -995,10 +1007,10 @@ const metrics: readonly Metric[] = [
   {
     id: "wakeb-agents",
     value: same("6"),
-    label: l("agents in Wakeb Data's bilingual production chatbot", "وكلاء في روبوت محادثة ثنائي اللغة لدى Wakeb Data، في بيئة الإنتاج"),
+    label: l("agents in Wakeb Data's bilingual production chatbot", "وكلاء في روبوت محادثة ثنائي اللغة في بيئة الإنتاج لدى Wakeb Data"),
     detail: l(
       "Fully async, Arabic and English, on Qwen served with vLLM on A100 GPUs.",
-      "بمعالجة غير متزامنة بالكامل، بالعربية والإنجليزية، على Qwen المستضاف عبر vLLM على وحدات A100.",
+      "غير متزامن بالكامل، يعمل بالعربية والإنجليزية على Qwen المُشغَّل عبر vLLM بوحدات A100.",
     ),
     featured: true,
     evidence: ["case:wakeb-bilingual-chatbot", "role:wakeb"],
@@ -1007,10 +1019,10 @@ const metrics: readonly Metric[] = [
   {
     id: "assets-indexed",
     value: l("Millions", "ملايين"),
-    label: l("of ArabsStock media files made searchable", "من ملفات الوسائط في ArabsStock مفهرسة للبحث الذكي"),
+    label: l("of ArabsStock media files made searchable", "من ملفات الوسائط في ArabsStock أصبحت قابلة للبحث الذكي"),
     detail: l(
       "Semantic search (OpenAI embeddings + Pinecone) and visual-similarity search over ArabsStock's photos, videos and vector graphics.",
-      "بحث دلالي (تضمينات OpenAI مع Pinecone) وبحث بالتشابه البصري في صور ArabsStock ومقاطع الفيديو والرسومات المتجهة.",
+      "بحث دلالي (تضمينات OpenAI مع Pinecone) وبحث بالتشابه البصري في ما تضمه ArabsStock من صور ومقاطع فيديو ورسومات متجهة.",
     ),
     featured: true,
     evidence: ["case:arabsstock-assistant", "role:arabsstock"],
@@ -1031,10 +1043,10 @@ const metrics: readonly Metric[] = [
   {
     id: "developers-unified",
     value: same("3,008+"),
-    label: l("real-estate developers' data unified", "من المطوّرين العقاريين توحّدت بياناتهم"),
+    label: l("real-estate developers' data unified", "من المطوّرين العقاريين وُحِّدت بياناتهم"),
     detail: l(
       "Each with its own schema, merged to scale Empoweromics' real-time e-map.",
-      "لكلٍّ منهم مخطط بيانات مختلف، ودُمجت بياناتهم جميعًا لدعم توسّع الخريطة الإلكترونية المحدثة لحظيًا في Empoweromics.",
+      "لكلٍّ منهم مخطط بيانات مختلف، ودُمجت بياناتهم جميعًا ليتسع نطاق الخريطة الإلكترونية المحدّثة لحظيًا في Empoweromics.",
     ),
     featured: false,
     evidence: ["case:empoweromics-ml", "role:empoweromics"],
@@ -1046,7 +1058,7 @@ const metrics: readonly Metric[] = [
     label: l("in most of what I've shipped", "في معظم ما أطلقته"),
     detail: l(
       "The Wakeb chatbot, the assistant for a Saudi government client and Empoweromics' Smart Search all work in Arabic and English.",
-      "روبوت المحادثة في Wakeb، والمساعد المؤسسي لجهة حكومية سعودية، والبحث الذكي في Empoweromics، تعمل جميعها بالعربية والإنجليزية.",
+      "روبوت المحادثة في Wakeb، والمساعد المؤسسي لجهة حكومية سعودية، والبحث الذكي في Empoweromics: كلها تعمل بالعربية والإنجليزية.",
     ),
     featured: false,
     evidence: ["case:wakeb-bilingual-chatbot", "case:gov-bilingual-assistant", "case:empoweromics-ml"],
@@ -1086,7 +1098,7 @@ const experience: readonly Role[] = [
       factB(
         ["team of 7", "فريق من 7 أعضاء"],
         "Leading a team of 7. The runtime is one LangGraph agent behind 96 tools (27 visible to visitors); every booking or order waits for the user's confirmation. Noura was accepted in the client's UAT in September 2026.",
-        "قيادة فريق من 7 أعضاء. تقوم بيئة التشغيل على وكيل LangGraph واحد مزوّد بـ96 أداة، منها 27 متاحة للزوار، ولا يُنفَّذ أي حجز أو طلب إلا بعد تأكيد المستخدم. واعتمد العميل «نورة» في اختبار قبول المستخدم (UAT) في سبتمبر 2026.",
+        "قيادة فريق من 7 أعضاء. تقوم بيئة التشغيل على وكيل LangGraph واحد مزوّد بـ96 أداة، منها 27 متاحة للزوار، ولا يُنفَّذ أي حجز أو طلب إلا بعد تأكيد المستخدم. واجتازت «نورة» اختبار قبول المستخدم (UAT) لدى العميل في سبتمبر 2026.",
         "mohamed",
       ),
     ],
@@ -1097,7 +1109,7 @@ const experience: readonly Role[] = [
       factB(
         ["Saudi Tourism Authority (STA) project", "مشروع الهيئة السعودية للسياحة (STA)"],
         "Saudi Tourism Authority (STA) project: one agent serves both assistants; an audience gate sets the tools and knowledge each session may use, so a visitor never reaches staff tools or data. Answers cite the authority's content.",
-        "مشروع الهيئة السعودية للسياحة (STA): وكيل واحد يخدم المساعدَين، وطبقة صلاحيات تحدّد الأدوات والمعرفة المتاحة لكل جلسة، فلا يصل الزائر إلى أدوات الموظفين أو بياناتهم، والإجابات تستند إلى محتوى الهيئة مع مصادرها.",
+        "مشروع الهيئة السعودية للسياحة (STA): وكيل واحد يخدم المساعدَين، وطبقة صلاحيات تحدّد الأدوات والمعرفة المتاحة لكل جلسة، فلا يصل الزائر إلى أدوات الموظفين أو بياناتهم، وتستند الإجابات إلى محتوى الهيئة مع ذكر مصادرها.",
         "mohamed",
       ),
       // Approved for the CV by Mohamed (2026-10-10), from the STA case study: one agent (never "multi-agent"), the
@@ -1107,7 +1119,7 @@ const experience: readonly Role[] = [
       factB(
         ["one LangGraph agent behind 96 tools", "وكيل LangGraph واحد مزوّد بـ96 أداة"],
         "Leading a team of 7. The runtime is one LangGraph agent behind 96 tools (27 visible to visitors); every booking or order waits for the user's confirmation. Noura was accepted in the client's UAT in September 2026.",
-        "قيادة فريق من 7 أعضاء. تقوم بيئة التشغيل على وكيل LangGraph واحد مزوّد بـ96 أداة، منها 27 متاحة للزوار، ولا يُنفَّذ أي حجز أو طلب إلا بعد تأكيد المستخدم. واعتمد العميل «نورة» في اختبار قبول المستخدم (UAT) في سبتمبر 2026.",
+        "قيادة فريق من 7 أعضاء. تقوم بيئة التشغيل على وكيل LangGraph واحد مزوّد بـ96 أداة، منها 27 متاحة للزوار، ولا يُنفَّذ أي حجز أو طلب إلا بعد تأكيد المستخدم. واجتازت «نورة» اختبار قبول المستخدم (UAT) لدى العميل في سبتمبر 2026.",
         "mohamed",
       ),
     ],
@@ -1129,29 +1141,29 @@ const experience: readonly Role[] = [
     workMode: "hybrid",
     summary: l(
       "Built and ran a 6-agent bilingual chatbot in production, with hybrid RAG and self-hosted Qwen on A100 GPUs.",
-      "بناء روبوت محادثة ثنائي اللغة من 6 وكلاء وتشغيله في بيئة الإنتاج، مع بحث هجين لخطوط RAG ونموذج Qwen ذاتي الاستضافة على وحدات A100.",
+      "بناء روبوت محادثة ثنائي اللغة من 6 وكلاء وتشغيله في بيئة الإنتاج، باسترجاع هجين لأنظمة RAG ونماذج Qwen مستضافة ذاتيًا على وحدات A100.",
     ),
     bullets: [
       factB(
         ["6-agent bilingual (Arabic/English) chatbot", "روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء"],
         "Architected and deployed a 6-agent bilingual (Arabic/English) chatbot in LangGraph: fully async, built from modular subgraphs, with agents routed by LangGraph's Command instead of fixed edges.",
-        "تصميم روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء على LangGraph ونشره، بمعالجة غير متزامنة بالكامل ومخططات فرعية معيارية، مع توجيه بين وكلائه عبر Command بدلًا من الحواف الثابتة.",
+        "تصميم روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء على LangGraph ونشره: غير متزامن بالكامل، ومبني من مخططات فرعية معيارية، وتتنقل الطلبات بين وكلائه عبر Command في LangGraph بدلًا من الحواف الثابتة.",
         "cv",
         "linkedin",
         "github",
       ),
       factB(
-        ["model-serving lifecycle for Qwen on vLLM", "دورة حياة خدمة النماذج لـQwen على vLLM"],
+        ["model-serving lifecycle for Qwen on vLLM", "دورة حياة خدمة نماذج Qwen على vLLM"],
         "Owned the model-serving lifecycle for Qwen on vLLM: serving configuration, A100 GPU allocation, model versions, health monitoring and automated restarts across multiple production GPU servers.",
-        "إدارة دورة حياة خدمة النماذج لـQwen على vLLM بالكامل: إعدادات الخدمة، وتخصيص وحدات A100، وإصدارات النماذج، ومراقبة الحالة، وإعادة التشغيل التلقائي على عدة خوادم GPU في بيئة الإنتاج.",
+        "تولّي دورة حياة خدمة نماذج Qwen على vLLM كاملةً: إعدادات الخدمة، وتخصيص وحدات A100، وإصدارات النماذج، ومراقبة الحالة، وإعادة التشغيل التلقائي على عدة خوادم GPU في بيئة الإنتاج.",
         "cv",
         "linkedin",
         "github",
       ),
       factB(
-        ["hybrid retrieval for RAG", "استرجاع هجين لخطوط RAG"],
+        ["hybrid retrieval for RAG", "استرجاع هجين لأنظمة RAG"],
         "Built hybrid retrieval for RAG (vector + BM25, reranked by an LLM) with SQLite node-level caching and web search through the Brave Search MCP server, shipped as Dockerised FastAPI services behind Nginx.",
-        "بناء استرجاع هجين لخطوط RAG (بحث متجهي مع BM25 وإعادة ترتيب بنموذج لغوي)، مع تخزين مؤقت على مستوى العُقد عبر SQLite، وبحث على الويب من خلال خادم Brave Search MCP، ونشره كخدمات FastAPI في حاويات Docker خلف Nginx.",
+        "بناء استرجاع هجين لأنظمة RAG (بحث بالمتجهات مع BM25، ثم إعادة ترتيب بنموذج لغوي)، مع تخزين مؤقت على مستوى العُقد عبر SQLite، وبحث في الويب من خلال خادم Brave Search MCP، ونشره في صورة خدمات FastAPI داخل حاويات Docker خلف Nginx.",
         "cv",
         "linkedin",
         "github",
@@ -1159,7 +1171,7 @@ const experience: readonly Role[] = [
       factB(
         ["version 2 of the AI semantic search", "الإصدار الثاني من البحث الدلالي"],
         "Designed version 2 of the AI semantic search for the AIP project: more accurate retrieval, faster search and better image search.",
-        "تصميم الإصدار الثاني من البحث الدلالي المدعوم بالذكاء الاصطناعي لمشروع AIP: استرجاع أدق، وبحث أسرع، وقدرات أفضل في البحث بالصور.",
+        "تصميم الإصدار الثاني من البحث الدلالي المدعوم بالذكاء الاصطناعي لمشروع AIP: استرجاع أدق، وبحث أسرع، وبحث أفضل بالصور.",
         "cv",
         "linkedin",
         "github",
@@ -1175,7 +1187,7 @@ const experience: readonly Role[] = [
       factB(
         ["Wakeb Papers Research Agent", "Wakeb Papers Research Agent"],
         "Developed the Wakeb Papers Research Agent for searching and analysing academic papers, with agent memory and multi-turn conversational context.",
-        "تطوير Wakeb Papers Research Agent للبحث في الأوراق العلمية وتحليلها، مع ذاكرة للوكيل وسياق محادثة متعدد الجولات.",
+        "تطوير وكيل Wakeb Papers Research Agent للبحث في الأوراق العلمية وتحليلها، مع ذاكرة للوكيل وسياق محادثة متعدد الجولات.",
         "cv",
         "linkedin",
         "github",
@@ -1183,14 +1195,14 @@ const experience: readonly Role[] = [
       factB(
         ["REST to gRPC", "من REST إلى gRPC"],
         "Migrated key APIs from REST to gRPC to cut latency between microservices.",
-        "نقل واجهات برمجية أساسية من REST إلى gRPC لخفض زمن الاستجابة بين الخدمات المصغّرة.",
+        "نقل واجهات برمجة تطبيقات أساسية من REST إلى gRPC لخفض زمن الاستجابة بين الخدمات المصغّرة.",
         "cv",
         "linkedin",
         "github",
       ),
       fact(
         "Ran CI/CD and containerised deployments (Docker, Git, shell-scripted automation) across development and production.",
-        "إدارة CI/CD وعمليات النشر بالحاويات (Docker وGit وأتمتة بسكربتات shell) في بيئتي التطوير والإنتاج.",
+        "إدارة التكامل والنشر المستمرين (CI/CD) وعمليات النشر بالحاويات (Docker وGit وأتمتة بنصوص shell) في بيئتي التطوير والإنتاج.",
         "cv",
         "linkedin",
       ),
@@ -1200,19 +1212,19 @@ const experience: readonly Role[] = [
       factB(
         ["6-agent bilingual (Arabic/English) LangGraph chatbot", "روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء"],
         "Architected and deployed a fully async 6-agent bilingual (Arabic/English) LangGraph chatbot on Qwen, served with vLLM on NVIDIA A100 GPUs.",
-        "تصميم روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء على LangGraph ونشره، بمعالجة غير متزامنة بالكامل، على Qwen المستضاف عبر vLLM على وحدات NVIDIA A100.",
+        "تصميم روبوت محادثة ثنائي اللغة (عربي/إنجليزي) من 6 وكلاء على LangGraph، غير متزامن بالكامل، ونشره على Qwen المُشغَّل عبر vLLM بوحدات NVIDIA A100.",
         "cv", "linkedin", "github",
       ),
       factB(
         ["model serving on multiple production GPU servers", "خدمة النماذج على عدة خوادم GPU"],
         "Owned model serving on multiple production GPU servers: vLLM setup, GPU allocation, model versions, health checks, automated restarts.",
-        "تولّي خدمة النماذج على عدة خوادم GPU: إعدادات vLLM، وتخصيص وحدات GPU، وإصدارات النماذج، ومراقبة الحالة، وإعادة التشغيل التلقائي.",
+        "تولّي خدمة النماذج على عدة خوادم GPU في بيئة الإنتاج: إعدادات vLLM، وتخصيص وحدات GPU، وإصدارات النماذج، وفحوص الحالة، وإعادة التشغيل التلقائي.",
         "cv", "linkedin", "github",
       ),
       factB(
-        ["hybrid RAG", "بحث هجين لخطوط RAG"],
+        ["hybrid RAG", "استرجاع هجين لـRAG"],
         "Built hybrid RAG (vector + BM25, LLM reranking), node caching and Brave Search over MCP, as Dockerised FastAPI services behind Nginx.",
-        "بناء بحث هجين لخطوط RAG (متجهي مع BM25 وإعادة ترتيب بنموذج لغوي)، وتخزين مؤقت للعُقد، وBrave Search عبر MCP، كخدمات FastAPI في Docker خلف Nginx.",
+        "بناء استرجاع هجين لـRAG (متجهات وBM25 وإعادة ترتيب بنموذج لغوي)، وتخزين مؤقت للعُقد، وBrave Search عبر MCP، في خدمات FastAPI وDocker خلف Nginx.",
         "cv", "linkedin", "github",
       ),
       // Round 6 (HM-03): the government assistant stays off the CV, which names this role's client (GADD) right above
@@ -1220,7 +1232,7 @@ const experience: readonly Role[] = [
       factB(
         ["AIP semantic search v2", "الإصدار الثاني من البحث الدلالي لمشروع AIP"],
         "Designed AIP semantic search v2, built the Wakeb Papers Research Agent with agent memory, and moved key APIs from REST to gRPC.",
-        "تصميم الإصدار الثاني من البحث الدلالي لمشروع AIP، وتطوير Wakeb Papers Research Agent بذاكرة للوكيل، ونقل واجهات أساسية من REST إلى gRPC.",
+        "تصميم الإصدار الثاني من البحث الدلالي لمشروع AIP، وتطوير وكيل Wakeb Papers Research Agent بذاكرة، ونقل واجهات أساسية من REST إلى gRPC.",
         "cv", "linkedin", "github",
       ),
     ],
@@ -1268,7 +1280,7 @@ const experience: readonly Role[] = [
       factB(
         ["ArabsStock Assistant", "مساعد ArabsStock"],
         "Architected and built the ArabsStock Assistant: 14 specialised agents orchestrated with LangGraph for semantic search, AI image generation, database operations, content moderation and other AI services across the platform.",
-        "تصميم مساعد ArabsStock وبناؤه: 14 وكيلًا متخصصًا ينسّقها LangGraph، تغطي البحث الدلالي، وتوليد الصور بالذكاء الاصطناعي، وعمليات قواعد البيانات، والإشراف على المحتوى، وخدمات ذكاء اصطناعي أخرى على المنصة.",
+        "تصميم مساعد ArabsStock وبناؤه: 14 وكيلًا متخصصًا ينسّق بينهم LangGraph، ويغطّون البحث الدلالي، وتوليد الصور بالذكاء الاصطناعي، وعمليات قواعد البيانات، والإشراف على المحتوى، وخدمات ذكاء اصطناعي أخرى على المنصة.",
         "cv",
         "linkedin",
         "github",
@@ -1276,7 +1288,7 @@ const experience: readonly Role[] = [
       factB(
         ["semantic search pipeline", "خط البحث الدلالي"],
         "Built the semantic search pipeline (OpenAI embeddings + Pinecone) with automated batch ingestion, indexing millions of royalty-free photos, videos and vector graphics.",
-        "بناء خط البحث الدلالي (تضمينات OpenAI مع Pinecone) مع إدخال آلي على دفعات، وفهرسة ملايين الصور ومقاطع الفيديو والرسومات المتجهة.",
+        "بناء خط البحث الدلالي (تضمينات OpenAI مع Pinecone) بإدخال آلي على دفعات، وفهرسة ملايين الصور ومقاطع الفيديو والرسومات المتجهة.",
         "cv",
         "linkedin",
         "github",
@@ -1284,7 +1296,7 @@ const experience: readonly Role[] = [
       factB(
         ["visual-similarity image search", "بحث بالصور يعتمد على التشابه البصري"],
         "Added visual-similarity image search across the whole media library.",
-        "إضافة بحث بالصور يعتمد على التشابه البصري في مكتبة الوسائط كاملة.",
+        "إضافة بحث بالصور يعتمد على التشابه البصري في مكتبة الوسائط كلها.",
         "linkedin",
         "cv",
         "github",
@@ -1292,21 +1304,21 @@ const experience: readonly Role[] = [
       factB(
         ["into audio", "لتشمل الصوت"],
         "Took the platform into audio: sound generation and search for a beta sound library, instrument classification, BPM detection and audio watermarking. The model endpoints ran as containerised FastAPI microservices.",
-        "توسيع المنصة لتشمل الصوت: توليد الأصوات والبحث فيها لمكتبة صوتية تجريبية، وتصنيف الآلات الموسيقية، واكتشاف سرعة الإيقاع (BPM)، والعلامات المائية الصوتية، مع تشغيل نقاط النماذج كخدمات FastAPI مصغّرة في حاويات.",
+        "توسيع المنصة لتشمل الصوت: توليد الأصوات والبحث فيها لمكتبة صوتية تجريبية، وتصنيف الآلات الموسيقية، واكتشاف سرعة الإيقاع (BPM)، والعلامات المائية الصوتية، مع تشغيل نقاط نهاية النماذج في صورة خدمات FastAPI مصغّرة داخل حاويات.",
         "cv",
         "linkedin",
         "github",
       ),
       factB(
-        ["LLM agent evaluation", "سير عمل لتقييم الوكلاء"],
+        ["LLM agent evaluation", "تقييم لوكلاء النماذج اللغوية"],
         "Set up LLM agent evaluation to track reliability, response accuracy and agent routing in production.",
-        "بناء سير عمل لتقييم الوكلاء يتابع موثوقية النظام ودقة الإجابات وجودة التوجيه بين الوكلاء في بيئة الإنتاج.",
+        "إعداد تقييم لوكلاء النماذج اللغوية يتابع الموثوقية ودقة الإجابات وجودة التوجيه بين الوكلاء في بيئة الإنتاج.",
         "cv",
       ),
       factB(
         ["raw video and audio", "الفيديو والصوت الخام"],
         "Built production pipelines for raw video and audio, including footage from ArabsStock studios: quality optimisation and metadata enrichment.",
-        "بناء خطوط معالجة في بيئة الإنتاج لمواد الفيديو والصوت الخام، ومنها لقطات من استوديوهات ArabsStock: تحسين الجودة وإثراء البيانات الوصفية.",
+        "بناء خطوط معالجة تعمل في بيئة الإنتاج لمواد الفيديو والصوت الخام، ومنها لقطات من استوديوهات ArabsStock: تحسين الجودة وإثراء البيانات الوصفية.",
         "cv",
         "linkedin",
       ),
@@ -1323,19 +1335,19 @@ const experience: readonly Role[] = [
       factB(
         ["millions of photos, videos and vector graphics", "ملايين الصور ومقاطع الفيديو والرسومات المتجهة"],
         "Built semantic search (OpenAI embeddings, Pinecone, batch ingestion) over millions of photos, videos and vector graphics, plus visual search.",
-        "بناء بحث دلالي (تضمينات OpenAI وPinecone وإدخال على دفعات) في ملايين الصور ومقاطع الفيديو والرسومات المتجهة، مع بحث بصري.",
+        "بناء بحث دلالي (تضمينات OpenAI وPinecone وإدخال على دفعات) في ملايين الصور ومقاطع الفيديو والرسومات المتجهة، وبحث بالتشابه البصري.",
         "cv", "linkedin", "github",
       ),
       factB(
         ["audio AI", "قدرات صوتية"],
         "Shipped audio AI for a beta sound library (generation, search, instrument classification, BPM detection, watermarking) as FastAPI services.",
-        "إطلاق قدرات صوتية لمكتبة صوتية تجريبية (توليد وبحث، وتصنيف الآلات، واكتشاف سرعة الإيقاع، وعلامات مائية) كخدمات FastAPI.",
+        "إطلاق قدرات صوتية لمكتبة صوتية تجريبية (توليد وبحث، وتصنيف الآلات، واكتشاف سرعة الإيقاع، وعلامات مائية) في خدمات FastAPI.",
         "cv", "linkedin", "github",
       ),
       factB(
         ["agent evaluation", "تقييم للوكلاء"],
         "Set up agent evaluation to track reliability, response accuracy and routing in production.",
-        "بناء تقييم للوكلاء يتابع الموثوقية ودقة الإجابات وجودة التوجيه في بيئة الإنتاج.",
+        "إعداد تقييم للوكلاء يتابع الموثوقية ودقة الإجابات وجودة التوجيه في بيئة الإنتاج.",
         "cv",
       ),
     ],
@@ -1357,24 +1369,24 @@ const experience: readonly Role[] = [
     workMode: "remote",
     summary: l(
       "Designed and ran the GIS data pipelines and deployed map serving, part-time.",
-      "تصميم خطوط بيانات GIS وتشغيلها ونشر حلول خدمة الخرائط، بدوام جزئي.",
+      "تصميم خطوط بيانات GIS وتشغيلها، ونشر خدمة الخرائط، بدوام جزئي.",
     ),
     bullets: [
       factB(
         ["all data pipelines in Prefect", "جميع خطوط البيانات"],
         "Designed and managed all data pipelines in Prefect, including ETL for GIS data from Saudi government sources.",
-        "تصميم جميع خطوط البيانات وإدارتها باستخدام Prefect، ومنها عمليات ETL لبيانات GIS من مصادر حكومية سعودية.",
+        "تصميم جميع خطوط البيانات وإدارتها في Prefect، ومنها عمليات ETL لبيانات GIS من مصادر حكومية سعودية.",
         "cv",
       ),
       factB(
         ["AWS Athena and DuckDB", "AWS Athena وDuckDB"],
         "Queried geospatial data from Overture Maps with AWS Athena and DuckDB for spatial analytics.",
-        "استعلام البيانات الجغرافية المكانية من Overture Maps عبر AWS Athena وDuckDB لتطبيقات التحليل المكاني.",
+        "الاستعلام عن البيانات الجغرافية المكانية في Overture Maps عبر AWS Athena وDuckDB لأغراض التحليل المكاني.",
         "cv",
       ),
       fact(
         "Deployed map serving and visualisation with MapProxy, Kepler.gl, MapLibre and MBTileServer.",
-        "نشر حلول عرض الخرائط والتمثيل المرئي للبيانات باستخدام MapProxy وKepler.gl وMapLibre وMBTileServer.",
+        "نشر خدمة الخرائط وتمثيلها المرئي باستخدام MapProxy وKepler.gl وMapLibre وMBTileServer.",
         "cv",
       ),
     ],
@@ -1382,12 +1394,12 @@ const experience: readonly Role[] = [
       factB(
         ["all data pipelines in Prefect", "جميع خطوط البيانات"],
         "Designed and managed all data pipelines in Prefect, including ETL for GIS data from Saudi government sources.",
-        "تصميم جميع خطوط البيانات وإدارتها عبر Prefect، ومنها عمليات ETL لبيانات GIS من مصادر حكومية سعودية.",
+        "تصميم جميع خطوط البيانات وإدارتها في Prefect، ومنها عمليات ETL لبيانات GIS من مصادر حكومية سعودية.",
         "cv",
       ),
       fact(
         "Queried Overture Maps with AWS Athena and DuckDB; deployed map serving with MapProxy, MBTileServer, MapLibre and Kepler.gl.",
-        "الاستعلام في Overture Maps عبر AWS Athena وDuckDB، ونشر خدمة الخرائط باستخدام MapProxy وMBTileServer وMapLibre وKepler.gl.",
+        "الاستعلام عن بيانات Overture Maps عبر AWS Athena وDuckDB، ونشر خدمة الخرائط باستخدام MapProxy وMBTileServer وMapLibre وKepler.gl.",
         "cv",
       ),
     ],
@@ -1408,20 +1420,20 @@ const experience: readonly Role[] = [
     workMode: null,
     summary: l(
       "Unified data from 3,008+ real-estate developers and built lead-scoring and message-routing models. Named Best Engineer of the Year.",
-      "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، وبناء نماذج لترتيب أولوية العملاء وتوجيه الرسائل، ونيل جائزة أفضل مهندس للعام.",
+      "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، وبناء نماذج لترتيب أولوية العملاء المحتملين وتوجيه الرسائل، ونيل جائزة أفضل مهندس للعام.",
     ),
     bullets: [
       factB(
         ["3,008+ real-estate developers", "أكثر من 3,008 من المطوّرين العقاريين"],
         "Designed a data integration system that merged data from 3,008+ real-estate developers, each with its own schema, to scale the company's real-time e-map.",
-        "تصميم نظام لتكامل البيانات يدمج بيانات أكثر من 3,008 من المطوّرين العقاريين، لكلٍّ منهم مخطط بيانات مختلف، لدعم توسّع الخريطة الإلكترونية المحدثة لحظيًا للشركة.",
+        "تصميم نظام لتكامل البيانات يدمج بيانات أكثر من 3,008 من المطوّرين العقاريين، لكلٍّ منهم مخطط بيانات مختلف، ليتسع نطاق الخريطة الإلكترونية المحدّثة لحظيًا لدى الشركة.",
         "linkedin",
         "github",
       ),
       factB(
         ["7 client lifecycle stages", "7 مراحل في دورة حياته"],
         "Built classification models for 7 client lifecycle stages (Inactive, Assigned, In Progress, Lost, Won, Void, Active) so brokers could prioritise high-value leads.",
-        "بناء نماذج تصنيف تتنبأ بمرحلة العميل من بين 7 مراحل في دورة حياته (غير نشط، ومُسنَد، وقيد المتابعة، ومفقود، ومكسوب، وملغى، ونشط)، ليُركّز الوسطاء على العملاء الأعلى قيمة.",
+        "بناء نماذج تصنيف تتنبأ بمرحلة العميل من بين 7 مراحل في دورة حياته (غير نشط، ومُسنَد، وقيد المتابعة، ومفقود، ومكسوب، وملغى، ونشط)، ليركّز الوسطاء على العملاء المحتملين الأعلى قيمة.",
         "cv",
         "linkedin",
         "github",
@@ -1429,7 +1441,7 @@ const experience: readonly Role[] = [
       factB(
         ["WhatsApp message classification", "نظام لتصنيف رسائل WhatsApp"],
         "Built automatic WhatsApp message classification for text and images (NLP + computer vision), routing each message to Tech, HR, Accounting, Operations or Marketing.",
-        "بناء نظام لتصنيف رسائل WhatsApp تلقائيًا، نصوصًا وصورًا (NLP ورؤية حاسوبية)، وتوجيه كل رسالة إلى القسم المختص: قسم التقنية أو الموارد البشرية أو المحاسبة أو العمليات أو التسويق.",
+        "بناء نظام لتصنيف رسائل WhatsApp تلقائيًا، نصوصًا وصورًا (معالجة اللغة الطبيعية والرؤية الحاسوبية)، وتوجيه كل رسالة إلى القسم المختص: التقنية أو الموارد البشرية أو المحاسبة أو العمليات أو التسويق.",
         "cv",
         "linkedin",
         "github",
@@ -1437,14 +1449,14 @@ const experience: readonly Role[] = [
       factB(
         ["Smart Search", "Smart Search"],
         "Built Smart Search: fuzzy client lookup that finds the right record from misspelled or partial Arabic and English names.",
-        "بناء «Smart Search»: بحث تقريبي (fuzzy) عن العملاء يصل إلى السجل الصحيح حتى مع الأخطاء الإملائية أو الأسماء الناقصة، بالعربية والإنجليزية.",
+        "بناء Smart Search: بحث تقريبي (fuzzy) عن العملاء يصل إلى السجل الصحيح رغم الأخطاء الإملائية أو نقص الاسم، بالعربية والإنجليزية.",
         "cv",
         "linkedin",
         "github",
       ),
       fact(
         "Designed ETL from Cosmos DB (NoSQL) to Microsoft SQL Server, scheduled with Azure Functions.",
-        "تصميم عمليات ETL لنقل البيانات من Cosmos DB (NoSQL) إلى Microsoft SQL Server، مجدولة عبر Azure Functions.",
+        "تصميم عمليات ETL تنقل البيانات من Cosmos DB (NoSQL) إلى Microsoft SQL Server، مجدولة عبر Azure Functions.",
         "cv",
         "linkedin",
         "github",
@@ -1455,24 +1467,24 @@ const experience: readonly Role[] = [
         ["3,008+ real-estate developers", "أكثر من 3,008 من المطوّرين العقاريين"],
         "Unified data from 3,008+ real-estate developers, each with its own schema, to scale the company's real-time e-map.",
         // "لكل" without shadda and tanween here: the PDF's text layer copied the marks as U+0000 (audit cvpdf-13).
-        "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، لكل منهم مخطط بيانات مختلف، لدعم توسّع الخريطة الإلكترونية المحدثة لحظيًا للشركة.",
+        "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، لكل منهم مخطط بيانات مختلف، ليتسع نطاق الخريطة الإلكترونية المحدّثة لحظيًا لدى الشركة.",
         "linkedin", "github",
       ),
       factB(
         ["text + image WhatsApp classification", "تصنيف لرسائل WhatsApp نصًا وصورة"],
         "Built lead-lifecycle models (7 stages) for broker prioritisation, and text + image WhatsApp classification that routes messages to the right department.",
-        "بناء نماذج لمراحل دورة حياة العميل (7 مراحل) لترتيب أولويات الوسطاء، وتصنيف لرسائل WhatsApp نصًا وصورة يوجّهها إلى القسم المختص.",
+        "بناء نماذج لمراحل دورة حياة العميل (7 مراحل) تساعد الوسطاء على ترتيب أولوياتهم، وتصنيف لرسائل WhatsApp نصًا وصورة يوجّهها إلى القسم المختص.",
         "cv", "linkedin",
       ),
       // Round 6 (HM-25): the name-to-gender model is no longer listed (a sensitive-attribute inference).
       fact(
         "Built Smart Search: fuzzy lookup over misspelled or partial Arabic/English names.",
-        "بناء Smart Search: بحث تقريبي يتحمّل الأخطاء الإملائية والأسماء الناقصة بالعربية والإنجليزية.",
+        "بناء Smart Search: بحث تقريبي لا تعوقه الأخطاء الإملائية ولا الأسماء الناقصة، بالعربية والإنجليزية.",
         "cv", "linkedin",
       ),
       fact(
         "Designed ETL from Cosmos DB to SQL Server, scheduled with Azure Functions.",
-        "تصميم عمليات ETL من Cosmos DB إلى SQL Server مجدولة عبر Azure Functions.",
+        "تصميم عمليات ETL من Cosmos DB إلى SQL Server، مجدولة عبر Azure Functions.",
         "cv", "linkedin",
       ),
     ],
@@ -1501,7 +1513,7 @@ const experience: readonly Role[] = [
     bullets: [
       fact(
         "Primary research assistant to two master's students in biomedical informatics at The British University in Dubai, an engineer and a pharmacist.",
-        "مساعد باحث رئيسي لطالبَي ماجستير في المعلوماتية الطبية الحيوية بالجامعة البريطانية في دبي، أحدهما مهندس والآخر صيدلي.",
+        "العمل مساعدَ باحث رئيسيًا لطالبَي ماجستير في المعلوماتية الطبية الحيوية بالجامعة البريطانية في دبي، أحدهما مهندس والآخر صيدلي.",
         "linkedin",
         "github",
       ),
@@ -1512,7 +1524,7 @@ const experience: readonly Role[] = [
       ),
       fact(
         "Mentored master's research at BUID and Umm Al-Qura University on text summarisation, recommender systems and classification models.",
-        "توجيه طلاب ماجستير في مشروعاتهم البحثية في الجامعة البريطانية في دبي وجامعة أم القرى، في تلخيص النصوص ونظم التوصية ونماذج التصنيف.",
+        "توجيه أبحاث ماجستير في الجامعة البريطانية في دبي وجامعة أم القرى، في موضوعات تلخيص النصوص ونظم التوصية ونماذج التصنيف.",
         "cv",
         "linkedin",
       ),
@@ -1546,7 +1558,7 @@ const experience: readonly Role[] = [
     bullets: [
       fact(
         "Delivered specialised AI courses to engineers in the Egyptian Armed Forces: machine-learning fundamentals, deep learning and practical deployment.",
-        "تقديم دورات متخصصة في الذكاء الاصطناعي لمهندسين في القوات المسلحة المصرية: أساسيات تعلّم الآلة، والتعلّم العميق، والتطبيق العملي ونشر النماذج.",
+        "تقديم دورات متخصصة في الذكاء الاصطناعي لمهندسين في القوات المسلحة المصرية: أساسيات تعلّم الآلة، والتعلّم العميق، ونشر النماذج عمليًا.",
         "cv",
         "linkedin",
       ),
@@ -1575,34 +1587,34 @@ const experience: readonly Role[] = [
     workMode: "remote",
     summary: l(
       "Healthcare data analytics, dashboards and patient-retention modelling for AestheticsPro, a US healthcare software company.",
-      "تحليلات بيانات صحية ولوحات معلومات ونمذجة الاحتفاظ بالمرضى لشركة AestheticsPro الأمريكية لبرمجيات الرعاية الصحية.",
+      "تحليل بيانات صحية، ولوحات معلومات، ونمذجة للاحتفاظ بالمرضى لصالح AestheticsPro، الشركة الأمريكية لبرمجيات الرعاية الصحية.",
     ),
     bullets: [
       fact(
         "Scraped and cleaned healthcare data and loaded it into SQL Server for structured storage and retrieval.",
-        "جمع بيانات صحية من الويب وتنظيفها وتحميلها إلى SQL Server لتخزينها واسترجاعها بشكل منظّم.",
+        "جمع بيانات صحية من الويب وتنظيفها وتحميلها إلى SQL Server لتخزينها واسترجاعها على نحو منظّم.",
         "linkedin",
       ),
       fact(
         "Explored the data and built a detailed dashboard for stakeholders.",
-        "تحليل استكشافي للبيانات وبناء لوحة معلومات تفصيلية لأصحاب القرار.",
+        "تحليل البيانات تحليلًا استكشافيًا، وبناء لوحة معلومات تفصيلية لأصحاب المصلحة.",
         "linkedin",
       ),
       fact(
         "Built ML models that flag patients likely to leave, used to target retention offers.",
-        "بناء نماذج تعلّم آلة ترصد المرضى المرجّح انقطاعهم، لاستهدافهم بعروض تحافظ عليهم.",
+        "بناء نماذج تعلّم آلة ترصد المرضى المرجَّح انقطاعهم، لاستهدافهم بعروض تحافظ عليهم.",
         "linkedin",
       ),
     ],
     cvBullets: [
       fact(
         "Scraped, cleaned and loaded healthcare data into SQL Server; built EDA and a stakeholder dashboard.",
-        "جمع بيانات صحية وتنظيفها وتحميلها إلى SQL Server، مع تحليل استكشافي ولوحة معلومات لأصحاب القرار.",
+        "جمع بيانات صحية وتنظيفها وتحميلها إلى SQL Server، مع تحليل استكشافي ولوحة معلومات لأصحاب المصلحة.",
         "linkedin",
       ),
       fact(
         "Built ML models predicting patient retention, used to target retention offers.",
-        "بناء نماذج تعلّم آلة تتنبأ باحتفاظ المرضى بالخدمة، لاستهدافهم بعروض تحافظ عليهم.",
+        "بناء نماذج تعلّم آلة تتنبأ بالاحتفاظ بالمرضى، لاستهدافهم بعروض تحافظ عليهم.",
         "linkedin",
       ),
     ],
@@ -1628,13 +1640,13 @@ const experience: readonly Role[] = [
     bullets: [
       fact(
         "Wrote and optimised complex SQL stored procedures for production payment systems.",
-        "كتابة إجراءات SQL مخزّنة معقّدة لأنظمة مدفوعات في بيئة الإنتاج وتحسينها.",
+        "كتابة إجراءات SQL مخزّنة معقّدة وتحسينها لأنظمة مدفوعات تعمل في بيئة الإنتاج.",
         "cv",
         "linkedin",
       ),
       fact(
         "Tuned large SQL statements, stored procedures and views to cut execution time, and looked after database integrity and security.",
-        "ضبط استعلامات SQL الكبيرة والإجراءات المخزّنة وطرق العرض لتقليل زمن التنفيذ، والحفاظ على سلامة قواعد البيانات وأمانها.",
+        "تحسين أداء استعلامات SQL الكبيرة والإجراءات المخزّنة وطرق العرض لتقليل زمن التنفيذ، والحفاظ على سلامة قواعد البيانات وأمنها.",
         "linkedin",
         "cv",
       ),
@@ -1642,7 +1654,7 @@ const experience: readonly Role[] = [
     cvBullets: [
       fact(
         "Developed and optimised complex SQL stored procedures for production payment systems; query tuning and database administration.",
-        "تطوير إجراءات SQL مخزّنة معقّدة لأنظمة مدفوعات في بيئة الإنتاج وتحسينها، مع ضبط الاستعلامات وإدارة قواعد البيانات.",
+        "تطوير إجراءات SQL مخزّنة معقّدة وتحسينها لأنظمة مدفوعات تعمل في بيئة الإنتاج، مع ضبط الاستعلامات وإدارة قواعد البيانات.",
         "cv", "linkedin",
       ),
     ],
@@ -1682,21 +1694,21 @@ const caseStudies: readonly CaseStudy[] = [
     updated: "2026-10-11",
     summary: l(
       "Leading the AI engineering, with a team of 7, for two Saudi Tourism Authority assistants on one LangGraph agent: Noura for visitors and one for staff.",
-      "قيادة هندسة الذكاء الاصطناعي، مع فريق من 7 أعضاء، لمساعدَين للهيئة السعودية للسياحة على وكيل LangGraph واحد: «نورة» للزوار ومساعد للموظفين.",
+      "قيادة هندسة الذكاء الاصطناعي، مع فريق من 7 أعضاء، لمساعدَين للهيئة السعودية للسياحة يقومان على وكيل LangGraph واحد: «نورة» للزوار، وآخر للموظفين.",
     ),
     problem: l(
       "The Saudi Tourism Authority wanted two assistants: Noura, a public travel assistant for visitors, and an internal assistant for its staff. Both had to answer from the authority's own content, in Arabic and English, and a visitor could never reach staff tools or data.",
-      "أرادت الهيئة السعودية للسياحة مساعدَين: «نورة»، المساعدَ الافتراضي للزوار، ومساعدًا داخليًا لموظفيها. وكان على كليهما أن يجيب من محتوى الهيئة نفسها بالعربية والإنجليزية، دون أن يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم.",
+      "أرادت الهيئة السعودية للسياحة مساعدَين: «نورة»، المساعدَ الافتراضي للزوار، ومساعدًا داخليًا لموظفيها. وكان على كلٍّ منهما أن يجيب من محتوى الهيئة نفسه بالعربية والإنجليزية، على ألّا يصل الزائر بأي حال إلى أدوات الموظفين أو بياناتهم.",
     ),
     approach: [
       fact(
         "One agent, two audiences: a single LangGraph agent serves both assistants, and an audience gate decides which tools and knowledge each session can use, so a visitor never reaches staff tools or data.",
-        "وكيل واحد لجمهورين: وكيل LangGraph واحد يخدم المساعدَين، وطبقة صلاحيات تحدّد الأدوات والمعرفة المتاحة لكل جلسة حسب نوع المستخدم، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم.",
+        "وكيل واحد لجمهورين: وكيل LangGraph واحد يخدم المساعدَين، وطبقة صلاحيات تحدّد الأدوات والمعرفة المتاحة لكل جلسة بحسب نوع المستخدم، فلا يصل الزائر أبدًا إلى أدوات الموظفين أو بياناتهم.",
         "mohamed",
       ),
       fact(
         "Tools that answer with cards: destinations, events, visas, weather and trip plans for visitors; meeting rooms, leave and office requests for staff.",
-        "أدوات تجيب ببطاقات: الوجهات والفعاليات والتأشيرات والطقس وخطط الرحلات للزوار، وقاعات الاجتماعات والإجازات وطلبات المكتب للموظفين.",
+        "أدوات تعرض إجاباتها في بطاقات: الوجهات والفعاليات والتأشيرات والطقس وخطط الرحلات للزوار، وقاعات الاجتماعات والإجازات والطلبات المكتبية للموظفين.",
         "mohamed",
       ),
       fact(
@@ -1707,24 +1719,24 @@ const caseStudies: readonly CaseStudy[] = [
       // Round 7 (R7-03): what waits for the user is an action that changes something, not every tool call.
       fact(
         "The user confirms before anything changes: booking a room, placing an order or building an itinerary waits for their yes.",
-        "يؤكد المستخدم قبل أي تغيير: حجز قاعة أو تنفيذ طلب أو بناء برنامج رحلة لا يتم إلا بعد موافقته.",
+        "لا تغيير قبل تأكيد المستخدم: فحجز قاعة أو تنفيذ طلب أو إعداد برنامج رحلة لا يُنفَّذ إلا بموافقته.",
         "mohamed",
       ),
       fact(
         "Arabic and English throughout, right to left and left to right, on desktop and phone.",
-        "العربية والإنجليزية في كل شيء، من اليمين إلى اليسار ومن اليسار إلى اليمين، على الحاسوب والهاتف.",
+        "العربية والإنجليزية في التجربة كلها، من اليمين إلى اليسار ومن اليسار إلى اليمين، على الحاسوب والهاتف.",
         "mohamed",
       ),
       fact(
         "Answer quality and retrieval measured by evaluations, not assumed.",
-        "قياس جودة الإجابات ودقة الاسترجاع بالتقييم بدل افتراضهما.",
+        "قياس جودة الإجابات ودقة الاسترجاع بالتقييمات بدلًا من افتراضهما.",
         "mohamed",
       ),
     ],
     architecture: {
       caption: l(
         "Capability view: one LangGraph agent serves visitors and staff; an audience gate decides what each session may use, answers come from the authority's own content with their sources, and every booking or order waits for the user's confirmation.",
-        "عرض للقدرات: وكيل LangGraph واحد يخدم الزوار والموظفين، وطبقة الصلاحيات تحدّد ما يتاح لكل جلسة، والإجابات تأتي من محتوى الهيئة مع مصادرها، وكل حجز أو طلب ينتظر تأكيد المستخدم.",
+        "عرض للقدرات: وكيل LangGraph واحد يخدم الزوار والموظفين، وطبقة الصلاحيات تحدّد ما يتاح لكل جلسة، والإجابات مستمدة من محتوى الهيئة مع مصادرها، وكل حجز أو طلب ينتظر تأكيد المستخدم.",
       ),
       nodes: [
         { id: "visitors", label: l("Visitors (Noura)", "الزوار (نورة)"), kind: "user" },
@@ -1733,7 +1745,7 @@ const caseStudies: readonly CaseStudy[] = [
           id: "gate",
           label: l("Audience gate", "طبقة الصلاحيات"),
           kind: "quality",
-          note: l("Tools and knowledge per audience", "الأدوات والمعرفة حسب نوع المستخدم"),
+          note: l("Tools and knowledge per audience", "الأدوات والمعرفة بحسب نوع المستخدم"),
         },
         {
           id: "agent",
@@ -1773,7 +1785,7 @@ const caseStudies: readonly CaseStudy[] = [
       ),
       fact(
         "Noura was accepted in the client's user-acceptance testing (UAT) in September 2026.",
-        "اعتمد العميل «نورة» في اختبار قبول المستخدم (UAT) في سبتمبر 2026.",
+        "اجتازت «نورة» اختبار قبول المستخدم (UAT) لدى العميل في سبتمبر 2026.",
         "mohamed",
       ),
       fact(
@@ -1788,7 +1800,7 @@ const caseStudies: readonly CaseStudy[] = [
       // Round 7 (R7-28): «محددة الأنواع» is "typed" («منظّمة» read as "organised"); one Arabic name for UAT.
       { value: same("96"), unit: l("tools", "أداة"), label: l("typed, behind one LangGraph agent", "محددة الأنواع يستدعيها وكيل LangGraph واحد"), source: ["mohamed"] },
       { value: same("27"), label: l("of them visible to visitors", "منها متاحة للزوار"), source: ["mohamed"] },
-      { value: l("Sep 2026", "سبتمبر 2026"), label: l("Noura accepted in the client's UAT", "اعتماد «نورة» في اختبار قبول المستخدم (UAT) لدى العميل"), source: ["mohamed"] },
+      { value: l("Sep 2026", "سبتمبر 2026"), label: l("Noura accepted in the client's UAT", "اجتياز «نورة» اختبار قبول المستخدم (UAT) لدى العميل"), source: ["mohamed"] },
     ],
     stack: ["LangGraph", "Python", "FastAPI", "RAG", "LLM evaluation", "React", "TypeScript"],
     links: [],
@@ -1803,7 +1815,7 @@ const caseStudies: readonly CaseStudy[] = [
         alt: l("Noura's home screen in English", "الشاشة الرئيسية لنورة بالإنجليزية"),
         caption: l(
           "Noura's home screen: top attractions and live events from Visit Saudi, with saved favourites.",
-          "الشاشة الرئيسية لنورة: أبرز المعالم والفعاليات الجارية من «روح السعودية»، مع المفضّلة المحفوظة.",
+          "الشاشة الرئيسية لـ«نورة»: أبرز المعالم والفعاليات الجارية من «روح السعودية»، مع المفضّلة المحفوظة.",
         ),
       },
       {
@@ -1814,7 +1826,7 @@ const caseStudies: readonly CaseStudy[] = [
         alt: l("Noura answering in Arabic, right to left", "نورة تجيب بالعربية من اليمين إلى اليسار"),
         caption: l(
           "Noura answering in Arabic, right to left: a destination card for AlUla and a sourced summary.",
-          "نورة تجيب بالعربية من اليمين إلى اليسار: بطاقة وجهة للعُلا وملخّص يذكر مصدره.",
+          "«نورة» تجيب بالعربية من اليمين إلى اليسار: بطاقة وجهة للعُلا وملخّص يذكر مصدره.",
         ),
       },
       {
@@ -1825,7 +1837,7 @@ const caseStudies: readonly CaseStudy[] = [
         alt: l("A one-day AlUla itinerary built by Noura", "برنامج يوم واحد في العُلا بنته نورة"),
         caption: l(
           "A one-day AlUla itinerary built from the traveller's preferences, including the sunset viewpoint they asked for.",
-          "برنامج يوم واحد في العُلا مبني على تفضيلات المسافر، ويشمل نقطة مشاهدة الغروب التي طلبها.",
+          "برنامج يوم واحد في العُلا مبنيّ على تفضيلات المسافر، ويشمل نقطة مشاهدة الغروب التي طلبها.",
         ),
       },
       {
@@ -1836,7 +1848,7 @@ const caseStudies: readonly CaseStudy[] = [
         alt: l("Noura on a phone", "نورة على الهاتف"),
         caption: l(
           "Noura on a phone: the same answers and follow-up suggestions in a narrow layout.",
-          "نورة على الهاتف: الإجابات نفسها واقتراحات المتابعة في تخطيط مناسب للشاشة الصغيرة.",
+          "«نورة» على الهاتف: الإجابات نفسها واقتراحات المتابعة في تخطيط يلائم الشاشة الضيقة.",
         ),
       },
       {
@@ -1858,7 +1870,7 @@ const caseStudies: readonly CaseStudy[] = [
         alt: l("An approval request before a coffee order", "طلب موافقة قبل تنفيذ طلب قهوة"),
         caption: l(
           "The user confirms first: the assistant asks before placing a coffee order.",
-          "تأكيد المستخدم أولًا: المساعد يستأذن قبل تنفيذ طلب القهوة.",
+          "تأكيد المستخدم أولًا: يستأذن المساعد قبل تنفيذ طلب القهوة.",
         ),
       },
     ],
@@ -1882,64 +1894,64 @@ const caseStudies: readonly CaseStudy[] = [
     shortTitle: l("Al Majed Oud: AI sales assistant", "الماجد للعود: مساعد المبيعات الذكي"),
     context: l("Al Majed Oud, a Saudi oud and fragrance house (contract)", "الماجد للعود، دار سعودية للعود والعطور (عمل بعقد)"),
     roleId: null,
-    contribution: l("Sole AI engineer, end to end (contract)", "مهندس الذكاء الاصطناعي الوحيد، من البداية إلى النهاية (بعقد)"),
+    contribution: l("Sole AI engineer, end to end (contract)", "مهندس الذكاء الاصطناعي الوحيد، من التصميم إلى التسليم (بعقد)"),
     period: { start: "2026-04", end: "2026-08" },
     published: "2026-10-28",
     updated: "2026-10-28",
     summary: l(
       "Built Al Majed Oud's Arabic-first AI sales assistant end to end on contract: 9 agents answer from the warehouse; a 155-case eval gate guards each deploy.",
-      "بناء مساعد مبيعات ذكي بالعربية أولًا لشركة الماجد للعود من البداية إلى النهاية (بعقد): 9 وكلاء يجيبون من المستودع، وبوابة تقييم من 155 حالة تحرس كل نشر.",
+      "بناء مساعد مبيعات يضع العربية أولًا لشركة الماجد للعود، من التصميم إلى التسليم (بعقد): 9 وكلاء يجيبون من المستودع، وبوابة تقييم من 155 حالة تسبق كل نشر.",
     ),
     problem: l(
       "Al Majed Oud's staff across the GCC relied on analysts and Power BI reports for everyday sales numbers, mostly in English, while most of them work in Arabic. An assistant that improvises figures would do more harm than good: a plausible wrong number is worse than no answer.",
-      "كان موظفو الماجد للعود في دول الخليج يعتمدون على المحللين وتقارير Power BI لمعرفة أرقام المبيعات اليومية، ومعظمها بالإنجليزية، بينما يعمل أغلبهم بالعربية. ومساعد يرتجل الأرقام يضرّ أكثر مما ينفع: فالرقم الخاطئ المقنع أسوأ من غياب الإجابة.",
+      "كان موظفو الماجد للعود في دول الخليج يعتمدون على المحللين وتقارير Power BI لمعرفة أرقام المبيعات اليومية، ومعظم تلك التقارير بالإنجليزية، في حين يعمل أغلبهم بالعربية. والمساعد الذي يرتجل الأرقام يضرّ أكثر مما ينفع، فالرقم الخاطئ المقنع أسوأ من غياب الإجابة.",
     ),
     approach: [
       fact(
         "Text-to-SQL over the warehouse, not RAG over documents: sales questions are arithmetic with one right answer, so every figure comes from SQL run against the company's own data, never from the model's memory.",
-        "تحويل السؤال إلى SQL على مستودع البيانات بدل RAG على المستندات: أسئلة المبيعات حسابية ولها إجابة صحيحة واحدة، لذا يأتي كل رقم من استعلام SQL على بيانات الشركة نفسها، لا من ذاكرة النموذج.",
+        "تحويل السؤال إلى استعلام SQL على مستودع البيانات، لا التوليد المعزّز بالاسترجاع (RAG) من المستندات: فأسئلة المبيعات حسابية ولها إجابة صحيحة واحدة، ولذلك يأتي كل رقم من استعلام SQL على بيانات الشركة نفسها، لا من ذاكرة النموذج.",
         "mohamed",
       ),
       fact(
         "A router and 9 specialist agents on LangGraph: sales, customers, products, staff, stores, loyalty, payments, discounts, and one that clarifies or declines. A planner splits compound questions across agents.",
-        "موجّه و9 وكلاء متخصصين على LangGraph: المبيعات، والعملاء، والمنتجات، والموظفون، والفروع، والولاء، وطرق الدفع، والخصومات، ووكيل يطلب التوضيح أو يعتذر. ومخطِّط يوزّع الأسئلة المركّبة على أكثر من وكيل.",
+        "موجّه و9 وكلاء متخصصين على LangGraph: المبيعات، والعملاء، والمنتجات، والموظفون، والفروع، والولاء، وطرق الدفع، والخصومات، ووكيل يستوضح أو يعتذر. ويوزّع مخطِّطٌ الأسئلةَ المركّبة على أكثر من وكيل.",
         "mohamed",
       ),
       fact(
         "SQL guardrails on every query: read-only, one statement, a table whitelist per agent, a row cap and a time limit. An answer never states a figure that isn't in the returned rows.",
-        "حواجز حماية على كل استعلام SQL: قراءة فقط، وعبارة واحدة، وقائمة جداول مسموح بها لكل وكيل، وحدّ لعدد الصفوف وآخر للوقت. ولا تذكر الإجابة أي رقم غير موجود في الصفوف المسترجعة.",
+        "حواجز حماية على كل استعلام SQL: قراءة فقط، وتعليمة واحدة، وقائمة جداول مسموح بها لكل وكيل، وحدّ أقصى لعدد الصفوف وآخر للمدة. ولا تذكر الإجابة رقمًا غير موجود في الصفوف المسترجعة.",
         "mohamed",
       ),
       fact(
         "Clarifying or declining is a feature: with no period in the question, it asks for one; when the data can't answer, it says so. 64 test cases check exactly that.",
-        "التوضيح أو الاعتذار ميزة مقصودة: إذا خلا السؤال من فترة زمنية سأل عنها، وإذا لم تكفِ البيانات قال ذلك صراحة. و64 حالة اختبار تتحقق من ذلك تحديدًا.",
+        "الاستيضاح أو الاعتذار ميزة مقصودة: إذا خلا السؤال من فترة زمنية سأل عنها، وإذا لم تكفِ البيانات للإجابة قال ذلك صراحة. وتتحقق 64 حالة اختبار من ذلك تحديدًا.",
         "mohamed",
       ),
       fact(
         "Arabic first: hybrid name search (dense and sparse vectors) for the many spellings of Arabic names, Hijri dates with Ramadan and Eid, and a right-to-left interface.",
-        "العربية أولًا: بحث هجين عن الأسماء (متجهات كثيفة ومتناثرة) يتعامل مع تعدد كتابات الأسماء العربية، وتواريخ هجرية تشمل رمضان والعيد، وواجهة من اليمين إلى اليسار.",
+        "العربية أولًا: بحث هجين عن الأسماء (متجهات كثيفة ومتفرقة) يستوعب تعدد كتابات الأسماء العربية، وتواريخ هجرية تشمل رمضان والعيد، وواجهة من اليمين إلى اليسار.",
         "mohamed",
       ),
       fact(
         "A query-optimised copy of the Microsoft Fabric warehouse in PostgreSQL, with today's sales refreshed every 15 minutes.",
-        "نسخة من مستودع Microsoft Fabric على PostgreSQL مهيّأة للاستعلام، تُحدَّث فيها مبيعات اليوم كل 15 دقيقة.",
+        "نسخة من مستودع Microsoft Fabric على PostgreSQL مهيّأة لسرعة الاستعلام، تُحدَّث فيها مبيعات اليوم كل 15 دقيقة.",
         "mohamed",
       ),
       fact(
         "Answers stream in as they are written (SSE), with a chart the backend picks from the same rows, behind Microsoft Entra single sign-on.",
-        "إجابات تظهر أثناء كتابتها (SSE) مع رسم بياني يختاره الخادم من الصفوف نفسها، خلف تسجيل الدخول الموحّد عبر Microsoft Entra.",
+        "إجابات تتدفق أثناء توليدها (SSE)، مع رسم بياني يختاره الخادم من الصفوف نفسها، ومحميّة بتسجيل الدخول الموحّد عبر Microsoft Entra.",
         "mohamed",
       ),
       fact(
         "Eval-gated CI/CD and tracing: a bilingual test suite runs against each new build in the production environment and blocks any deploy that regresses; Langfuse traces every request, and an admin dashboard shows latency, quality scores and negative feedback.",
-        "تكامل ونشر مستمران تحرسهما التقييمات، مع تتبّع كامل: مجموعة اختبارات ثنائية اللغة تعمل على كل بناء جديد داخل بيئة الإنتاج وتوقف أي نشر يتراجع أداؤه، وLangfuse يتتبّع كل طلب، ولوحة إدارة تعرض زمن الاستجابة ودرجات الجودة والتقييمات السلبية.",
+        "تكامل ونشر مستمران (CI/CD) مشروطان باجتياز التقييمات، مع تتبّع كامل: مجموعة اختبارات ثنائية اللغة تعمل على كل بناء جديد داخل بيئة الإنتاج وتوقف أي نشر يتراجع فيه الأداء، ويتتبّع Langfuse كل طلب، وتعرض لوحة الإدارة زمن الاستجابة ودرجات الجودة والتقييمات السلبية.",
         "mohamed",
       ),
     ],
     architecture: {
       caption: l(
         "Capability view: staff sign in with Microsoft Entra; a router sends each question to one of 9 agents, which write SQL through a guardrail layer over a PostgreSQL copy of the Fabric warehouse; an eval gate blocks any deploy that regresses.",
-        "عرض للقدرات: يسجّل الموظفون دخولهم عبر Microsoft Entra، ويوجّه الموجّه كل سؤال إلى أحد 9 وكلاء يكتبون SQL عبر طبقة حماية فوق نسخة PostgreSQL من مستودع Fabric، وبوابة تقييم توقف أي نشر يتراجع أداؤه.",
+        "عرض للقدرات: يسجّل الموظفون دخولهم عبر Microsoft Entra، ويحيل الموجّه كل سؤال إلى واحد من 9 وكلاء يكتبون SQL عبر حواجز حماية على نسخة PostgreSQL من مستودع Fabric، وتوقف بوابة التقييم أي نشر يتراجع فيه الأداء.",
       ),
       nodes: [
         { id: "staff", label: l("Company staff (Arabic or English)", "موظفو الشركة (بالعربية أو الإنجليزية)"), kind: "user" },
@@ -1950,7 +1962,7 @@ const caseStudies: readonly CaseStudy[] = [
           id: "agents",
           label: l("9 specialist agents", "9 وكلاء متخصصين"),
           kind: "agent",
-          note: l("Sales, customers, products, staff, stores, loyalty, payments, discounts, clarify or decline", "المبيعات والعملاء والمنتجات والموظفون والفروع والولاء وطرق الدفع والخصومات، والتوضيح أو الاعتذار"),
+          note: l("Sales, customers, products, staff, stores, loyalty, payments, discounts, clarify or decline", "المبيعات والعملاء والمنتجات والموظفون والفروع والولاء وطرق الدفع والخصومات، والاستيضاح أو الاعتذار"),
         },
         { id: "models", label: l("Tiered Azure OpenAI models", "نماذج Azure OpenAI متدرّجة"), kind: "model" },
         { id: "names", label: l("Hybrid name search", "بحث هجين عن الأسماء"), kind: "retrieval", note: l("Arabic and Latin spellings", "الكتابة العربية واللاتينية") },
@@ -1958,7 +1970,7 @@ const caseStudies: readonly CaseStudy[] = [
         { id: "warehouse", label: l("PostgreSQL copy of the warehouse", "نسخة PostgreSQL من المستودع"), kind: "data" },
         { id: "sync", label: l("Sync every 15 minutes", "مزامنة كل 15 دقيقة"), kind: "pipeline" },
         { id: "fabric", label: l("Microsoft Fabric warehouse", "مستودع Microsoft Fabric"), kind: "data" },
-        { id: "evals", label: l("Eval gate in CI/CD", "بوابة التقييم في CI/CD"), kind: "quality", note: l("155 cases block every deploy", "155 حالة تحرس كل نشر") },
+        { id: "evals", label: l("Eval gate in CI/CD", "بوابة التقييم في CI/CD"), kind: "quality", note: l("155 cases block every deploy", "155 حالة يمرّ بها كل نشر") },
         { id: "tracing", label: l("Langfuse tracing and admin dashboard", "تتبّع Langfuse ولوحة الإدارة"), kind: "quality" },
       ],
       edges: [
@@ -1972,37 +1984,37 @@ const caseStudies: readonly CaseStudy[] = [
         { from: "guard", to: "warehouse" },
         { from: "fabric", to: "sync" },
         { from: "sync", to: "warehouse" },
-        { from: "evals", to: "router", label: l("blocks a deploy that regresses", "يوقف النشر المتراجع") },
+        { from: "evals", to: "router", label: l("blocks a deploy that regresses", "توقف أي نشر يتراجع فيه الأداء") },
         { from: "tracing", to: "router", label: l("every request", "كل طلب") },
       ],
     },
     outcome: [
       fact(
         "Went into production on Azure in June 2026, behind Microsoft Entra SSO and available to all staff; delivered and handed over in August 2026.",
-        "دخل بيئة الإنتاج على Azure في يونيو 2026 خلف تسجيل الدخول الموحّد عبر Microsoft Entra ومتاحًا لجميع الموظفين، ثم سُلِّم في أغسطس 2026.",
+        "دخل بيئة الإنتاج على Azure في يونيو 2026، متاحًا لجميع الموظفين عبر تسجيل الدخول الموحّد عبر Microsoft Entra، ثم سُلِّم إلى الشركة في أغسطس 2026.",
         "mohamed",
       ),
       fact(
         "The final release passed its release gate at 155/155, and the full nightly suite of 399 bilingual cases (248 Arabic, 151 English) reached 399/399.",
-        "اجتاز الإصدار الأخير بوابة الإصدار بنتيجة 155/155، وبلغت المجموعة الليلية الكاملة من 399 حالة ثنائية اللغة (248 بالعربية و151 بالإنجليزية) نتيجة 399/399.",
+        "اجتاز الإصدار الأخير بوابته بنتيجة 155/155، وحققت مجموعة الاختبارات الليلية الكاملة (399 حالة ثنائية اللغة: 248 بالعربية و151 بالإنجليزية) نتيجة 399/399.",
         "mohamed",
       ),
       fact(
         "Answers in Arabic or English, streamed with charts, with figures built to match the company's financial reports.",
-        "إجابات بالعربية أو الإنجليزية، متدفقة ومعها رسوم بيانية، وأرقام مصمَّمة لتطابق التقارير المالية للشركة.",
+        "إجابات بالعربية أو الإنجليزية تتدفق مع رسومها البيانية، وأرقام بُنيت لتطابق التقارير المالية للشركة.",
         "mohamed",
       ),
       fact(
         "Handed over with runbooks, a mobile integration kit for the company's app team, and a disaster-recovery path rehearsed with a restore in about 2 minutes.",
-        "التسليم مع أدلة التشغيل، وحزمة تكامل لفريق تطبيق الجوال في الشركة، ومسار للتعافي من الكوارث جرى التدرّب عليه باستعادة في نحو دقيقتين.",
+        "التسليم مع أدلة التشغيل، وحزمة تكامل لفريق تطبيق الجوال في الشركة، وخطة للتعافي من الكوارث اختُبرت باستعادة فعلية استغرقت نحو دقيقتين.",
         "mohamed",
       ),
     ],
     figures: [
-      { value: same("9"), unit: l("agents", "وكلاء"), label: l("specialists behind one router", "متخصصون خلف موجّه واحد"), source: ["mohamed"] },
-      { value: same("155/155"), label: l("on the release gate that blocks every deploy", "في بوابة الإصدار التي تحرس كل نشر"), source: ["mohamed"] },
+      { value: same("9"), unit: l("agents", "وكلاء"), label: l("specialists behind one router", "متخصصين يحيل إليهم موجّه واحد"), source: ["mohamed"] },
+      { value: same("155/155"), label: l("on the release gate that blocks every deploy", "في بوابة الإصدار التي يمرّ بها كل نشر"), source: ["mohamed"] },
       { value: same("399"), label: l("bilingual eval cases, 248 of them in Arabic", "حالة تقييم ثنائية اللغة، منها 248 بالعربية"), source: ["mohamed"] },
-      { value: same("15"), unit: l("min", "دقيقة"), label: l("data sync from Microsoft Fabric", "لمزامنة البيانات من Microsoft Fabric"), source: ["mohamed"] },
+      { value: same("15"), unit: l("min", "دقيقة"), label: l("data sync from Microsoft Fabric", "بين كل مزامنة وأخرى من Microsoft Fabric"), source: ["mohamed"] },
     ],
     stack: ["LangGraph", "Azure OpenAI", "PostgreSQL", "Qdrant", "FastAPI", "Next.js", "Langfuse", "Microsoft Fabric", "Microsoft Entra ID", "Azure Container Apps", "Python"],
     // The product is internal: no public link.
@@ -2013,7 +2025,7 @@ const caseStudies: readonly CaseStudy[] = [
     // illustrative demo data ("Demo branch 1", made-up figures), never company data, and their captions say so.
     screensNote: l(
       "Screens from the app. The chat screens run on illustrative demo data, not company figures.",
-      "لقطات من التطبيق، وشاشات المحادثة فيها ببيانات توضيحية لا بأرقام الشركة.",
+      "لقطات من التطبيق، تعرض فيها شاشات المحادثة بيانات توضيحية لا أرقام الشركة.",
     ),
     screens: [
       {
@@ -2081,7 +2093,7 @@ const caseStudies: readonly CaseStudy[] = [
     depth: "full",
     title: l(
       "ArabsStock Assistant: 14 agents and AI search over millions of assets",
-      "مساعد من 14 وكيلًا وبحث ذكي في ملايين ملفات الوسائط لمنصة ArabsStock",
+      "مساعد ArabsStock: 14 وكيلًا وبحث ذكي في ملايين ملفات الوسائط",
     ),
     shortTitle: l("ArabsStock Assistant: 14 agents", "مساعد ArabsStock من 14 وكيلًا"),
     context: l("ArabsStock, an Arab stock-media platform", "ArabsStock، منصة عربية للصور ومقاطع الفيديو المرخّصة"),
@@ -2096,7 +2108,7 @@ const caseStudies: readonly CaseStudy[] = [
     ),
     problem: l(
       "ArabsStock is an Arab library of millions of royalty-free photos, videos and vector graphics. The platform needed one assistant for very different jobs (finding assets, generating images, running database operations, moderating content) and search that finds assets by meaning and by visual similarity.",
-      "ArabsStock مكتبة عربية تضم ملايين الصور ومقاطع الفيديو والرسومات المتجهة. احتاجت المنصة إلى مساعد واحد يؤدي مهام مختلفة تمامًا (العثور على المحتوى، وتوليد الصور، وتنفيذ عمليات قواعد البيانات، والإشراف على المحتوى)، وإلى بحث يجد المحتوى بمعناه وبتشابهه البصري.",
+      "منصة ArabsStock مكتبة عربية تضم ملايين الصور ومقاطع الفيديو والرسومات المتجهة. واحتاجت المنصة إلى مساعد واحد يؤدي مهام مختلفة تمامًا (العثور على المحتوى، وتوليد الصور، وتنفيذ عمليات قواعد البيانات، والإشراف على المحتوى)، وإلى بحث يجد المحتوى بمعناه وبتشابهه البصري.",
     ),
     approach: [
       // Round 6 (HM-15): the "why", from the problem as the sources state it (very different jobs) and the routing the
@@ -2104,7 +2116,7 @@ const caseStudies: readonly CaseStudy[] = [
       // got one or more agents (the sources give the total, not the split).
       fact(
         "Why 14 agents: the jobs were very different (semantic search, AI image generation, database operations, content moderation and other platform AI services), so each kind of job got one or more specialised agents, 14 in all, and one LangGraph orchestrator routes every request.",
-        "لماذا 14 وكيلًا: كانت المهام مختلفة تمامًا (البحث الدلالي، وتوليد الصور، وعمليات قواعد البيانات، والإشراف على المحتوى، وخدمات ذكاء اصطناعي أخرى على المنصة)، فخُصّص لكل نوع منها وكيل متخصص أو أكثر، 14 وكيلًا في المجموع، ومنسّق LangGraph واحد يوجّه كل طلب إلى وكيله.",
+        "لماذا 14 وكيلًا؟ لأن المهام كانت مختلفة تمامًا (البحث الدلالي، وتوليد الصور، وعمليات قواعد البيانات، والإشراف على المحتوى، وخدمات ذكاء اصطناعي أخرى على المنصة)، فخُصّص لكل نوع منها وكيل متخصص أو أكثر، فبلغ المجموع 14 وكيلًا، ويوجّه منسّق LangGraph واحد كل طلب إلى وكيله.",
         "cv",
         "linkedin",
       ),
@@ -2122,7 +2134,7 @@ const caseStudies: readonly CaseStudy[] = [
       ),
       fact(
         "Served image search, sound generation, instrument classification, BPM detection and audio watermarking as containerised FastAPI microservices, and added sound search for a beta sound library.",
-        "تشغيل البحث بالصور، وتوليد الأصوات، وتصنيف الآلات الموسيقية، واكتشاف سرعة الإيقاع (BPM)، والعلامات المائية الصوتية كخدمات FastAPI مصغّرة في حاويات، مع إضافة البحث الصوتي لمكتبة صوتية تجريبية.",
+        "تشغيل البحث بالصور، وتوليد الأصوات، وتصنيف الآلات الموسيقية، واكتشاف سرعة الإيقاع (BPM)، والعلامات المائية الصوتية في صورة خدمات FastAPI مصغّرة داخل حاويات، مع إضافة البحث الصوتي لمكتبة صوتية تجريبية.",
         "cv",
         "linkedin",
       ),
@@ -2135,7 +2147,7 @@ const caseStudies: readonly CaseStudy[] = [
     architecture: {
       caption: l(
         "Component view: a LangGraph orchestrator routes requests to specialised agents; a batch pipeline keeps the vector index current; model services run as separate containers; evaluation watches routing and accuracy.",
-        "عرض للمكوّنات: منسّق LangGraph يوجّه الطلبات إلى وكلاء متخصصين، وخط دفعات يُبقي الفهرس المتجهي محدّثًا، وخدمات النماذج تعمل في حاويات مستقلة، والتقييم يراقب التوجيه والدقة.",
+        "عرض للمكوّنات: منسّق LangGraph يوجّه الطلبات إلى وكلاء متخصصين، وخط معالجة على دفعات يُبقي فهرس المتجهات محدّثًا، وخدمات النماذج تعمل في حاويات مستقلة، والتقييم يراقب التوجيه والدقة.",
       ),
       nodes: [
         { id: "users", label: l("Platform users", "مستخدمو المنصة"), kind: "user" },
@@ -2150,16 +2162,16 @@ const caseStudies: readonly CaseStudy[] = [
           id: "ingestion",
           label: l("Batch ingestion", "إدخال على دفعات"),
           kind: "pipeline",
-          note: l("Millions of photos, videos, vector graphics", "ملايين الصور والفيديو والرسومات"),
+          note: l("Millions of photos, videos, vector graphics", "ملايين الصور ومقاطع الفيديو والرسومات المتجهة"),
         },
         { id: "embeddings", label: l("OpenAI embeddings", "تضمينات OpenAI"), kind: "model" },
-        { id: "pinecone", label: l("Pinecone vector index", "فهرس Pinecone المتجهي"), kind: "data" },
+        { id: "pinecone", label: l("Pinecone vector index", "فهرس المتجهات في Pinecone"), kind: "data" },
         { id: "visual-search", label: l("Visual-similarity search", "بحث بالتشابه البصري"), kind: "retrieval" },
         {
           id: "audio",
           label: l("Audio model services", "خدمات نماذج الصوت"),
           kind: "service",
-          note: l("Generation, search, instruments, BPM, watermarking", "توليد، بحث، آلات، BPM، علامات مائية"),
+          note: l("Generation, search, instruments, BPM, watermarking", "التوليد، البحث، الآلات، BPM، العلامات المائية"),
         },
         { id: "evaluation", label: l("Agent evaluation", "تقييم الوكلاء"), kind: "quality" },
       ],
@@ -2190,21 +2202,21 @@ const caseStudies: readonly CaseStudy[] = [
       ),
       fact(
         "A new audio line for the platform: a beta sound library with generation and search.",
-        "مجال جديد للمنصة هو الصوت: مكتبة صوتية تجريبية تدعم التوليد والبحث.",
+        "مجال جديد للمنصة هو الصوت: مكتبة صوتية تجريبية تتيح توليد الأصوات والبحث فيها.",
         "linkedin",
         "cv",
       ),
       fact(
         "Agent reliability, accuracy and routing measured in production rather than assumed.",
-        "قياس موثوقية الوكلاء ودقتهم وجودة التوجيه في بيئة الإنتاج بدل افتراضها.",
+        "قياس موثوقية الوكلاء ودقتهم وجودة التوجيه في بيئة الإنتاج بدلًا من افتراضها.",
         "cv",
       ),
     ],
     figures: [
       { value: same("14"), label: l("specialised agents in one LangGraph assistant", "وكيلًا متخصصًا في مساعد واحد على LangGraph"), source: ["cv", "linkedin", "github"] },
       // Image search, sound generation, instrument classification, BPM detection, audio watermarking.
-      { value: same("5"), label: l("vision and audio model services, each a FastAPI container", "خدمات نماذج للصورة والصوت، كلٌّ منها حاوية FastAPI"), source: ["cv", "linkedin"] },
-      { value: l("Millions", "ملايين"), label: l("of photos, videos and vector graphics behind semantic search", "من الصور ومقاطع الفيديو والرسومات المتجهة خلف البحث الدلالي"), source: ["cv", "linkedin", "github"] },
+      { value: same("5"), label: l("vision and audio model services, each a FastAPI container", "خدمات نماذج للصورة والصوت، كلٌّ منها في حاوية FastAPI"), source: ["cv", "linkedin"] },
+      { value: l("Millions", "ملايين"), label: l("of photos, videos and vector graphics behind semantic search", "من الصور ومقاطع الفيديو والرسومات المتجهة يشملها البحث الدلالي"), source: ["cv", "linkedin", "github"] },
       // The role's own dates, counted inclusively like LinkedIn ("1 yr 9 mos").
       { value: same("21"), unit: l("months", "شهرًا"), label: l("Apr 2023 – Dec 2024, full-time and remote", "أبريل 2023 – ديسمبر 2024، بدوام كامل وعن بُعد"), source: ["linkedin", "cv"] },
     ],
@@ -2220,7 +2232,7 @@ const caseStudies: readonly CaseStudy[] = [
     depth: "full",
     title: l(
       "A 6-agent bilingual chatbot on self-hosted Qwen",
-      "روبوت محادثة ثنائي اللغة من 6 وكلاء على Qwen ذاتي الاستضافة",
+      "روبوت محادثة ثنائي اللغة من 6 وكلاء على Qwen مستضاف ذاتيًا",
     ),
     shortTitle: l("6-agent bilingual chatbot on vLLM", "روبوت محادثة من 6 وكلاء على vLLM"),
     context: l("Wakeb Data, production chatbot", "Wakeb Data، روبوت محادثة في بيئة الإنتاج"),
@@ -2234,40 +2246,40 @@ const caseStudies: readonly CaseStudy[] = [
     updated: "2026-10-11",
     summary: l(
       "Architected a fully async 6-agent LangGraph chatbot in Arabic and English, and ran its Qwen models on vLLM across production A100 servers.",
-      "تصميم روبوت محادثة من 6 وكلاء على LangGraph بالعربية والإنجليزية بمعالجة غير متزامنة، وتشغيل نماذج Qwen عبر vLLM على خوادم A100 في بيئة الإنتاج.",
+      "تصميم روبوت محادثة غير متزامن بالكامل من 6 وكلاء على LangGraph يجيب بالعربية والإنجليزية، وتشغيل نماذج Qwen عبر vLLM على خوادم A100 في بيئة الإنتاج.",
     ),
     problem: l(
       "The chatbot had to answer in Arabic and English, run on self-hosted models on A100 GPU servers, ground its answers in documents and live web results, and guide users through multi-turn service configuration. In production, the model servers had to recover on their own when something failed.",
-      "كان على روبوت المحادثة أن يجيب بالعربية والإنجليزية، وأن يعمل على نماذج ذاتية الاستضافة على خوادم A100، وأن يستند في إجاباته إلى المستندات ونتائج الويب الحية، وأن يرشد المستخدم في إعداد الخدمات عبر محادثة متعددة الجولات. وفي بيئة الإنتاج، كان على خوادم النماذج أن تتعافى تلقائيًا عند حدوث أي عطل.",
+      "كان على روبوت المحادثة أن يجيب بالعربية والإنجليزية، وأن يعمل على نماذج مستضافة ذاتيًا على خوادم A100، وأن يستند في إجاباته إلى المستندات ونتائج الويب الآنية، وأن يرشد المستخدم إلى إعداد الخدمات عبر محادثة متعددة الجولات. وفي بيئة الإنتاج، كان على خوادم النماذج أن تتعافى من تلقاء نفسها عند أي عطل.",
     ),
     approach: [
       fact(
         "Six specialised LangGraph agents built from modular subgraphs. LangGraph's Command routes between them instead of fixed edges, and the whole graph is async.",
-        "ستة وكلاء متخصصين على LangGraph، مبنيّون من مخططات فرعية معيارية، مع توجيه ديناميكي بينهم عبر Command من دون حواف ثابتة، ومعالجة غير متزامنة في المخطط كله.",
+        "ستة وكلاء متخصصين على LangGraph، مبنيّين من مخططات فرعية معيارية، يتنقل الطلب بينهم عبر Command في LangGraph بدلًا من الحواف الثابتة، والمخطط كله غير متزامن.",
         "cv",
         "linkedin",
       ),
       fact(
         "Hybrid retrieval for RAG: vector search and BM25, reranked by an LLM, with SQLite caching at the graph-node level.",
-        "استرجاع هجين لخطوط RAG: بحث متجهي مع BM25، ثم إعادة ترتيب بنموذج لغوي، مع تخزين مؤقت عبر SQLite على مستوى عُقد المخطط.",
+        "استرجاع هجين لأنظمة RAG: بحث بالمتجهات مع BM25، ثم إعادة ترتيب بنموذج لغوي، مع تخزين مؤقت عبر SQLite على مستوى عُقد المخطط.",
         "cv",
         "linkedin",
       ),
       fact(
         "Live web search through the Brave Search MCP server.",
-        "بحث حي على الويب عبر خادم Brave Search MCP.",
+        "بحث آني في الويب عبر خادم Brave Search MCP.",
         "cv",
         "linkedin",
       ),
       fact(
         "Served Qwen with vLLM on NVIDIA A100 GPUs and owned the lifecycle: serving configuration, GPU allocation, model versions, health monitoring and automated restarts across multiple production GPU servers.",
-        "خدمة Qwen عبر vLLM على وحدات NVIDIA A100، مع تولّي دورة حياتها كاملة: إعدادات الخدمة، وتخصيص وحدات GPU، وإصدارات النماذج، ومراقبة الحالة، وإعادة التشغيل التلقائي على عدة خوادم GPU في بيئة الإنتاج.",
+        "تشغيل Qwen عبر vLLM على وحدات NVIDIA A100، وتولّي دورة حياة خدمته كاملةً: إعدادات الخدمة، وتخصيص وحدات GPU، وإصدارات النماذج، ومراقبة الحالة، وإعادة التشغيل التلقائي على عدة خوادم GPU في بيئة الإنتاج.",
         "cv",
         "linkedin",
       ),
       fact(
         "Shipped as Dockerised FastAPI services behind Nginx, with CI/CD.",
-        "النشر كخدمات FastAPI في حاويات Docker خلف Nginx، مع CI/CD.",
+        "النشر في صورة خدمات FastAPI داخل حاويات Docker خلف Nginx، مع تكامل ونشر مستمرين (CI/CD).",
         "cv",
         "linkedin",
       ),
@@ -2275,7 +2287,7 @@ const caseStudies: readonly CaseStudy[] = [
     architecture: {
       caption: l(
         "Component view: async LangGraph agents call self-hosted Qwen on vLLM, retrieve through hybrid search with LLM reranking, and reach the web through MCP; FastAPI services sit behind Nginx.",
-        "عرض للمكوّنات: وكلاء LangGraph يعملون بمعالجة غير متزامنة ويستدعون Qwen ذاتي الاستضافة على vLLM، ويسترجعون عبر بحث هجين مع إعادة ترتيب بنموذج لغوي، ويصلون إلى الويب عبر MCP، فيما تعمل خدمات FastAPI خلف Nginx.",
+        "عرض للمكوّنات: وكلاء LangGraph غير متزامنين يستدعون Qwen المستضاف ذاتيًا على vLLM، ويسترجعون المعلومات ببحث هجين مع إعادة ترتيب بنموذج لغوي، ويصلون إلى الويب عبر MCP، فيما تعمل خدمات FastAPI خلف Nginx.",
       ),
       nodes: [
         { id: "users", label: l("Users (Arabic / English)", "المستخدمون (عربي / إنجليزي)"), kind: "user" },
@@ -2289,7 +2301,7 @@ const caseStudies: readonly CaseStudy[] = [
         },
         { id: "agents", label: l("6 specialised agents", "6 وكلاء متخصصين"), kind: "agent", note: l("Modular subgraphs", "مخططات فرعية معيارية") },
         { id: "cache", label: l("SQLite node cache", "تخزين مؤقت للعُقد (SQLite)"), kind: "data" },
-        { id: "hybrid", label: l("Hybrid search: vector + BM25", "بحث هجين: متجهي + BM25"), kind: "retrieval" },
+        { id: "hybrid", label: l("Hybrid search: vector + BM25", "بحث هجين: متجهات + BM25"), kind: "retrieval" },
         { id: "rerank", label: l("LLM reranker", "إعادة ترتيب بنموذج لغوي"), kind: "retrieval" },
         { id: "mcp", label: l("Brave Search via MCP", "البحث في الويب: Brave Search عبر MCP"), kind: "service" },
         { id: "vllm", label: l("vLLM serving Qwen", "تشغيل Qwen عبر vLLM"), kind: "model" },
@@ -2316,19 +2328,19 @@ const caseStudies: readonly CaseStudy[] = [
     outcome: [
       fact(
         "Deployed to production as a fully async, bilingual Arabic/English system.",
-        "نظام ثنائي اللغة (عربي/إنجليزي) يعمل في بيئة الإنتاج بمعالجة غير متزامنة بالكامل.",
+        "نظام ثنائي اللغة (عربي/إنجليزي) غير متزامن بالكامل، منشور في بيئة الإنتاج.",
         "cv",
         "linkedin",
       ),
       fact(
         "Self-hosted model serving with health monitoring and automated restarts across multiple production GPU servers.",
-        "خدمة نماذج ذاتية الاستضافة مع مراقبة الحالة وإعادة التشغيل التلقائي على عدة خوادم GPU في بيئة الإنتاج.",
+        "خدمة نماذج مستضافة ذاتيًا، مع مراقبة الحالة وإعادة التشغيل التلقائي على عدة خوادم GPU في بيئة الإنتاج.",
         "cv",
         "linkedin",
       ),
       fact(
         "Answers grounded in retrieved documents and live web results.",
-        "إجابات تستند إلى المستندات المسترجعة ونتائج الويب الحية.",
+        "إجابات تستند إلى المستندات المسترجعة ونتائج الويب الآنية.",
         "cv",
         "linkedin",
       ),
@@ -2364,7 +2376,7 @@ const caseStudies: readonly CaseStudy[] = [
     ),
     problem: l(
       "A Saudi government client needed an enterprise-grade bilingual (Arabic/English) assistant, with evaluation and monitoring of answer quality.",
-      "احتاجت جهة حكومية سعودية إلى مساعد مؤسسي ثنائي اللغة (عربي/إنجليزي)، مع تقييم جودة الإجابات ومراقبتها.",
+      "احتاجت جهة حكومية سعودية إلى مساعد مؤسسي ثنائي اللغة (عربي/إنجليزي)، تُقيَّم جودة إجاباته وتُراقَب.",
     ),
     approach: [
       fact(
@@ -2375,7 +2387,7 @@ const caseStudies: readonly CaseStudy[] = [
       ),
       fact(
         "Added LLM evaluation and observability monitoring focused on response quality.",
-        "إضافة تقييم للنماذج اللغوية ومراقبة مستمرة تركّز على جودة الإجابات.",
+        "إضافة تقييم للنماذج اللغوية، ومراقبة مستمرة تركّز على جودة الإجابات.",
         "cv",
         "linkedin",
       ),
@@ -2383,13 +2395,13 @@ const caseStudies: readonly CaseStudy[] = [
     architecture: {
       caption: l(
         "Capability view: the public description covers the assistant, its evaluation and its monitoring; implementation details are not public.",
-        "عرض للقدرات: الوصف المنشور يشمل المساعد وتقييمه ومراقبته، أما تفاصيل التنفيذ فغير منشورة.",
+        "عرض للقدرات: يشمل الوصف المنشور المساعد وتقييمه ومراقبته، أما تفاصيل التنفيذ فغير منشورة.",
       ),
       nodes: [
         { id: "users", label: l("Users (Arabic / English)", "المستخدمون (عربي / إنجليزي)"), kind: "user" },
         { id: "assistant", label: l("Bilingual assistant", "مساعد ثنائي اللغة"), kind: "orchestrator" },
         { id: "llm", label: l("LLM", "نموذج لغوي"), kind: "model" },
-        { id: "eval", label: l("LLM evaluation", "تقييم النموذج"), kind: "quality" },
+        { id: "eval", label: l("LLM evaluation", "تقييم النموذج اللغوي"), kind: "quality" },
         { id: "observability", label: l("Observability: answer quality", "المراقبة: جودة الإجابات"), kind: "quality" },
       ],
       edges: [
@@ -2403,7 +2415,7 @@ const caseStudies: readonly CaseStudy[] = [
       fact(
         // Round 7 (HM-22): the outcome adds what the summary doesn't say (quality measured, not assumed).
         "Answer quality is measured and monitored, not assumed: LLM evaluation and observability were part of the build.",
-        "جودة الإجابات تُقاس وتُراقَب ولا تُفترَض: التقييم والمراقبة جزء من البناء نفسه.",
+        "جودة الإجابات تُقاس وتُراقَب ولا تُفترَض: فالتقييم والمراقبة جزء من البناء نفسه.",
         "cv",
         "linkedin",
       ),
@@ -2431,22 +2443,22 @@ const caseStudies: readonly CaseStudy[] = [
     updated: "2026-10-11",
     summary: l(
       "Unified data from 3,008+ real-estate developers, built lead-prioritisation and WhatsApp-routing models, and shipped typo-tolerant client search.",
-      "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، وبناء نماذج لترتيب أولويات العملاء وتوجيه رسائل WhatsApp وبحث يتسامح مع الأخطاء الإملائية.",
+      "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، وبناء نماذج لترتيب أولوية العملاء المحتملين وتوجيه رسائل WhatsApp، وبحث لا تعوقه الأخطاء الإملائية.",
     ),
     problem: l(
       "Empoweromics runs a real-time e-map for real estate. Its data came from 3,008+ developers, each with its own schema. Brokers needed to know which leads to chase, inbound WhatsApp messages (text and images) had to reach the right department, and staff had to find clients even when a name was misspelled.",
-      "تدير Empoweromics خريطة إلكترونية للعقارات محدثة لحظيًا، وتأتي بياناتها من أكثر من 3,008 من المطوّرين العقاريين لكلٍّ منهم مخطط بيانات مختلف. احتاج الوسطاء إلى معرفة العملاء الأجدر بالمتابعة، واحتاجت رسائل WhatsApp الواردة (نصوصًا وصورًا) إلى الوصول للقسم المختص، واحتاج الفريق إلى إيجاد العملاء حتى مع الأخطاء الإملائية في الأسماء.",
+      "تدير Empoweromics خريطة إلكترونية للعقارات محدّثة لحظيًا، تأتي بياناتها من أكثر من 3,008 من المطوّرين العقاريين، لكلٍّ منهم مخطط بيانات مختلف. وكان الوسطاء بحاجة إلى معرفة العملاء الأجدر بالمتابعة، ورسائل WhatsApp الواردة (نصوصًا وصورًا) بحاجة إلى أن تبلغ القسم المختص، والموظفون بحاجة إلى العثور على العملاء حتى لو كُتبت أسماؤهم بأخطاء إملائية.",
     ),
     approach: [
       fact(
         "A data integration system that merged 3,008+ developer schemas to scale the e-map.",
-        "نظام لتكامل البيانات يدمج مخططات أكثر من 3,008 من المطوّرين العقاريين لدعم توسّع الخريطة الإلكترونية.",
+        "نظام لتكامل البيانات يدمج مخططات أكثر من 3,008 من المطوّرين العقاريين، ليتسع نطاق الخريطة الإلكترونية.",
         "linkedin",
         "github",
       ),
       fact(
         "Classification models for 7 client lifecycle stages (Inactive, Assigned, In Progress, Lost, Won, Void, Active) to rank leads for brokers.",
-        "نماذج تصنيف لـ7 مراحل في دورة حياة العميل (غير نشط، ومُسنَد، وقيد المتابعة، ومفقود، ومكسوب، وملغى، ونشط) لترتيب العملاء أمام الوسطاء.",
+        "نماذج تصنيف لـ7 مراحل في دورة حياة العميل (غير نشط، ومُسنَد، وقيد المتابعة، ومفقود، ومكسوب، وملغى، ونشط)، يرتّب بها الوسطاء العملاء المحتملين.",
         "cv",
         "linkedin",
       ),
@@ -2458,7 +2470,7 @@ const caseStudies: readonly CaseStudy[] = [
       ),
       fact(
         "Smart Search: fuzzy matching over Arabic and English names, robust to misspelled or partial input.",
-        "Smart Search: مطابقة تقريبية لأسماء العملاء بالعربية والإنجليزية، تصمد أمام الأخطاء الإملائية والمدخلات الناقصة.",
+        "Smart Search: مطابقة تقريبية لأسماء العملاء بالعربية والإنجليزية، لا تتأثر بالأخطاء الإملائية ولا بالمدخلات الناقصة.",
         "cv",
         "linkedin",
       ),
@@ -2472,29 +2484,29 @@ const caseStudies: readonly CaseStudy[] = [
     architecture: {
       caption: l(
         "Component view: developer data is unified for the e-map; ETL moves data from Cosmos DB to SQL Server; separate models serve brokers, client lookup and message routing.",
-        "عرض للمكوّنات: توحيد بيانات المطوّرين للخريطة الإلكترونية، وETL ينقل البيانات من Cosmos DB إلى SQL Server، ونماذج مستقلة تخدم الوسطاء والبحث عن العملاء وتوجيه الرسائل.",
+        "عرض للمكوّنات: توحيد بيانات المطوّرين للخريطة الإلكترونية، وعمليات ETL تنقل البيانات من Cosmos DB إلى SQL Server، ونماذج مستقلة تخدم الوسطاء والبحث عن العملاء وتوجيه الرسائل.",
       ),
       nodes: [
         { id: "developers", label: l("3,008+ developer data sources", "بيانات أكثر من 3,008 من المطوّرين العقاريين"), kind: "data" },
         { id: "integration", label: l("Schema integration", "توحيد المخططات"), kind: "pipeline" },
-        { id: "emap", label: l("Real-time e-map", "الخريطة الإلكترونية المحدثة لحظيًا"), kind: "user" },
+        { id: "emap", label: l("Real-time e-map", "الخريطة الإلكترونية المحدّثة لحظيًا"), kind: "user" },
         { id: "cosmos", label: same("Cosmos DB"), kind: "data" },
         { id: "etl", label: l("ETL (Azure Functions)", "ETL (Azure Functions)"), kind: "pipeline" },
         { id: "sql", label: same("SQL Server"), kind: "data" },
-        { id: "lifecycle", label: l("Lifecycle-stage models", "نماذج مراحل العميل"), kind: "model" },
+        { id: "lifecycle", label: l("Lifecycle-stage models", "نماذج مراحل دورة حياة العميل"), kind: "model" },
         { id: "brokers", label: l("Brokers", "الوسطاء"), kind: "user" },
         { id: "smart-search", label: l("Smart Search (fuzzy)", "بحث تقريبي (Smart Search)"), kind: "retrieval" },
         { id: "clients", label: l("Client records", "سجلات العملاء"), kind: "data" },
         { id: "whatsapp", label: l("WhatsApp inbox", "رسائل WhatsApp"), kind: "user" },
         { id: "classifier", label: l("Text + image classifier", "مصنِّف النصوص والصور"), kind: "model" },
-        { id: "departments", label: l("Department queues", "قوائم الأقسام"), kind: "service" },
+        { id: "departments", label: l("Department queues", "قوائم انتظار الأقسام"), kind: "service" },
       ],
       edges: [
         { from: "developers", to: "integration" },
         { from: "integration", to: "emap" },
         { from: "cosmos", to: "etl" },
         { from: "etl", to: "sql" },
-        { from: "lifecycle", to: "brokers", label: l("lead priority", "أولوية العميل") },
+        { from: "lifecycle", to: "brokers", label: l("lead priority", "أولوية العميل المحتمل") },
         { from: "smart-search", to: "clients" },
         { from: "whatsapp", to: "classifier" },
         { from: "classifier", to: "departments" },
@@ -2503,19 +2515,19 @@ const caseStudies: readonly CaseStudy[] = [
     outcome: [
       fact(
         "Data from 3,008+ developers unified so the real-time e-map could scale.",
-        "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين لتتمكن الخريطة الإلكترونية المحدثة لحظيًا من التوسع.",
+        "توحيد بيانات أكثر من 3,008 من المطوّرين العقاريين، ليتسع نطاق الخريطة الإلكترونية المحدّثة لحظيًا.",
         "linkedin",
         "github",
       ),
       fact(
         "Brokers prioritise leads by predicted lifecycle stage; inbound WhatsApp messages reach the right department automatically.",
-        "يرتّب الوسطاء العملاء حسب المرحلة المتوقعة، وتصل رسائل WhatsApp الواردة إلى القسم المختص تلقائيًا.",
+        "يرتّب الوسطاء العملاء المحتملين بحسب المرحلة المتوقعة، وتصل رسائل WhatsApp الواردة إلى القسم المختص تلقائيًا.",
         "cv",
         "linkedin",
       ),
     ],
     figures: [
-      { value: same("3,008+"), label: l("real-estate developers' data unified", "من المطوّرين العقاريين توحّدت بياناتهم"), source: ["linkedin", "github"] },
+      { value: same("3,008+"), label: l("real-estate developers' data unified", "من المطوّرين العقاريين وُحِّدت بياناتهم"), source: ["linkedin", "github"] },
       { value: same("7"), label: l("client lifecycle stages the lead models predict", "مراحل لدورة حياة العميل تتنبأ بها النماذج"), source: ["cv", "linkedin"] },
       // Tech, HR, Accounting, Operations, Marketing.
       { value: same("5"), label: l("departments that WhatsApp messages are routed to", "أقسام توجَّه إليها رسائل WhatsApp"), source: ["cv", "linkedin"] },
@@ -2532,7 +2544,7 @@ const caseStudies: readonly CaseStudy[] = [
     depth: "full",
     title: l(
       "logic-controls.com: a 4-language site, accessible and tested end to end",
-      "موقع logic-controls.com بأربع لغات، متوافق مع معايير الإتاحة ومختبَر من طرف إلى طرف",
+      "موقع logic-controls.com بأربع لغات، متوافق مع معايير إتاحة الوصول ومختبَر من طرف إلى طرف",
     ),
     shortTitle: l("logic-controls.com, 4 languages", "موقع logic-controls.com بأربع لغات"),
     context: l("Logic Controls, industrial automation, Egypt (freelance)", "Logic Controls، أتمتة صناعية، مصر (عمل حر)"),
@@ -2543,16 +2555,16 @@ const caseStudies: readonly CaseStudy[] = [
     updated: "2026-10-11",
     summary: l(
       "Freelance build of logic-controls.com in English, Arabic (RTL), Chinese and Turkish: Astro on Cloudflare Workers, WCAG 2.2 AA, Lighthouse 98–100 mobile.",
-      "بناء موقع logic-controls.com بأربع لغات (عمل حر) بـAstro على Cloudflare Workers، متوافقًا مع WCAG 2.2 AA، وبنتيجة Lighthouse بين 98 و100 على الجوال.",
+      "بناء موقع logic-controls.com بأربع لغات (عمل حر) بإطار Astro على Cloudflare Workers، متوافقًا مع WCAG 2.2 AA، وبنتيجة Lighthouse من 98 إلى 100 على الجوال.",
     ),
     problem: l(
       "An industrial-automation company in Egypt needed one site for two audiences: local factories, Arabic first, and foreign manufacturers setting up plants in Egypt, in English, Chinese and Turkish. It had to be fast, accessible and cheap to run: the domain is the only paid item.",
-      "احتاجت شركة أتمتة صناعية في مصر إلى موقع واحد لجمهورين: المصانع المحلية بالعربية أولًا، والمصنّعين الأجانب الذين يؤسّسون مصانع في مصر بالإنجليزية والصينية والتركية. وكان المطلوب أن يكون سريعًا ومتوافقًا مع معايير الإتاحة ومنخفض تكلفة التشغيل: اسم النطاق هو البند المدفوع الوحيد.",
+      "احتاجت شركة أتمتة صناعية في مصر إلى موقع واحد لجمهورين: المصانع المحلية بالعربية أولًا، والمصنّعين الأجانب الذين يؤسّسون مصانع في مصر بالإنجليزية والصينية والتركية. وكان المطلوب أن يكون سريعًا، متوافقًا مع معايير إتاحة الوصول، زهيد التكلفة في التشغيل، فاسم النطاق هو البند المدفوع الوحيد.",
     ),
     approach: [
       fact(
         "Static Astro + TypeScript + Tailwind CSS build in 4 locales, with Arabic in RTL, served from Cloudflare Workers on the free tier.",
-        "موقع ثابت مبني بـAstro وTypeScript وTailwind CSS بأربع لغات، والعربية من اليمين إلى اليسار، ومستضاف على Cloudflare Workers ضمن الخطة المجانية.",
+        "موقع ثابت مبني بـAstro وTypeScript وTailwind CSS بأربع لغات، تُعرض فيه العربية من اليمين إلى اليسار، ومستضاف على Cloudflare Workers ضمن الخطة المجانية.",
         "logic-controls",
         "github",
       ),
@@ -2564,13 +2576,13 @@ const caseStudies: readonly CaseStudy[] = [
       ),
       fact(
         "A contact form with spam protection (Turnstile, honeypot, validation) and email delivery from the Worker.",
-        "نموذج تواصل محمي من الرسائل المزعجة (Turnstile وحقل خفي وتحقق من المدخلات) يرسل البريد مباشرة من الـWorker.",
+        "نموذج تواصل محمي من الرسائل المزعجة (Turnstile وحقل خفي وتحقق من المدخلات)، يُرسَل بريده مباشرة من Worker.",
         "logic-controls",
         "github",
       ),
       fact(
         "CI with about 950 unit tests and 900 end-to-end tests across Chrome, Android and iPhone Safari, plus axe accessibility checks.",
-        "تكامل مستمر يضم نحو 950 اختبار وحدة و900 اختبار من طرف إلى طرف على Chrome وAndroid وSafari على iPhone، مع فحوص إتاحة عبر axe.",
+        "تكامل مستمر يضم نحو 950 اختبار وحدة و900 اختبار من طرف إلى طرف على Chrome وAndroid وSafari على iPhone، مع فحوص لإتاحة الوصول عبر axe.",
         "logic-controls",
         "github",
       ),
@@ -2578,7 +2590,7 @@ const caseStudies: readonly CaseStudy[] = [
     architecture: {
       caption: l(
         "Component view: a static Astro build served by Cloudflare Workers; a small Worker handles the language redirect and the contact form; automated tests run in CI and before every deploy.",
-        "عرض للمكوّنات: بناء Astro ثابت تقدّمه Cloudflare Workers، وWorker صغير يتولّى توجيه اللغة ونموذج التواصل، واختبارات آلية تعمل في التكامل المستمر وقبل كل نشر.",
+        "عرض للمكوّنات: موقع Astro ثابت تقدّمه Cloudflare Workers، وWorker صغير يتولّى توجيه الزائر إلى لغته ونموذج التواصل، واختبارات آلية تعمل في التكامل المستمر وقبل كل نشر.",
       ),
       nodes: [
         { id: "visitors", label: l("Visitors (EN, AR, ZH, TR)", "الزوار (EN, AR, ZH, TR)"), kind: "user" },
@@ -2601,10 +2613,10 @@ const caseStudies: readonly CaseStudy[] = [
       ],
     },
     outcome: [
-      fact("Live at logic-controls.com in 4 languages.", "إطلاق الموقع على logic-controls.com بأربع لغات.", "logic-controls", "github"),
+      fact("Live at logic-controls.com in 4 languages.", "الموقع منشور على logic-controls.com بأربع لغات.", "logic-controls", "github"),
       fact(
         "WCAG 2.2 AA with zero axe violations; Lighthouse 98–100 on mobile and 100 on desktop.",
-        "متوافق مع WCAG 2.2 AA دون أي مخالفة في axe، ونتيجة Lighthouse بين 98 و100 على الجوال و100 على سطح المكتب.",
+        "متوافق مع WCAG 2.2 AA دون أي مخالفة في axe، ونتيجة Lighthouse من 98 إلى 100 على الجوال و100 على سطح المكتب.",
         "logic-controls",
         "github",
       ),
@@ -2618,7 +2630,7 @@ const caseStudies: readonly CaseStudy[] = [
     figures: [
       { value: same("4"), label: l("languages", "لغات"), source: ["logic-controls", "github"] },
       { value: same("98–100"), label: l("Lighthouse, mobile", "Lighthouse على الجوال"), source: ["logic-controls", "github"] },
-      { value: l("950 + 900", "950 و900"), label: l("unit + end-to-end tests", "اختبار وحدة واختبار شامل"), source: ["logic-controls", "github"] },
+      { value: l("950 + 900", "950 و900"), label: l("unit + end-to-end tests", "اختبار وحدة واختبار من طرف إلى طرف"), source: ["logic-controls", "github"] },
     ],
     stack: ["Astro", "TypeScript", "Tailwind CSS", "Cloudflare Workers", "Turnstile", "Vitest", "Playwright", "axe-core"],
     links: [
@@ -2647,7 +2659,7 @@ const caseStudies: readonly CaseStudy[] = [
     ),
     problem: l(
       "AIP already had AI-powered semantic search. Version 2 had to return more relevant results, answer faster and handle image search better.",
-      "كان لدى AIP بحث دلالي مدعوم بالذكاء الاصطناعي، والمطلوب من الإصدار الثاني نتائج أدق، واستجابة أسرع، وبحث أفضل بالصور.",
+      "كان لدى AIP بحث دلالي مدعوم بالذكاء الاصطناعي، وكان المطلوب من الإصدار الثاني نتائج أدق، واستجابة أسرع، وبحثًا أفضل بالصور.",
     ),
     approach: [
       fact(
@@ -2660,7 +2672,7 @@ const caseStudies: readonly CaseStudy[] = [
     architecture: {
       caption: l(
         "Capability view: searches go through the version 2 semantic search, which also improved image search; implementation details are not public.",
-        "عرض للقدرات: عمليات البحث تمر عبر الإصدار الثاني من البحث الدلالي الذي حسّن البحث بالصور أيضًا، أما تفاصيل التنفيذ فغير منشورة.",
+        "عرض للقدرات: تمرّ عمليات البحث عبر الإصدار الثاني من البحث الدلالي، الذي حسّن البحث بالصور أيضًا، أما تفاصيل التنفيذ فغير منشورة.",
       ),
       nodes: [
         { id: "users", label: l("Searches", "عمليات البحث"), kind: "user" },
@@ -2680,7 +2692,7 @@ const caseStudies: readonly CaseStudy[] = [
     outcome: [
       fact(
         "Improved retrieval accuracy, search speed and image search over version 1 (no public figures).",
-        "تحسين دقة الاسترجاع وسرعة البحث والبحث بالصور مقارنة بالإصدار الأول (لا توجد أرقام منشورة).",
+        "تحسين دقة الاسترجاع وسرعة البحث والبحث بالصور مقارنةً بالإصدار الأول (دون أرقام منشورة).",
         "cv",
         "linkedin",
       ),
@@ -2706,38 +2718,38 @@ const caseStudies: readonly CaseStudy[] = [
     updated: "2026-10-11",
     summary: l(
       "Designed and ran all data pipelines in Prefect (ETL for Saudi government GIS data), queried Overture Maps with Athena and DuckDB, and deployed map serving.",
-      "تصميم جميع خطوط البيانات وإدارتها عبر Prefect (ETL لبيانات GIS حكومية سعودية)، والاستعلام في Overture Maps عبر Athena وDuckDB، ونشر حلول خدمة الخرائط.",
+      "تصميم جميع خطوط البيانات وإدارتها في Prefect (ETL لبيانات GIS حكومية سعودية)، والاستعلام عن بيانات Overture Maps عبر Athena وDuckDB، ونشر خدمة الخرائط.",
     ),
     problem: l(
       "Spatial analytics needed reliable ETL from Saudi governmental GIS sources, queries over Overture Maps' open map data, and map serving for rendering and visualisation.",
-      "احتاجت التحليلات المكانية إلى عمليات ETL موثوقة من مصادر GIS حكومية سعودية، واستعلامات على بيانات Overture Maps المفتوحة، وخدمة خرائط للعرض والتمثيل المرئي للبيانات.",
+      "احتاج التحليل المكاني إلى عمليات ETL موثوقة من مصادر GIS حكومية سعودية، واستعلامات على بيانات Overture Maps المفتوحة، وخدمة خرائط للعرض والتمثيل المرئي.",
     ),
     approach: [
       fact(
         "Orchestrated the data pipelines in Prefect, including ETL for GIS data from Saudi government sources.",
-        "تنسيق خطوط البيانات عبر Prefect، ومنها عمليات ETL لبيانات GIS من مصادر حكومية سعودية.",
+        "تنسيق خطوط البيانات في Prefect، ومنها عمليات ETL لبيانات GIS من مصادر حكومية سعودية.",
         "cv",
       ),
       fact(
         "Queried Overture Maps with AWS Athena and DuckDB for spatial analytics.",
-        "الاستعلام في Overture Maps عبر AWS Athena وDuckDB للتحليل المكاني.",
+        "الاستعلام عن بيانات Overture Maps عبر AWS Athena وDuckDB لأغراض التحليل المكاني.",
         "cv",
       ),
       fact(
         "Served and visualised maps with MapProxy, MBTileServer, MapLibre and Kepler.gl.",
-        "خدمة الخرائط وعرضها مرئيًا عبر MapProxy وMBTileServer وMapLibre وKepler.gl.",
+        "خدمة الخرائط وعرضها مرئيًا باستخدام MapProxy وMBTileServer وMapLibre وKepler.gl.",
         "cv",
       ),
     ],
     architecture: {
       caption: l(
         "Component view, three workstreams: Prefect ETL from government GIS sources; Athena and DuckDB queries over Overture Maps; tile servers behind web maps.",
-        "عرض للمكوّنات في ثلاثة محاور عمل: ETL عبر Prefect من مصادر GIS حكومية، واستعلامات Athena وDuckDB في Overture Maps، وخوادم بلاطات الخرائط (tile servers) التي تغذّي خرائط الويب.",
+        "عرض للمكوّنات في ثلاثة مسارات عمل: عمليات ETL في Prefect من مصادر GIS حكومية، واستعلامات Athena وDuckDB على Overture Maps، وخوادم مربّعات الخرائط (tile servers) التي تغذّي خرائط الويب.",
       ),
       nodes: [
         { id: "gov", label: l("Saudi government GIS sources", "مصادر GIS حكومية سعودية"), kind: "data" },
-        { id: "prefect", label: l("Prefect ETL flows", "خطوط ETL في Prefect"), kind: "pipeline" },
-        { id: "gis-data", label: l("Processed GIS data", "بيانات GIS معالجة"), kind: "data" },
+        { id: "prefect", label: l("Prefect ETL flows", "تدفقات ETL في Prefect"), kind: "pipeline" },
+        { id: "gis-data", label: l("Processed GIS data", "بيانات GIS مُعالَجة"), kind: "data" },
         { id: "overture", label: same("Overture Maps"), kind: "data" },
         { id: "query", label: same("AWS Athena + DuckDB"), kind: "retrieval" },
         { id: "analytics", label: l("Spatial analytics", "التحليل المكاني"), kind: "user" },
@@ -2755,7 +2767,7 @@ const caseStudies: readonly CaseStudy[] = [
     outcome: [
       fact(
         "The company's data pipelines designed and run in Prefect, plus a map-serving stack for rendering and visualisation.",
-        "خطوط بيانات الشركة مصمَّمة ومُدارة في Prefect، مع منظومة لخدمة الخرائط وعرضها.",
+        "خطوط بيانات الشركة كلها مصمَّمة ومُدارة في Prefect، إلى جانب منظومة لخدمة الخرائط وعرضها.",
         "cv",
       ),
     ],
@@ -2775,17 +2787,17 @@ const projects: readonly Project[] = [
     year: 2026,
     description: l(
       "A replayable LangGraph pipeline that grades LLM outputs in separate quality, safety and retry stages, then computes the pass / review / fail verdict in plain Python, not with the model. Its tests check that the validator catches tampering, such as a flipped verdict or a paraphrased quote.",
-      "خط معالجة على LangGraph قابل لإعادة التشغيل يقيّم مخرجات النماذج اللغوية على مراحل منفصلة للجودة والسلامة وإعادة المحاولة، ثم يحسب الحكم النهائي (نجاح / مراجعة / رسوب) بشيفرة Python عادية، لا بالنموذج. وتتحقق اختباراته من أن المدقّق يكشف التلاعب، مثل حكم مقلوب أو اقتباس مُعاد الصياغة.",
+      "خط معالجة على LangGraph قابل لإعادة التشغيل، يقيّم مخرجات النماذج اللغوية في مراحل منفصلة للجودة والسلامة وإعادة المحاولة، ثم يحسب الحكم النهائي (نجاح / مراجعة / رسوب) بشيفرة Python عادية لا بالنموذج. وتتحقق اختباراته من أن المدقّق يكشف التلاعب، كحكم مقلوب أو اقتباس أُعيدت صياغته.",
     ),
     highlights: [
       fact(
         "Every LLM call is logged with its stage, model and a SHA-256 hash of the prompt; a standalone validator re-checks all artifacts without calling a model.",
-        "يُسجَّل كل استدعاء للنموذج مع مرحلته واسم النموذج وبصمة SHA-256 للموجّه، ويعيد مدقّق مستقل فحص جميع المخرجات دون استدعاء أي نموذج.",
+        "يُسجَّل كل استدعاء للنموذج مع مرحلته واسم النموذج وبصمة SHA-256 للموجّه، ويعيد مدقّق مستقل فحص المخرجات كلها دون استدعاء أي نموذج.",
         "github",
       ),
       fact(
         "Judge evidence must be an exact quote from the output: unverifiable quality evidence is nulled and unverifiable safety findings are dropped.",
-        "يجب أن يكون دليل المقيّم اقتباسًا حرفيًا من المخرجات: يُلغى دليل الجودة الذي لا يمكن التحقق منه، وتُستبعد ملاحظات السلامة غير الموثّقة.",
+        "يجب أن يكون دليل المقيّم اقتباسًا حرفيًا من المخرجات: فدليل الجودة الذي يتعذّر التحقق منه يُلغى، وملاحظات السلامة التي يتعذّر التحقق منها تُستبعد.",
         "github",
       ),
       fact(
@@ -2795,13 +2807,13 @@ const projects: readonly Project[] = [
       ),
       fact(
         "Offline tests with a stubbed client, run by GitHub Actions on Python 3.11 and 3.13.",
-        "اختبارات تعمل دون اتصال بالشبكة عبر عميل بديل (stub)، وتشغّلها GitHub Actions على Python 3.11 و3.13.",
+        "اختبارات تعمل دون اتصال بالشبكة عبر عميل بديل (stub)، تشغّلها GitHub Actions على Python 3.11 و3.13.",
         "github",
       ),
       // Round 7 (R7-11): from the README's Tests section.
       fact(
         "Its tests check that the validator catches five kinds of tampering: a flipped verdict, a score leaked into retry output, a paraphrased quote, a missing log record and parsing after the first model call.",
-        "تتحقق اختباراته من أن المدقّق يكشف خمسة أنواع من التلاعب: حكمًا مقلوبًا، ودرجةً مسرّبة إلى مخرجات إعادة المحاولة، واقتباسًا مُعاد الصياغة، وسجلًا ناقصًا، وتحليلًا يجري بعد أول استدعاء للنموذج.",
+        "تتحقق اختباراته من أن المدقّق يكشف خمسة أنواع من التلاعب: حكمًا مقلوبًا، ودرجةً مسرّبة إلى مخرجات إعادة المحاولة، واقتباسًا أُعيدت صياغته، وسجلًا ناقصًا، وتحليلًا يجري بعد أول استدعاء للنموذج.",
         "github",
       ),
     ],
@@ -2818,12 +2830,12 @@ const projects: readonly Project[] = [
     year: 2026,
     description: l(
       "Measures how consistently an LLM answers when the same question is paraphrased, misspelled, padded with noise, reordered or given distractors. Result (gpt-4o-mini): regex correctness 1.00, yet mean consistency 0.49, mostly the same answer worded differently.",
-      "يقيس مدى ثبات إجابة النموذج اللغوي حين يُطرح السؤال نفسه بصياغة أخرى، أو بأخطاء إملائية، أو مع ضوضاء، أو بترتيب مختلف، أو مع معلومات تشتّت الانتباه. النتيجة (gpt-4o-mini): صحة 1.00 وفق التعبيرات النمطية، لكن متوسط الثبات 0.49، ومعظم ذلك من صياغة الإجابة نفسها بكلمات مختلفة.",
+      "يقيس مدى ثبات إجابة النموذج اللغوي حين يُطرح السؤال نفسه بصياغة أخرى، أو بأخطاء إملائية، أو مع ضوضاء، أو بترتيب مختلف، أو مع معلومات مشتِّتة. النتيجة (gpt-4o-mini): صحة 1.00 وفق التعبيرات النمطية، لكن متوسط الثبات 0.49، ومردّ معظم ذلك إلى صياغة الإجابة نفسها بكلمات مختلفة.",
     ),
     highlights: [
       fact(
         "Invariance tests (the answer must not change) and perturbation tests (measure how often it does).",
-        "اختبارات ثبات (يجب ألا تتغير الإجابة) واختبارات اضطراب (تقيس كم مرة تتغير).",
+        "اختبارات ثبات (يجب ألّا تتغير الإجابة) واختبارات اضطراب (تقيس عدد مرات تغيّرها).",
         "github",
       ),
       fact(
@@ -2850,7 +2862,7 @@ const projects: readonly Project[] = [
     year: 2026,
     description: l(
       "A small retrieval-only FastAPI service: OpenAI embeddings, cosine and dot-product indexes side by side, a guardrail in front, and latency and hit-rate metrics.",
-      "خدمة FastAPI صغيرة للاسترجاع فقط: تضمينات OpenAI، وفهرسا تشابه جيب التمام والضرب النقطي جنبًا إلى جنب، وحاجز حماية في المقدمة، ومقاييس لزمن الاستجابة ونسبة الإصابة.",
+      "خدمة FastAPI صغيرة للاسترجاع فقط: تضمينات OpenAI، وفهرسان جنبًا إلى جنب (تشابه جيب التمام والضرب النقطي)، وحاجز حماية يسبق كل شيء، ومقاييس لزمن الاستجابة ونسبة الإصابة.",
     ),
     highlights: [
       fact(
@@ -2860,7 +2872,7 @@ const projects: readonly Project[] = [
       ),
       fact(
         "A denylist guardrail blocks prompt injection, SQL/XSS probes and oversized queries before any API call.",
-        "حاجز حماية بقائمة حظر يوقف حقن الموجّهات ومحاولات SQL/XSS والاستعلامات المفرطة الطول قبل أي استدعاء للواجهة.",
+        "حاجز حماية بقائمة حظر يوقف حقن الموجّهات ومحاولات استكشاف ثغرات SQL وXSS والاستعلامات المفرطة في الطول قبل أي استدعاء للواجهة البرمجية.",
         "github",
       ),
       fact(
@@ -2882,7 +2894,7 @@ const projects: readonly Project[] = [
     year: 2022,
     description: l(
       "Arabic sentiment classification on about 455k tweets and reviews, comparing recurrent models (BiGRU, BiLSTM), CNNs on AraVec embeddings and classical ML. Result: a BiGRU (2 layers) at 0.816 accuracy, against a 0.595 baseline.",
-      "تصنيف المشاعر في نحو 455 ألف تغريدة ومراجعة عربية، مع مقارنة نماذج تكرارية (BiGRU وBiLSTM)، وشبكات CNN على تضمينات AraVec، ونماذج تعلّم آلة تقليدية. النتيجة: BiGRU من طبقتين بدقة 0.816، مقابل 0.595 لخط الأساس.",
+      "تصنيف المشاعر في نحو 455 ألف تغريدة ومراجعة عربية، بمقارنة نماذج متكررة (BiGRU وBiLSTM)، وشبكات CNN على تضمينات AraVec، ونماذج تعلّم آلة تقليدية. النتيجة: BiGRU من طبقتين بدقة 0.816، مقابل 0.595 لخط الأساس.",
     ),
     highlights: [
       fact(
@@ -2908,18 +2920,18 @@ const projects: readonly Project[] = [
     year: 2022,
     description: l(
       "A Dash app that summarises a news article or URL with DistilBART, T5 and TextRank side by side, showing time and length for each.",
-      "تطبيق Dash يلخّص مقالًا إخباريًا أو رابطًا بثلاث طرق جنبًا إلى جنب (DistilBART وT5 وTextRank)، مع زمن كل ملخص وطوله.",
+      "تطبيق Dash يلخّص مقالًا إخباريًا، نصًا أو رابطًا، بثلاث طرق جنبًا إلى جنب (DistilBART وT5 وTextRank)، ويعرض زمن كل ملخّص وطوله.",
     ),
     highlights: [
       fact(
         "Sentence-aligned chunking to get past each model's input limit.",
-        "تقسيم النص إلى أجزاء على حدود الجمل لتجاوز حد المدخلات في كل نموذج.",
+        "تقسيم النص إلى أجزاء عند حدود الجمل لتجاوز الحد الأقصى لمدخلات كل نموذج.",
         "github",
       ),
     ],
     stack: ["Python", "Hugging Face Transformers", "Dash", "BeautifulSoup"],
     repo: "https://github.com/mhatem5351/Text-Summarization-NLP",
-    credit: l("Team project, ITI AI diploma (2022)", "مشروع جماعي ضمن دبلوم الذكاء الاصطناعي في ITI عام 2022"),
+    credit: l("Team project, ITI AI diploma (2022)", "مشروع جماعي في دبلوم الذكاء الاصطناعي بمعهد ITI (2022)"),
     source: ["github"],
   },
   {
@@ -2935,7 +2947,7 @@ const projects: readonly Project[] = [
     highlights: [
       fact(
         "WCAG 2.2 AA (axe-clean); Lighthouse 98–100 on mobile, 100 on desktop.",
-        "متوافق مع WCAG 2.2 AA دون مخالفات في axe، وLighthouse بين 98 و100 على الجوال و100 على سطح المكتب.",
+        "متوافق مع WCAG 2.2 AA دون مخالفات في axe، ونتيجة Lighthouse من 98 إلى 100 على الجوال و100 على سطح المكتب.",
         "logic-controls",
         "github",
       ),
@@ -2959,7 +2971,7 @@ const projects: readonly Project[] = [
     year: 2021,
     description: l(
       "Stroke prediction with a Spark MLlib logistic-regression pipeline, using class weights for a dataset where about 5% of patients are positive (ITI exam).",
-      "التنبؤ بالسكتة الدماغية عبر خط انحدار لوجستي في Spark MLlib، مع أوزان للفئات لأن نحو 5% فقط من المرضى إيجابيون (اختبار في ITI).",
+      "التنبؤ بالسكتة الدماغية بخط معالجة للانحدار اللوجستي في Spark MLlib، مع أوزان للفئات لأن الحالات الإيجابية لا تتجاوز نحو 5% من المرضى (امتحان في ITI).",
     ),
     highlights: [],
     stack: ["PySpark", "Spark MLlib"],
@@ -2974,7 +2986,7 @@ const projects: readonly Project[] = [
     year: 2021,
     description: l(
       "A COVID-19 dashboard in Plotly Dash on Kaggle's daily-case data, with country and date filters.",
-      "لوحة معلومات عن COVID-19 بـPlotly Dash على بيانات الحالات اليومية من Kaggle، مع عوامل تصفية للدول والتواريخ.",
+      "لوحة معلومات عن COVID-19 مبنية بـPlotly Dash على بيانات الإصابات اليومية من Kaggle، مع عوامل تصفية للدول والتواريخ.",
     ),
     highlights: [],
     stack: ["Python", "Plotly Dash", "pandas"],
@@ -2990,7 +3002,7 @@ const projects: readonly Project[] = [
     year: 2021,
     description: l(
       "Telecom churn classification: 6 scikit-learn and XGBoost models compared with cross-validation; best test accuracy 0.818 (ITI coursework).",
-      "تصنيف تسرّب عملاء الاتصالات: مقارنة 6 نماذج من scikit-learn وXGBoost بالتحقق المتقاطع، وأفضل دقة اختبار 0.818 (تكليف في ITI).",
+      "تصنيف تسرّب عملاء الاتصالات: مقارنة 6 نماذج من scikit-learn وXGBoost بالتحقق المتقاطع، وأفضل دقة على بيانات الاختبار 0.818 (مشروع دراسي في ITI).",
     ),
     highlights: [],
     stack: ["Python", "scikit-learn", "XGBoost"],
@@ -3005,7 +3017,7 @@ const projects: readonly Project[] = [
     year: 2021,
     description: l(
       "Hyderabad house-price regression with geocoded locations and a KNN / random forest / gradient boosting voting ensemble; test RMSLE 0.227 (ITI coursework).",
-      "انحدار لأسعار المنازل في حيدر آباد مع تحويل المواقع إلى إحداثيات، ومجموعة تصويت من KNN والغابة العشوائية والتعزيز التدرّجي؛ RMSLE على الاختبار 0.227 (تكليف في ITI).",
+      "نموذج انحدار لأسعار المنازل في حيدر آباد، مع تحويل المواقع إلى إحداثيات، ونموذج تجميعي بالتصويت يضم KNN والغابة العشوائية والتعزيز التدرّجي؛ وبلغ RMSLE على بيانات الاختبار 0.227 (مشروع دراسي في ITI).",
     ),
     highlights: [],
     stack: ["Python", "scikit-learn", "geopy"],
@@ -3020,7 +3032,7 @@ const skills: readonly SkillGroup[] = [
     title: l("LLMs & agents", "النماذج اللغوية والوكلاء"),
     summary: l(
       "Multi-agent orchestration in production, from 6 to 14 agents.",
-      "أنظمة متعددة الوكلاء في بيئة الإنتاج، من 6 وكلاء إلى 14 وكيلًا.",
+      "تنسيق أنظمة متعددة الوكلاء في بيئة الإنتاج، من 6 وكلاء إلى 14 وكيلًا.",
     ),
     skills: [
       { name: same("LangGraph"), evidence: ["case:arabsstock-assistant", "case:wakeb-bilingual-chatbot", "role:globant", "project:staged-llm-evaluator", "case:almajed-sales-assistant"], source: ["cv", "linkedin", "github", "mohamed"] },
@@ -3047,11 +3059,11 @@ const skills: readonly SkillGroup[] = [
     title: l("Retrieval & search", "الاسترجاع والبحث"),
     summary: l(
       "RAG and semantic search, from hybrid BM25 + dense retrieval to visual search over millions of assets.",
-      "RAG والبحث الدلالي، من الاسترجاع الهجين (BM25 مع المتجهات) إلى البحث البصري في ملايين ملفات الوسائط.",
+      "التوليد المعزّز بالاسترجاع (RAG) والبحث الدلالي، من الاسترجاع الهجين (BM25 مع المتجهات الكثيفة) إلى البحث البصري في ملايين ملفات الوسائط.",
     ),
     skills: [
-      { name: l("RAG pipelines", "خطوط RAG"), evidence: ["case:wakeb-bilingual-chatbot", "project:rag-answering-service", "role:globant"], source: ["cv", "linkedin", "github"] },
-      { name: l("Hybrid search (vector + BM25)", "البحث الهجين (متجهي + BM25)"), evidence: ["case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
+      { name: l("RAG pipelines", "أنظمة RAG"), evidence: ["case:wakeb-bilingual-chatbot", "project:rag-answering-service", "role:globant"], source: ["cv", "linkedin", "github"] },
+      { name: l("Hybrid search (vector + BM25)", "البحث الهجين (المتجهات + BM25)"), evidence: ["case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
       { name: l("LLM reranking", "إعادة الترتيب بنموذج لغوي"), evidence: ["case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
       { name: l("Semantic & visual search", "البحث الدلالي والبصري"), evidence: ["case:arabsstock-assistant", "case:aip-semantic-search"], source: ["cv", "linkedin", "github"] },
       { name: same("Pinecone"), evidence: ["case:arabsstock-assistant"], source: ["cv", "linkedin", "github"] },
@@ -3065,7 +3077,7 @@ const skills: readonly SkillGroup[] = [
     title: l("LLM serving & MLOps", "خدمة النماذج وMLOps"),
     summary: l(
       "Self-hosted models on GPUs, kept healthy in production.",
-      "نماذج ذاتية الاستضافة على وحدات GPU، مع الحفاظ على استقرارها في بيئة الإنتاج.",
+      "نماذج مستضافة ذاتيًا على وحدات GPU، تعمل باستقرار في بيئة الإنتاج.",
     ),
     skills: [
       { name: same("vLLM"), evidence: ["case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
@@ -3078,7 +3090,7 @@ const skills: readonly SkillGroup[] = [
       { name: same("Nginx"), evidence: ["case:wakeb-bilingual-chatbot"], source: ["cv", "linkedin", "github"] },
       { name: same("Prefect"), evidence: ["case:tabaqat-gis"], source: ["cv", "linkedin"] },
       { name: same("Celery"), evidence: [], source: ["cv", "linkedin"] },
-      { name: l("Linux & shell scripting", "Linux وسكربتات shell"), evidence: ["role:wakeb"], source: ["cv", "linkedin"] },
+      { name: l("Linux & shell scripting", "Linux وبرمجة نصوص shell"), evidence: ["role:wakeb"], source: ["cv", "linkedin"] },
     ],
   },
   {
@@ -3102,7 +3114,7 @@ const skills: readonly SkillGroup[] = [
     title: l("Backend & data", "الواجهات الخلفية والبيانات"),
     summary: l(
       "Python services and the databases behind them.",
-      "خدمات Python وقواعد البيانات التي تقف خلفها.",
+      "خدمات Python وقواعد البيانات التي تعتمد عليها.",
     ),
     skills: [
       { name: same("Python"), endorsements: 10, evidence: ["role:wakeb", "role:arabsstock", "role:empoweromics"], source: ["cv", "linkedin", "github"] },
@@ -3123,7 +3135,7 @@ const skills: readonly SkillGroup[] = [
     title: l("Machine learning & data science", "تعلّم الآلة وعلم البيانات"),
     summary: l(
       "The foundation: models, features and the analysis around them.",
-      "الأساس: النماذج والخصائص والتحليل المحيط بها.",
+      "الأساس: النماذج والسمات والتحليل الذي يحيط بها.",
     ),
     skills: [
       { name: l("Artificial intelligence", "الذكاء الاصطناعي"), endorsements: 19, evidence: ["role:arabsstock", "role:wakeb"], source: ["linkedin"] },
@@ -3161,7 +3173,7 @@ const skills: readonly SkillGroup[] = [
     title: l("Frontend", "الواجهات الأمامية"),
     summary: l(
       "Accessible, multilingual sites with Arabic RTL, tested end to end.",
-      "مواقع متعددة اللغات تراعي معايير الإتاحة، وتدعم العربية من اليمين إلى اليسار، ومختبرة من طرف إلى طرف.",
+      "مواقع متعددة اللغات تراعي معايير إتاحة الوصول، وتدعم العربية من اليمين إلى اليسار، ومختبَرة من طرف إلى طرف.",
     ),
     skills: [
       { name: same("TypeScript"), evidence: ["case:logic-controls-website"], source: ["logic-controls", "github"] },
@@ -3178,7 +3190,7 @@ const skills: readonly SkillGroup[] = [
     summary: l(
       // Round 7 (R7-12): the team of 7 and what the teaching was (the About text has the details).
       "Leading a team of 7 at Globant; earlier, lecturing and mentoring master's students and teaching AI to engineers.",
-      "قيادة فريق من 7 أعضاء في Globant، وقبلها إلقاء المحاضرات لطلاب الماجستير وتوجيههم، وتدريس الذكاء الاصطناعي لمهندسين.",
+      "قيادة فريق من 7 أعضاء في Globant، وقبل ذلك إلقاء محاضرات على طلاب الماجستير وتوجيههم، وتدريس الذكاء الاصطناعي لمهندسين.",
     ),
     skills: [
       { name: l("Team leadership", "قيادة الفرق"), evidence: ["role:globant"], source: ["github", "linkedin"] },
@@ -3201,7 +3213,7 @@ const education: readonly Education[] = [
     logo: { file: "cairo-university", monogram: "CU" },
     period: { start: "2023-09", end: "2027" },
     status: "in-progress",
-    notes: l("In progress, expected 2027", "قيد الدراسة، والتخرج المتوقع عام 2027"),
+    notes: l("In progress, expected 2027", "قيد الدراسة، ويُتوقع التخرج عام 2027"),
     courses: [
       l("Advanced Machine Learning", "تعلّم الآلة المتقدم"),
       l("Advanced Bayesian Inference", "الاستدلال البايزي المتقدم"),
@@ -3228,7 +3240,7 @@ const education: readonly Education[] = [
   },
   {
     id: "beng-structural",
-    degree: l("B.Eng. in Structural Engineering", "بكالوريوس الهندسة، تخصص الهندسة الإنشائية"),
+    degree: l("B.Eng. in Structural Engineering", "بكالوريوس الهندسة الإنشائية"),
     institution: l("Tanta University, Faculty of Engineering", "جامعة طنطا، كلية الهندسة"),
     logo: { file: "tanta-university", monogram: "TU" },
     period: { start: "2015-09", end: "2020-08" },
@@ -3315,7 +3327,7 @@ const cvData: Cv = {
   // and one «يقود» in Arabic. The approved STA clause follows "the AI engineering" verbatim.
   summary: l(
     "AI Team Lead at Globant with 7 years in data and AI. On the Saudi Tourism Authority (STA) project, leads a team of 7 and the AI engineering: an agentic LLM runtime (LangGraph) with retrieval, human-approval gates and evaluation, serving Noura, the public visitor assistant, and an internal staff assistant, in Arabic and English. Before Globant, designed, shipped and ran multi-agent LLM systems in production: a 14-agent assistant for ArabsStock and a 6-agent Arabic/English chatbot on self-hosted Qwen (vLLM on NVIDIA A100) at Wakeb Data.",
-    "قائد فريق ذكاء اصطناعي في Globant، بخبرة 7 سنوات في البيانات والذكاء الاصطناعي. وفي مشروع الهيئة السعودية للسياحة (STA) يقود فريقًا من 7 أعضاء وهندسة الذكاء الاصطناعي: بيئة تشغيل على LangGraph لوكيل ذكي قائم على النماذج اللغوية، تجمع الاسترجاع ونقاط الموافقة البشرية والتقييم، وتخدم «نورة»، المساعد الافتراضي للزوار، ومساعدًا داخليًا للموظفين، بالعربية والإنجليزية. وقبل Globant صمّم أنظمة LLM متعددة الوكلاء وأطلقها وشغّلها في بيئة الإنتاج: مساعدًا من 14 وكيلًا لمنصة ArabsStock، وروبوت محادثة ثنائي اللغة من 6 وكلاء على Qwen مستضاف ذاتيًا (vLLM وNVIDIA A100) في Wakeb Data.",
+    "قائد فريق ذكاء اصطناعي في Globant، بخبرة 7 سنوات في البيانات والذكاء الاصطناعي. وفي مشروع الهيئة السعودية للسياحة (STA) يقود فريقًا من 7 أعضاء وهندسة الذكاء الاصطناعي: بيئة تشغيل على LangGraph لوكيل ذكي قائم على النماذج اللغوية، تجمع الاسترجاع ونقاط الموافقة البشرية والتقييم، وتخدم «نورة»، المساعد الافتراضي للزوار، ومساعدًا داخليًا للموظفين، بالعربية والإنجليزية. وقبل Globant صمّم أنظمة متعددة الوكلاء قائمة على النماذج اللغوية، وأطلقها وشغّلها في بيئة الإنتاج: مساعدًا من 14 وكيلًا لمنصة ArabsStock، وروبوت محادثة ثنائي اللغة من 6 وكلاء في Wakeb Data على Qwen مستضاف ذاتيًا (vLLM وNVIDIA A100).",
   ),
   summaryStrong: [
     l("7 years in data and AI", "بخبرة 7 سنوات في البيانات والذكاء الاصطناعي"),
@@ -3350,9 +3362,9 @@ const cvData: Cv = {
       label: l("Retrieval", "الاسترجاع"),
       items: [
         same("RAG"),
-        l("Hybrid search (vector + BM25)", "البحث الهجين (متجهي + BM25)"),
+        l("Hybrid search (vector + BM25)", "البحث الهجين (المتجهات + BM25)"),
         l("LLM reranking", "إعادة الترتيب بنموذج لغوي"),
-        l("Vector databases (Pinecone)", "قواعد البيانات المتجهية (Pinecone)"),
+        l("Vector databases (Pinecone)", "قواعد بيانات المتجهات (Pinecone)"),
       ],
       alsoUsed: [same("ChromaDB"), same("Qdrant"), same("pgvector")],
       source: ["cv", "linkedin", "github"],
@@ -3403,7 +3415,7 @@ const cvData: Cv = {
       id: "prompt-reliability-harness",
       line: l(
         "Measures how consistently an LLM answers paraphrased, noisy or reordered questions. Result (gpt-4o-mini): regex correctness 1.00, yet mean consistency 0.49.",
-        "يقيس ثبات إجابات النموذج حين يُعاد السؤال بصياغة أخرى أو بضوضاء أو بترتيب مختلف. النتيجة (gpt-4o-mini): صحة 1.00 وفق التعبيرات النمطية، لكن متوسط الثبات 0.49.",
+        "يقيس ثبات إجابات النموذج حين يُطرح السؤال بصياغة أخرى أو مع ضوضاء أو بترتيب مختلف. النتيجة (gpt-4o-mini): صحة 1.00 وفق التعبيرات النمطية، لكن متوسط الثبات 0.49.",
       ),
       source: ["github"],
     },
@@ -3411,7 +3423,7 @@ const cvData: Cv = {
       id: "staged-llm-evaluator",
       line: l(
         "Replayable LangGraph grading in quality, safety and retry stages; the verdict is computed in plain Python, and every LLM call is logged with a SHA-256 prompt hash.",
-        "تقييم على LangGraph قابل لإعادة التشغيل بمراحل للجودة والسلامة وإعادة المحاولة، حكمه النهائي بشيفرة Python عادية، وكل استدعاء للنموذج مسجَّل مع بصمة SHA-256 للموجّه.",
+        "تقييم على LangGraph قابل لإعادة التشغيل بمراحل للجودة والسلامة وإعادة المحاولة، يُحسب حكمه النهائي بشيفرة Python عادية، ويُسجَّل كل استدعاء للنموذج مع بصمة SHA-256 للموجّه.",
       ),
       source: ["github"],
     },
@@ -3426,13 +3438,13 @@ const cvData: Cv = {
         factB(
           ["a LangGraph router and 9 specialist agents", "موجّه LangGraph و9 وكلاء متخصصين"],
           "Arabic-first sales assistant, built end to end: a LangGraph router and 9 specialist agents answer staff in Arabic and English via guarded text-to-SQL over data synced from Microsoft Fabric every 15 minutes.",
-          "مساعد مبيعات بالعربية أولًا من البداية إلى النهاية: موجّه LangGraph و9 وكلاء متخصصين يجيبون الموظفين بالعربية والإنجليزية عبر SQL محميّ على بيانات من Microsoft Fabric تُحدَّث كل 15 دقيقة.",
+          "بناء مساعد مبيعات يضع العربية أولًا، من التصميم إلى التسليم: موجّه LangGraph و9 وكلاء متخصصين يجيبون الموظفين بالعربية والإنجليزية عبر SQL محميّ على بيانات من Microsoft Fabric تُحدَّث كل 15 دقيقة.",
           "mohamed",
         ),
         factB(
           ["155/155", "155/155"],
           "Releases gated by 399 bilingual evals; the final one passed its 155-case gate 155/155. On Azure with Entra SSO and Langfuse from June 2026; handed over in August 2026.",
-          "إصدارات تحرسها 399 حالة تقييم ثنائية اللغة، واجتاز آخرها بوابة الـ155 حالة بنتيجة 155/155. على Azure مع Entra SSO وLangfuse منذ يونيو 2026، وسُلِّم في أغسطس 2026.",
+          "إصدارات تحكمها 399 حالة تقييم ثنائية اللغة، واجتاز آخرها بوابة الإصدار (155 حالة) بنتيجة 155/155. دخل بيئة الإنتاج على Azure مع Entra SSO وLangfuse في يونيو 2026، وسُلِّم في أغسطس 2026.",
           "mohamed",
         ),
       ],
