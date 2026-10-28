@@ -102,8 +102,8 @@ const TILE_SPECS = [
   { key: "empoweromics", src: "empoweromics-symbol.png", bg: "#FFFFFF", fit: 0.6 },
   { key: "tabaqat", src: "tabaqat-symbol.png", bg: "#FFFFFF", fit: 0.72 },
   { key: "logic-controls", src: "logic-controls-mark.svg", bg: "#FFFFFF", fit: 0.66 },
-  // Al Majed Oud: the typographic «م» monogram (almajed-mark.mjs), gold on the product's warm ink, like its own crest.
-  { key: "almajed", src: "almajed-mark.svg", bg: "#1A1410", fit: 0.6 },
+  // Al Majed Oud: the crown-and-M symbol of the official logo (its favicon is this symbol alone).
+  { key: "almajed", src: "almajed-symbol.png", bg: "#FFFFFF", fit: 0.66 },
 ];
 async function tile(S, { src, bg, fit }) {
   const F = S * 4;

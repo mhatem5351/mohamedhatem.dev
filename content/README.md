@@ -153,7 +153,7 @@ Contact details and the binding decisions (title, "7 years", no Logic Controls f
   2–4 sourced facts for full case studies (the strip is omitted below two); a figure may carry a small `unit`
   ("21" + "months"). Show `m.work.architectureNote` near diagrams. `client` names the client in JSON-LD (only where it
   approved being named); `client.tile` gives contract or freelance work without a role its client's logo tile in the
-  hero eyebrow and on the work card (Al Majed Oud's typographic «م» tile). `screens` lists product screens for the page's gallery (only with the client's approval):
+  hero eyebrow and on the work card (Al Majed Oud's official symbol). `screens` lists product screens for the page's gallery (only with the client's approval):
   cleaned captures in `site/src/assets/screens/<slug>/`, each with its `density` (2 for the desktop captures; 1 for the
   phone screen and the dialog, which are never shown wider than captured), `frame`, `product`, `alt` and `caption`.
   Captions say what a screen shows, never how it was captured ("Screens from the apps").
