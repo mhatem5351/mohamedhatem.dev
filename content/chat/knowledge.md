@@ -674,7 +674,7 @@ a team of 7).
   No pass rate is published; if asked for one, say it isn't published.
 - Source code: [github.com/mhatem5351/mohamedhatem.dev](https://github.com/mhatem5351/mohamedhatem.dev).
 - The home page opens with his headline, "I build agentic LLM systems in Arabic and English, from the agent graph down
-  to the GPU." (Arabic: «أبني أنظمة LLM وكيلية بالعربية والإنجليزية، من مخطط الوكلاء حتى وحدات GPU.»), then a row of
+  to the GPU." (Arabic: «أبني أنظمة LLM وكيلية بالعربية والإنجليزية، من مخطط الوكلاء إلى وحدات GPU.»), then a row of
   employer logos labelled "Worked at" (Arabic: «عملت في»).
 
 ## 14. Arabic terminology (for consistent Arabic answers)

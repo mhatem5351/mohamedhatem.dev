@@ -1889,7 +1889,7 @@ const caseStudies: readonly CaseStudy[] = [
     depth: "full",
     title: l(
       "Al Majed Oud: an Arabic-first AI sales assistant grounded in real data",
-      "الماجد للعود: مساعد ذكي للمبيعات يجيب بالعربية من بيانات الشركة نفسها",
+      "الماجد للعود: مساعد مبيعات ذكي بالعربية أولًا، يستند إلى بيانات حقيقية",
     ),
     shortTitle: l("Al Majed Oud: AI sales assistant", "الماجد للعود: مساعد المبيعات الذكي"),
     context: l("Al Majed Oud, a Saudi oud and fragrance house (contract)", "الماجد للعود، دار سعودية للعود والعطور (عمل بعقد)"),
@@ -3443,7 +3443,7 @@ const cvData: Cv = {
         ),
         factB(
           ["155/155", "155/155"],
-          "Releases gated by 399 bilingual evals; the final one passed its 155-case gate 155/155. On Azure with Entra SSO and Langfuse from June 2026; handed over in August 2026.",
+          "Releases gated by 399 bilingual evals; the final one passed its 155-case gate 155/155. In production on Azure (Entra SSO, Langfuse) in June 2026; handed over in August 2026.",
           "إصدارات تحكمها 399 حالة تقييم ثنائية اللغة، واجتاز آخرها بوابة الإصدار (155 حالة) بنتيجة 155/155. دخل بيئة الإنتاج على Azure مع Entra SSO وLangfuse في يونيو 2026، وسُلِّم في أغسطس 2026.",
           "mohamed",
         ),
